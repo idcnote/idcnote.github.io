@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL中SELECT+UPDATE处理并发更新问题解决方案分享_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL中SELECT+UPDATE处理并发更新问题解决方案分享，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+问题背" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL中SELECT+UPDATE处理并发更新问题解决方案分享</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:32:34                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL中SELECT+UPDATE处理并发更新问题解决方案分享，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+问题背</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL中SELECT+UPDATE处理并发更新问题解决方案分享，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>问题背景：</p>
+<p>假设MySQL数据库有一张会员表vip_member（InnoDB表），结构如下：</p>
+<p></p>
+<table border="0" cellpadding="0" cellspacing="3" width="100%">
+	<tbody>
+		<tr>
+			<td><!---ecms -ecms 
+【图缺】
+--></td>
+		</tr>
+		<tr>
+			<td></td>
+		</tr>
+	</tbody>
+</table>
+<p>当一个会员想续买会员（只能续买1个月、3个月或6个月）时，必须满足以下业务要求：</p>
+<p>&bull;如果end_at早于当前时间，则设置start_at为当前时间，end_at为当前时间加上续买的月数</p>
+<p>&bull;如果end_at等于或晚于当前时间，则设置end_at=end_at+续买的月数</p>
+<p>&bull;续买后active_status必须为1（即被激活）</p>
+<p>问题分析：</p>
+<p>对于上面这种情况，我们一般会先SELECT查出这条记录，然后根据查出记录的end_at再UPDATE start_at和end_at，伪代码如下（为uid是1001的会员续1个月）：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>vipMember = SELECT * FROM vip_member WHERE uid=1001 LIMIT 1 # 查uid为1001的会员
+if vipMember.end_at &lt; NOW():
+ UPDATE vip_member SET start_at=NOW(), end_at=DATE_ADD(NOW(), INTERVAL 1 MONTH), active_status=1, updated_at=NOW() WHERE uid=1001
+else:
+ UPDATE vip_member SET end_at=DATE_ADD(end_at, INTERVAL 1 MONTH), active_status=1, updated_at=NOW() WHERE uid=1001
+</code></pre>
+<p></p>
+<p>假如同时有两个线程执行上面的代码，很显然存在&ldquo;数据覆盖&rdquo;问题（即一个是续1个月，一个续2个月，但最终可能只续了2个月，而不是加起来的3个月）。</p>
+<p>解决方案：</p>
+<p>A、我想到的第一种方案是把SELECT和UPDATE合成一条SQL，如下：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>UPDATE vip_member 
+SET 
+ start_at = CASE
+ WHEN end_at &lt; NOW() 
+ THEN NOW()
+ ELSE start_at
+ END,
+ end_at = CASE
+ WHEN end_at &lt; NOW()
+ THEN DATE_ADD(NOW(), INTERVAL #duration:INTEGER# MONTH)
+ ELSE DATE_ADD(end_at, INTERVAL #duration:INTEGER# MONTH)
+ END,
+ active_status=1,
+ updated_at=NOW()
+WHERE uid=#uid:BIGINT#
+LIMIT 1;
+</code></pre>
+<p></p>
+<p> So easy！</p>
+<p>B、第二种方案：事务，即用一个事务来包裹上面的SELECT+UPDATE操作。</p>
+<p> 那么是否包上事务就万事大吉了呢？</p>
+<p> 显然不是。因为如果同时有两个事务都分别SELECT到相同的vip_member记录，那么一样的会发生数据覆盖问题。那有什么办法可以解决呢？难道要设置事务隔离级别为SERIALIZABLE，考虑到性能不现实。</p>
+<p> 我们知道InnoDB支持行锁。查看MySQL官方文档（innodb locking reads）了解到InnoDB在读取行数据时可以加两种锁：读共享锁和写独占锁。</p>
+<p> 读共享锁是通过下面这样的SQL获得的：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>SELECT * FROM parent WHERE NAME = &#39;Jones&#39; LOCK IN SHARE MODE;
+</code></pre>
+<p></p>
+<p> 如果事务A获得了先获得了读共享锁，那么事务B之后仍然可以读取加了读共享锁的行数据，但必须等事务A commit或者roll back之后才可以更新或者删除加了读共享锁的行数据。</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>SELECT counter_field FROM child_codes FOR UPDATE;
+UPDATE child_codes SET counter_field = counter_field + 1;
+</code></pre>
+<p></p>
+<p> 如果事务A先获得了某行的写共享锁，那么事务B就必须等待事务A commit或者roll back之后才可以访问行数据。</p>
+<p> 显然要解决会员状态更新问题，不能加读共享锁，只能加写共享锁，即将前面的SQL改写成如下：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>vipMember = SELECT * FROM vip_member WHERE uid=1001 LIMIT 1 FOR UPDATE # 查uid为1001的会员
+if vipMember.end_at &lt; NOW():
+ UPDATE vip_member SET start_at=NOW(), end_at=DATE_ADD(NOW(), INTERVAL 1 MONTH), active_status=1, updated_at=NOW() WHERE uid=1001
+else:
+ UPDATE vip_member SET end_at=DATE_ADD(end_at, INTERVAL 1 MONTH), active_status=1, updated_at=NOW() WHERE uid=1001
+</code></pre>
+<p></p>
+<p> 另外这里特别提醒下：UPDATE/DELETE SQL尽量带上WHERE条件并在WHERE条件中设定索引过滤条件，否则会锁表，性能可想而知有多差了。</p>
+<p>C、第三种方案：乐观锁，类CAS机制</p>
+<p> 第二种加锁方案是一种悲观锁机制。而且SELECT...FOR UPDATE方式也不太常用，联想到CAS实现的乐观锁机制，于是我想到了第三种解决方案：乐观锁。</p>
+<p> 具体来说也挺简单，首先SELECT SQL不作任何修改，然后在UPDATE SQL的WHERE条件中加上SELECT出来的vip_memer的end_at条件。如下：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>vipMember = SELECT * FROM vip_member WHERE uid=1001 LIMIT 1 # 查uid为1001的会员
+cur_end_at = vipMember.end_at
+if vipMember.end_at &lt; NOW():
+ UPDATE vip_member SET start_at=NOW(), end_at=DATE_ADD(NOW(), INTERVAL 1 MONTH), active_status=1, updated_at=NOW() WHERE uid=1001 AND end_at=cur_end_at
+else:
+ UPDATE vip_member SET end_at=DATE_ADD(end_at, INTERVAL 1 MONTH), active_status=1, updated_at=NOW() WHERE uid=1001 AND end_at=cur_end_at
+</code></pre>
+<p></p>
+<p> 这样可以根据UPDATE返回值来判断是否更新成功，如果返回值是0则表明存在并发更新，那么只需要重试一下就好了。</p>
+<p>方案比较：</p>
+<p>三种方案各自优劣也许众说纷纭，只说说我自己的看法：</p>
+<p>&bull;第一种方案利用一条比较复杂的SQL解决问题，不利于维护，因为把具体业务糅在SQL里了，以后修改业务时不但需要读懂这条SQL，还很有可能会修改成更复杂的SQL</p>
+<p>&bull;第二种方案写独占锁，可以解决问题，但不常用</p>
+<p>&bull;第三种方案应该是比较中庸的解决方案，并且甚至可以不加事务，也是我个人推荐的方案</p>
+<p>此外，乐观锁和悲观锁的选择一般是这样的（参考了文末第二篇资料）：</p>
+<p>&bull;如果对读的响应度要求非常高，比如证券交易系统，那么适合用乐观锁，因为悲观锁会阻塞读</p>
+<p>&bull;如果读远多于写，那么也适合用乐观锁，因为用悲观锁会导致大量读被少量的写阻塞</p>
+<p>&bull;如果写操作频繁并且冲突比例很高，那么适合用悲观写独占锁</p>
+
+<p>注：关于MySQL中SELECT+UPDATE处理并发更新问题解决方案分享的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1911.html'>MySQL查询两个日期之间记录的解决办法</a><a>下一篇</a><a href='/mysql/biji/1913.html'>MySQL双向加密解密方式用法分析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

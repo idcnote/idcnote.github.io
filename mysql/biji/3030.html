@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server中参数化SQL写法遇到parameter sniff ，导致不合理执行计划重用的快速解决方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server中参数化SQL写法遇到parameter sniff ，导致不合理执行计划重用的快速解决方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server中参数化SQL写法遇到parameter sniff ，导致不合理执行计划重用的快速解决方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:42:47                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server中参数化SQL写法遇到parameter sniff ，导致不合理执行计划重用的快速解决方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server中参数化SQL写法遇到parameter sniff ，导致不合理执行计划重用的快速解决方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>parameter sniff问题是重用其他参数生成的执行计划，导致当前参数采用该执行计划非最优化的现象。想必熟悉数据的同学都应该知道，产生parameter sniff最典型的问题就是使用了参数化的SQL（或者存储过程中使用了参数化）写法，如果存在数据分布不均匀的情况下，正常情况下生成的执行计划，在传入在分布数据较多的参数的情况下，重用了正常参数生成的执行计划，而这种缓存的执行计划并非适合当前参数的一种情况。</p>
+<p>这种情况，在实际业务中，出现的频率还是比较高的，因为存储过程一般都是采用参数化的写法，这时，遇到分布不均匀的数据参数时，parameter sniff现象就出现了，这种问题还是比较让人头疼的。</p>
+<p>具体parameter sniff产生的原因，我就不做过多的解释了，解释这个就显得太low了</p>
+<p>我举个简单的例子，模拟一下这个现象，说明参数化的存存储过程是怎么写的，存在哪些问题，又如何解决parameter sniff问题，</p>
+<p>先创建一个测试环境：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+create table ParameterSniffProblem
+(
+id int identity(1,1),
+CustomerId int,
+OrderId int,
+OrederStatus int,
+CreateDate Datetime,
+Remark varchar(200)
+)
+declare @i int = 0
+while @i&lt;500000
+begin
+INSERT INTO ParameterSniffProblem values (@i%10000,@i,RAND()*10,GETDATE()-RAND()*100,NEWID())
+set @i=@i+1
+end
+--假如某一个客户有非常多的订单，模拟数据分布不均匀的情况
+INSERT INTO ParameterSniffProblem values (6666,RAND()*100000,1,GETDATE()-RAND()*100,NEWID())
+GO 100000
+--创建正常的索引
+CREATE CLUSTERED INDEX IDX_CreateDate on ParameterSniffProblem(CreateDate
+)
+CREATE INDEX IDX_CustomerId ON ParameterSniffProblem(CustomerId)</code></pre>
+<p>参数化存储过程的写法：</p>
+<p>在编写存储过程的时候，我们一般建议采用参数化的写法，目的是为了减少存储过程的编译和加强执行计划缓存的重用</p>
+<p>大概是这样子的</p>
+<p>代码如下：</p>
+<pre>
+<code>
+CREATE PROCEDURE [dbo].ParameterSniffTest 
+( 
+@p_CustomerId int,
+@p_Status int,
+@p_FromDate datetime,
+@p_ToDate datetime
+) 
+AS 
+BEGIN
+SET NOCOUNT ON 
+DECLARE
+@Parm NVARCHAR(MAX),
+@sqlcommand NVARCHAR(MAX) = N''
+SET @sqlcommand = 'SELECT * FROM ParameterSniffProblem WHERE 1=1'
+　　　　 IF(@p_CustomerId IS NOT NULL)
+SET @sqlcommand = CONCAT(@sqlcommand,'AND CustomerId=@p_CustomerId ')
+IF(@p_Status IS NOT NULL)
+SET @sqlcommand = CONCAT(@sqlcommand,'AND OrederStatus=@p_Status ')
+IF(@p_FromDate IS NOT NULL)
+SET @sqlcommand = CONCAT(@sqlcommand,'AND CreateDate&gt;=@p_FromDate ')
+IF(@p_ToDate IS NOT NULL)
+SET @sqlcommand = CONCAT(@sqlcommand,'AND CreateDate&lt;=@p_ToDate ')
+　　　　SET @Parm= '@p_CustomerId int,
+@p_Status 　　int,
+@p_FromDate 　datetime,
+@p_ToDate 　　datetime '
+　　　　EXEC sp_executesql @sqlcommand,@Parm,
+@p_CustomerId = @p_CustomerId,
+@p_Status = @p_Status,
+@p_FromDate = @p_FromDate,
+@p_ToDate = @p_ToDate 
+END
+GO</code></pre>
+<p></p>
+<h3>Parameter Sniff问题：</h3>
+<p></p>
+<p>这就潜在一个parameter sniff问题，</p>
+<p>比如我查询用户ID=100的订单信息，一个正常的分布的数据，存储过程第一次编译，这个执行计划完全没有问题，</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>如果我接着改变参数执行查询用户6666的信息，一个分布及其不均匀的数据，但是因为重用上面缓存的执行计划，就出现parameter sniff问题了，这个执行计划显然是不合理的</p>
+<p>IO就不看了，刻意造的例子</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>如果我清空执行计划缓存，重新执行上述查询，因为有了重编译，执行计划就是不这个样子，对于CustomerID=6666这个参数来说，显然走全表扫描代价要更小一点</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>想必这是一个开发中常见的问题给，我们参数化SQL就是为了让不同参数的查询重用执行计划，但是很不幸，数据分布不均匀的时候，重用执行计划恰恰又给数据库造成了伤害，例中，如果是正常参数重用了分布较多数据的执行计划，比如命名可以用到索引，结果是表扫描，后果会更严重。</p>
+<p>那么，既想要尽可能的重用执行计划，又要避免因为执行计划重用产生parameter sniff问题，怎么办？</p>
+<p>我们知道问题在于@p_CustomerId身上，那么可不可以对有可能产生parameter sniff问题的@p_CustomerId不做参数化，直接拼凑在SQL中，如果@p_CustomerId变化了就重编译SQL，也就是对传入进来的@p_CustomerId重编译</p>
+<p>如果是@p_CustomerId不变，其他参数有变化，比如这里时间字段的变化，还可以享受参数化带来的执行计划重用的好处 也就是这样处理 @p_CustomerId这个参数，直接把@p_CustomerId以字符串的方式平凑在SQL语句中，这样的话，就相当于即席查询了，不通过参数化的方式给CustomerId这个查询条件字段赋值</p>
+<p>代码如下：</p>
+<pre>
+<code>
+IF(@p_CustomerId IS NOT NULL)
+SET @sqlcommand = CONCAT(@sqlcommand,'AND CustomerId= ',@p_CustomerId)</code></pre>
+<p>这样再去执行存储过程的时候，</p>
+<p>带入@p_CustomerId=1的时候，执行IDX_CustomerId的index seek</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>带入@p_CustomerId=6666的时候，重编译，执行计划是全表扫描，避免重用上面生成的执行计划，造成不合理的执行方式对效率以及数据库服务器资源的消耗</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>这样会尽可能的减少parameter sniff问题带来的影响，当缓存了@p_CustomerId=1的执行计划的时候，再次传入@p_CustomerId=1，其他条件有较小的变化，比如时间字段上有改动，依然可以重用缓存的执行计划，避免重编译带来的影响</p>
+<p>结论：</p>
+<p></p>
+<h3>这种方式于处理parameter sniff问题，当然不是完美的，肯定也有问题，我当然知道一旦@p_CustomerId不同就要重编译</h3>
+<p></p>
+<p>肯定会因为@p_CustomerId参数值不同，这样的话，不可避免地增加了重编译的机会，</p>
+<p>但是却不会因为不合理的执行计划重用，带来的parameter sniff问题</p>
+<p>要知道一旦产生parameter sniff问题，大量的查询用到不合理的执行计划，会对整个服务器产生非常严重的影响，比如可能会产生大量的IO等</p>
+<p>同时存在一个好处，比如第一次传入@p_CustomerId=1，</p>
+<p>再次传入@p_CustomerId=1，其他条件有较小的变化，比如时间字段上有改动，依然可以重用缓存的执行计划，避免重编译带来的影响当然我这里只是一个简单的例子，实际应用中远远比这个复杂</p>
+<p>比如分布的特别的多的数据有两个特点，第一分布的标示不仅仅只有一个，第二分布不均的数据是动态的，有可能第一季度是A这部分数据占据大多数，有可能是第二季度B数据占绝大多数</p>
+<p>所以很难采用Plan Guide的方式解决parameter sniff问题</p>
+<p></p>
+<h3>这种方式可以在一定程度上也能够重用缓存的执行计划，可以减少（但不可避免）重编译的次数</h3>
+<p></p>
+<p>同时，这种方式与拼凑一个SQL字符串执行的即席查询方式相比，同时还可以利用参数化带来的其他好处，比如SQL注入等等</p>
+<p>总结：</p>
+<p>　　　　parameter sniff问题的解决方式有很多，不一一啰嗦了</p>
+<p>　　　　最典型的就是强制重编译，</p>
+<p>　　　　或者使用EXEC执行一个拼凑出来的字符串，这种方式属于Adhoc查询</p>
+<p>　　　　或者查询提示，</p>
+<p>　　　　或者是使用本地变量，</p>
+<p>　　　 或者使用Plan Guide等等等等，</p>
+<p>　　　　每种方式都有他的局限性，至少到目前为止，还没有一种十全十美的方式来解决parameter sniff问题</p>
+<p>　　　　遇到问题，解决方法有很多种，以最小的代价解决问题才是王道。</p>
+
+<p>注：关于SQL Server中参数化SQL写法遇到parameter sniff ，导致不合理执行计划重用的快速解决方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3029.html'>SQL Server 修改数据库为多用户模式的解决办法</a><a>下一篇</a><a href='/mysql/biji/3031.html'>快速实现SQL Server数据库恢复备份</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

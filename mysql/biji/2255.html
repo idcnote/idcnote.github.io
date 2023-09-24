@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>浅析MySQL Join语法以及性能优化_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了浅析MySQL Join语法以及性能优化，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+一．Join语法概述
+join 用于" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">浅析MySQL Join语法以及性能优化</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:35:35                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了浅析MySQL Join语法以及性能优化，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+一．Join语法概述
+join 用于</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了浅析MySQL Join语法以及性能优化，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p><strong>一．Join语法概述</strong></p>
+<p>join 用于多表中字段之间的联系，语法如下：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>... FROM table1 INNER|LEFT|RIGHT JOIN table2 ON conditiona
+</code></pre>
+<p></p>
+<p>table1:左表；table2:右表。</p>
+<p>JOIN 按照功能大致分为如下三类：</p>
+<p>INNER JOIN（内连接,或等值连接）：取得两个表中存在连接匹配关系的记录。</p>
+<p>LEFT JOIN（左连接）：取得左表（table1）完全记录，即是右表（table2）并无对应匹配记录。</p>
+<p>RIGHT JOIN（右连接）：与 LEFT JOIN 相反，取得右表（table2）完全记录，即是左表（table1）并无匹配对应记录。</p>
+<p>注意：mysql不支持Full join,不过可以通过UNION 关键字来合并 LEFT JOIN 与 RIGHT JOIN来模拟FULL join.</p>
+<p>接下来给出一个列子用于解释下面几种分类。如下两个表(A,B)</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; select A.id,A.name,B.name from A,B where A.id=B.id;
++----+-----------+-------------+
+| id | name | name |
++----+-----------+-------------+
+| 1 | Pirate | Rutabaga |
+| 2 | Monkey | Pirate |
+| 3 | Ninja | Darth Vader |
+| 4 | Spaghetti | Ninja |
++----+-----------+-------------+
+4 rows in set (0.00 sec)
+</code></pre>
+<p></p>
+<p><strong>二.Inner join</strong></p>
+<p>内连接，也叫等值连接，inner join产生同时符合A和B的一组数据。</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; select * from A inner join B on A.name = B.name;
++----+--------+----+--------+
+| id | name | id | name |
++----+--------+----+--------+
+| 1 | Pirate | 2 | Pirate |
+| 3 | Ninja | 4 | Ninja |
++----+--------+----+--------+
+</code></pre>
+<p></p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p><strong>三.Left join</strong></p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; select * from A left join B on A.name = B.name;
+#或者：select * from A left outer join B on A.name = B.name;</code></pre>
+<p></p>
+<p><code>+----+-----------+------+--------+| id | name | id | name |+----+-----------+------+--------+| 1 | Pirate | 2 | Pirate || 2 | Monkey | NULL | NULL || 3 | Ninja | 4 | Ninja || 4 | Spaghetti | NULL | NULL |+----+-----------+------+--------+4 rows in set (0.00 sec)</code></p>
+<p></p>
+<p>left join,（或left outer join:在Mysql中两者等价，推荐使用left join.）左连接从左表(A)产生一套完整的记录,与匹配的记录(右表(B)) .如果没有匹配,右侧将包含null。</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>如果想只从左表(A)中产生一套记录，但不包含右表(B)的记录，可以通过设置where语句来执行，如下：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; select * from A left join B on A.name=B.name where A.id is null or B.id is null;
++----+-----------+------+------+
+| id | name | id | name |
++----+-----------+------+------+
+| 2 | Monkey | NULL | NULL |
+| 4 | Spaghetti | NULL | NULL |
++----+-----------+------+------+
+2 rows in set (0.00 sec)
+</code></pre>
+<p></p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>同理，还可以模拟inner join. 如下：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; select * from A left join B on A.name=B.name where A.id is not null and B.id is not null;
++----+--------+------+--------+
+| id | name | id | name |
++----+--------+------+--------+
+| 1 | Pirate | 2 | Pirate |
+| 3 | Ninja | 4 | Ninja |
++----+--------+------+--------+
+2 rows in set (0.00 sec)
+</code></pre>
+<p></p>
+<p>求差集：</p>
+<p>根据上面的例子可以求差集，如下：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>SELECT * FROM A LEFT JOIN B ON A.name = B.name
+WHERE B.id IS NULL
+union
+SELECT * FROM A right JOIN B ON A.name = B.name
+WHERE A.id IS NULL;
+# 结果
+ +------+-----------+------+-------------+
+| id | name | id | name |
++------+-----------+------+-------------+
+| 2 | Monkey | NULL | NULL |
+| 4 | Spaghetti | NULL | NULL |
+| NULL | NULL | 1 | Rutabaga |
+| NULL | NULL | 3 | Darth Vader |
++------+-----------+------+-------------+
+</code></pre>
+<p></p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p><strong>四.Right join</strong></p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; select * from A right join B on A.name = B.name;
++------+--------+----+-------------+
+| id | name | id | name |
++------+--------+----+-------------+
+| NULL | NULL | 1 | Rutabaga |
+| 1 | Pirate | 2 | Pirate |
+| NULL | NULL | 3 | Darth Vader |
+| 3 | Ninja | 4 | Ninja |
++------+--------+----+-------------+
+4 rows in set (0.00 sec)
+</code></pre>
+<p></p>
+<p>同left join。</p>
+<p><strong>五.Cross join</strong></p>
+<p>cross join：交叉连接，得到的结果是两个表的乘积，即笛卡尔积</p>
+<p>笛卡尔（Descartes）乘积又叫直积。假设集合A={a,b}，集合B={0,1,2}，则两个集合的笛卡尔积为{(a,0),(a,1),(a,2),(b,0),(b,1), (b,2)}。可以扩展到多个集合的情况。类似的例子有，如果A表示某学校学生的集合，B表示该学校所有课程的集合，则A与B的笛卡尔积表示所有可能的选课情况。</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; select * from A cross join B;
++----+-----------+----+-------------+
+| id | name | id | name |
++----+-----------+----+-------------+
+| 1 | Pirate | 1 | Rutabaga |
+| 2 | Monkey | 1 | Rutabaga |
+| 3 | Ninja | 1 | Rutabaga |
+| 4 | Spaghetti | 1 | Rutabaga |
+| 1 | Pirate | 2 | Pirate |
+| 2 | Monkey | 2 | Pirate |
+| 3 | Ninja | 2 | Pirate |
+| 4 | Spaghetti | 2 | Pirate |
+| 1 | Pirate | 3 | Darth Vader |
+| 2 | Monkey | 3 | Darth Vader |
+| 3 | Ninja | 3 | Darth Vader |
+| 4 | Spaghetti | 3 | Darth Vader |
+| 1 | Pirate | 4 | Ninja |
+| 2 | Monkey | 4 | Ninja |
+| 3 | Ninja | 4 | Ninja |
+| 4 | Spaghetti | 4 | Ninja |
++----+-----------+----+-------------+
+16 rows in set (0.00 sec)</code></pre>
+<p></p>
+<p><code>#再执行：mysql&gt; select * from A inner join B; 试一试</code></p>
+<p><code>#在执行mysql&gt; select * from A cross join B on A.name = B.name; 试一试</code></p>
+<p></p>
+<p>实际上，在 MySQL 中（仅限于 MySQL） CROSS JOIN 与 INNER JOIN 的表现是一样的，在不指定 ON 条件得到的结果都是笛卡尔积，反之取得两个表完全匹配的结果。 INNER JOIN 与 CROSS JOIN 可以省略 INNER 或 CROSS 关键字，因此下面的 SQL 效果是一样的：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>... FROM table1 INNER JOIN table2
+... FROM table1 CROSS JOIN table2
+... FROM table1 JOIN table2
+</code></pre>
+<p></p>
+<p><strong>六.Full join</strong></p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; select * from A left join B on B.name = A.name 
+ -&gt; union 
+ -&gt; select * from A right join B on B.name = A.name;
++------+-----------+------+-------------+
+| id | name | id | name |
++------+-----------+------+-------------+
+| 1 | Pirate | 2 | Pirate |
+| 2 | Monkey | NULL | NULL |
+| 3 | Ninja | 4 | Ninja |
+| 4 | Spaghetti | NULL | NULL |
+| NULL | NULL | 1 | Rutabaga |
+| NULL | NULL | 3 | Darth Vader |
++------+-----------+------+-------------+
+6 rows in set (0.00 sec)
+</code></pre>
+<p></p>
+<p>全连接产生的所有记录（双方匹配记录）在表A和表B。如果没有匹配,则对面将包含null。</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p><strong>七.性能优化</strong>1.显示(explicit) inner join VS 隐式(implicit) inner join</p>
+<p>如：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>select * from
+table a inner join table b
+on a.id = b.id;
+</code></pre>
+<p></p>
+<p>VS</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>select a.*, b.*
+from table a, table b
+where a.id = b.id;
+</code></pre>
+<p></p>
+<p>我在数据库中比较(10w数据)得之，它们用时几乎相同，第一个是显示的inner join，后一个是隐式的inner join。</p>
+<p>2.left join/right join VS inner join</p>
+<p>尽量用inner join.避免 LEFT JOIN 和 NULL.</p>
+<p>在使用left join（或right join）时，应该清楚的知道以下几点：(1). on与 where的执行顺序</p>
+<p> ON 条件（&ldquo;A LEFT JOIN B ON 条件表达式&rdquo;中的ON）用来决定如何从 B 表中检索数据行。如果 B 表中没有任何一行数据匹配 ON 的条件,将会额外生成一行所有列为 NULL 的数据,在匹配阶段 WHERE 子句的条件都不会被使用。仅在匹配阶段完成以后，WHERE 子句条件才会被使用。它将从匹配阶段产生的数据中检索过滤。</p>
+<p>所以我们要注意：在使用Left (right) join的时候，一定要在先给出尽可能多的匹配满足条件，减少Where的执行。如：</p>
+<p>PASS</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>select * from A
+inner join B on B.name = A.name
+left join C on C.name = B.name
+left join D on D.id = C.id
+where C.status&gt;1 and D.status=1;
+</code></pre>
+<p></p>
+<p>Great</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>select * from A
+inner join B on B.name = A.name
+left join C on C.name = B.name and C.status&gt;1
+left join D on D.id = C.id and D.status=1
+</code></pre>
+<p></p>
+<p>从上面例子可以看出，尽可能满足ON的条件，而少用Where的条件。从执行性能来看第二个显然更加省时。</p>
+<p>(2).注意ON 子句和 WHERE 子句的不同</p>
+<p>如作者举了一个列子：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; SELECT * FROM product LEFT JOIN product_details
+ ON (product.id = product_details.id)
+ AND product_details.id=2;
++----+--------+------+--------+-------+
+| id | amount | id | weight | exist |
++----+--------+------+--------+-------+
+| 1 | 100 | NULL | NULL | NULL |
+| 2 | 200 | 2 | 22 | 0 |
+| 3 | 300 | NULL | NULL | NULL |
+| 4 | 400 | NULL | NULL | NULL |
++----+--------+------+--------+-------+
+4 rows in set (0.00 sec)</code></pre>
+<p></p>
+<p><code>mysql&gt; SELECT * FROM product LEFT JOIN product_details ON (product.id = product_details.id) WHERE product_details.id=2;+----+--------+----+--------+-------+| id | amount | id | weight | exist |+----+--------+----+--------+-------+| 2 | 200 | 2 | 22 | 0 |+----+--------+----+--------+-------+1 row in set (0.01 sec)</code></p>
+<p></p>
+<p>从上可知，第一条查询使用 ON 条件决定了从 LEFT JOIN的 product_details表中检索符合的所有数据行。第二条查询做了简单的LEFT JOIN，然后使用 WHERE 子句从 LEFT JOIN的数据中过滤掉不符合条件的数据行。</p>
+<p>(3).尽量避免子查询，而用join</p>
+<p>往往性能这玩意儿，更多时候体现在数据量比较大的时候，此时，我们应该避免复杂的子查询。如下：</p>
+<p>PASS</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>insert into t1(a1) select b1 from t2 where not exists(select 1 from t1 where t1.id = t2.r_id); 
+</code></pre>
+<p></p>
+<p>Great</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>insert into t1(a1) 
+select b1 from t2 
+left join (select distinct t1.id from t1 ) t1 on t1.id = t2.r_id 
+where t1.id is null; 
+</code></pre>
+<p></p>
+
+<p>注：关于浅析MySQL Join语法以及性能优化的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2254.html'>SQL Server数据库高版本备份还原为低版本的解决办法</a><a>下一篇</a><a href='/mysql/biji/2256.html'>SQL Server 分组求和sql语句的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

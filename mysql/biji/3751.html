@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server 多列复合索引的使用 绕过微软sql server的一个缺陷_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server 多列复合索引的使用 绕过微软sql server的一个缺陷，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server 多列复合索引的使用 绕过微软sql server的一个缺陷</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:49:28                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server 多列复合索引的使用 绕过微软sql server的一个缺陷，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server 多列复合索引的使用 绕过微软sql server的一个缺陷，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>然而，微软sql server在处理这类索引时，有个重要的缺陷，那就是把本该编译成索引seek的操作编成了索引扫描，这可能导致严重性能下降举个例子来说明问题，假设某个表T有索引 ( cityid, sentdate, userid), 现在有个分页列表功能，要获得大于某个多列复合索引V0的若干个记录的查询，用最简单表意的方式写出来就是 V &gt;= V0, 如果分解开来，就是:cityid &gt; @cityid0 or (cityid = @cityid0 and (sentdate &gt; @sentdate0 or (sentdate = @sentdate0 and userid &gt;= @userid0))),当你写出上述查询时，你会期待sql server会自动的把上述识别为V &gt;= V0类型的边界条件，并使用index seek操作来实施该查询。然而，微软的sql server (2005版)有一个重要缺陷(其他的sql server如何还不得知), 当它遇到这样sql时，sql server就会采用index scan来实施，结果是您建立好的索引根本就没有被使用，如果这个表的数据量很大，那所造成的性能下降是非常大的。对于这个问题，我曾经提交给微软的有关人士，他们进一步要求我去一个正式的网站上去提交这个缺陷，我懒得去做。不过，对这个缺陷，还是有个办法能够绕过去的，只要把上面给出的条件变变形，sql server还是能够变回到是用index seek, 而不是低性能的index scan. 具体请看我的英文原文吧(对不起了, 我一旦写了中文,就不想翻成英文,反过来也一样, 估计大家英文都还可以,实在不行的就看黑体部分吧, )：The seek predicate of the form &quot;x &gt; bookmark_of_x&quot; is needed in paging related query. The compiler has no difficulty to parse it correctly if x is a single column index, or two columns index, however, if x is a three columns index or more, then the compiler will have a hard time to recognize it. This failure will result in that the seek predicate ended up in residue predicate, which results in a much worse execution plan.To illustrate the point, take a example,Create table A( a int, b int, c int, d float, primary key (a, b, c))now check the plan for the query:select c, d from A where (a&gt; 111 or a= 111 and(b &gt; 222 or b = 222 and c &gt; 333))you can see a table scan op is used, and the Where clause ended up in residue predicate.However, if you rewrite the query in an equivalent form:select c, d from A where a&gt; 111 or a= 111 and b &gt; 222 or a= 111 and b= 222 and c &gt;333Then the compiler can choose an index seek op, which is desired.The problem is, the compiler should be able to recognize the first form of seek predicate on multiple columns index, it saves the user from having to pay extra time to figure out a get-around, not to mention the first form is a more efficient form of same expression.上面的问题，可以说是部分的绕过去了，但是，也有绕不过的时候，接着看下面一段:It looks like that sql server lacks a consept of vector bookmark, or vector comparison or whatever you like to call it.The workaround is not a perfect workaround. If sql server were to understand the concept of vector bookmark, then the following two would be the same in execution plan and performance:1. select top(n) * from A where vectorIndex &gt;= @vectorIndex2. select * from A where vectorIndex &gt;= @vectorIndex and vectorIndex &lt;=@vectorIndexEnd-- @vectorIndexEnd corresponds to the last row of 1.However, test has shown that, the second statement takes far more time than the first statement, and sql server actually only seek to the begining of the vector range and scan to the end of the whole Index, instead of stop at the end of the vector range.Not only sql server compile badly when the vector bookmark has 3 columns, test has shown that even with as few as 2 columns, sql serer still can not correctly recognize this is actually a vector range, example:3. select top (100) a, b, c, d from A where a&gt; 60 or a= 60 and b &gt; 204. select a, b, c, d from A where (a&gt; 60 or a= 60 and b &gt; 20) and(a&lt; 60 or a= 60 and b &lt;= 21),上面两个查询实质相同(表中的数据刚好如此)，并且给出同业的结果集，但是，3比4的速度要快的多，如果去看execution plan也证明3确实应当比4快.也就是说, 即使在索引vectorIndex只含两列的情况下, sql server也无法正确的理解范围表达式 @vectorIndex0 &lt; vectorIndex &lt; @vectorIndex1, 它能把前半部分正确的解读为seek, 但是, 后半部分无法正确解读, 导致, sql server会一直扫描到整个表的末尾, 而不是在@vectorIndex1处停下来.以下测试代码, 有兴趣的人可以拿去自己玩:
+<p>代码如下:</p>
+<pre>
+<code> 
+CREATE TABLE [dbo].[A]( 
+[a] [int] NOT NULL, 
+[b] [int] NOT NULL, 
+[c] [int] NOT NULL, 
+[d] [float] NULL, 
+PRIMARY KEY CLUSTERED ([a] ASC, [b] ASC, [c] ASC) 
+) 
+declare @a int, @b int, @c int 
+set @a =1 
+while @a &lt;= 100 
+begin 
+set @b = 1 
+begin tran 
+while @b &lt;= 100 
+begin 
+set @c = 1 
+while @c &lt;= 100 
+begin 
+INSERT INTO A (a, b, c, d) 
+VALUES (@a,@b,@c,@a+@b+@c) 
+set @c = @c + 1 
+end 
+set @b = @b + 1 
+end 
+commit 
+set @a = @a + 1 
+end 
+SET STATISTICS PROFILE ON 
+SET STATISTICS time ON 
+SET STATISTICS io ON 
+
+select top (10) a, b, c, d from A where (a&gt; 60 or a= 60 and 
+(b &gt; 20 or b = 20 and c &gt;= 31)) 
+select a, b, c, d from A where (a&gt; 60 or a= 60 and 
+(b &gt; 20 or b = 20 and c &gt;= 31)) and (a&lt; 60 or a= 60 and 
+(b &lt; 20 or b = 20 and c &lt;= 40)) 
+
+select top (10) a, b, c, d from A where a&gt; 60 or a= 60 and b &gt; 20 or a= 60 and b= 20 and c &gt;= 31 
+select a, b, c, d from A where (a&gt; 60 or a= 60 and b &gt; 20 or a= 60 and b= 20 and c &gt;= 31) and 
+(a&lt; 60 or a= 60 and b &lt; 20 or a= 60 and b= 20 and c &lt;= 40) 
+select top (100) a, b, c, d from A where a&gt; 60 or a= 60 and b &gt; 20 
+select a, b, c, d from A where (a&gt; 60 or a= 60 and b &gt; 20) and (a&lt; 60 or a= 60 and b &lt;= 21) 
+select top (100) a, b, c, d from A where a&gt; 60 or a= 60 and b &gt; 20 
+select a, b, c, d from A where (a&gt; 60 or a= 60 and b &gt; 20) and (a&lt; 60 or a= 60 and b &lt;= 21) 
+</code></pre>
+
+<p>注：关于SQL Server 多列复合索引的使用 绕过微软sql server的一个缺陷的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3750.html'>SQL Server 批量插入与更新两种解决方案分享(存储过程)</a><a>下一篇</a><a href='/mysql/biji/3752.html'>SQL Server 查询所有数据库名，表名，和字段名的语句</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

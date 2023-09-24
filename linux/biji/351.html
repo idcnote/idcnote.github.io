@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>redis优化系列（三）解决主从配置后的常见问题_IDC笔记</title>
+    <meta name="keywords" content=",Linux常用命令" />
+    <meta name="description" content="该系列博文之上一篇：传送门 走你读写分离概述：读流量分摊到从节点上。这是个非常好的特性，如果一个业务只需要读数据，那么我们只需要连一台 slave 从机读数据。虽然读写有优势，能" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+            <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> Linux命令大全            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/linux/1.html">Linux常用命令(手册)大全</a></li><li><a href="/linux/linux/2.html">Linux命令格式</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 系统管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/system/3.html">Linux ls命令:显示指定工作目录下的内容</a></li><li><a href="/linux/system/4.html">Linux pwd命令:显示当前工作目录</a></li><li><a href="/linux/system/5.html">Linux cd命令:切换工作目录</a></li><li><a href="/linux/system/6.html">Linux date命令:显示或设置系统时间</a></li><li><a href="/linux/system/7.html">Linux su命令:切换用户</a></li><li><a href="/linux/system/9.html">Linux man命令:查看帮助信息</a></li><li><a href="/linux/system/8.html">Linux clear命令:清除屏幕</a></li><li><a href="/linux/system/11.html">Linux whoami命令:显示目前登录用户名</a></li><li><a href="/linux/system/10.html">Linux who命令:显示目前登录用户信息</a></li><li><a href="/linux/system/13.html">Linux ps命令:显示进程状态</a></li><li><a href="/linux/system/12.html">Linux free命令:显示系统内存状态</a></li><li><a href="/linux/system/15.html">Linux help命令:显示帮助信息</a></li><li><a href="/linux/system/14.html">Linux top命令:查看系统活跃进程</a></li><li><a href="/linux/system/18.html">Linux shutdown命令:关机或重启</a></li><li><a href="/linux/system/17.html">Linux halt命令:关闭系统</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 文件管理与编辑命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/file/27.html">Linux mkdir命令:创建目录</a></li><li><a href="/linux/file/29.html">Linux cat命令:连接文件并打印到标准输出设备上</a></li><li><a href="/linux/file/28.html">Linux more命令:显示文本文件内容</a></li><li><a href="/linux/file/30.html">Linux grep命令:检索文件内容</a></li><li><a href="/linux/file/31.html">Linux rm命令:删除文件或目录</a></li><li><a href="/linux/file/32.html">Linux touch命令:修改文件的时间</a></li><li><a href="/linux/file/34.html">Linux cp命令:复制文件或目录</a></li><li><a href="/linux/file/33.html">Linux ln命令:创建链接</a></li><li><a href="/linux/file/35.html">Linux find命令:查找文件</a></li><li><a href="/linux/file/37.html">Linux mv命令:移动或重命名文件或目录</a></li><li><a href="/linux/file/36.html">Linux split命令:分割文件</a></li><li><a href="/linux/file/40.html">Linux head命令:查看文件前几行</a></li><li><a href="/linux/file/39.html">Linux less命令:分页显示文件内容</a></li><li><a href="/linux/file/38.html">Linux vi/vim命令:文本编辑器</a></li><li><a href="/linux/file/42.html">Linux wc命令:统计字节数、字数、行数</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 压缩与解压命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/compression/55.html">Linux unzip命令:解压文件或目录</a></li><li><a href="/linux/compression/54.html">Linux zip命令:压缩文件或目录</a></li><li><a href="/linux/compression/56.html">Linux tar命令:归档工具</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 磁盘管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/disk/57.html">Linux df命令:显示磁盘空间使用情况</a></li><li><a href="/linux/disk/59.html">Linux quota命令:显示磁盘已使用的空间与限制</a></li><li><a href="/linux/disk/58.html">Linux mount命令:挂载文件系统</a></li><li><a href="/linux/disk/62.html">Linux ip命令:执行网络管理任务</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 网络设置与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/network/61.html">Linux netstat命令:显示网络状态</a></li><li><a href="/linux/network/60.html">Linux ifconfig命令:配置或显示网络接口信息</a></li><li><a href="/linux/network/63.html">Linux ping命令:测试主机间网络连通性</a></li><li><a href="/linux/network/65.html">Linux finger命令:查找并显示用户信息</a></li><li><a href="/linux/network/64.html">Linux wall命令:发送广播</a></li><li><a href="/linux/network/67.html">Linux rlogin命令:远端登入</a></li><li><a href="/linux/network/66.html">Linux rcp命令:远程文件复制</a></li>        </ul>
+    </li>
+        <li>
+        <a href="/linux/biji/" class="waves-effect">
+            <i class="icon-share"></i>
+            <span>Linux笔记
+                <span class="float-right menu-arrow">
+                <i class="mdi mdi-chevron-right"></i>
+                </span>
+            </span>
+        </a>
+    </li>
+    </ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+</div>
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="page-title-box">
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <h1 class="page-title">redis优化系列（三）解决主从配置后的常见问题</h1>
+                    </div>
+                </div>
+                <!-- end row -->
+            </div>
+            <!-- end page-title -->
+            <!-- START ROW -->
+            <div class="panel panel-forbid">
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+                <div class="panel-content">
+                <span>该系列博文之上一篇：传送门 走你读写分离概述：读流量分摊到从节点上。这是个非常好的特性，如果一个业务只需要读数据，那么我们只需要连一台 slave 从机读数据。虽然读写有优势，能</span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+                <div class="panel-content">
+                <span><p>该系列博文之上一篇：传送门 走你</p><h2>读写分离概述：</h2><p>读流量分摊到从节点上。这是个非常好的特性，如果一个业务只需要读数据，那么我们只需要连一台 slave 从机读数据。</p><p><img src="/d/file/p/20221029/1565879698568109.jpg" title="1565879698568109.jpg" _src="/d/file/p/20221029/1565879698568109.jpg" alt="r1.jpg"/></p><p>虽然读写有优势，能够让读这部分 分配给各个 slave 从机，如果不够，直接加 slave 机器就好了。但是也会出现以下问题：</p><h3>1、复制数据延迟</h3><p>可能会出现 slave 延迟导致读写不一致等问题，当然你也可以使用监控偏移量 offset，如果 offset 超出范围就切换到 master 上，逻辑切换，而具体延迟多少，可以通过 info replication 的 offset 指标进行排查。</p><p><br/></p><p>对于无法容忍大量延迟场景，可以编写外部监控程序（比如consul）监听主从节点的复制偏移量，当延迟较大时触发报警或者通知客户端避免读取延迟过高的从节点</p><p><br/></p><p><strong>例子：模拟网络延迟（只写一下步骤，不做模拟并截图了，感兴趣的自己试一下）</strong></p><pre class="brush:bash;toolbar:false">#使用redis镜像创建一台新的redis从节点服务器
+docker&nbsp;run&nbsp;--privileged&nbsp;-itd&nbsp;--name&nbsp;redis-slave2&nbsp;--net&nbsp;mynetwork&nbsp;-p&nbsp;6390:6379&nbsp;--ip&nbsp;172.10.0.4&nbsp;redis</pre><p><strong></strong>注：--privileged&nbsp; 让docker容器将拥有访问主机所有设备的权限</p><p><br/></p><p>通过linux下的控流工具，模拟网络延迟，用代码模拟下，因为对于网络的操作属于特殊权限所以需要添加 --privileged 参数</p><p><br/></p><pre class="brush:bash;toolbar:false">#安装linux下的控流工具，使用他来模拟网络延迟
+yum&nbsp;install&nbsp;iproute</pre><p><br/></p><p>配置延迟5s（秒）</p><pre class="brush:bash;toolbar:false">#进入redis-slave2容器里面
+docker&nbsp;exec&nbsp;-itd&nbsp;redis-slave2&nbsp;bash
+
+#配置这台服务器的网络延迟5秒钟
+tc&nbsp;&nbsp;qdisc&nbsp;&nbsp;add&nbsp;&nbsp;&nbsp;dev&nbsp;&nbsp;eth0&nbsp;&nbsp;root&nbsp;&nbsp;netem&nbsp;&nbsp;delay&nbsp;5000ms
+
+#然后你可以使用swoole的定时器来检测查看结果
+
+
+
+#删除延迟网络服务器的命令如下：
+tc&nbsp;qdisc&nbsp;&nbsp;del&nbsp;&nbsp;dev&nbsp;&nbsp;eth0&nbsp;&nbsp;root&nbsp;netem&nbsp;delay&nbsp;5000ms</pre><p>注意：这个配置网络延迟不要乱用。。特别是生产环境。。。。。。<br/></p><p><br/></p><p>同时从节点的slave-serve-stale-data参数也与此有关，它控制这种情况下从节点的表现：如果为yes（默认值），则从节点仍能够响应客户端的命令；如果为no，则从节点只能响应info、slaveof等少数命令。该参数的设置与应用对数据一致性的要求有关；如果对数据一致性要求很高，则应设置为no。</p><p><br/></p><p><strong>只有N个从节点链接的时候才允许写入：</strong></p><p>Redis 2.8以后，可以设置主节点只有在有N台从节点链接的时候可以写入请求。然而，因为Redis使用的是异步复制，所以没有办法保证从节点确实收到的给定的写入请求，所以存在一个窗口期的数据丢失的可能性。</p><p><br/></p><p>接下来是解释这个特性是如何工作的：</p><p><br/></p><p>从节点每秒钟都会ping主节点，告知它所有的复制流工作了。</p><p>主节点会记住从每个从节点收到的最新的ping</p><p><br/></p><p>用户可以给主节点配置一个在等于从节点的数量的最低值和不超过最高值之间的延迟<br/></p><p>如果至少有N个从节点，如果少于延迟M秒，则写入将被接受。<br/><br/></p><p>你可能觉得经最大努力保证数据安全的机制，虽然数据一致性无法保证，但是至少只是几秒的时间窗口内丢失数据。通常情况下范围数据丢失可比无范围数据丢失好多了。</p><p><br/></p><p>如果条件不满足，主节点将会返回一个错误，并且写入请求将不被接受</p><p><br/></p><p>主机配置两个参数：<br/>min-slaves-to-write&nbsp; &lt;number of slaves&gt;<br/>min-slaves-max-lag&nbsp; &lt;number of seconds&gt;</p><p><br/></p><p><strong>如何选择，要不要读写分离？</strong></p><p>没有最合适的方案，只有最合适的场景，读写分离需要业务可以容忍一定程度的数据不一致，适合读多写少的业务场景，读写分离，是为了什么？主要是因为要建立一主多从的架构，才能横向任意扩展slave node去支撑更大的读吞吐量。</p><h3>2、从节点故障问题</h3><p>对于从节点的故障问题，需要在客户端维护一个可用从节点列表，当从节点故障时，立刻切换到其他从节点或主节点。</p><p><br/></p><h3><strong>3、配置不一致</strong></h3><p>主机和从机不同，经常导致主机和从机的配置不同，并带来问题。</p><p>①、数据丢失：</p><p>主机和从机有时候会发生配置不一致的情况，例如 maxmemory 不一致，如果主机配置 maxmemory 为8G，从机 slave 设置为4G，这个时候是可以用的，而且还不会报错。但是如果要做高可用，让从节点变成主节点的时候，就会发现数据已经丢失了，而且无法挽回。</p><p><br/></p><h3 style="white-space: normal;"><strong>4、避免全量复制</strong></h3><p>全量复制指的是当 slave 从机断掉并重启后，runid 产生变化而导致需要在 master 主机里拷贝全部数据。这种拷贝全部数据的过程非常耗资源。</p><p>全量复制是不可避免的，例如第一次的全量复制是不可避免的，这时我们需要选择小主节点，且maxmemory 值不要过大，这样就会比较快。同时选择在低峰值的时候做全量复制。</p><p><br/></p><p><strong>造成全量复制的原因：</strong></p><p><span style="white-space: normal;">①</span>、一是主从机的运行 runid 不匹配。解释一下，主节点如果重启，runid 将会发生变化。如果从节点监控到 runid 不是同一个，它就会认为你的节点不安全。当发生故障转移的时候，如果主节点发生故障，那么从机就会变成主节点。<strong><br/></strong></p><p>②、复制缓冲区空间不足，比如默认值1M，可以部分复制。但如果缓存区不够大的话，首先需要网络中断，部分复制就无法满足。其次需要增大复制缓冲区配置（relbacklogsize），对网络的缓冲增强。参考之前的说明。</p><p><strong><br/></strong></p><p><strong>该如何解决呢？</strong></p><p>在一些场景下，可能希望对主节点进行重启，例如主节点内存碎片率过高，或者希望调整一些只能在启动时调整的参数。如果使用普通的手段重启主节点，会使得runid发生变化，可能导致不必要的全量复制！<strong><br/></strong></p><p>为了解决这个问题，Redis提供了debug reload的重启方式：重启后，主节点的runid和offset都不受影响，避免了全量复制。</p><p><br/></p><h3>5、复制风暴</h3><p>当一个主机下面挂了很多个 slave 从机的时候，主机 master 挂了，这时 master 主机重启后，因为 runid 发生了变化，所有的 slave 从机都要做一次全量复制。这将引起单节点和单机器的复制风暴，开销会非常大。</p><p><strong><img src="/d/file/p/20221029/1565882544267575.jpg" title="1565882544267575.jpg" _src="/d/file/p/20221029/1565882544267575.jpg" alt="r2.jpg"/></strong></p><p><strong>如何解决呢？</strong></p><p>可以采用树状结构降低多个从节点对主节点的消耗</p><p><br/></p><p>从节点采用树状树非常有用，网络开销交给位于中间层的从节点，而不必消耗顶层的主节点。但是这种树状结构也带来了运维的复杂性，增加了手动和自动处理故障转移的难度。</p><p><br/></p><h3>6、单机器的复制风暴</h3><p>由于 Redis 的单线程架构，通常单台机器会部署多个 Redis 实例。当一台机器（machine）上同时部署多个主节点（master）时，如果每个 master 主机只有一台 slave 从机，那么当机器宕机以后，会产生大量全量复制。这种情况是非常危险的情况，带宽马上会被占用，会导致不可用。</p><p><img src="/d/file/p/20221029/1565882765179984.jpg" title="1565882765179984.jpg" _src="/d/file/p/20221029/1565882765179984.jpg" alt="r3.jpg"/></p><p><strong style="white-space: normal;">如何解决呢？</strong></p><p>应该把主节点尽量分散在多台机器上，避免在单台机器上部署过多的主节点。<strong style="white-space: normal;"><br/></strong></p><p>当主节点所在机器故障后提供故障转移机制，避免机器恢复后进行密集的全量复制</p><p><br/></p>					
+                                                                                                        
+                                                </div>
+                                                <!-- .entry-wrapper --></span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+                <div class="panel-content">
+                <span>[!--zhushi--]</span>                                     
+                </div>
+
+            </div>
+
+            <!-- END ROW -->
+            <div class="newsPage">
+                <div class="newsPageTurn">
+                    <span><a>上一篇</a><a href='/linux/biji/350.html'>CentOS7搭建NFS文件共享存储服务[linux入门]</a><a>下一篇</a><a href='/linux/biji/352.html'>pyOpenSSL版本问题导致Scrapy安装报错，打补丁</a></span>
+                </div>
+            </div>
+        </div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+                <li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<!-- container-fluid -->
+    </div>
+<!-- content -->
+    <footer class="footer">
+    © 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    </footer>
+</div>
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

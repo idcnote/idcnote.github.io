@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server 2008 CDC功能实现数据变更捕获脚本的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server 2008 CDC功能实现数据变更捕获脚本的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+C" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server 2008 CDC功能实现数据变更捕获脚本的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:46:06                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server 2008 CDC功能实现数据变更捕获脚本的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+C</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server 2008 CDC功能实现数据变更捕获脚本的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>CDC:Change Data Capture</p>
+<p>代码如下:</p>
+<pre>
+
+<code>--步骤：本文中以GPOSDB为例</code></pre>
+<p></p>
+<p><code class="hljs">--第一步、对目标库显式启用CDC：--在当前库使用sys.sp_cdc_enable_db。返回0（成功）或1（失败）。--注意，无法对系统数据库和分发数据库启用该功能。且执行者需要用sysadmin角色权限。--该存储过程的作用域是整个目标库。包含元数据、DDL触发器、cdc架构和cdc用户。--使用以下代码启用：USE GPOSDB --要启用CDC的数据库GOEXECUTE sys.sp_cdc_enable_db;GO--在一开始直接执行时，出现了报错信息：--消息22830，级别16，状态1，过程sp_cdc_enable_db_internal，第193 行--无法更新元数据来指示已对数据库AdventureWorks 启用了变更数据捕获。--执行命令&#39;SetCDCTracked(Value = 1)&#39; 时失败。--返回的错误为15517: &#39;无法作为数据库主体执行，因为主体&quot;dbo&quot;--不存在、无法模拟这种类型的主体，或您没有所需的权限。&#39;。请使用此操作和错误来确定失败的原因并重新提交请求。--这里引出了另外一个知识点：错误号 15517 的错误--这种错误会在很多地方出现，如还原数据库的时候也会有可能出现。--共同点是：某个/些存储过程使用了具有WITHEXECUTE AS 的选项。--使其在当前库具有了某个架构，但是当在别的地方执行时，由于没有这个架构，所以就报错，解决方法：ALTER AUTHORIZATION ON DATABASE::[GPOSDB] TO [sa]</code></p>
+<p><code class="hljs">--经过检查，uspUpdateEmployeeHireInfo这个存储过程的确有：WITH EXECUTE AS CALLER--使用sa的原因是即使sa被禁用，sa还是存在的。所以不会报错。--现在重新执行：USE GPOSDBGOEXECUTE sys.sp_cdc_enable_db;GO--启用成功，然后通过以下语句检查是否成功：SELECTis_cdc_enabled,CASE WHEN is_cdc_enabled=0 THEN &#39;CDC功能禁用&#39; ELSE &#39;CDC功能启用&#39; END 描述FROM sys.databasesWHERE NAME = &#39;GPOSDB&#39;</code></p>
+<p><code class="hljs">--创建成功后，将自动添加CDC用户和CDC架构。--在用户和架构下面可以看到cdc用户和cdc架构</code></p>
+<p><code class="hljs">--创建这两个用户、架构的原因是因为CDC要求独占方式使用这两个架构，所以要单独创建。--如果存在了非CDC功能创建的CDC用户、架构的话，则需要先删除该cdc命名的架构，才能开启。</code></p>
+<p><code class="hljs">--第二步、对目标表启用CDC：--使用db_owner角色的成员执行sys.sp_cdc_enable_table为每个需要跟踪的表创建捕获实例。--然后通过sys.tables目录视图中的is_tracked_by_cdc列来判断是否创建成功。--默认情况下会对表的全部列做捕获。如果只需要对某些列做捕获，--可以使用@captured_column_list参数指定这些列。--如果要把更改表放到文件组里的话，最好创建单独的文件组（最起码与源表独立）。</code></p>
+<p><code class="hljs">--如果不想控制访问角色，则@role_name必须显式设置为null。sys.sp_cdc_enable_table [ @source_schema = ] &#39;source_schema&#39;, [ @source_name = ] &#39;source_name&#39; , [ @role_name = ] &#39;role_name&#39; [,[ @capture_instance = ] &#39;capture_instance&#39; ] [,[ @supports_net_changes = ] supports_net_changes ] [,[ @index_name = ] &#39;index_name&#39; ] [,[ @captured_column_list = ] &#39;captured_column_list&#39; ] [,[ @filegroup_name = ] &#39;filegroup_name&#39; ] [,[ @partition_switch = ] &#39;partition_switch&#39; ]</code></p>
+<p><code class="hljs">--例子：--把SYSTEMPARA 这个表开启变更捕获。USE GPOSDBGOEXEC sys.sp_cdc_enable_table @source_schema = &#39;DBO&#39;, @source_name = &#39;SYSTEMPARA&#39;,@role_name = NULL</code></p>
+<p><code class="hljs">--然后查询是否成功：SELECT name , is_tracked_by_cdc , CASE WHEN is_tracked_by_cdc = 0 THEN &#39;CDC功能禁用&#39; ELSE &#39;CDC功能启用&#39; END 描述FROM sys.tablesWHERE OBJECT_ID = OBJECT_ID(&#39;dbo.systempara&#39;)--对表开启以后，可以在下图中看到多了很多cdc架构开头的表：--刷新一下GPOSDB数据库，在系统表下面可以看到多了下面几张表[cdc].[DBO_SYSTEMPARA_CT][cdc].[change_tables][cdc].[captured_columns][cdc].[ddl_history][cdc].[index_columns][cdc].[lsn_time_mapping][dbo].[systranschemas][dbo].[dtproperties]</code></p>
+<p><code class="hljs">--启动之后，可以看到SQLServer代理里面的作业，也出现了这两个作业：[cdc.GPOSDB_capture][cdc.GPOSDB_cleanup]</code></p>
+<p><code class="hljs">--在可编程性-》函数-》表值函数里，也多了两个函数[cdc].[fn_cdc_get_all_changes_DBO_SYSTEMPARA][cdc].[fn_cdc_get_net_changes_DBO_SYSTEMPARA]</code></p>
+<p><code class="hljs">--下面列出相关的存储过程：--Sys.sp_cdc_add_job--说明及例子--Sys.sp_cdc_generate_wrapper_function--说明及例子--Sys.sp_cdc_change_job--说明及例子--Sys.sp_cdc_get_captured_columns--说明及例子--Sys.sp_cdc_cleanup_change_table--说明及例子--Sys.sp_cdc_get_ddl_history--说明及例子--Sys.sp_cdc_disable_db--说明及例子 建议先禁用表，再禁用库--Sys.sp_cdc_help_change_data_capture--说明及例子--Sys.sp_cdc_disable_table--说明及例子--Sys.sp_cdc_help_jobs--说明及例子--Sys.sp_cdc_drop_job--说明及例子--Sys.sp_cdc_scan--说明及例子--Sys.sp_cdc_enable_db--说明及例子--Sys.sp_cdc_start_job--说明及例子--Sys.sp_cdc_enable_table--说明及例子--Sys.sp_cdc_stop_job--说明及例子</code></p>
+<p><code class="hljs">--函数：--Cdc.fn_cdc_get_all_changes_&lt;capture_instance&gt;--说明及例子--Sys.fn_cdc_has_column_changed--说明及例子--Cdc.fn_cdc_get_net_changes_&lt;capture_instance&gt;--说明及例子--Sys.fn_cdc_increment_lsn--说明及例子--Sys.fn_cdc_decrement_lsn--说明及例子--Sys.fn_cdc_is_bit_set--说明及例子--Sys.fn_cdc_get_column_ordinal--说明及例子--Sys.fn_cdc_map_lsn_to_time--说明及例子--Sys.fn_cdc_get_max_lsn--说明及例子--Sys.fn_cdc_map_time_to_lsn--说明及例子--Sys.fn_cdc_get_min_lsn--说明及例子</code></p>
+<p><code class="hljs">--------------------下面开始从头到尾做一个实际案例---------------------------下面开始从头到尾做一个实际案例</code></p>
+<p><code class="hljs">--步骤一:对目标库显式启用CDCUSE GPOSDB --要启用CDC的数据库GOEXECUTE sys.sp_cdc_enable_db;GO</code></p>
+<p><code class="hljs">--某些数据库可能存在一些存储过程包含有：execute as 等语句，此时会报错：</code></p>
+<p><code class="hljs">--文字描述：--消息22830，级别16，状态1，过程sp_cdc_enable_db_internal，第186 行--无法更新元数据来指示已对数据库AdventureWorks 启用了变更数据捕获。执行命令&#39;SetCDCTracked(Value = 1)&#39; 时失败。返回的错误为15517: &#39;无法作为数据库主体执行，因为主体&quot;dbo&quot; 不存在、无法模拟这种类型的主体，或您没有所需的权限。&#39;。请使用此操作和错误来确定失败的原因并重新提交请求。--消息266，级别16，状态2，过程sp_cdc_enable_db_internal，第0 行--EXECUTE 后的事务计数指示BEGIN 和COMMIT 语句的数目不匹配。上一计数= 0，当前计数= 1。--消息266，级别16，状态2，过程sp_cdc_enable_db，第0 行--EXECUTE 后的事务计数指示BEGIN 和COMMIT 语句的数目不匹配。上一计数= 0，当前计数= 1。--消息3998，级别16，状态1，第1 行--在批处理结束时检测到不可提交的事务。该事务将回滚。--如果出现这个错误，目前的解决方法是执行下面语句，原因已在开头说明，对于没有使用EXECUTE AS的库，一般不会有这样的问题：</code></p>
+<p><code class="hljs">ALTER AUTHORIZATION ON DATABASE::[GPOSDB] TO [sa]</code></p>
+<p><code class="hljs">--现在重新执行：USE GPOSDBGOEXECUTE sys.sp_cdc_enable_db;GO--通过以下语句检查是否成功：SELECTis_cdc_enabled,CASE WHEN is_cdc_enabled=0 THEN &#39;CDC功能禁用&#39; ELSE &#39;CDC功能启用&#39; END 描述FROM sys.databasesWHERE NAME = &#39;GPOSDB&#39;</code></p>
+<p><code class="hljs">--步骤二：对表启用CDCUSE GPOSDBGOEXEC sys.sp_cdc_enable_table@source_schema = &#39;DBO&#39;,@source_name = &#39;SYSTEMPARA&#39;,@role_name = NULL,@capture_instance=DEFAULTGO</code></p>
+<p><code class="hljs">--然后查询是否成功：SELECT name , is_tracked_by_cdc , CASE WHEN is_tracked_by_cdc = 0 THEN &#39;CDC功能禁用&#39; ELSE &#39;CDC功能启用&#39; END 描述FROM sys.tablesWHERE OBJECT_ID = OBJECT_ID(&#39;dbo.systempara&#39;)</code></p>
+<p><code class="hljs">--可以看到GPOSDB数据库里的系统表里新增了[cdc].[DBO_SYSTEMPARA_CT]表</code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs">--步骤三：检验，下面来改动数据--先查询一下DBO_SYSTEMPARA_CT表SELECT * FROM cdc.[DBO_SYSTEMPARA_CT]</code></p>
+<p><code class="hljs">--可以看到一条记录都没有，因为刚刚创建，并没有对原表systempara做任何增删改操作</code></p>
+<p><code class="hljs">--向[SystemPara]表插入一条记录INSERT INTO [dbo].[SystemPara] ( [ParaValue] , [Name] , [Description] )VALUES ( &#39;中国&#39; , -- ParaValue - varchar(50) &#39;中国&#39; , -- Name - varchar(50) &#39;中国&#39; -- Description - varchar(50) )</code></p>
+<p><code class="hljs">--查询一下DBO_SYSTEMPARA_CT表，可以看到多了一条记录SELECT * FROM cdc.[DBO_SYSTEMPARA_CT]</code></p>
+<p><code class="hljs">--更新[SystemPara]表的一条记录UPDATE [dbo].[SystemPara] SET [ParaValue]=&#39;德国&#39; WHERE [Description]=&#39;中国&#39;</code></p>
+<p><code class="hljs">--查询一下DBO_SYSTEMPARA_CT表，可以看到多了两条记录SELECT * FROM cdc.[DBO_SYSTEMPARA_CT]</code></p>
+<p><code class="hljs">--删除[SystemPara]表的一条记录DELETE FROM [dbo].[SystemPara] WHERE [Description]=&#39;中国&#39;</code></p>
+<p><code class="hljs">--查询一下DBO_SYSTEMPARA_CT表，可以看到多了一条记录SELECT * FROM cdc.[DBO_SYSTEMPARA_CT]</code></p>
+<p><code class="hljs">--现在来分析一下DBO_SYSTEMPARA_CT表--可以在联机丛书上查看：--cdc.&lt;capture_instance&gt;_CT--可以看到，这样命名的表，是用于记录源表做过更改操作的表。--对于insert/delete操作，会有对应的一行记录，而对于update，会有两行记录。--对于__$operation列：1 = 删除、2= 插入、3= 更新（旧值）、4= 更新（新值）--update语句的__$operation列的值是3和4，所以一条update语句对应两条记录</code></p>
+<p><code class="hljs">--对于__$start_lsn列：由于更改是来源与数据库的事务日志，所以这里会保存其事务日志的开始序列号（LSN）--但是微软不检查直接查询这类表，建议使用--cdc.fn_cdc_get_all_changes_&lt;捕获实例&gt;--cdc.fn_cdc_get_net_changes_&lt;capture_instance&gt;-- 来查询</code></p>
+<p><code class="hljs">----------------------------------------------------------</code></p>
+<p><code class="hljs">--下文开始，来熟悉各种函数、存储过程的使用，并尝试一些不正常的操作。</code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs">--日常使用情景：--1、查询已经开启的捕获实例：--返回所有表的变更捕获配置信息USE [GPOSDB]GOEXECUTE sys.sp_cdc_help_change_data_capture;GO</code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs">--查看对某个实例(即表)的哪些列做了捕获监控USE [GPOSDB]GOEXEC sys.sp_cdc_get_captured_columns@capture_instance = &#39;systempara&#39; -- sysname</code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs">--也可以从下面中查找配置信息SELECT * FROM msdb.dbo.cdc_jobs</code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs">--2、查看当前配置使用sp_cdc_help_jobs：--从上文可以看到，启用cdc之后会自动创建了两个作业，可以先使用以下语句来查看：sp_cdc_help_jobs</code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs">--对于一个大型的OLTP系统，由于数据更改会非常频繁，变更表中的数据会非常多，--如果存放过久（最久可以存放100年），那对数据库空间是非常大的挑战。--此时可以调整上图中cdc.AdventureWorks_cleanup 中retention（单位：分钟）。</code></p>
+<p><code class="hljs">--3、修改配置：sp_cdc_change_job--显示原有配置EXEC sp_cdc_help_jobsGO--更改数据保留时间为100分钟EXECUTE sys.sp_cdc_change_job @job_type = N&#39;cleanup&#39;, @retention=100GO</code></p>
+<p><code class="hljs">--重启一下作业，以使设置生效--停用作业EXEC sys.sp_cdc_stop_job N&#39;cleanup&#39;GO--启用作业EXEC sys.sp_cdc_start_job N&#39;cleanup&#39;GO--再次查看EXEC sp_cdc_help_jobsGO--可以看到retention（单位：分钟）的值变为100了</code></p>
+<p><code class="hljs">--4、停止/启用、删除/创建作业</code></p>
+<p><code class="hljs">--停用作业EXEC sys.sp_cdc_stop_job N&#39;cleanup&#39;GO--启用作业EXEC sys.sp_cdc_start_job N&#39;cleanup&#39;GO</code></p>
+<p><code class="hljs">--删除作业EXEC sys.sp_cdc_drop_job @job_type = N&#39;cleanup&#39; -- nvarchar(20)GO--查看作业EXEC sys.sp_cdc_help_jobsGO--可以看到现在只剩下一个作业了:cdc.GPOSDB_capture</code></p>
+<p><code class="hljs">--创建作业EXEC sys.sp_cdc_add_job @job_type = N&#39;cleanup&#39;, @start_job = 0, @retention = 5760</code></p>
+<p><code class="hljs">--查看作业EXEC sys.sp_cdc_help_jobsGO</code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs">--5、DDL变更捕获：--CDC除了捕获数据变更之外，还能捕获DDL操作的变化。--前提是先要确保SQLServer 代理的启用，其实CDC功能都需要确保sql 代理正常运行--因为所有操作都通过代理中的两个作业来实现的。--现在先来对SYSTEMPARA 表修改一下，把PARAVALUE的长度加长USE [GPOSDB]GOALTER TABLE [dbo].[SystemPara] ALTER COLUMN PARAVALUE VARCHAR(120) ;GO</code></p>
+<p><code class="hljs">--然后查询ddl记录表SELECT * FROM cdc.ddl_history</code></p>
+<p><code class="hljs">--6、使用CDC的函数来获取更改--A、使用 [cdc].[fn_cdc_get_all_changes_DBO_SYSTEMPARA]--函数报告捕获实例的当前所有可用更改DECLARE @from_lsn BINARY(10) , @to_lsn BINARY(10)SET @from_lsn = sys.fn_cdc_get_min_lsn(&#39;SYSTEMPARA&#39;)SET @to_lsn = sys.fn_cdc_get_max_lsn()SELECT *FROM cdc.fn_cdc_get_all_changes_DBO_SYSTEMPARA(@from_lsn, @to_lsn,N&#39;all update old&#39;);GO</code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs">--B、获取某个时间段的更改信息：--先根据日志序列号（logsequence number ,LSN）来获取跟踪变更数据--Sys.fn_cdc_map_time_to_lsn获取变更范围内的最大、最小LSN值。可以使用Smallest greater than;smallest greater than orequal;largest less than;largest less than or equal;</code></p>
+<p><code class="hljs">--如查询某个时间段插入的数据INSERT INTO [dbo].[SystemPara] ( [ParaValue] , [Name] , [Description] )VALUES ( &#39;中国&#39; , -- ParaValue - varchar(50) &#39;中国&#39; , -- Name - varchar(50) &#39;中国&#39; -- Description - varchar(50) )</code></p>
+<p><code class="hljs">GO</code></p>
+<p><code class="hljs">--检查数据--1删除--2插入--3、4更改--曾经插入过的记录就算delete了也可以查询出来DECLARE @bglsn VARBINARY(10)= sys.fn_cdc_map_time_to_lsn(&#39;smallest greater than or equal&#39;, &#39;2013-10-21 12:00:00.997&#39;)DECLARE @edlsn VARBINARY(10)= sys.fn_cdc_map_time_to_lsn(&#39;largest less than or equal&#39;, GETDATE())SELECT *FROM [cdc].[DBO_SYSTEMPARA_CT]WHERE [__$operation] = 2 AND [__$start_lsn] BETWEEN @bglsn AND @edlsn</code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs">--C、sys.fn_cdc_map_lsn_to_time 查询变更时间：SELECT [__$operation] , CASE [__$operation] WHEN 1 THEN &#39;删除&#39; WHEN 2 THEN &#39;插入&#39; WHEN 3 THEN &#39;更新（捕获的列值是执行更新操作前的值）&#39; WHEN 4 THEN &#39;更新（捕获的列值是执行更新操作后的值）&#39; END [类型] , sys.fn_cdc_map_lsn_to_time([__$start_lsn]) [更改时间] , *FROM [cdc].[DBO_SYSTEMPARA_CT]</code></p>
+<p><code class="hljs"></code></p>
+<p><code class="hljs">--D、获取LSN边界SELECT sys.fn_cdc_get_max_lsn() [数据库级别的最大LSN] , sys.fn_cdc_get_min_lsn(&#39;cdc.DBO_SYSTEMPARA_CT&#39;) [捕获实例的lsn]</code></p>
+<p><code class="hljs">这两个值可以用于上面提到的函数里面用于筛选数据之用。</code></p>
+<p><code class="hljs">------------------------------------------------------------1. CDC的目的是什么？</code></p>
+<p><code class="hljs">--CDC就是极大地方便了我们获取某个表数据更新情况的一个机制。它通过一个独立的进程，--异步读取日志文件，而不是触发器的方式工作。而且它的数据是会持久化保存到一个系统表的。--2. CDC是不是SQL Server 2008特有的功能，对别的数据库或者早期版本是否起作用？</code></p>
+<p><code class="hljs">--CDC是SQL Server 2008特有的功能，而且是企业版特有的功能。开发版也有该功能，但仅用于测试场合。</code></p>
+<p><code class="hljs">--3. CDC读取日志，那么如果日志被截断了会怎么样？</code></p>
+<p><code class="hljs">--如果某部分日志，CDC的进程还没有读取，那么在截断日志时就会忽略这个部分,不能截断!!</code></p>
+<p><code class="hljs">--捕获进程是一个独立的，它随着代理服务启动而启动。两次扫描之间间隔5分钟。</code></p>
+<p><code>--4. 系统表中的数据是否会永久存在？--不会，它会被保留3天。会有一个清理的作业，每天晚上2点进行扫描。--最后，补充一点的是，CDC功能依赖Agent服务，因为它有两个操作都是通过作业来启动的。</code></p>
+<p></p>
+
+<p>注：关于SQL Server 2008 CDC功能实现数据变更捕获脚本的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3395.html'>sqlserver锁表、解锁、查看销表的方法</a><a>下一篇</a><a href='/mysql/biji/3397.html'>SQL Server2005数据附加失败报错3456解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

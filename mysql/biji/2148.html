@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>linux系统下实现MySQL热备份详细步骤(MySQL主从复制)_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了linux系统下实现MySQL热备份详细步骤(MySQL主从复制)，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+主从" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">linux系统下实现MySQL热备份详细步骤(MySQL主从复制)</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:34:36                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了linux系统下实现MySQL热备份详细步骤(MySQL主从复制)，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+主从</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了linux系统下实现MySQL热备份详细步骤(MySQL主从复制)，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>主从的作用：</p>
+<p>1.可以当做一种备份方式</p>
+<p>2.用来实现读写分离，缓解一个数据库的压力</p>
+<p>MySQL主从备份原理：</p>
+<p>Mysql的主从复制至少是需要两个Mysql的服务，当然Mysql的服务是可以分布在不同的服务器上，也可以在一台服务器上启动多个服务。</p>
+<p>如果想配置成为同一台上的话，注意安装的时候，选择两个不同的prefix=路径，同时开启服务器的时候，端口不能相同。</p>
+<p>(1)首先确保主从服务器上的Mysql版本相同（做主从服务器的原则是，MYSQL版本要相同，如果不能满足，最起码从服务器的MYSQL的版本必须高于主服务器的MYSQL版本 ）</p>
+<p>(2)在主服务器上,设置一个从数据库的账户,使用REPLICATION SLAVE赋予权限,如:</p>
+<p>代码如下:</p>
+<pre>
+
+<code> mysql&gt; GRANT REPLICATION SLAVE ON *.* TO 'slave001'@'192.168.0.99' IDENTIFIED BY</code></pre>
+<p></p>
+<p><code class="hljs">&#39;123456&#39;;</code></p>
+<p><code>Query OK, 0 rows affected (0.13 sec)</code></p>
+<p></p>
+<p>[原理]master 上提供binlog ,</p>
+<p>slave 通过 I/O线程从 master拿取 binlog,并复制到slave的中继日志中</p>
+<p>slave 通过 SQL线程从 slave的中继日志中读取binlog ,然后解析到slave中</p>
+<p>主从复制大前提</p>
+<p>需要master与slave同步，因为笔者的数据库数据量不大，所以无需考虑太多，直接把</p>
+<p>master上的data复制到了slave上，但是如果是大的数据量，比如像taobao这个的系统</p>
+<p>实验环境准备：</p>
+<p>OS： CentOS5.4</p>
+<p>Mysql:Mysql-5.0.41.tar.gz辅助工具:SSH Secure Shell Client</p>
+<p>两台测试IP&amp;服务器：</p>
+<p>代码如下:</p>
+<pre>
+
+<code>Master Server: 192.168.1.2/Linux CentOS5.4/MYSQL 5.0
+Slave Server: 192.168.1.3/Linux CentOS5.4/MYSQL 5.0
+</code></pre>安装配置步骤：
+<p></p>
+<p>1、首先在Linux环境下分配好磁盘分区以便留足MySQL数据库的备份空间</p>
+<p>代码如下:</p>
+<pre>
+
+<code>[root@vps mysql]# df -h
+Filesystem Size Used Avail Use% Mounted on
+/dev/simfs 30G 2.0G 29G 7% /
+</code></pre>
+<p></p>
+<p>2、MySQL数据库的安装：</p>
+<p>1&gt;将Mysql-5.0.41.tar.gz通过SSH 工具 上传到Linux系统的home目录下</p>
+<p>2&gt;建立MySQL使用者和群组:</p>
+<p>代码如下:</p>
+<pre>
+
+<code>#groupadd mysql
+#useradd -g mysql mysql
+</code></pre>
+<p></p>
+<p>3&gt;解压缩Mysql-5.0.41.tar.gz源码包</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>#cd /usr/local/sofrware
+#tar zxvf Mysql-5.0.41.tar.gz
+</code></pre>
+<p></p>
+<p>4&gt;进入源码目录编译安装</p>
+<p>代码如下:</p>
+<pre>
+
+<code>#cd /home/Mysql-5.0.41
+#./configure --prefix=/usr/local/mysql --with-charset=gbk |注:配置Mysql安装路径并且支持中文
+#make |注:编译
+#make install |注:编译安装
+</code></pre>
+<p></p>
+<p>5&gt;替换/etc/my.cnf文件,进入源码包,执行命令</p>
+<p>代码如下:</p>
+<pre>
+
+<code>#cd /home/Mysql-5.0.41
+#cp support-files/my-medium.cnf /etc/my.cnf
+</code></pre>6&gt;完成以上操作以后进行初始化数据库,进入已经安装好的mysql目录
+<p>代码如下:</p>
+<pre>
+
+<code>#cd /usr/local/mysql
+#bin/mysql_install_db --user=mysql |注:--user=mysql 初始化表并且规定用mysql用户
+</code></pre>
+<p></p>
+<p>7&gt;设置给mysql和root用户设定访问权限 我们先进入mysql目录</p>
+<p>代码如下:</p>
+<pre>
+
+<code>#cd /usr/local/mysql
+#chown -R root /usr/local/mysql 　　　　　注:设定root能访问/usr/local/mysq
+#chown -R mysql /usr/local/mysql/var 　　注:设定mysql用户能访问/usr/local/mysql/var
+#chgrp -R mysql /usr/local/mysql 　　　　注:设定mysql组能够访问/usr/local/mysq
+</code></pre>
+<p></p>
+<p>8&gt;启动mysql,进入已经安装好的目录</p>
+<p>代码如下:</p>
+<pre>
+
+<code>#cd /usr/local/mysql
+#bin/mysqld_safe --user=mysql &amp;
+</code></pre>
+<p></p>
+<p>9&gt;修改mysql数据库超级用户root的缺省密码:</p>
+<p>代码如下:</p>
+<pre>
+
+<code>/usr/local/mysql/bin/mysqladmin -u root password &#39;mysql&#39;
+</code></pre>
+<p></p>
+<p>关闭mysql服务器</p>
+<p>代码如下:</p>
+<pre>
+
+<code>cd /usr/local/mysql/bin
+./mysqladmin -u root -p shutdown
+</code></pre>
+<p></p>
+<p>10&gt;设定开机就启动mysql,进入源码目录下</p>
+<p>代码如下:</p>
+<pre>
+
+<code># cd /home/Mysql-5.0.41
+# cp support-files/mysql.server /etc/init.d/mysql</code></pre>
+<p></p><code> </code>
+<p><code># chmod +x /etc/init.d/mysql# chkconfig --level 345 mysql on# service mysql restartShutting down MySQL. [ 确定 ]Starting MySQL [ 确定 ][root@localhost mysql]#</code></p>
+<p></p>
+<p>到这里MySQL就装好了。</p>
+<p>3、配置MySQL5.0的复制（Replication）功能</p>
+<p>一.将master设置为只读。</p>
+<p>mysql&gt; flush tables with read lock;</p>
+<p>二.用master中的data文件夹替换slave中的data文件夹</p>
+<p>比如 用 tar zcvf mysql_data.gz /media/raid10/mysql/3306/data</p>
+<p>然后 mv mysql_data.gz /media/raid10/htdocs/blog/wordpress/</p>
+<p>因为我的 /media/raid10/htdocs/blog/wordpress/ 是 Nginx 的主目录</p>
+<p>所以可以在 slave上，用wget下载这个文件，然后 解压，并覆盖slave上的data文件</p>
+<p>注意：覆盖之前最好备份源文件</p>
+<p>三.配置master的my.cnf,添加以下内容</p>
+<p>在[mysqld]配置段添加如下字段</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>server-id=1</code></pre>
+<p></p><code class="hljs"> </code>
+<p><code class="hljs">log-bin=/media/raid10/mysql/3306/binlog/binlog //这里写你的binlog绝对路径名</code></p><code class="hljs"> </code>
+<p><code class="hljs">binlog-do-db=blog //需要同步的数据库，如果没有本行，即表示同步所有的数据库</code></p><code class="hljs"> </code>
+<p><code>binlog-ignore-db=mysql //被忽略的数据库</code></p>
+<p></p>
+<p>这里给出我的my.cnf配置文件</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>[client]</code></pre>
+<p></p><code class="hljs"> </code>
+<p><code class="hljs">character-set-server = utf8</code></p><code class="hljs"> </code>
+<p><code class="hljs">port = 3306</code></p><code class="hljs"> </code>
+<p><code class="hljs">socket = /tmp/mysql.sock</code></p><code class="hljs"> </code>
+<p><code class="hljs">[mysqld]</code></p><code class="hljs"> </code>
+<p><code class="hljs">character-set-server = utf8</code></p><code class="hljs"> </code>
+<p><code class="hljs">replicate-ignore-db = mysql</code></p><code class="hljs"> </code>
+<p><code class="hljs">replicate-ignore-db = test</code></p><code class="hljs"> </code>
+<p><code class="hljs">replicate-ignore-db = information_schema</code></p><code class="hljs"> </code>
+<p><code class="hljs">user = mysql</code></p><code class="hljs"> </code>
+<p><code class="hljs">port = 3306</code></p><code class="hljs"> </code>
+<p><code class="hljs">socket = /tmp/mysql.sock</code></p><code class="hljs"> </code>
+<p><code class="hljs">basedir = /usr/local/webserver/mysql</code></p><code class="hljs"> </code>
+<p><code class="hljs">datadir = /media/raid10/mysql/3306/data</code></p><code class="hljs"> </code>
+<p><code class="hljs">log-error = /media/raid10/mysql/3306/mysql_error.log</code></p><code class="hljs"> </code>
+<p><code class="hljs">pid-file = /media/raid10/mysql/3306/mysql.pid</code></p><code class="hljs"> </code>
+<p><code class="hljs">open_files_limit = 10240</code></p><code class="hljs"> </code>
+<p><code class="hljs">back_log = 600</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_connections = 5000</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_connect_errors = 6000</code></p><code class="hljs"> </code>
+<p><code class="hljs">table_cache = 614</code></p><code class="hljs"> </code>
+<p><code class="hljs">external-locking = FALSE</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_allowed_packet = 16M</code></p><code class="hljs"> </code>
+<p><code class="hljs">sort_buffer_size = 1M</code></p><code class="hljs"> </code>
+<p><code class="hljs">join_buffer_size = 1M</code></p><code class="hljs"> </code>
+<p><code class="hljs">thread_cache_size = 300</code></p><code class="hljs"> </code>
+<p><code class="hljs">#thread_concurrency = 8</code></p><code class="hljs"> </code>
+<p><code class="hljs">query_cache_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">query_cache_limit = 2M</code></p><code class="hljs"> </code>
+<p><code class="hljs">query_cache_min_res_unit = 2k</code></p><code class="hljs"> </code>
+<p><code class="hljs">default-storage-engine = MyISAM</code></p><code class="hljs"> </code>
+<p><code class="hljs">thread_stack = 192K</code></p><code class="hljs"> </code>
+<p><code class="hljs">transaction_isolation = READ-COMMITTED</code></p><code class="hljs"> </code>
+<p><code class="hljs">tmp_table_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_heap_table_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">long_query_time = 3</code></p><code class="hljs"> </code>
+<p><code class="hljs">log-slave-updates</code></p><code class="hljs"> </code>
+<p><code class="hljs">log-bin = /media/raid10/mysql/3306/binlog/binlog</code></p><code class="hljs"> </code>
+<p><code class="hljs">binlog-do-db=blog</code></p><code class="hljs"> </code>
+<p><code class="hljs">binlog-ignore-db=mysql</code></p><code class="hljs"> </code>
+<p><code class="hljs">binlog_cache_size = 4M</code></p><code class="hljs"> </code>
+<p><code class="hljs">binlog_format = MIXED</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_binlog_cache_size = 8M</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_binlog_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">relay-log-index = /media/raid10/mysql/3306/relaylog/relaylog</code></p><code class="hljs"> </code>
+<p><code class="hljs">relay-log-info-file = /media/raid10/mysql/3306/relaylog/relaylog</code></p><code class="hljs"> </code>
+<p><code class="hljs">relay-log = /media/raid10/mysql/3306/relaylog/relaylog</code></p><code class="hljs"> </code>
+<p><code class="hljs">expire_logs_days = 30</code></p><code class="hljs"> </code>
+<p><code class="hljs">key_buffer_size = 10M</code></p><code class="hljs"> </code>
+<p><code class="hljs">read_buffer_size = 1M</code></p><code class="hljs"> </code>
+<p><code class="hljs">read_rnd_buffer_size = 6M</code></p><code class="hljs"> </code>
+<p><code class="hljs">bulk_insert_buffer_size = 4M</code></p><code class="hljs"> </code>
+<p><code class="hljs">myisam_sort_buffer_size = 8M</code></p><code class="hljs"> </code>
+<p><code class="hljs">myisam_max_sort_file_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">myisam_repair_threads = 1</code></p><code class="hljs"> </code>
+<p><code class="hljs">myisam_recover</code></p><code class="hljs"> </code>
+<p><code class="hljs">interactive_timeout = 120</code></p><code class="hljs"> </code>
+<p><code class="hljs">wait_timeout = 120</code></p><code class="hljs"> </code>
+<p><code class="hljs">skip-name-resolve</code></p><code class="hljs"> </code>
+<p><code class="hljs">#master-connect-retry = 10</code></p><code class="hljs"> </code>
+<p><code class="hljs">slave-skip-errors = 1032,1062,126,1114,1146,1048,1396</code></p><code class="hljs"> </code>
+<p><code class="hljs">#master-host = 192.168.1.2</code></p><code class="hljs"> </code>
+<p><code class="hljs">#master-user = username</code></p><code class="hljs"> </code>
+<p><code class="hljs">#master-password = password</code></p><code class="hljs"> </code>
+<p><code class="hljs">#master-port = 3306</code></p><code class="hljs"> </code>
+<p><code class="hljs">server-id = 1</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_additional_mem_pool_size = 16M</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_buffer_pool_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_data_file_path = ibdata1:56M:autoextend</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_file_io_threads = 4</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_thread_concurrency = 8</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_flush_log_at_trx_commit = 2</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_log_buffer_size = 16M</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_log_file_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_log_files_in_group = 3</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_max_dirty_pages_pct = 90</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_lock_wait_timeout = 120</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_file_per_table = 0</code></p><code class="hljs"> </code>
+<p><code class="hljs">#log-slow-queries = /media/raid10/mysql/3306/slow.log</code></p><code class="hljs"> </code>
+<p><code class="hljs">#long_query_time = 10</code></p><code class="hljs"> </code>
+<p><code class="hljs">[mysqldump]</code></p><code class="hljs"> </code>
+<p><code class="hljs">quick</code></p><code class="hljs"> </code>
+<p><code>max_allowed_packet = 32M</code></p>
+<p></p>
+<p>四.在master机上为slave机添加一同步帐号</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; grant replication slave on *.* to 'admin'@'172.29.141.115' identified by '12345678';</code></pre>
+<p></p><code class="hljs"> </code>
+<p><code>mysql&gt; flush privileges ;</code></p>
+<p></p>
+<p>五.配置slave的my.cnf,添加以下内容</p>
+<p>注意:</p>
+<p>1.如果mysql是5.5.3-m3 的版本，只需</p>
+<p>在[mysqld]字段下添加如下内容</p>
+<p>server-id=2</p>
+<p>2.如果是5.0x的版本，需要</p>
+<p>在[mysqld]字段下添加如下内容</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>server-id=2</code></pre>
+<p></p><code class="hljs"> </code>
+<p><code class="hljs">log-bin=mysql-bin //这是同步的binlog，具体以你的binlog为准</code></p><code class="hljs"> </code>
+<p><code class="hljs">master-host=172.29.141.112</code></p><code class="hljs"> </code>
+<p><code class="hljs">master-user=admin</code></p><code class="hljs"> </code>
+<p><code class="hljs">master-password=12345678</code></p><code class="hljs"> </code>
+<p><code class="hljs">master-port=3306</code></p><code class="hljs"> </code>
+<p><code class="hljs">master-connect-retry=60 //如果发现主服务器断线，重新连接的时间差；</code></p><code class="hljs"> </code>
+<p><code class="hljs">replicate-do-db=blog //同步的数据库，不写本行 表示 同步所有数据库</code></p><code class="hljs"> </code>
+<p><code class="hljs">replicate-ignore-db=mysql //不需要备份的数据库</code></p><code class="hljs"> </code>
+<p><code class="hljs">log-slave-update</code></p><code class="hljs"> </code>
+<p><code>slave-skip-errors</code></p>
+<p></p>
+<p>我的mysql是5.5.3，这里给出我的slave my.cnf配置文件</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>[client]</code></pre>
+<p></p><code class="hljs"> </code>
+<p><code class="hljs">character-set-server = utf8</code></p><code class="hljs"> </code>
+<p><code class="hljs">port = 3306</code></p><code class="hljs"> </code>
+<p><code class="hljs">socket = /tmp/mysql.sock</code></p><code class="hljs"> </code>
+<p><code class="hljs"></code></p><code class="hljs"> </code>
+<p><code class="hljs">[mysqld]</code></p><code class="hljs"> </code>
+<p><code class="hljs">character-set-server = utf8</code></p><code class="hljs"> </code>
+<p><code class="hljs">replicate-ignore-db = mysql</code></p><code class="hljs"> </code>
+<p><code class="hljs">replicate-ignore-db = test</code></p><code class="hljs"> </code>
+<p><code class="hljs">replicate-do-db = blog</code></p><code class="hljs"> </code>
+<p><code class="hljs">replicate-ignore-db = information_schema</code></p><code class="hljs"> </code>
+<p><code class="hljs">user = mysql</code></p><code class="hljs"> </code>
+<p><code class="hljs">port = 3306</code></p><code class="hljs"> </code>
+<p><code class="hljs">socket = /tmp/mysql.sock</code></p><code class="hljs"> </code>
+<p><code class="hljs">basedir = /usr/local/webserver/mysql</code></p><code class="hljs"> </code>
+<p><code class="hljs">datadir = /media/raid10/mysql/3306/data</code></p><code class="hljs"> </code>
+<p><code class="hljs">log-error = /media/raid10/mysql/3306/mysql_error.log</code></p><code class="hljs"> </code>
+<p><code class="hljs">pid-file = /media/raid10/mysql/3306/mysql.pid</code></p><code class="hljs"> </code>
+<p><code class="hljs">open_files_limit = 10240</code></p><code class="hljs"> </code>
+<p><code class="hljs">back_log = 600</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_connections = 5000</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_connect_errors = 6000</code></p><code class="hljs"> </code>
+<p><code class="hljs">table_cache = 614</code></p><code class="hljs"> </code>
+<p><code class="hljs">external-locking = FALSE</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_allowed_packet = 16M</code></p><code class="hljs"> </code>
+<p><code class="hljs">sort_buffer_size = 1M</code></p><code class="hljs"> </code>
+<p><code class="hljs">join_buffer_size = 1M</code></p><code class="hljs"> </code>
+<p><code class="hljs">thread_cache_size = 300</code></p><code class="hljs"> </code>
+<p><code class="hljs">#thread_concurrency = 8</code></p><code class="hljs"> </code>
+<p><code class="hljs">query_cache_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">query_cache_limit = 2M</code></p><code class="hljs"> </code>
+<p><code class="hljs">query_cache_min_res_unit = 2k</code></p><code class="hljs"> </code>
+<p><code class="hljs">default-storage-engine = MyISAM</code></p><code class="hljs"> </code>
+<p><code class="hljs">thread_stack = 192K</code></p><code class="hljs"> </code>
+<p><code class="hljs">transaction_isolation = READ-COMMITTED</code></p><code class="hljs"> </code>
+<p><code class="hljs">tmp_table_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_heap_table_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">long_query_time = 3</code></p><code class="hljs"> </code>
+<p><code class="hljs">log-slave-updates</code></p><code class="hljs"> </code>
+<p><code class="hljs">log-bin = /media/raid10/mysql/3306/binlog/binlog</code></p><code class="hljs"> </code>
+<p><code class="hljs">binlog_cache_size = 4M</code></p><code class="hljs"> </code>
+<p><code class="hljs">binlog_format = MIXED</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_binlog_cache_size = 8M</code></p><code class="hljs"> </code>
+<p><code class="hljs">max_binlog_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">relay-log-index = /media/raid10/mysql/3306/relaylog/relaylog</code></p><code class="hljs"> </code>
+<p><code class="hljs">relay-log-info-file = /media/raid10/mysql/3306/relaylog/relaylog</code></p><code class="hljs"> </code>
+<p><code class="hljs">relay-log = /media/raid10/mysql/3306/relaylog/relaylog</code></p><code class="hljs"> </code>
+<p><code class="hljs">expire_logs_days = 30</code></p><code class="hljs"> </code>
+<p><code class="hljs">key_buffer_size = 10M</code></p><code class="hljs"> </code>
+<p><code class="hljs">read_buffer_size = 1M</code></p><code class="hljs"> </code>
+<p><code class="hljs">read_rnd_buffer_size = 6M</code></p><code class="hljs"> </code>
+<p><code class="hljs">bulk_insert_buffer_size = 4M</code></p><code class="hljs"> </code>
+<p><code class="hljs">myisam_sort_buffer_size = 8M</code></p><code class="hljs"> </code>
+<p><code class="hljs">myisam_max_sort_file_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">myisam_repair_threads = 1</code></p><code class="hljs"> </code>
+<p><code class="hljs">myisam_recover</code></p><code class="hljs"> </code>
+<p><code class="hljs">interactive_timeout = 120</code></p><code class="hljs"> </code>
+<p><code class="hljs">wait_timeout = 120</code></p><code class="hljs"> </code>
+<p><code class="hljs">skip-name-resolve</code></p><code class="hljs"> </code>
+<p><code class="hljs">#master-connect-retry = 60</code></p><code class="hljs"> </code>
+<p><code class="hljs">slave-skip-errors = 1032,1062,126,1114,1146,1048,1396</code></p><code class="hljs"> </code>
+<p><code class="hljs">#master-host=172.29.141.112</code></p><code class="hljs"> </code>
+<p><code class="hljs">#master-user = admin</code></p><code class="hljs"> </code>
+<p><code class="hljs">#master-password = 12345678</code></p><code class="hljs"> </code>
+<p><code class="hljs">#master-port = 3306</code></p><code class="hljs"> </code>
+<p><code class="hljs">server-id = 2</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_additional_mem_pool_size = 16M</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_buffer_pool_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_data_file_path = ibdata1:56M:autoextend</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_file_io_threads = 4</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_thread_concurrency = 8</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_flush_log_at_trx_commit = 2</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_log_buffer_size = 16M</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_log_file_size = 20M</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_log_files_in_group = 3</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_max_dirty_pages_pct = 90</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_lock_wait_timeout = 120</code></p><code class="hljs"> </code>
+<p><code class="hljs">innodb_file_per_table = 0</code></p><code class="hljs"> </code>
+<p><code class="hljs">#log-slow-queries = /media/raid10/mysql/3306/slow.log</code></p><code class="hljs"> </code>
+<p><code class="hljs">#long_query_time = 10</code></p><code class="hljs"> </code>
+<p><code class="hljs">[mysqldump]</code></p><code class="hljs"> </code>
+<p><code class="hljs">quick</code></p><code class="hljs"> </code>
+<p><code>max_allowed_packet = 32M</code></p>
+<p></p>
+<p>六.通过查看master的状态(在master上查看)，为配置slave做准备</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; show master status/G;</code></pre>
+<p></p><code class="hljs"> </code>
+<p><code class="hljs">ERROR 2006 (HY000): MySQL server has gone away</code></p><code class="hljs"> </code>
+<p><code class="hljs">No connection. Trying to reconnect...</code></p><code class="hljs"> </code>
+<p><code class="hljs">Connection id: 13</code></p><code class="hljs"> </code>
+<p><code class="hljs">Current database: blog</code></p><code class="hljs"> </code>
+<p><code class="hljs">*************************** 1. row ***************************</code></p><code class="hljs"> </code>
+<p><code class="hljs">File: binlog.000005</code></p><code class="hljs"> </code>
+<p><code class="hljs">Position: 592</code></p><code class="hljs"> </code>
+<p><code class="hljs">Binlog_Do_DB: blog</code></p><code class="hljs"> </code>
+<p><code class="hljs">Binlog_Ignore_DB: mysql</code></p><code class="hljs"> </code>
+<p><code class="hljs">1 row in set (0.01 sec)</code></p><code class="hljs"> </code>
+<p><code class="hljs">ERROR:</code></p><code class="hljs"> </code>
+<p><code>No query specified</code></p>
+<p></p>
+<p>从上面的信息，可以看出，master现在使用的binlog是binlog.000005，position是592,那么下面的slave配置必须与这个对应。</p>
+<p>其实binlog.000005是当前master使用的binlog日志文件</p>
+<p>position是当前master使用的binlog.000005日志文件的位置</p>
+<p>简单理解为master正在使用哪个binlog的哪个数据行(位置)。</p>
+<p>七.如果是5.5.3-m3版本mysql,需要启动slave后，配置与master相关对应的信息(在slave上配置)</p>
+<p>注意，这个与第六步相对应</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; stop slave ;</code></pre>
+<p></p><code class="hljs"> </code>
+<p><code>mysql&gt; change master to master_host=&#39;172.29.141.112&#39;, master_user=&#39;admin&#39;, master_password=&#39;12345678&#39;, master_log_file=&#39;binlog.000005&#39;, master_log_pos=488;mysql&gt; CHANGE MASTER TO MASTER_CONNECT_RETRY=60;</code></p>
+<p></p>
+<p>这个与5.0的配置my.cnf作用是一样的，配置成与master相对应的内容</p>
+<p>主要是配置slave，让slave知道从master的哪个binlog上的哪个位置复制数据。所以需要知道master的ip,user_name,user_passwd,binlog,binlog_position以及多长时间连接一次master</p>
+<p>八.开启slave</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; start slave;
+</code></pre>
+<p></p>
+<p>九.解除master只读限制,并做测试</p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; unlock tables;</code></pre>
+<p></p><code class="hljs"> </code>
+<p><code class="hljs">mysql&gt; use blog;</code></p><code class="hljs"> </code>
+<p><code>mysql&gt; create longxibendi ( a int, b int );</code></p>十.从slave上查看
+<p></p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; use blog;</code></pre>
+<p></p><code class="hljs"> </code>
+<p><code class="hljs">mysql&gt; show tables;</code></p><code class="hljs"> </code>
+<p><code class="hljs">+-----------------------+</code></p><code class="hljs"> </code>
+<p><code class="hljs">| Tables_in_blog |</code></p><code class="hljs"> </code>
+<p><code class="hljs">+-----------------------+</code></p><code class="hljs"> </code>
+<p><code class="hljs">| longxibendi |</code></p><code class="hljs"> </code>
+<p><code class="hljs">| wp_commentmeta |</code></p><code class="hljs"> </code>
+<p><code class="hljs">| wp_comments |</code></p><code class="hljs"> </code>
+<p><code class="hljs">| wp_links |</code></p><code class="hljs"> </code>
+<p><code class="hljs">| wp_options |</code></p><code class="hljs"> </code>
+<p><code class="hljs">| wp_postmeta |</code></p><code class="hljs"> </code>
+<p><code class="hljs">| wp_posts |</code></p><code class="hljs"> </code>
+<p><code class="hljs">| wp_term_relationships |</code></p><code class="hljs"> </code>
+<p><code class="hljs">| wp_term_taxonomy |</code></p><code class="hljs"> </code>
+<p><code class="hljs">| wp_terms |</code></p><code class="hljs"> </code>
+<p><code class="hljs">| wp_usermeta |</code></p><code class="hljs"> </code>
+<p><code class="hljs">| wp_users |</code></p><code class="hljs"> </code>
+<p><code class="hljs">+-----------------------+</code></p><code class="hljs"> </code>
+<p><code>12 rows in set (0.00 sec)</code></p>可以看到成功了！！
+<p></p>
+<p>十一.配置过程中，可以用 show slave status/G; 在 slave上</p>
+<p>查看 slave的复制情况</p>
+<p>十二.如果出现什么问题，可能是防火墙的问题</p>
+<p>/etc/init.d/iptables stop 关闭 master 上的防火墙，或者进行相应的配置</p>
+<p>常遇到的错误与解决：</p>
+<p>1.[mysql]ERROR 2002 (HY000): Can&#39;t connect to local MySQL server through socket &#39;/var/lib/mysql/mysql.sock&#39; (2)</p>
+<p>这个错误，网上有很多说法，其实直接的原因是mysql服务器没有启动</p>
+<p>之前我按照5.0x配置master-slave，然后启动slave，在连接slave,就会报这个错误</p>
+<p>后来发现原因是，mysql slave没有启动起来，然后去查错误日志，发现以下的字段</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>110505 01:55:20 mysqld_safe mysqld from pid file /media/raid10/mysql/3306/mysql.pid ended</code></pre>
+<p></p><code class="hljs"> </code>
+<p><code class="hljs">110505 02:04:41 mysqld_safe Starting mysqld daemon with databases from /media/raid10/mysql/3306/data</code></p><code class="hljs"> </code>
+<p><code class="hljs">InnoDB: The InnoDB memory heap is disabled</code></p><code class="hljs"> </code>
+<p><code class="hljs">InnoDB: Mutexes and rw_locks use InnoDB&#39;s own implementation</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 2:04:41 InnoDB: highest supported file format is Barracuda.</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 2:04:41 InnoDB Plugin 1.0.6 started; log sequence number 44338</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 2:04:41 [ERROR] /usr/local/webserver/mysql/libexec/mysqld: unknown variable &#39;master-connect-retry=60&#39;</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 2:04:41 [ERROR] Aborting</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 2:04:41 InnoDB: Starting shutdown...</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 2:04:43 InnoDB: Shutdown completed; log sequence number 44348</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 2:04:43 [Note] /usr/local/webserver/mysql/libexec/mysqld: Shutdown complete</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 02:04:43 mysqld_safe mysqld from pid file /media/raid10/mysql/3306/mysql.pid ended</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 02:07:44 mysqld_safe Starting mysqld daemon with databases from /media/raid10/mysql/3306/data</code></p><code class="hljs"> </code>
+<p><code class="hljs">InnoDB: The InnoDB memory heap is disabled</code></p><code class="hljs"> </code>
+<p><code class="hljs">InnoDB: Mutexes and rw_locks use InnoDB&#39;s own implementation</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 2:07:44 InnoDB: highest supported file format is Barracuda.</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 2:07:45 InnoDB Plugin 1.0.6 started; log sequence number 44348</code></p><code class="hljs"> </code>
+<p><code class="hljs">110505 2:07:45 [ERROR] /usr/local/webserver/mysql/libexec/mysqld: unknown variable &#39;master-host=172.29.141.112&#39;</code></p><code class="hljs"> </code>
+<p><code>110505 2:07:45 [ERROR] Aborting</code></p>
+<p></p>
+<p>从上面的ERROR，知道 master-connect-retry=60这个my.cnf中的参数有问题，后来从网上搜资料，发现，mysql5.5.3-m3版本不支持这个参数，</p>
+<p>然后我把这个参数注释掉，又发现不支持这个参数master-host，从上面的ERROR字段可以看出来。后来，就知道，5.5.3-m3不能按5.0.x那样配置</p>
+<p>原来不需要从my.cnf中配置master相关信息，当然server-id是必须的。其他信息，通过 在命令行中 ，登陆 mysql服务器配置。</p>
+<p>其实server-id的作用是</p>
+<p>第一，标识，区分不同的slave,第二，防止环备份的发生</p>
+<p></p>
+<p>2.Last_Error: Last_SQL_Error：等错误</p>
+<p>这个是从 slave上，运行 show slave status/G; 得到的。出现这个问题，最根本的原因是，slave 没有与当前的master的binlog 和binlog的position对应上</p>
+<p>也就是说，slave传输的master binlog 不与当前master正使用的binlog以及binlog的行数对应。</p>
+<p></p>
+<p>3.[ERROR] Slave I/O: error connecting to master &#39;admin@172.29.141.112:3306&#39; - retry-time: 60 retries: 86400, Error_code: 2003</p>
+<p>这个就是因为防火墙的问题，所以用 /etc/init.d/iptables stop 关闭防火墙就OK了。</p>
+<p></p>
+<p>4.遇到ERROR 2013 (HY000): Lost connection to MySQL server during query错误。在/ect/my.cnf的[mysqld]中添加skip-name-resolve</p>
+
+<p>注：关于linux系统下实现MySQL热备份详细步骤(MySQL主从复制)的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2147.html'>MySQL导入sql文件命令和MySQL远程登陆使用分析</a><a>下一篇</a><a href='/mysql/biji/2149.html'>mybaits非配置原因，导致SqlSession was not registered for synchronization异常解析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

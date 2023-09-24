@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL Memory 存储引擎浅析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL Memory 存储引擎浅析，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！后来看到博客园在用NorthScale M" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL Memory 存储引擎浅析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:22:48                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL Memory 存储引擎浅析，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！后来看到博客园在用NorthScale M</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL Memory 存储引擎浅析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>后来看到博客园在用NorthScale Memcached Server（官方站点：http://www.couchbase.com/products-and-services/memcached），貌似共享收费，又犹豫了。其实项目里的需求很简单，也想自己用.Net Cache来实现，但稳定性难以评估，开发维护成本又似乎太大，没办法，My SQL Memory Storage成了唯一选择，因为几乎不怎么需要编写代码。先看官方手册，然后写了个简单的性能测试。因为官方最新的文档都是英文版的，所以译了5.5版本 MySQL Memory Storage章节。官方文档（译自5.5版本的The Memory Storage Engine）Memory存储引擎将表的数据存放在内存中。Memory替代以前的Heap成为首选项，但同时向下兼容，Heap仍被支持。Memory存储引擎特性：
+<table border="1" cellpadding="0" cellspacing="0" style="WIDTH: 90%">
+	<tbody>
+		<tr>
+			<td>Storage limits</td>
+			<td>RAM</td>
+			<td>Transactions</td>
+			<td>No</td>
+			<td>Locking granularity</td>
+			<td>Table</td>
+		</tr>
+		<tr>
+			<td>MVCC</td>
+			<td>No</td>
+			<td>Geospatial data type support</td>
+			<td>No</td>
+			<td>Geospatial indexing support</td>
+			<td>No</td>
+		</tr>
+		<tr>
+			<td>B-tree indexes</td>
+			<td>Yes</td>
+			<td>Hash indexes</td>
+			<td>Yes</td>
+			<td>Full-text search indexes</td>
+			<td>No</td>
+		</tr>
+		<tr>
+			<td>Clustered indexes</td>
+			<td>No</td>
+			<td>Data caches</td>
+			<td>N/A</td>
+			<td>Index caches</td>
+			<td>N/A</td>
+		</tr>
+		<tr>
+			<td>Compressed data</td>
+			<td>No</td>
+			<td>Encrypted data</td>
+			<td>Yes</td>
+			<td>Cluster database support</td>
+			<td>No</td>
+		</tr>
+		<tr>
+			<td>Replication support</td>
+			<td>Yes</td>
+			<td>Foreign key support</td>
+			<td>No</td>
+			<td>Backup / point-in-time recoveryc</td>
+			<td>Yes</td>
+		</tr>
+		<tr>
+			<td>Query cache support</td>
+			<td>Yes</td>
+			<td>Update statistics for data dictionary</td>
+			<td>Yes</td>
+			<td></td>
+			<td></td>
+		</tr>
+	</tbody>
+</table><strong>Memory 与 MySQL Cluster的比较</strong>希望部署内存引擎的开发者们会考虑MySQL Cluster是否是更好的选择，参考如下Memory引擎的使用场景及特点：能像会话（Session）或缓存（Caching）一样方便操作和管理。充分发挥内存引擎的特点：高速度，低延迟。只读或读为主的访问模式（不适合频繁写）。但是内存表的性能受制于单线程的执行效率和写操作时的表锁开销，这就限制了内存表高负载时的扩展性，特别是混合写操作的并发处理。此外，内存表中的数据在服务器重启后会丢失。MySQL Cluster（集群）支持与Memory引擎同样的功能并且提供更高的性能，同时拥有Memory不支持的更多其它功能：行锁机制更好的支持多线程多用户并发。更好的支持读写混合语句以及扩展。可选择磁盘存储介质永久保存数据。Shared-nothing和分布式架构保证无单点故障，99.999% 可用性。数据自动分布在各个节点，应用开发者无需考虑分区或分片解决方案。支持MEMORY中不支持的变长数据类型（包括BLOB 和 TEXT）。关于MySQL集群与Memory引擎更多细节方面的比较，可以查看Scaling Web Services with MySQL Cluster: An Alternative to the MySQL Memory Storage Engine，该白皮书包括了这两种技术的性能研究，并一步步指导你如何将Memory用户迁移到MySQL集群。每个Memory表和一个磁盘文件关联起来。文件名由表的名字开始，并且由一个.frm的扩展名来指明它存储的表定义。要明确指出你想要一个Memory表，可使用ENGINE选项来指定：CREATE TABLE t (i INT) ENGINE = MEMORY;如它们名字所指明的，Memory表被存储在内存中，且默认使用哈希索引。这使得它们非常快，并且对创建临时表非常有用。可是，当服务器关闭之时，所有存储在Memory表里的数据被丢失。因为表的定义被存在磁盘上的.frm文件中，所以表自身继续存在，在服务器重启动时它们是空的。这个例子显示你如何可以创建，使用并删除一个Memory表：
+<p>代码如下:</p>
+<pre>
+<code> 
+CREATE TABLE test ENGINE=MEMORY; 
+SELECT ip,SUM(downloads) AS down FROM log_table GROUP BY ip; 
+SELECT COUNT(ip),AVG(down) FROM test; 
+DROP TABLE test; 
+</code></pre>MEMORY表有下列特征：给Memory表的空间被以小块来分配。表对插入使用100%动态哈希来。不需要溢出区或额外键空间。自由列表无额外的空间需求。已删除的行被放在一个以链接的列表里，并且在你往表里插入新数据之时被重新使用。Memory表也没有通常与在哈希表中删除加插入相关的问题。MEMORY表可以有多达每个表64个索引，每个索引16列，以及3072字节的最大键长度。MEMORY存储引擎支持HASH和BTREE索引。你可以通过添加一个如下所示的USING子句为给定的索引指定一个或另一个：
+<p>代码如下:</p>
+<pre>
+<code> 
+CREATE TABLE lookup 
+(id INT, INDEX USING HASH (id)) 
+ENGINE = MEMORY; 
+CREATE TABLE lookup 
+(id INT, INDEX USING BTREE (id)) 
+ENGINE = MEMORY; 
+</code></pre>如果一个MEMORY 表的哈希索引键高度重复 (许多索引条目包含相同的值)，与索引键相关的更新以及所有的删除将会明显变慢。 重复度与速度成正比，此时你可以使用BTREE 索引来避免这个问题。MEMORY表能够使用非唯一键。（对哈希索引的实现，这是一个不常用的功能）对可包含NULL值的列的索引MEMORY表使用固定的记录长度格式，像VARCHAR这样的可变长度类型将转换为固定长度类型在MEMORY表中存储。MEMORY不能包含BLOB或TEXT列.MEMORY支持AUTO_INCREMENT列MEMORY表支持INSERT DELAYED非临时的MEMORY表在所有客户端之间共享，就像其它任何非临时表。MEMORY表内容存储在内存中，它会作为动态查询队列创建内部临时表的共享介质，但是两个类型表的不同在于MEMORY表不会遇到存储转换，而内部表则会：1、MEMORY表不会转换为磁盘表，而内部临时表如果太大会自动转换为磁盘表。2、MEMORY表最大值受系统变量 max_heap_table_size 限制，默认为16MB，要改变MEMORY表大小限制，需要改变max_heap_table_size 的值。该值在 CREATE TABLE 时生效并伴随表的生命周期，(当你使用 ALTER TABLE 或 TRUNCATE TABLE命令时，表的最大限制将改变，或重启MYSQL服务时, 所有已存在的MEMORY表的最大限制将使用max_heap_table_size 的值重置。)服务器需要足够内存来维持所有在同一时间使用的MEMORY表。如果删除行，内存表不会回收内存，只有整张表全部删除的时候，才进行内存回收。同时只有在同一张表中插入新行时才会使用之前删除行的内存空间。 要释放已删除行所占用的内存空间，可以使用ALTER TABLE ENGINE=MEMORY对表进行强制重建。当内容过期要释放整张内存表，可以执行DELETE 或 TRUNCATE TABLE清除所有行，或者使用DROP TABLE删除表。当MySQL服务器启动时，如果你想填充MEMORY表，你可以使用--init-file选项。例如，你可以把INSERT INTO ... SELECT 或LOAD DATA INFILE这样的语句放入这个文件中以便从持久稳固的的数据源装载表。如果你正使用复制，当主服务器被关闭且重启动之时，主服务器的MEMORY表变空。可是从服务器意识不到这些表已经变空，所以如果你从它们选择数据，它就返回过时的内容。自从服务器启动后，当一个MEMORY表在主服务器上第一次被使用之时，一个DELETE FROM语句被自动写进主服务器的二进制日志，因此再次让从服务器与主服务器同步。注意，即使使用这个策略，在主服务器的重启和它第一次使用该表之间的间隔中，从服务器仍旧在表中有过时数据。可是，如果你使用--init-file选项于主服务器启动之时在其上推行MEMORY表。它确保这个时间间隔为零。在MEMORY表中，一行需要的内存使用下列公式计算：
+<p>代码如下:</p>
+<pre>
+<code> 
+SUM_OVER_ALL_BTREE_KEYS(max_length_of_key + sizeof(char*) * 4) 
++ SUM_OVER_ALL_HASH_KEYS(sizeof(char*) * 2) 
++ ALIGN(length_of_row+1, sizeof(char*)) 
+</code></pre>ALIGN()代表round-up因子，它使得行的长度为char指针大小的确切倍数。sizeof(char*)在32位机器上是4，在64位机器上是8。如前所述，系统变量 max_heap_table_size 用于设置内存表的大小上限。要控制单个表的最大值，需要在创建表之前设置会话变量。(不要设置全局max_heap_table_size 的值，除非你打算所有客户端创建的内存表都使用这个值)下面的例子创建了两张内存表，它们的大小限制分别为 1MB 和 2MB：
+<p>代码如下:</p>
+<pre>
+<code> 
+SET max_heap_table_size = 1024*1024; 
+/* Query OK, 0 rows affected (0.00 sec) */ 
+
+CREATE TABLE t1 (id INT, UNIQUE(id)) ENGINE = MEMORY; 
+/* Query OK, 0 rows affected (0.01 sec) */ 
+
+SET max_heap_table_size = 1024*1024*2; 
+/* Query OK, 0 rows affected (0.00 sec) */ 
+
+CREATE TABLE t2 (id INT, UNIQUE(id)) ENGINE = MEMORY; 
+/* Query OK, 0 rows affected (0.00 sec) */ 
+</code></pre>如果服务重启，两张表的大小限制会使用全局的max_heap_table_size值复原。你也可以通过CREATE TABLE 的MAX_ROWS选项设置表的最大行数，但max_heap_table_size的优先级高于MAX_ROWS，当两者同时存在时为了最大兼容，你需要将max_heap_table_size设置一个合理值。
+<p>Memory存储引擎官方论坛： http://forums.mysql.com/list.php?92</p><strong>性能测试</strong>分别测试比较了MySQL的InnoDB、MyIsam、Memory三种引擎与.Net DataTable的Insert以及Select性能（柱状图体现了其消耗时间，单位百纳秒，innodb_flush_log_at_trx_commit参数配置为1，每次测试重启了MySQL以避免Query Cache），大至结果如下：
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>写入10000条记录比较。</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>读取1000条记录比较。</p>
+<p>测试脚本：</p>
+<p>代码如下:</p>
+<pre>
+<code> 
+/****************************************************** 
+MYSQL STORAGE ENGINE TEST 
+http://wu-jian.cnblogs.com/ 
+2011-11-29 
+******************************************************/ 
+CREATE DATABASE IF NOT EXISTS test 
+CHARACTER SET &#39;utf8&#39; 
+COLLATE &#39;utf8_general_ci&#39;; 
+USE test; 
+/****************************************************** 
+1.INNODB 
+******************************************************/ 
+DROP TABLE IF EXISTS test_innodb; 
+CREATE TABLE IF NOT EXISTS test_innodb ( 
+id INT UNSIGNED AUTO_INCREMENT COMMENT &#39;PK&#39;, 
+obj CHAR(255) NOT NULL DEFAULT &#39;&#39; COMMENT &#39;OBJECT&#39;, 
+PRIMARY KEY (id) 
+) ENGINE=INNODB; 
+/****************************************************** 
+2.MYISAM 
+******************************************************/ 
+DROP TABLE IF EXISTS test_myisam; 
+CREATE TABLE IF NOT EXISTS test_myisam ( 
+id INT UNSIGNED AUTO_INCREMENT COMMENT &#39;PK&#39;, 
+obj CHAR(255) NOT NULL DEFAULT &#39;&#39; COMMENT &#39;OBJECT&#39;, 
+PRIMARY KEY (id) 
+) ENGINE=MYISAM; 
+/****************************************************** 
+1.MEMORY 
+******************************************************/ 
+DROP TABLE IF EXISTS test_memory; 
+CREATE TABLE IF NOT EXISTS test_memory ( 
+id INT UNSIGNED AUTO_INCREMENT COMMENT &#39;PK&#39;, 
+obj CHAR(255) NOT NULL DEFAULT &#39;&#39; COMMENT &#39;OBJECT&#39;, 
+PRIMARY KEY (id) 
+) ENGINE=MEMORY; 
+</code></pre>测试代码：
+<p>代码如下:</p>
+<pre>
+<code> 
+using System; 
+using System.Data; 
+using MySql.Data.MySqlClient; 
+namespace MySqlEngineTest 
+{ 
+class Program 
+{ 
+const string OBJ = &quot;The MEMORY storage engine creates tables with contents that are stored in memory. Formerly, these were known as HEAP tables. MEMORY is the preferred term, although HEAP remains supported for backward compatibility.&quot;; 
+const string SQL_CONN = &quot;Data Source=127.0.0.1;Port=3308;User ID=root;Password=root;DataBase=test;Allow Zero Datetime=true;Charset=utf8;pooling=true;&quot;; 
+const int LOOP_TOTAL = 10000; 
+const int LOOP_BEGIN = 8000; 
+const int LOOP_END = 9000; 
+#region Database Functions 
+public static bool DB_InnoDBInsert(string obj) 
+{ 
+string commandText = &quot;INSERT INTO test_innodb (obj) VALUES (?obj)&quot;; 
+MySqlParameter[] parameters = { 
+new MySqlParameter(&quot;?obj&quot;, MySqlDbType.VarChar, 255) 
+}; 
+parameters[0].Value = obj; 
+if (DBUtility.MySqlHelper.ExecuteNonQuery(SQL_CONN, CommandType.Text, commandText, parameters) &gt; 0) 
+return true; 
+else 
+return false; 
+} 
+public static string DB_InnoDBSelect(int id) 
+{ 
+string commandText = &quot;SELECT obj FROM test_innodb WHERE id = ?id&quot;; 
+MySqlParameter[] parameters = { 
+new MySqlParameter(&quot;?id&quot;, MySqlDbType.Int32) 
+}; 
+parameters[0].Value = id; 
+return DBUtility.MySqlHelper.ExecuteScalar(SQL_CONN, CommandType.Text, commandText, parameters).ToString(); 
+} 
+public static bool DB_MyIsamInsert(string obj) 
+{ 
+string commandText = &quot;INSERT INTO test_myisam (obj) VALUES (?obj)&quot;; 
+MySqlParameter[] parameters = { 
+new MySqlParameter(&quot;?obj&quot;, MySqlDbType.VarChar, 255) 
+}; 
+parameters[0].Value = obj; 
+if (DBUtility.MySqlHelper.ExecuteNonQuery(SQL_CONN, CommandType.Text, commandText, parameters) &gt; 0) 
+return true; 
+else 
+return false; 
+} 
+public static string DB_MyIsamSelect(int id) 
+{ 
+string commandText = &quot;SELECT obj FROM test_myisam WHERE id = ?id&quot;; 
+MySqlParameter[] parameters = { 
+new MySqlParameter(&quot;?id&quot;, MySqlDbType.Int32) 
+}; 
+parameters[0].Value = id; 
+return DBUtility.MySqlHelper.ExecuteScalar(SQL_CONN, CommandType.Text, commandText, parameters).ToString(); 
+} 
+public static bool DB_MemoryInsert(string obj) 
+{ 
+string commandText = &quot;INSERT INTO test_memory (obj) VALUES (?obj)&quot;; 
+MySqlParameter[] parameters = { 
+new MySqlParameter(&quot;?obj&quot;, MySqlDbType.VarChar, 255) 
+}; 
+parameters[0].Value = obj; 
+if (DBUtility.MySqlHelper.ExecuteNonQuery(SQL_CONN, CommandType.Text, commandText, parameters) &gt; 0) 
+return true; 
+else 
+return false; 
+} 
+public static string DB_MemorySelect(int id) 
+{ 
+string commandText = &quot;SELECT obj FROM test_memory WHERE id = ?id&quot;; 
+MySqlParameter[] parameters = { 
+new MySqlParameter(&quot;?id&quot;, MySqlDbType.Int32) 
+}; 
+parameters[0].Value = id; 
+return DBUtility.MySqlHelper.ExecuteScalar(SQL_CONN, CommandType.Text, commandText, parameters).ToString(); 
+} 
+#endregion 
+#region Test Functions InnoDB 
+static void InnoDBInsert() 
+{ 
+long begin = DateTime.Now.Ticks; 
+for (int i = 0; i &lt; LOOP_TOTAL; i++) 
+{ 
+DB_InnoDBInsert(OBJ); 
+} 
+Console.WriteLine(&quot;InnoDB Insert Result: {0}&quot;, DateTime.Now.Ticks - begin); 
+} 
+static void InnoDBSelect() 
+{ 
+long begin = DateTime.Now.Ticks; 
+for (int i = LOOP_BEGIN; i &lt; LOOP_END; i++) 
+{ 
+DB_InnoDBSelect(i); 
+} 
+Console.WriteLine(&quot;InnoDB SELECT Result: {0}&quot;, DateTime.Now.Ticks - begin); 
+} 
+static void MyIsamInsert() 
+{ 
+long begin = DateTime.Now.Ticks; 
+for (int i = 0; i &lt; LOOP_TOTAL; i++) 
+{ 
+DB_MyIsamInsert(OBJ); 
+} 
+Console.WriteLine(&quot;MyIsam Insert Result: {0}&quot;, DateTime.Now.Ticks - begin); 
+} 
+static void MyIsamSelect() 
+{ 
+long begin = DateTime.Now.Ticks; 
+for (int i = LOOP_BEGIN; i &lt; LOOP_END; i++) 
+{ 
+DB_MyIsamSelect(i); 
+} 
+Console.WriteLine(&quot;MyIsam SELECT Result: {0}&quot;, DateTime.Now.Ticks - begin); 
+} 
+static void MemoryInsert() 
+{ 
+long begin = DateTime.Now.Ticks; 
+for (int i = 0; i &lt; LOOP_TOTAL; i++) 
+{ 
+DB_MemoryInsert(OBJ); 
+} 
+Console.WriteLine(&quot;Memory Insert Result: {0}&quot;, DateTime.Now.Ticks - begin); 
+} 
+static void MemorySelect() 
+{ 
+long begin = DateTime.Now.Ticks; 
+for (int i = LOOP_BEGIN; i &lt; LOOP_END; i++) 
+{ 
+DB_MemorySelect(i); 
+} 
+Console.WriteLine(&quot;Memory SELECT Result: {0}&quot;, DateTime.Now.Ticks - begin); 
+} 
+static void DataTableInsertAndSelect() 
+{ 
+//Insert 
+DataTable dt = new DataTable(); 
+dt.Columns.Add(&quot;id&quot;, Type.GetType(&quot;System.Int32&quot;)); 
+dt.Columns[&quot;id&quot;].AutoIncrement = true; 
+dt.Columns.Add(&quot;obj&quot;, Type.GetType(&quot;System.String&quot;)); 
+DataRow dr = null; 
+long begin = DateTime.Now.Ticks; 
+for (int i = 0; i &lt; LOOP_TOTAL; i++) 
+{ 
+dr = null; 
+dr = dt.NewRow(); 
+dr[&quot;obj&quot;] = OBJ; 
+dt.Rows.Add(dr); 
+} 
+Console.WriteLine(&quot;DataTable Insert Result: {0}&quot;, DateTime.Now.Ticks - begin); 
+//Select 
+long begin1 = DateTime.Now.Ticks; 
+for (int i = LOOP_BEGIN; i &lt; LOOP_END; i++) 
+{ 
+dt.Select(&quot;id = &quot; + i); 
+} 
+Console.WriteLine(&quot;DataTable Select Result: {0}&quot;, DateTime.Now.Ticks - begin1); 
+} 
+#endregion 
+static void Main(string[] args) 
+{ 
+InnoDBInsert(); 
+InnoDBSelect(); 
+//restart mysql to avoid query cache 
+MyIsamInsert(); 
+MyIsamSelect(); 
+//restart mysql to avoid query cache 
+MemoryInsert(); 
+MemorySelect(); 
+DataTableInsertAndSelect(); 
+} 
+}//end class 
+} 
+</code></pre>总结.Net Cache读写性能毫无疑问大大领先于数据库引擎InnoDB写入耗时大概是MyIsam和Memory的5倍左右，它的行锁机制必然决定了写入时的更多性能开销，而它的强项在于多线程的并发处理，而本测试未能体现其优势。三种数据库引擎在SELECT性能上差不多，Memory稍占优，同样高并发下的比较有待进一步测试。
+<p></p>
+
+<p>注：关于MySQL Memory 存储引擎浅析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1129.html'>MySQL VARCHAR的最大长度到底是多少</a><a>下一篇</a><a href='/mysql/biji/1131.html'>MySQL启动中 InnoDB: Error: log file ./ib_logfile0 is of different size 0 5242880 bytes 的问题</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

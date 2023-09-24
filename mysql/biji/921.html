@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>解决MySQL Threads_running飙升与慢查询的问题_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了解决MySQL Threads_running飙升与慢查询的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+背" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">解决MySQL Threads_running飙升与慢查询的问题</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:20:50                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了解决MySQL Threads_running飙升与慢查询的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+背</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了解决MySQL Threads_running飙升与慢查询的问题，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h2>背景</h2>
+<p>年前本应该是回顾一年工作和收尾的阶段，奈何各种促销，活动都等着春节，因此也遇到了不少的问题，回顾了一下最近遇到的问题，发现有好几个问题比较类似，正好整理一下，作为年前收尾的案例吧。表现上都是数据库假死，无响应，发生的场景有较高的业务压力到来时，也有业务正常运行的时候，突然就出现问题了。</p>
+<h2>问题描述</h2>
+<p>由于腾讯云数据库 MySQL 本身是有故障检测和高可用机制的，这几例问题发生的时候，从用户反馈的问题出现的时间点到实际介入排查的时候已经有好几分钟了，但是并没有触发高可用切换，说明这个问题可能并不是数据库自身的故障，也不是一些外部原因导致数据库不可用。</p>
+<p>检查一下数据库当时候的状态，发现一个很不正常的指标：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>在问题的时间点附近，连接数的总数量和 threads_running 的数量在短时间内开始飙升，并且接近半分钟的时间内，连监控插件都采集不到数据了。在相同的时间段内，CPU 的使用率（达到 100%）、慢查询数量也跟着飙升。基本上可以确认 CPU 使用率，慢查询，连接数的指标这三者应该是相关联的，可以从这三者入手来分析这次问题的起因。</p>
+<h2>原因分析</h2>
+<p>99%的情况下，只要慢查询数量在飙升，那么这个问题就和慢查询脱不了关系，但是案例分析并不能这么草率的下结论。言归正传，既然目标缩小在三个指标上，那么分别考虑一下这三个指标的意义，看看这几个指标的异常会带来什么问题。</p>
+<h3>CPU</h3>
+<p>CPU 过高说明 MySQL 的计算能力被占满了，能占用 MySQL 计算资源的只有用户线程和 MySQL 自身的系统线程，这次问题明显和 MySQL 系统线程没什么关系，说明用户线程在大量占用 CPU 的计算资源，而且使用率达到 100% 说明有这个资源争抢的程度是非常严重的，可能会导致原本效率极高的查询因为拿不到 CPU 资源而变得非常缓慢，从高效率的查询变成低效的慢查询，从而产生数据库假死或者 hang 死的现象。</p>
+<h3>慢查询</h3>
+<p>慢查询是个老生常谈的问题了，因为查询效率过低，会过度占用 CPU，IO，内存等资源，从而影响到其他正常的查询，从监控指标上来说，CPU 使用率，IO 使用情况，内存使用率都可能会有不同程度的上升，严重的情况下也会引发这几个指标的飙升，导致整个数据库响应缓慢。</p>
+<h3>连接数</h3>
+<p>连接数通常是一个引发&ldquo;实际故障&rdquo;的指标，例如连接数达到 max_connections 的上限，从而导致整个数据库无法新建连接，程序侧直接是报错的，而不是无响应。threads_running 这个指标，参考官方文档的描述：</p>
+<blockquote>
+<p>The number of threads that are not sleeping.</p></blockquote>
+<p>简单直白的解释，这个指标的飙升代表当时候有大量活跃的用户连接在 MySQL 实例中。而且从这个案例的监控图表来看，是一个飙升的趋势，说明是在短时间内出现了大量的活跃连接。</p>
+<h3>分析</h3>
+<p>完成这三个指标的简单分析，可以发现这个三个指标是互相影响：</p>
+<ol>
+	<li>慢查询堆积会导致 CPU 使用率过高；</li>
+	<li>CPU 过高会导致整体的查询效率变低，进而导致一些高效的查询变成慢查询；</li>
+	<li>慢查询的执行效率过低，会较长时间的保持活跃状态，所以 Threads_running 这个指标一定会上涨。</li>
+	<li>过高的并发突然到来时，大量的查询处于活跃状态会让 Threads_running 这个指标飙升，同时这种尖刺型的高峰也很容易占满 CPU。</li>
+</ol>
+<p>看起来三个指标飙升的原因是自洽的，只靠这三个指标并不能真正的判断出问题的原因。那么仔细考虑一下这几个指标飙升的原因为什么会自洽？会发现有一个核心现象，或者说是共性：查询要能够堆积起来。如果：</p>
+<ol>
+	<li>堆积起来的查询本来效率就不高，那么这个问题的诱因基本就是慢查询了。</li>
+	<li>堆积起来的查询效率很高，那么这个问题的诱因可能是瞬间并发过高，或者是其他的原因导致 CPU 使用率暴涨，然后反过来影响了这些效率很高的查询。</li>
+</ol>
+<p>所以检查一下堆积起来的查询，就能比较直白的分辨出问题了，就上图展示的这个案例而言，堆积起来的查询大量使用了 group by 和 order by，查询的效率比较低，所以根因还是慢查询。</p>
+<h2>拓展一下</h2>
+<p>如开篇所提及，最近发生的问题有多起，且原因类似。除了这个飙升的案例，还有如下所示的现象。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>threads_running 保持在一个相对平稳的数值，参考前文的分析，可以发现这个现象代表着在平时的时候，就有约 10 个查询长时间处于活跃状态，可以预测一个故障场景：业务量继续上升，活跃的查询变多，当高效的查询受影响，效率降低到一定程度的时候，前端程序/用户会因为超时或者响应慢的原因，发起重试，然后因为查询效率降低，这个重试被反复触发，然后引发雪崩效应，慢慢拖垮数据库。</p>
+<p>万幸的是多个类似现象的实例仅有一个出现了问题，就是预测的这个场景，其他的都及时优化掉了。</p>
+<h2>总结一下</h2>
+<p>虽说仍旧是慢查询的问题，但是从这个案例可以发现另外一个 MySQL 指标，threads_running 的用处：监控活跃的连接，提前发现一些并发量过高和异常的查询，防止数据库堆积查询，产生假死的现象。</p>
+<p>以上就是MySQL Threads_running飙升与慢查询的问题解决的详细内容，更多关于MySQL Threads_running飙升与慢查询的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于解决MySQL Threads_running飙升与慢查询的问题的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/920.html'>MySQL的select 学习笔记</a><a>下一篇</a><a href='/mysql/biji/922.html'>MySQL 使用事件（Events）完成计划任务的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>C++ COM编程之接口背后的虚函数表_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="前言<br />
+学习C++的人，肯定都知道多态机制；多态就是用父类型别的指针指向其子类的实例，然后通过父类的指针调用实际子类的成员函数。对于多态机制是如何实现的，你有没有想过呢？而COM" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">C++ COM编程之接口背后的虚函数表</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>前言<br />
+学习C++的人，肯定都知道多态机制；多态就是用父类型别的指针指向其子类的实例，然后通过父类的指针调用实际子类的成员函数。对于多态机制是如何实现的，你有没有想过呢？而COM</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>前言</strong></p>
+<p>学习C++的人，肯定都知道多态机制；多态就是用父类型别的指针指向其子类的实例，然后通过父类的指针调用实际子类的成员函数。对于多态机制是如何实现的，你有没有想过呢？而COM中的接口就将这一机制运用到了极致，所以，不知道多态机制的人，是永运无法明白COM的。所以，在总结COM时，是非常有必要专门总结一下C++的多态机制是如何实现的。</p>
+<p><strong>多态</strong></p>
+<p>什么是多态？上面也说了，多态就是用父类型别的指针指向其子类的实例，然后通过父类的指针调用实际子类的成员函数。现在通过代码，让大家切身的体会一下多态：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="90050" class="copybut" id="copybut90050" onclick="doCopy('code90050')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code90050"><br />
+#include &lt;iostream&gt;<br />
+using namespace std;<br />
+&nbsp;<br />
+class A<br />
+{<br />
+public:<br />
+&nbsp;&nbsp;&nbsp; void Print()<br />
+&nbsp;&nbsp;&nbsp; {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout&lt;&lt;"I am A."&lt;&lt;endl;<br />
+&nbsp;&nbsp;&nbsp; }<br />
+};<br />
+&nbsp;<br />
+class B : public A<br />
+{<br />
+public:<br />
+&nbsp;&nbsp;&nbsp; void Print()<br />
+&nbsp;&nbsp;&nbsp; {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout&lt;&lt;"I am B."&lt;&lt;endl;<br />
+&nbsp;&nbsp;&nbsp; }<br />
+};<br />
+&nbsp;<br />
+int main()<br />
+{<br />
+&nbsp;&nbsp;&nbsp; A *pAObj = new B();<br />
+&nbsp;&nbsp;&nbsp; pAObj-&gt;Print();<br />
+}<br />
+</div></p>
+<p>上面代码的运行结果是：I am A.这不是多态的行为。</p>
+<p>好了，经过对上面代码的改造，就在A类的Print函数前面加入关键字virtual，具体代码如下：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="81764" class="copybut" id="copybut81764" onclick="doCopy('code81764')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code81764"><br />
+#include &lt;iostream&gt;<br />
+using namespace std;<br />
+&nbsp;<br />
+class A<br />
+{<br />
+public:<br />
+&nbsp;&nbsp;&nbsp; virtual void Print()<br />
+&nbsp;&nbsp;&nbsp; {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout&lt;&lt;"I am A."&lt;&lt;endl;<br />
+&nbsp;&nbsp;&nbsp; }<br />
+};<br />
+&nbsp;<br />
+class B : public A<br />
+{<br />
+public:<br />
+&nbsp;&nbsp;&nbsp; void Print()<br />
+&nbsp;&nbsp;&nbsp; {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout&lt;&lt;"I am B."&lt;&lt;endl;<br />
+&nbsp;&nbsp;&nbsp; }<br />
+};<br />
+&nbsp;<br />
+int main()<br />
+{<br />
+&nbsp;&nbsp;&nbsp; A *pAObj = new B();<br />
+&nbsp;&nbsp;&nbsp; pAObj-&gt;Print();<br />
+}<br />
+</div></p>
+<p>此时，代码的运行结果为：I am B.这个时候就表现出来了多态行为。好了，多了我也不说了，就通过这个简单的例子，你就能体会到多态的概念了。从下面才开始今天的主题。</p>
+<p><strong>虚函数表</strong></p>
+<p>多态机制的关键就是在于虚函数表，也就是vtbl。当我们定义一个类，类中包含虚函数时，其实也就定义了一张虚函数表，没有虚函数的类是不包含虚函数表的，只有该类被实例化时，才会将这个表分配到这个实例的内存中；在这张虚函数表中，存放了每个虚函数的地址；它就像一个地图一样，指明了实际所应该调用的函数。比如我定义一个类，如下：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="59738" class="copybut" id="copybut59738" onclick="doCopy('code59738')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code59738"><br />
+class CIF<br />
+{<br />
+public:<br />
+&nbsp;&nbsp;&nbsp;&nbsp; CIF(){}<br />
+&nbsp;&nbsp;&nbsp;&nbsp; CIF(int i, int f) : m_iVar(i), m_fVar(f){}<br />
+&nbsp;&nbsp;&nbsp;&nbsp; virtual void IF1() { cout&lt;&lt;"I'm IF1"&lt;&lt;endl; }<br />
+&nbsp;&nbsp;&nbsp;&nbsp; virtual void IF2() { cout&lt;&lt;"I'm IF2"&lt;&lt;endl; }<br />
+&nbsp;&nbsp;&nbsp;&nbsp; virtual void IF3() { cout&lt;&lt;"I'm IF3"&lt;&lt;endl; }<br />
+&nbsp;&nbsp;&nbsp;&nbsp; void MemFunc(){ cout&lt;&lt;"I'm IF4"&lt;&lt;endl; }<br />
+private:<br />
+&nbsp;&nbsp;&nbsp;&nbsp; int m_iVar;<br />
+&nbsp;&nbsp;&nbsp;&nbsp; float m_fVar;<br />
+};<br />
+</div></p>
+<p>这样的一个类，当你去定义这个类的实例时，编译器会给这个类分配一个成员变量，该变量指向这个虚函数表，这个虚函数表中的每一项都会记录对应的虚函数的地址；如下图：</p>
+<p></p>
+<p>这个类的变量还没有被初始化时，就像上图那样，变量的值都是随机值，而指向虚拟函数表的指针__vfptr中对应的虚函数地址也是错误的地址；只有等我们真正的完成了这个变量的声明和初始化时，这些值才能被正确的初始化，如下图：</p>
+<p></p>
+<p>从上图中就可以看到，初始化完成以后，指向虚函数表的__vfptr指针中的元素都被赋予了正确的虚函数值，分别指向了在类中定义的三个虚函数。也看到了，__vfptr指针定义的位置也比m_iVar和m_fVar变量的位置靠前；在C++编译器中，它保证虚函数表的指针存在于对象实例中最前面的位置，这主要是为了在多层继承或是多重继承的情况下，能以高性能取到这张虚函数表，然后进行遍历，查找对应的虚函数指针，进行对应的调用。</p>
+<p>我们都知道，虚函数是用来支持C++中的多态的，而单独的一个类，有了虚函数，而没有任何继承关系，也就是说没有子类去覆盖父类的虚函数，这样是毫无意义的。所以下面就要从各个方面进行详细的说明虚函数表。</p>
+<p><strong>没有实现多态的单继承</strong></p>
+<p>比如有如下的继承关系：</p>
+<p></p>
+<p>在这个继承关系中，CIF2作为CIF1的子类，但是CIF2没有重写CIF1类的任何虚函数；定义CIF2 if2Obj;实例，在派生类的实例中，它的虚函数表应该是像下面这样的：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="99259" class="copybut" id="copybut99259" onclick="doCopy('code99259')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code99259"><br />
+[0]&nbsp;&nbsp;&nbsp;&nbsp; 0x011513c5 {InterfaceDemo2.exe!CIF1::IF1(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[1]&nbsp;&nbsp;&nbsp;&nbsp; 0x011512cb {InterfaceDemo2.exe!CIF1::IF2(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[2]&nbsp;&nbsp;&nbsp;&nbsp; 0x01151343 {InterfaceDemo2.exe!CIF1::IF3(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[3]&nbsp;&nbsp;&nbsp;&nbsp; 0x01151249 {InterfaceDemo2.exe!CIF2::IF4(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[4]&nbsp;&nbsp;&nbsp;&nbsp; 0x01151433 {InterfaceDemo2.exe!CIF2::IF5(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[5]&nbsp;&nbsp;&nbsp;&nbsp; 0x01151267 {InterfaceDemo2.exe!CIF2::IF6(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[6]&nbsp;&nbsp;&nbsp;&nbsp; 0x00000000&nbsp;&nbsp;&nbsp;&nbsp; void *<br />
+</div></p>
+<p>可以发现，虚函数按照其声明顺序存放在表中，父类的虚函数在子类的虚函数前面。</p>
+<p><strong>实现多态的单继承</strong></p>
+<p>现在我在CIF2类中，重写CIF1类的IF1函数，它们的关系如下：</p>
+<p></p>
+<p>在上图中，CIF2继承了CIF1，并且在CIF2类中重写了CIF1的虚函数IF1，那我们现在看看虚函数表是什么样子的？</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="80696" class="copybut" id="copybut80696" onclick="doCopy('code80696')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code80696"><br />
+[0]&nbsp;&nbsp;&nbsp;&nbsp; 0x00b61311 {InterfaceDemo2.exe!CIF2::IF1(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[1]&nbsp;&nbsp;&nbsp;&nbsp; 0x00b612c6 {InterfaceDemo2.exe!CIF1::IF2(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[2]&nbsp;&nbsp;&nbsp;&nbsp; 0x00b61343 {InterfaceDemo2.exe!CIF1::IF3(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[3]&nbsp;&nbsp;&nbsp;&nbsp; 0x00b61249 {InterfaceDemo2.exe!CIF2::IF4(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[4]&nbsp;&nbsp;&nbsp;&nbsp; 0x00b61433 {InterfaceDemo2.exe!CIF2::IF5(void)}&nbsp;&nbsp;&nbsp;&nbsp; void *<br />
+[5]&nbsp;&nbsp;&nbsp;&nbsp; 0x00000000&nbsp;&nbsp;&nbsp;&nbsp; void *<br />
+</div></p>
+<p>你发现了什么？虚函数表中的第一项是CIF2::IF1，而不是CIF1::IF1，这说明了当在子类中重写父类的虚函数时，新的函数的地址覆盖了父类的虚函数地址，这样就能在多态时能正确的找到需要被调用的函数；而没有被覆盖的函数还是那样的顺序在虚函数表中存储着。</p>
+<p><strong>没有实现多态的多继承</strong></p>
+<p>对于简单的，没有实现多态的多继承，比如，有下面的一个多继承关系：</p>
+<p></p>
+<p>在子类中没有重写任何父类的虚函数，那么它的虚函数表应该是什么样子呢？</p>
+<p>虚函数表CIF1，如下：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="62943" class="copybut" id="copybut62943" onclick="doCopy('code62943')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code62943"><br />
+[0]&nbsp;&nbsp;&nbsp;&nbsp; 0x001e13d9 {InterfaceDemo2.exe!CIF1::IF1(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[1]&nbsp;&nbsp;&nbsp;&nbsp; 0x001e12df {InterfaceDemo2.exe!CIF1::IF2(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[2]&nbsp;&nbsp;&nbsp;&nbsp; 0x001e1357 {InterfaceDemo2.exe!CIF1::IF3(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[3]&nbsp;&nbsp;&nbsp;&nbsp; 0x001e10c8 {InterfaceDemo2.exe!CIF3::IF4(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[4]&nbsp;&nbsp;&nbsp;&nbsp; 0x001e1041 {InterfaceDemo2.exe!CIF3::IF5(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[5]&nbsp;&nbsp;&nbsp;&nbsp; 0x001e1249 {InterfaceDemo2.exe!CIF3::IF6(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[6]&nbsp;&nbsp;&nbsp;&nbsp; 0x00000000&nbsp;&nbsp;&nbsp;&nbsp; void *<br />
+</div></p>
+<p>虚函数表CIF2，如下：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="89646" class="copybut" id="copybut89646" onclick="doCopy('code89646')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code89646"><br />
+[0]&nbsp;&nbsp;&nbsp;&nbsp; 0x001e1258 {InterfaceDemo2.exe!CIF2::IF7(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[1]&nbsp;&nbsp;&nbsp;&nbsp; 0x001e1447 {InterfaceDemo2.exe!CIF2::IF8(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[2]&nbsp;&nbsp;&nbsp;&nbsp; 0x001e127b {InterfaceDemo2.exe!CIF2::IF9(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[3]&nbsp;&nbsp;&nbsp;&nbsp; 0x00000000&nbsp;&nbsp;&nbsp;&nbsp; void *<br />
+</div></p>
+<p>从上面的虚函数表，我们可以分析出来，每个父类都有自己的虚函数表，子类的虚函数被放到了第一个父类的表中。第一个父类是按照声明顺序来判断的。</p>
+<p><strong>实现多态的多继承</strong></p>
+<p>上面说的是没有发生重写的情况，现在来说说发生重写的情况；比如，现在有以下情况：</p>
+<p></p>
+<p>在子类中重写了父类的虚函数，那它的虚函数表又是什么样子呢？</p>
+<p>虚函数表CIF1，如下：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="9536" class="copybut" id="copybut9536" onclick="doCopy('code9536')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code9536"><br />
+[0]&nbsp;&nbsp;&nbsp;&nbsp; 0x012013cf {InterfaceDemo2.exe!CIF3::IF1(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[1]&nbsp;&nbsp;&nbsp;&nbsp; 0x012012d5 {InterfaceDemo2.exe!CIF1::IF2(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[2]&nbsp;&nbsp;&nbsp;&nbsp; 0x0120134d {InterfaceDemo2.exe!CIF1::IF3(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[3]&nbsp;&nbsp;&nbsp;&nbsp; 0x01201456 {InterfaceDemo2.exe!CIF3::IF4(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[4]&nbsp;&nbsp;&nbsp;&nbsp; 0x012014d8 {InterfaceDemo2.exe!CIF3::IF5(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[5]&nbsp;&nbsp;&nbsp;&nbsp; 0x00000000&nbsp;&nbsp;&nbsp;&nbsp; void *<br />
+</div></p>
+<p>虚函数表CIF2，如下：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="76424" class="copybut" id="copybut76424" onclick="doCopy('code76424')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code76424"><br />
+[0]&nbsp;&nbsp;&nbsp;&nbsp; 0x012014e2 {InterfaceDemo2.exe![thunk]:CIF3::IF1`adjustor{4}' (void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[1]&nbsp;&nbsp;&nbsp;&nbsp; 0x012014ce {InterfaceDemo2.exe!CIF2::IF2(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[2]&nbsp;&nbsp;&nbsp;&nbsp; 0x012014d3 {InterfaceDemo2.exe!CIF2::IF3(void)}&nbsp;&nbsp;&nbsp;&nbsp; void * <br />
+[3]&nbsp;&nbsp;&nbsp;&nbsp; 0x00000000&nbsp;&nbsp;&nbsp;&nbsp; void *<br />
+</div></p>
+<p>从上面的虚函数表中，我们可以看到虚函数表中的CIF1::IF1(void)全都被替换成了CIF3::IF1(void)，那么我们就可以以任意的父类指针来调用IF1(void)，实际上调用的是CIF3::IF1(void)，这就实现了所谓的多态。</p>
+<p><strong>总结</strong></p>
+<p>总结了这么多关于虚函数表的内容，感觉很扯，和接口没有多大的关系；但是，这一切都是COM的基础，COM的背后，就是接口，而接口的背后，就是我这里总结的，说白了，完全了解了这里，对于理解COM的接口是有非常大的用处的。希望我的总结对大家有用。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/103458.html'>win10 Realtek HD Audio更新失败怎么办 win10关闭UAC解决Realtek HD Audio更新失败</a><a>下一篇</a><a href='/php/biji/103460.html'>C#编程实现自定义热键的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

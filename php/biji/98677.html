@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>浅谈利用缓存来优化HTML5 Canvas程序的性能_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="canvas玩多了后，就会自动的要开始考虑性能问题了。怎么优化canvas的动画呢？<br />
+　　【使用缓存】<br />
+　　使用缓存也就是用离屏canvas进行预渲染了，原理很简单，就是先绘制到一个离屏ca" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">浅谈利用缓存来优化HTML5 Canvas程序的性能</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>canvas玩多了后，就会自动的要开始考虑性能问题了。怎么优化canvas的动画呢？<br />
+　　【使用缓存】<br />
+　　使用缓存也就是用离屏canvas进行预渲染了，原理很简单，就是先绘制到一个离屏ca</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>canvas玩多了后，就会自动的要开始考虑性能问题了。怎么优化canvas的动画呢？</p>
+<p>　　【使用缓存】</p>
+<p>　　使用缓存也就是用离屏canvas进行预渲染了，原理很简单，就是先绘制到一个离屏canvas中，然后再通过drawImage把离屏canvas画到主canvas中。可能看到这很多人就会误解，这不是写游戏里面用的很多的双缓冲机制么？</p>
+<p>　　其实不然，双缓冲机制是游戏编程中为了防止画面闪烁，因此会有一个显示在用户面前的画布以及一个后台画布，进行绘制时会先将画面内容绘制到后台画布中，再将后台画布里的数据绘制到前台画布中。这就是双缓冲，但是canvas中是没有双缓冲的，因为现代浏览器基本上都是内置了双缓冲机制。所以，使用离屏canvas并不是双缓冲，而是把离屏canvas当成一个缓存区。把需要重复绘制的画面数据进行缓存起来，减少调用canvas的API的消耗。</p>
+<p>　　众所周知，调用canvas的API很消耗性能，所以，当我们要绘制一些重复的画面数据时，妥善利用离屏canvas对性能方面有很大的提升，可以看下下面的DEMO</p>
+<p>　　1 、 没使用缓存&nbsp;&nbsp;&nbsp; </p>
+<p>　　2、&nbsp; 使用了缓存但是没有设置离屏canvas的宽高&nbsp;&nbsp; </p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3 、 使用了缓存但是没有设置离屏canvas的宽高&nbsp;&nbsp; </p>
+<p>　　4 、 使用了缓存且设置了离屏canvas的宽高</p>
+<p>　　可以看到上面的DEMO的性能不一样，下面分析一下原因：为了实现每个圈的样式，所以绘制圈圈时我用了循环绘制，如果没用启用缓存，当页面的圈圈数量达到一定时，动画每一帧就要大量调用canvas的API，要进行大量的计算，这样再好的浏览器也会被拖垮啦。<br /><span class="lantxt">XML/HTML Code</span><span style="CURSOR: pointer" class="copyCodeText" onclick="copyIdText('code_8941')">复制内容到剪贴板</span></p>
+<div class="codeText">
+<div id="code_8941">
+<ol class="dp-xml">
+<li class="alt"><span><span>ctx.save(); &nbsp;&nbsp;</span></span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">j</span><span>=</span><span class="attribute-value">0</span><span>; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">ctx.lineWidth</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">borderWidth</span><span>; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(var&nbsp;</span><span class="attribute">i</span><span>=</span><span class="attribute-value">1</span><span>;i</span><span class="tag">&lt;</span><span class="tag-name">this.r</span><span>;i+=borderWidth){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.beginPath(); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">ctx.strokeStyle</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">this</span><span>.color[j]; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.arc(this.x&nbsp;,&nbsp;this.y&nbsp;,&nbsp;i&nbsp;,&nbsp;0&nbsp;,&nbsp;2*Math.PI); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.stroke(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;j++; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.restore();&nbsp;&nbsp;</span></li>
+</ol>
+</div>
+</div>
+<p>　　所以，我的方法很简单，每个圈圈对象里面给他一个离屏canvas作缓存区。</p>
+<p>　　除了创建离屏canvas作为缓存之外，下面的代码中有一点很关键，就是要设置离屏canvas的宽度和高度，canvas生成后的默认大小是300X150；对于我的代码中每个缓存起来圈圈对象半径最大也就不超过80，所以300X150的大小明显会造成很多空白区域，会造成资源浪费，所以就要设置一下离屏canvas的宽度和高度，让它跟缓存起来的元素大小一致，这样也有利于提高动画性能。上面的四个demo很明显的显示出了性能差距，如果没有设置宽高，当页面超过400个圈圈对象时就会卡的不行了，而设置了宽高1000个圈圈对象也不觉得卡。<br /></p>
+<div class="codeText">
+<div class="codeHead"><span class="lantxt">XML/HTML Code</span><span style="CURSOR: pointer" class="copyCodeText" onclick="copyIdText('code_8584')">复制内容到剪贴板</span></div>
+<div id="code_8584">
+<ol class="dp-xml">
+<li class="alt"><span><span>var&nbsp;</span><span class="attribute">ball</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">function</span><span>(x&nbsp;,&nbsp;y&nbsp;,&nbsp;vx&nbsp;,&nbsp;vy&nbsp;,&nbsp;useCache){ &nbsp;&nbsp;</span></span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.x</span><span>&nbsp;=&nbsp;x; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.y</span><span>&nbsp;=&nbsp;y; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.vx</span><span>&nbsp;=&nbsp;vx; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.vy</span><span>&nbsp;=&nbsp;vy; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.r</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">getZ</span><span>(getRandom(20,40)); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.color</span><span>&nbsp;=&nbsp;[]; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.cacheCanvas</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">document</span><span>.createElement(&quot;canvas&quot;); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute-value">this</span><span class="attribute">this.cacheCtx</span><span>&nbsp;=&nbsp;this.cacheCanvas.getContext(&quot;2d&quot;); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.cacheCanvas.width</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">2</span><span>*this.r; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.cacheCanvas.height</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">2</span><span>*this.r; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">num</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">getZ</span><span>(this.r/borderWidth); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(var&nbsp;</span><span class="attribute">j</span><span>=</span><span class="attribute-value">0</span><span>;j</span><span class="tag">&lt;</span><span class="tag-name">num</span><span>;j++){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.color.push(&quot;rgba(&quot;+getZ(getRandom(0,255))+&quot;,&quot;+getZ(getRandom(0,255))+&quot;,&quot;+getZ(getRandom(0,255))+&quot;,1)&quot;); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.useCache</span><span>&nbsp;=&nbsp;useCache; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(useCache){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cache(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;&nbsp;</span></li>
+</ol>
+</div>
+</div>
+<p>&nbsp;</p>
+<p>当我实例化圈圈对象时，直接调用缓存方法，把复杂的圈圈直接画到圈圈对象的离屏canvas中保存起来。<br /></p>
+<div class="codeText">
+<div class="codeHead"><span class="lantxt">XML/HTML Code</span><span style="CURSOR: pointer" class="copyCodeText" onclick="copyIdText('code_1770')">复制内容到剪贴板</span></div>
+<div id="code_1770">
+<ol class="dp-xml">
+<li class="alt"><span><span>cache:function(){ &nbsp;&nbsp;</span></span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cacheCtx.save(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">j</span><span>=</span><span class="attribute-value">0</span><span>; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.cacheCtx.lineWidth</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">borderWidth</span><span>; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(var&nbsp;</span><span class="attribute">i</span><span>=</span><span class="attribute-value">1</span><span>;i</span><span class="tag">&lt;</span><span class="tag-name">this.r</span><span>;i+=borderWidth){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cacheCtx.beginPath(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute-value">this</span><span class="attribute">this.cacheCtx.strokeStyle</span><span>&nbsp;=&nbsp;this.color[j]; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cacheCtx.arc(this.r&nbsp;,&nbsp;this.r&nbsp;,&nbsp;i&nbsp;,&nbsp;0&nbsp;,&nbsp;2*Math.PI); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cacheCtx.stroke(); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;j++; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cacheCtx.restore(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;&nbsp;</span></li>
+</ol>
+</div>
+</div>
+<p>然后在接下来的动画中，我只需要把圈圈对象的离屏canvas画到主canvas中，这样，每一帧调用的canvasAPI就只有这么一句话：</p>
+<div class="codeText">
+<div class="codeHead"><span class="lantxt">XML/HTML Code</span><span style="CURSOR: pointer" class="copyCodeText" onclick="copyIdText('code_3347')">复制内容到剪贴板</span></div>
+<div id="code_3347">
+<ol class="dp-xml">
+<li class="alt"><span><span>ctx.drawImage(this.cacheCanvas&nbsp;,&nbsp;this.x-this.r&nbsp;,&nbsp;this.y-this.r);&nbsp;&nbsp;</span></span></li>
+</ol>
+</div>
+</div>
+<p>跟之前的for循环绘制比起来，实在是快太多了。所以当需要重复绘制矢量图的时候或者绘制多个图片的时候，我们都可以合理利用离屏canvas来预先把画面数据缓存起来，在接下来的每一帧中就能减少很多没必要的消耗性能的操作。</p>
+<p>下面贴出1000个圈圈对象流畅版代码：<br />　　</p>
+<div class="codeText">
+<div class="codeHead"><span class="lantxt">XML/HTML Code</span><span style="CURSOR: pointer" class="copyCodeText" onclick="copyIdText('code_5505')">复制内容到剪贴板</span></div>
+<div id="code_5505">
+<ol class="dp-xml">
+<li class="alt"><span><span>&lt;!doctype&nbsp;html</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></span></li>
+<li><span></span><span class="tag">&lt;</span><span class="tag-name">html</span><span>&nbsp;</span><span class="attribute">lang</span><span>=</span><span class="attribute-value">&quot;en&quot;</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span></span><span class="tag">&lt;</span><span class="tag-name">head</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="tag">&lt;</span><span class="tag-name">meta</span><span>&nbsp;</span><span class="attribute">charset</span><span>=</span><span class="attribute-value">&quot;UTF-8&quot;</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="tag">&lt;</span><span class="tag-name">style</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;body{ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;padding:0; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;margin:0; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;overflow:&nbsp;hidden; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#cas{ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;display:&nbsp;block; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;background-color:rgba(0,0,0,0); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;margin:auto; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;border:1px&nbsp;solid; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="tag">&lt;/</span><span class="tag-name">style</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="tag">&lt;</span><span class="tag-name">title</span><span class="tag">&gt;</span><span>测试</span><span class="tag">&lt;/</span><span class="tag-name">title</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span></span><span class="tag">&lt;/</span><span class="tag-name">head</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li><span></span><span class="tag">&lt;</span><span class="tag-name">body</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="tag">&lt;</span><span class="tag-name">div</span><span>&nbsp;</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="tag">&lt;</span><span class="tag-name">canvas</span><span>&nbsp;</span><span class="attribute">id</span><span>=</span><span class="attribute-value">'cas'</span><span>&nbsp;</span><span class="attribute">width</span><span>=</span><span class="attribute-value">&quot;800&quot;</span><span>&nbsp;</span><span class="attribute">height</span><span>=</span><span class="attribute-value">&quot;600&quot;</span><span class="tag">&gt;</span><span>浏览器不支持canvas</span><span class="tag">&lt;/</span><span class="tag-name">canvas</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="tag">&lt;</span><span class="tag-name">div</span><span>&nbsp;</span><span class="attribute">style</span><span>=</span><span class="attribute-value">&quot;text-align:center&quot;</span><span class="tag">&gt;</span><span>1000个圈圈对象也不卡</span><span class="tag">&lt;/</span><span class="tag-name">div</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="tag">&lt;/</span><span class="tag-name">div</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="tag">&lt;</span><span class="tag-name">script</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">testBox</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">function</span><span>(){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">canvas</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">document</span><span>.getElementById(&quot;cas&quot;), &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">ctx</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">canvas</span><span>.getContext('2d'), &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">borderWidth</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">2</span><span>, &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">Balls</span><span>&nbsp;=&nbsp;[]; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">ball</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">function</span><span>(x&nbsp;,&nbsp;y&nbsp;,&nbsp;vx&nbsp;,&nbsp;vy&nbsp;,&nbsp;useCache){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.x</span><span>&nbsp;=&nbsp;x; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.y</span><span>&nbsp;=&nbsp;y; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.vx</span><span>&nbsp;=&nbsp;vx; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.vy</span><span>&nbsp;=&nbsp;vy; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.r</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">getZ</span><span>(getRandom(20,40)); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.color</span><span>&nbsp;=&nbsp;[]; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.cacheCanvas</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">document</span><span>.createElement(&quot;canvas&quot;); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute-value">this</span><span class="attribute">this.cacheCtx</span><span>&nbsp;=&nbsp;this.cacheCanvas.getContext(&quot;2d&quot;); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.cacheCanvas.width</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">2</span><span>*this.r; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.cacheCanvas.height</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">2</span><span>*this.r; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">num</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">getZ</span><span>(this.r/borderWidth); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(var&nbsp;</span><span class="attribute">j</span><span>=</span><span class="attribute-value">0</span><span>;j</span><span class="tag">&lt;</span><span class="tag-name">num</span><span>;j++){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.color.push(&quot;rgba(&quot;+getZ(getRandom(0,255))+&quot;,&quot;+getZ(getRandom(0,255))+&quot;,&quot;+getZ(getRandom(0,255))+&quot;,1)&quot;); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.useCache</span><span>&nbsp;=&nbsp;useCache; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(useCache){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cache(); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;getZ(num){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;rounded; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">rounded</span><span>&nbsp;=&nbsp;(0.5&nbsp;+&nbsp;num)&nbsp;|&nbsp;0; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;A&nbsp;double&nbsp;bitwise&nbsp;not. &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">rounded</span><span>&nbsp;=&nbsp;~~&nbsp;(0.5&nbsp;+&nbsp;num); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;Finally,&nbsp;a&nbsp;left&nbsp;bitwise&nbsp;shift. &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">rounded</span><span>&nbsp;=&nbsp;(0.5&nbsp;+&nbsp;num)&nbsp;</span><span class="tag">&lt;</span><span class="tag">&lt;</span><span>&nbsp;</span><span class="tag-name">0</span><span>; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;rounded; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">ball.prototype</span><span>&nbsp;=&nbsp;{ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;paint:function(ctx){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(!this.useCache){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.save(); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">j</span><span>=</span><span class="attribute-value">0</span><span>; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">ctx.lineWidth</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">borderWidth</span><span>; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(var&nbsp;</span><span class="attribute">i</span><span>=</span><span class="attribute-value">1</span><span>;i</span><span class="tag">&lt;</span><span class="tag-name">this.r</span><span>;i+=borderWidth){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.beginPath(); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">ctx.strokeStyle</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">this</span><span>.color[j]; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.arc(this.x&nbsp;,&nbsp;this.y&nbsp;,&nbsp;i&nbsp;,&nbsp;0&nbsp;,&nbsp;2*Math.PI); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.stroke(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;j++; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.restore(); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;else{ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.drawImage(this.cacheCanvas&nbsp;,&nbsp;this.x-this.r&nbsp;,&nbsp;this.y-this.r); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}, &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cache:function(){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cacheCtx.save(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">j</span><span>=</span><span class="attribute-value">0</span><span>; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.cacheCtx.lineWidth</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">borderWidth</span><span>; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(var&nbsp;</span><span class="attribute">i</span><span>=</span><span class="attribute-value">1</span><span>;i</span><span class="tag">&lt;</span><span class="tag-name">this.r</span><span>;i+=borderWidth){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cacheCtx.beginPath(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute-value">this</span><span class="attribute">this.cacheCtx.strokeStyle</span><span>&nbsp;=&nbsp;this.color[j]; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cacheCtx.arc(this.r&nbsp;,&nbsp;this.r&nbsp;,&nbsp;i&nbsp;,&nbsp;0&nbsp;,&nbsp;2*Math.PI); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cacheCtx.stroke(); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;j++; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.cacheCtx.restore(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}, &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;move:function(){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.x&nbsp;+=&nbsp;this.vx; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.y&nbsp;+=&nbsp;this.vy; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(this.x</span><span class="tag">&gt;</span><span>(canvas.width-this.r)||this.x</span><span class="tag">&lt;</span><span class="tag-name">this.r</span><span>){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute-value">this</span><span class="attribute">this.x</span><span>=this.x</span><span class="tag">&lt;</span><span class="tag-name">this.r</span><span>?this.r:(canvas.width-this.r); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.vx</span><span>&nbsp;=&nbsp;-this.vx; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(this.y</span><span class="tag">&gt;</span><span>(canvas.height-this.r)||this.y</span><span class="tag">&lt;</span><span class="tag-name">this.r</span><span>){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute-value">this</span><span class="attribute">this.y</span><span>=this.y</span><span class="tag">&lt;</span><span class="tag-name">this.r</span><span>?this.r:(canvas.height-this.r); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">this.vy</span><span>&nbsp;=&nbsp;-this.vy; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.paint(ctx); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">Game</span><span>&nbsp;=&nbsp;{ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;init:function(){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(var&nbsp;</span><span class="attribute">i</span><span>=</span><span class="attribute-value">0</span><span>;i</span><span class="tag">&lt;</span><span class="tag-name">1000</span><span>;i++){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">b</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">new</span><span>&nbsp;ball(getRandom(0,canvas.width)&nbsp;,&nbsp;getRandom(0,canvas.height)&nbsp;,&nbsp;getRandom(-10&nbsp;,&nbsp;10)&nbsp;,&nbsp;&nbsp;getRandom(-10&nbsp;,&nbsp;10)&nbsp;,&nbsp;true) &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Balls.push(b); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}, &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;update:function(){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctx.clearRect(0,0,canvas.width,canvas.height); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(var&nbsp;</span><span class="attribute">i</span><span>=</span><span class="attribute-value">0</span><span>;i</span><span class="tag">&lt;</span><span class="tag-name">Balls.length</span><span>;i++){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Balls[i].move(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}, &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loop:function(){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;</span><span class="attribute">_this</span><span>&nbsp;=&nbsp;this; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.update(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RAF(function(){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_this.loop(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}) &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}, &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;start:function(){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.init(); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.loop(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">window.RAF</span><span>&nbsp;=&nbsp;(function(){ &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;window.requestAnimationFrame&nbsp;||&nbsp;window.webkitRequestAnimationFrame&nbsp;||&nbsp;window.mozRequestAnimationFrame&nbsp;||&nbsp;window.oRequestAnimationFrame&nbsp;||&nbsp;window.msRequestAnimationFrame&nbsp;||&nbsp;function&nbsp;(callback)&nbsp;{window.setTimeout(callback,&nbsp;1000&nbsp;/&nbsp;60);&nbsp;}; &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;})(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;Game; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}(); &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;getRandom(a&nbsp;,&nbsp;b){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;Math.random()*(b-a)+a; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="attribute">window.onload</span><span>&nbsp;=&nbsp;</span><span class="attribute-value">function</span><span>(){ &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;testBox.start(); &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} &nbsp;&nbsp;</span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="tag">&lt;/</span><span class="tag-name">script</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li class="alt"><span></span><span class="tag">&lt;/</span><span class="tag-name">body</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+<li><span></span><span class="tag">&lt;/</span><span class="tag-name">html</span><span class="tag">&gt;</span><span>&nbsp;&nbsp;</span></li>
+</ol>
+</div>
+</div>
+<p></p>
+<p>　　离屏canvas还有一个注意事项，如果你做的效果是会将对象不停地创建和销毁，请慎重使用离屏canvas，至少不要像我上面写的那样给每个对象的属性绑定离屏canvas。</p>
+<p>　　因为如果这样绑定，当对象被销毁时，离屏canvas也会被销毁，而大量的离屏canvas不停地被创建和销毁，会导致canvas buffer耗费大量GPU资源，容易造成浏览器崩溃或者严重卡帧现象。解决办法就是弄一个离屏canvas数组，预先装进足够数量的离屏canvas，仅将仍然存活的对象缓存起来，当对象被销毁时，再解除缓存。这样就不会导致离屏canvas被销毁了。</p>
+<p>&nbsp;</p>
+<p>　【使用requestAnimationFrame】</p>
+<p>　　这个就不具体解释了，估计很多人都知道，这个才是做动画的最佳循环，而不是setTimeout或者setInterval。直接贴出兼容性写法：</p>
+<div class="codeText">
+<div class="codeHead"><span class="lantxt">XML/HTML Code</span><span style="CURSOR: pointer" class="copyCodeText" onclick="copyIdText('code_8080')">复制内容到剪贴板</span></div>
+<div>
+<ol class="dp-xml">
+<li class="alt"><span><span class="attribute">window.RAF</span><span>&nbsp;=&nbsp;(function(){ &nbsp;&nbsp;</span></span></li>
+<li><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;window.requestAnimationFrame&nbsp;||&nbsp;window.webkitRequestAnimationFrame&nbsp;||&nbsp;window.mozRequestAnimationFrame&nbsp;||&nbsp;window.oRequestAnimationFrame&nbsp;||&nbsp;window.msRequestAnimationFrame&nbsp;||&nbsp;function&nbsp;(callback)&nbsp;{window.setTimeout(callback,&nbsp;1000&nbsp;/&nbsp;60);&nbsp;}; &nbsp;&nbsp;</span></li>
+<li class="alt"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;})();&nbsp;&nbsp;&nbsp;</span></li>
+</ol>
+</div>
+</div>
+<p>　　</p>
+<p>　　【避免浮点运算】</p>
+<p>　　虽然javascript提供了很方便的一些取整方法，像Math.floor，Math.ceil，parseInt，但是，国外友人做过测试，parseInt这个方法做了一些额外的工作（比如检测数据是不是有效的数值，parseInt 甚至先将参数转换成了字符串!），所以，直接用parseInt的话相对来说比较消耗性能，那怎样取整呢，可以直接用老外写的很巧妙的方法了：</p>
+<div class="codeText">
+<div>
+<ol class="dp-xml">
+<div class="codeText">
+<div class="codeHead"><span class="lantxt">JavaScript Code</span><span style="CURSOR: pointer" class="copyCodeText" onclick="copyIdText('code_2883')">复制内容到剪贴板</span></div>
+<p class="alt"><span><span>1.rounded&nbsp;=&nbsp;(0.5&nbsp;+&nbsp;somenum)&nbsp;|&nbsp;0;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;</span></span></p>
+<p><span>2.rounded&nbsp;=&nbsp;~~&nbsp;(0.5&nbsp;+&nbsp;somenum);&nbsp;&nbsp;&nbsp;3.rounded&nbsp;=&nbsp;(0.5&nbsp;+&nbsp;somenum)&nbsp;&lt;&lt;&nbsp;0;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;</span></p>
+</div>
+运算符不懂的可以直接戳：http://www.w3school.com.cn/js/pro_js_operators_bitwise.asp&nbsp; 里面有详细解释</ol>
+</div>
+</div>
+<p>　　</p>
+<p>　　【尽量减少canvasAPI的调用】</p>
+<p>　　作粒子效果时，尽量少使用圆，最好使用方形，因为粒子太小，所以方形看上去也跟圆差不多。至于原因，很容易理解，我们画一个圆需要三个步骤：先beginPath，然后用arc画弧，再用fill进行填充才能产生一个圆。但是画方形，只需要一个fillRect就可以了。虽然只是差了两个调用，当粒子对象数量达到一定时，这性能差距就会显示出来了。</p>
+<p>　　还有一些其他注意事项，我就不一一列举了，因为谷歌上一搜也挺多的。我这也算是一个给自己做下记录，主要是记录缓存的用法。想要提升canvas的性能最主要的还是得注意代码的结构，减少不必要的API调用，在每一帧中减少复杂的运算或者把复杂运算由每一帧算一次改成数帧算一次。同时，上面所述的缓存用法，我因为贪图方便，所以是每个对象一个离屏canvas，其实离屏canvas也不能用的太泛滥，如果用太多离屏canvas也会有性能问题，请尽量合理利用离屏canvas。</p>
+<p>&nbsp;　　源码地址：https://github.com/whxaxes/canvas-test/tree/gh-pages/src/Other-demo/cache<br /></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/98676.html'>C++中的Lambda表达式详解</a><a>下一篇</a><a href='/php/biji/98678.html'>js正则表达式test()和exec()用法实例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

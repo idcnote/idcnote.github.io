@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>浅析Node.js 中 Stream API 的使用_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="本文由浅入深给大家介绍node.js stream api，具体详情请看下文吧。<br />
+基本介绍<br />
+在 Node.js 中，读取文件的方式有两种，一种是用 fs.readFile ，另外一种是利用 fs.createReadStream" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">浅析Node.js 中 Stream API 的使用</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>本文由浅入深给大家介绍node.js stream api，具体详情请看下文吧。<br />
+基本介绍<br />
+在 Node.js 中，读取文件的方式有两种，一种是用 fs.readFile ，另外一种是利用 fs.createReadStream</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>本文由浅入深给大家介绍node.js stream api，具体详情请看下文吧。</p>
+<p><strong>基本介绍</strong></p>
+<p>在 Node.js 中，读取文件的方式有两种，一种是用 fs.readFile ，另外一种是利用 fs.createReadStream 来读取。</p>
+<p>fs.readFile 对于每个 Node.js 使用者来说最熟悉不过了，简单易懂，很好上手。但它的缺点是会先将数据全部读入内存，一旦遇到大文件的时候，这种方式读取的效率就非常低下了。</p>
+<p>而 fs.createReadStream 则是通过 Stream 来读取数据，它会把文件（数据）分割成小块，然后触发一些特定的事件，我们可以监听这些事件，编写特定的处理函数。这种方式相对上面来说，并不好上手，但它效率非常高。</p>
+<p>事实上， Stream 在 Node.js 中并非仅仅用在文件处理上，其他地方也可以看到它的身影，如 process.stdin/stdout , http , tcp sockets , zlib , crypto 等都有用到。</p>
+<p>本文是我学习 Node.js 中的 Stream API 中的一点总结，希望对大家有用。</p>
+<p><strong>特点</strong></p>
+<p>基于事件通讯</p>
+<p>可以通过 pipe 来连接流</p>
+<p><strong>种类</strong></p>
+<p>Readable Stream 可读数据流</p>
+<p>Writeable Stream 可写数据流</p>
+<p>Duplex Stream 双向数据流，可以同时读和写</p>
+<p>Transform Stream 转换数据流，可读可写，同时可以转换（处理）数据</p>
+<p><strong>事件</strong></p>
+<p>可读数据流的事件</p>
+<p>readable 数据向外流时触发</p>
+<p>data 对于那些没有显式暂停的数据流，添加data事件监听函数，会将数据流切换到流动态，尽快向外提供数据</p>
+<p>end 读取完数据时触发。注意不能和 writeableStream.end() 混淆，writeableStream 并没有 end 事件，只有 .end() 方法</p>
+<p>close 数据源关闭时触发</p>
+<p>error 读取数据发生错误时触发</p>
+<p><strong>可写数据流的事件</strong></p>
+<p>drain writable.write(chunk) 返回 false 之后，缓存全部写入完成，可以重新写入时就会触发</p>
+<p>finish 调用 .end 方法时，所有缓存的数据释放后触发，类似于可读数据流中的 end 事件，表示写入过程结束</p>
+<p>pipe 作为 pipe 目标时触发</p>
+<p>unpipe 作为 unpipe 目标时触发</p>
+<p>error 写入数据发生错误时触发</p>
+<p><strong>状态</strong></p>
+<p>可读数据流有两种状态： 流动态 和 暂停态 ，改变数据流状态的方法如下：</p>
+<p>暂停态 -&gt; 流动态</p>
+<p>添加 data 事件的监听函数</p>
+<p>调用 resume 方法</p>
+<p>调用 pipe 方法</p>
+<p>注意：如果转为流动态时，没有 data 事件的监听函数，也没有 pipe 方法的目的地，那么数据将遗失。</p>
+<p>流动态 -&gt; 暂停态</p>
+<p>不存在 pipe 方法的目的地时，调用 pause 方法</p>
+<p>存在 pipe 方法的目的地时，移除所有 data 事件的监听函数，并且调用 unpipe 方法，移除所有 pipe 方法的目的地</p>
+<p>注意：只移除 data 事件的监听函数，并不会自动引发数据流进入「暂停态」。另外，存在 pipe 方法的目的地时，调用 pause 方法，并不能保证数据流总是处于暂停态，一旦那些目的地发出数据请求，数据流有可能会继续提供数据。</p>
+<p><strong>用法</strong></p>
+<p>读写文件</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+var fs = require('fs');
+// 新建可读数据流
+var rs = fs.createReadStream('./test1.txt');
+// 新建可写数据流
+var ws = fs.createWriteStream('./test2.txt');
+// 监听可读数据流结束事件
+rs.on('end', function() {
+ console.log('read text1.txt successfully!');
+});
+// 监听可写数据流结束事件
+ws.on('finish', function() {
+ console.log('write text2.txt successfully!');
+});
+// 把可读数据流转换成流动态，流进可写数据流中
+rs.pipe(ws);
+读取 CSV 文件，并上传数据（我在生产环境中写过）
+var fs = require('fs');
+var es = require('event-stream');
+var csv = require('csv');
+var parser = csv.parse();
+var transformer = csv.transform(function(record) {
+ return record.join(',');
+});
+var data = fs.createReadStream('./demo.csv');
+data
+ .pipe(parser)
+ .pipe(transformer)
+ // 处理前一个 stream 传递过来的数据
+ .pipe(es.map(function(data, callback) {
+  upload(data, function(err) {
+   callback(err);
+  });
+ }))
+ // 相当于监听前一个 stream 的 end 事件
+ .pipe(es.wait(function(err, body) {
+  process.stdout.write('done!');
+ }));</pre>
+</div>
+<p><strong>更多用法</strong></p>
+<p>可以参考一下 https://github.com/jeresig/node-stream-playground ，进去示例网站之后直接点 add stream 就能看到结果了。</p>
+<p><strong>常见坑</strong></p>
+<p>用 rs.pipe(ws) 的方式来写文件并不是把 rs 的内容 append 到 ws 后面，而是直接用 rs 的内容覆盖 ws 原有的内容</p>
+<p>已结束/关闭的流不能重复使用，必须重新创建数据流</p>
+<p>pipe 方法返回的是目标数据流，如 a.pipe(b) 返回的是 b，因此监听事件的时候请注意你监听的对象是否正确</p>
+<p>如果你要监听多个数据流，同时你又使用了 pipe 方法来串联数据流的话，你就要写成：</p>
+<p><strong>data</strong></p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+.on('end', function() {
+ console.log('data end');
+})
+.pipe(a)
+.on('end', function() {
+ console.log('a end');
+})
+.pipe(b)
+.on('end', function() {
+ console.log('b end');
+});</pre>
+</div>
+<p><strong>常用类库</strong></p>
+<p>event-stream 用起来有函数式编程的感觉，个人比较喜欢</p>
+<p>awesome-nodejs#streams 由于其他 stream 库我都没用过，所以有需求的就直接看这里吧</p>
+<p>以上内容是小编给大家介绍的Node.js 中 Stream API 的使用，希望大家喜欢。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/87303.html'>Mysql获取当前日期的前几天日期的方法</a><a>下一篇</a><a href='/php/biji/87305.html'>jQuery中的height innerHeight outerHeight区别示例介绍</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

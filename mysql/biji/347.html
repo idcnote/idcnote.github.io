@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL 8.0.15配置MGR单主多从的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL 8.0.15配置MGR单主多从的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+一、简介" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL 8.0.15配置MGR单主多从的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:15:25                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL 8.0.15配置MGR单主多从的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+一、简介</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL 8.0.15配置MGR单主多从的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h3>一、简介</h3>
+<p>MySQL Group Replication（简称MGR）字面意思是mysql组复制的意思,但其实他是一个高可用的集群架构,暂时只支持mysql5.7和mysql8.0版本.</p>
+<p>是MySQL官方于2016年12月推出的一个全新的高可用与高扩展的解决方案,提供了高可用、高扩展、高可靠的MySQL集群服务.</p>
+<p>也是mysql官方基于组复制概念并充分参考MariaDB Galera Cluster和Percona XtraDB Cluster结合而来的新的高可用集群架构.</p>
+<p>MySQL Group Replication是建立在基于Paxos的XCom之上的，正因为有了XCom基础设施，保证数据库状态机在节点间的事务一致性，才能在理论和实践中保证数据库系统在不同节点间的事务一致性。</p>
+<p>由一般主从复制概念扩展,多个节点共同组成一个数据库集群，事务的提交必须经过半数以上节点同意方可提交,在集群中每个节点上都维护一个数据库状态机，保证节点间事务的一致性。</p>
+<h3>优点:</h3>
+<p>高一致性，基于原生复制及paxos协议的组复制技术.</p>
+<p>高容错性，有自动检测机制，当出现宕机后,会自动剔除问题节点,其他节点可以正常使用(类似zk集群),当不同节点产生资源争用冲突时,会按照先到先得处理,并且内置了自动化脑裂防护机制.</p>
+<p>高扩展性，可随时在线新增和移除节点,会自动同步所有节点上状态，直到新节点和其他节点保持一致，自动维护新的组信息.</p>
+<p>高灵活性，直接插件形式安装(5.7.17后自带.so插件),有单主模式和多主模式，单主模式下，只有主库可以读写,其他从库会加上super_read_only状态,只能读取不可写入,出现故障会自动选主.</p>
+<h3>缺点:</h3>
+<p>还是太新,不太稳定,暂时性能还略差于PXC,对网络稳定性要求很高,至少是同机房做.</p>
+<h3>二、环境介绍</h3>
+<p>MySQL版本：8.0.15</p>
+<p>数据库端口：3306</p>
+<p>集群复制端口：33006</p>
+<p>MGR插件：<code>group_replication.so</code></p>
+<p>10.115.88.18：单主</p>
+<p>10.115.88.19：从</p>
+<p>10.115.88.20：从</p>
+<h3>三、安装MySQL 8.0.15</h3>
+<p>3.1.1 下载地址：</p>
+<p>https://cdn.mysql.com//Downloads/MySQL-8.0/mysql-8.0.15-linux-glibc2.12-x86_64.tar</p>
+<p>3.1.2： 安装数据库</p>
+<p>解压</p>
+<p>代码如下：</p>
+<pre>
+<code>
+tar -xf mysql-8.0.15-linux-glibc2.12-x86_64.tar -C /home/work</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>进入解压目录</p>
+<p>代码如下：</p>
+<pre>
+<code>
+cd /home/work
+
+tar xf mysql-8.0.15-linux-glibc2.12-x86_64.tar.gz
+
+mv mysql-8.0.15-linux-glibc2.12-x86_64 mysql
+
+rm -rf *.xz</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>授予权限并创建数据目录</p>
+<p>代码如下：</p>
+<pre>
+<code>
+cd /home/work
+
+tar xf mysql-8.0.15-linux-glibc2.12-x86_64.tar.gz
+
+mv mysql-8.0.15-linux-glibc2.12-x86_64 mysql
+
+rm -rf *.xz
+  chown -R work:work mysql
+  mkdir data
+  chown work:work data
+  cd /home/work/mysql
+ 
+  cd /home/work  mkdir /home/work/relaylog   chown -R work:work relaylog
+  cd /home/work/mysql  mkdir run  chown -R work:work run</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>添加my.cnf文件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[client]
+default-character-set=utf8
+socket=/home/work/mysql/run/mysql.sock
+
+[mysqld]
+user = work 
+port = 3306
+basedir=/home/work/mysql
+datadir=/home/work/data
+socket=/home/work/mysql/run/mysql.sock
+pid-file=/home/work/mysql/run/mysqld.pid
+# Disabling symbolic-links is recommended to prevent assorted security risks
+symbolic-links=0
+lower_case_table_names = 1
+
+
+server-id = 183306 
+log-bin = mysql-bin
+log-bin-index = binlogs.index
+binlog_format = row
+binlog_rows_query_log_events = on
+binlog_checksum = none
+
+slave-parallel-type = LOGICAL_CLOCK
+slave-parallel-workers = 4
+slave_preserve_commit_order = 1
+
+#GITD
+gtid_mode = on
+enforce_gtid_consistency = 1
+log-slave-updates = 1
+binlog_gtid_simple_recovery = 1
+
+relay_log = /home/work/relaylog/relay.log
+relay-log-index = /home/work/relaylog/relay.index
+master_info_repository = table
+relay_log_info_repository = table
+
+plugin_load="group_replication=group_replication.so"
+
+#MGR
+#GR配置项 基中loose前缀表示若group Replication plugin未加载 mysql server仍明治维新启动
+transaction_write_set_extraction = XXHASH64 #对每个事务获取write set，并且用XXHASH64算法获取hash值
+loose-group_replication_group_name = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" #组名，此处可拿select.uuid()生成
+loose-group_replication_start_on_boot = off #在mysqld启动时不自动启动组复制
+loose-group_replication_local_address = "10.115.88.18:33006" #本节点的IP地址和端口，注意该端口是组内成员之间通信的端口，而不是MySQL对外提供服务的端口
+loose-group_replication_group_seeds = "10.115.88.18:33006,10.115.88.19:33006,10.115.88.20:33006" #种子节点的IP和端口号，新成员加入到集群的时候需要联系种子节点，启动集群的节点不使用该选项
+loose-group_replication_bootstrap_group = off #关闭，如果打开会造成脑裂 #是否启动集群，注意，该选项任何时候只能用于一个节点，通常情况下启动集群的时候使用，启动之后需要关闭该选项
+
+loose-group_replication_member_weight = 50 #权重选择
+
+
+skip-host-cache
+skip-name-resolve
+skip-external-locking
+character-set-server=utf8
+lower_case_table_names=1
+event_scheduler=on
+log_bin_trust_function_creators=on
+
+max_connections = 3000 
+external-locking = FALSE 
+max_allowed_packet = 32M 
+sort_buffer_size = 8M 
+join_buffer_size = 2M 
+thread_cache_size = 300 
+#query_cache_size = 64M 
+#query_cache_limit = 4M 
+read_rnd_buffer_size = 8M
+
+innodb_buffer_pool_size = 8096M
+innodb_log_file_size = 128M
+innodb_log_files_in_group = 2
+innodb_log_buffer_size = 2M
+innodb_flush_log_at_trx_commit = 1
+sync_binlog = 1
+
+
+
+[mysqld_safe]
+log-error=/home/work/data/err.log</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>初始化数据库</p>
+<p>代码如下：</p>
+<pre>
+<code>
+bin/mysqld --initialize --basedir=/home/work/mysql --lower-case-table-names=1 --datadir=/home/work/data/ --user=work
+</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>拷贝启动文件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+cp support-files/mysql.server /etc/init.d/mysqld
+</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>添加环境变量</p>
+<p>代码如下：</p>
+<pre>
+<code>
+echo 'export PATH=/home/work/mysql/bin:$PATH' &gt;&gt;/etc/profile
+source /etc/profile
+</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>数据库启动</p>
+<p>代码如下：</p>
+<pre>
+<code>
+/etc/init.d/mysqld start
+</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>修改数据库密码</p>
+<p>代码如下：</p>
+<pre>
+<code>
+alter user'root'@'localhost' IDENTIFIED BY 'dashuaige'; 
+
+flush privileges;
+
+</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p></p>
+<h3>四、配置MGR主</h3>
+<p></p>
+<p></p>
+<h3>4.1.1 配置my.cnf文件</h3>
+<p></p>
+<p>修改binlog如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+server-id = 103306
+log-bin = mysql-bin
+log-bin-index = binlogs.index
+binlog_format = row
+binlog_rows_query_log_events = on
+binlog_checksum = none
+
+slave-parallel-type = LOGICAL_CLOCK
+slave-parallel-workers = 4
+slave_preserve_commit_order = 1</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>修改GTID如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+gtid_mode = on
+enforce_gtid_consistency = 1
+log-slave-updates = 1
+binlog_gtid_simple_recovery = 1
+
+relay_log = /home/work/relaylog/relay.log
+relay-log-index = /home/work/relaylog/relay.index
+master_info_repository = table
+relay_log_info_repository = table</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>添加MGR插件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+plugin_load="group_replication=group_replication.so"</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>修改MGR参数</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#GR配置项 基中loose前缀表示若group Replication plugin未加载 mysql server仍明治维新启动
+transaction_write_set_extraction = XXHASH64 #对每个事务获取write set，并且用XXHASH64算法获取hash值
+loose-group_replication_group_name = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" #组名，此处可拿select.uuid()生成
+loose-group_replication_start_on_boot = off #在mysqld启动时不自动启动组复制
+loose-group_replication_local_address = "10.115.88.18:33006" #本节点的IP地址和端口，注意该端口是组内成员之间通信的端口，而不是MySQL对外提供服务的端口
+loose-group_replication_group_seeds = "10.115.88.18:33006,10.115.88.19:33006,10.115.88.20:33006" #种子节点的IP和端口号，新成员加入到集群的时候需要联系种子节点，启动集群的节点不使用该选项
+loose-group_replication_bootstrap_group = off #关闭，如果打开会造成脑裂 #是否启动集群，注意，该选项任何时候只能用于一个节点，通常情况下启动集群的时候使用，启动之后需要关闭该选项
+
+loose-group_replication_member_weight = 50 #权重选择</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>启动数据库</p>
+<p>代码如下：</p>
+<pre>
+<code>
+/etc/init.d/mysqld restart</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>4.1.2 配置每台hosts主机解析</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@bj1-10-115-88-18 mysql]# cat /etc/hosts
+127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1   localhost localhost.localdomain localhost6 localhost6.localdomain6
+10.115.88.18 bj1-10-115-88-18
+10.115.88.19 bj1-10-115-88-19
+10.115.88.20 bj1-10-115-88-20</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>4.1.3 配置mgr第一个主节点</p>
+<p>以下步骤在10.115.88.18主机上的mysql中执行</p>
+<p>第一步：创建用于复制的用户</p>
+<p>代码如下：</p>
+<pre>
+<code>
+set sql_log_bin=0;
+create user repuser@'%' identified by 'repuser123';
+
+grant replication slave,replication client on *.* to repuser@'%';
+
+create user repuser@'127.0.0.1' identified by 'repuser123';
+
+grant replication slave,replication client on *.* to repuser@'127.0.0.1';
+
+create user repuser@'localhost' identified by 'repuser123';
+
+grant replication slave,replication client on *.* to repuser@'localhost';
+
+set sql_log_bin=1;</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>第二步：配置复制所使用的用户</p>
+<p>代码如下：</p>
+<pre>
+<code>
+change master to master_user='repuser',master_password='repuser123' for channel 'group_replication_recovery';</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>第三步：安装mysql group replication这个插件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+备注：如果在my.cnf里写写入plugin_load="group_replication=group_replication.so" 这步就可以不用操作
+
+install plugin group_replication soname 'group_replication.so';
+
+
+通过show plugins;查看是否安装成功</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>第四步：建个群(官方点的说法就是初始化一个复制组</p>
+<p>代码如下：</p>
+<pre>
+<code>
+set global group_replication_bootstrap_group=on;
+start group_replication;
+set global group_replication_bootstrap_group=off;
+
+select * from performance_schema.replication_group_members;</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>五、配置另外两节点，从</h3>
+<p></p>
+<p>以下步骤在所有从主机上的mysql中执行</p>
+<p>第一步：创建用于复制的用户</p>
+<p>代码如下：</p>
+<pre>
+<code>
+set sql_log_bin=0;
+create user repuser@'%' identified by 'repuser123';
+
+grant replication slave,replication client on *.* to repuser@'%';
+
+create user repuser@'127.0.0.1' identified by 'repuser123';
+
+grant replication slave,replication client on *.* to repuser@'127.0.0.1';
+
+create user repuser@'localhost' identified by 'repuser123';
+
+grant replication slave,replication client on *.* to repuser@'localhost';
+
+set sql_log_bin=1;</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>第二步：配置复制所使用的用户</p>
+<p>代码如下：</p>
+<pre>
+<code>
+change master to master_user='repuser',master_password='repuser123' for channel 'group_replication_recovery';</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>第三步：安装mysql group replication这个插件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+备注：如果在my.cnf里写写入plugin_load="group_replication=group_replication.so" 这步就可以不用操作
+
+install plugin group_replication soname 'group_replication.so';
+
+
+通过show plugins;查看是否安装成功</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>第四步：加入前面创建好的复制组</p>
+<p>代码如下：</p>
+<pre>
+<code>
+start group_replication;
+select * from performance_schema.replication_group_members;</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>如下出现以下报错</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>这是binlog导致的错误，执行以下</p>
+<p>代码如下：</p>
+<pre>
+<code>
+reset master;
+start group_replication;
+select * from performance_schema.replication_group_members;</code></pre>
+<p>MySQL 8.0.15配置MGR单主多从的方法</p>
+<p>查看是MGR状态：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>查看MGR主的读写状态</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>查看MGR两台从的读写状态</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>到此这篇关于MySQL 8.0.15配置MGR单主多从的方法的文章就介绍到这了,更多相关MySQL MGR单主多从内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL 8.0.15配置MGR单主多从的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/346.html'>阿里云服务器安装MySQL数据库的实现方法</a><a>下一篇</a><a href='/mysql/biji/348.html'>MySQL查看与修改字符集的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

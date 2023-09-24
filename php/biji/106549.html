@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Linux内核的文件预读详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="Linux文件预读算法磁盘I/O性能的发展远远滞后于CPU和内存，因而成为现代计算机系统的一个主要瓶颈。预读可以有效的减少磁盘的寻道次数和应用程序的I/O等待时间，是改进磁盘读I/" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Linux内核的文件预读详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>Linux文件预读算法磁盘I/O性能的发展远远滞后于CPU和内存，因而成为现代计算机系统的一个主要瓶颈。预读可以有效的减少磁盘的寻道次数和应用程序的I/O等待时间，是改进磁盘读I/</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>Linux文件预读算法磁盘I/O性能的发展远远滞后于CPU和内存，因而成为现代计算机系统的一个主要瓶颈。预读可以有效的减少磁盘的寻道次数和应用程序的I/O等待时间，是改进磁盘读I/O性能的重要优化手段之一。本文作者是中国科学技术大学自动化系的博士生，他在1998年开始学习Linux，为了优化服务器的性能，他开始尝试改进Linux kernel，并最终重写了内核的文件预读部分，这些改进被收录到Linux Kernel 2.6.23及其后续版本中。</p>
+<p>从寄存器、L1/L2高速缓存、内存、闪存，到磁盘/光盘/磁带/存储网络，计算机的各级存储器硬件组成了一个金字塔结构。越是底层存储容量越大。然而访问速度也越慢，具体表现为更小的带宽和更大的延迟。因而这很自然的便成为一个金字塔形的逐层缓存结构。由此产生了三类基本的缓存管理和优化问题：</p>
+<p>◆预取(prefetching)算法，从慢速存储中加载数据到缓存;</p>
+<p>◆替换(replacement)算法，从缓存中丢弃无用数据;</p>
+<p>◆写回(writeback)算法，把脏数据从缓存中保存到慢速存储。</p>
+<p>其中的预取算法，在磁盘这一层次尤为重要。磁盘的机械臂+旋转盘片的数据定位与读取方式，决定了它最突出的性能特点:擅长顺序读写，不善于随机I/O，I/O延迟非常大。由此而产生了两个方面的预读需求。</p>
+<p><strong>来自磁盘的需求</strong></p>
+<p>简单的说，磁盘的一个典型I/O操作由两个阶段组成：</p>
+<p>1.数据定位</p>
+<p>平均定位时间主要由两部分组成：平均寻道时间和平均转动延迟。寻道时间的典型值是4.6ms。转动延迟则取决于磁盘的转速：普通7200RPM桌面硬盘的转动延迟是4.2ms，而高端10000RPM的是3ms。这些数字多年来一直徘徊不前，大概今后也无法有大的改善了。在下文中，我们不妨使用 8ms作为典型定位时间。</p>
+<p>2.数据传输</p>
+<p>持续传输率主要取决于盘片的转速(线速度)和存储密度，最新的典型值为80MB/s。虽然磁盘转速难以提高，但是存储密度却在逐年改善。巨磁阻、垂直磁记录等一系列新技术的采用，不但大大提高了磁盘容量，也同时带来了更高的持续传输率。</p>
+<p>显然，I/O的粒度越大，传输时间在总时间中的比重就会越大，因而磁盘利用率和吞吐量就会越大。简单的估算结果如表1所示。如果进行大量4KB的随机I/O，那么磁盘在99%以上的时间内都在忙着定位，单个磁盘的吞吐量不到500KB/s。但是当I/O大小达到1MB的时候，吞吐量可接近50MB /s。由此可见，采用更大的I/O粒度，可以把磁盘的利用效率和吞吐量提高整整100倍。因而必须尽一切可能避免小尺寸I/O，这正是预读算法所要做的。</p>
+<p align="center"></p>
+<p align="center">表1随机读大小与磁盘性能的关系</p>
+<p><strong>来自程序的需求</strong></p>
+<p>应用程序处理数据的一个典型流程是这样的:while(!done) { read(); compute(); }。假设这个循环要重复5次，总共处理5批数据，则程序运行的时序图可能如图1所示。</p>
+<p align="center"></p>
+<p align="center">图1典型的I/O时序图</p>
+<p>不难看出，磁盘和CPU是在交替忙碌：当进行磁盘I/O的时候，CPU在等待;当CPU在计算和处理数据时，磁盘是空闲的。那么是不是可以让两者流水线作业，以便加快程序的执行速度?预读可以帮助达成这一目标。基本的方法是，当CPU开始处理第1批数据的时候，由内核的预读机制预加载下一批数据。这时候的预读是在后台异步进行的，如图2所示。</p>
+<p align="center"></p>
+<p align="center">图2预读的流水线作业</p>
+<p>注意，在这里我们并没有改变应用程序的行为：程序的下一个读请求仍然是在处理完当前的数据之后才发出的。只是这时候的被请求的数据可能已经在内核缓存中了，无须等待，直接就能复制过来用。在这里，异步预读的功能是对上层应用程序&ldquo;隐藏&rdquo;磁盘I/O的大延迟。虽然延迟事实上仍然存在，但是应用程序看不到了，因而运行的更流畅。</p>
+<p><strong>预读的概念</strong></p>
+<p>预取算法的涵义和应用非常广泛。它存在于CPU、硬盘、内核、应用程序以及网络的各个层次。预取有两种方案：启发性的(heuristic prefetching)和知情的(informed prefetching)。前者自动自发的进行预读决策，对上层应用是透明的，但是对算法的要求较高，存在命中率的问题;后者则简单的提供API接口，而由上层程序给予明确的预读指示。在磁盘这个层次，Linux为我们提供了三个API接口：posix_fadvise(2), readahead(2), madvise(2)。</p>
+<p>不过真正使用上述预读API的应用程序并不多见：因为一般情况下，内核中的启发式算法工作的很好。预读(readahead)算法预测即将访问的页面，并提前把它们批量的读入缓存。</p>
+<p>它的主要功能和任务可以用三个关键词来概括：</p>
+<p>◆批量，也就是把小I/O聚集为大I/O，以改善磁盘的利用率，提升系统的吞吐量。</p>
+<p>◆提前，也就是对应用程序隐藏磁盘的I/O延迟，以加快程序运行。</p>
+<p>◆ 预测，这是预读算法的核心任务。前两个功能的达成都有赖于准确的预测能力。当前包括Linux、FreeBSD和Solaris等主流操作系统都遵循了一个简单有效的原则：把读模式分为随机读和顺序读两大类，并只对顺序读进行预读。这一原则相对保守，但是可以保证很高的预读命中率，同时有效率/覆盖率也很好。因为顺序读是最简单而普遍的，而随机读在内核来说也确实是难以预测的。</p>
+<p><strong>Linux的预读架构</strong></p>
+<p>Linux内核的一大特色就是支持最多的文件系统，并拥有一个虚拟文件系统(VFS)层。早在2002年，也就是2.5内核的开发过程中，Andrew Morton在VFS层引入了文件预读的基本框架，以统一支持各个文件系统。如图所示，Linux内核会将它最近访问过的文件页面缓存在内存中一段时间，这个文件缓存被称为pagecache。如图3所示。一般的read()操作发生在应用程序提供的缓冲区与pagecache之间。而预读算法则负责填充这个pagecache。应用程序的读缓存一般都比较小，比如文件拷贝命令cp的读写粒度就是4KB;内核的预读算法则会以它认为更合适的大小进行预读 I/O，比比如16-128KB。</p>
+<p align="center"></p>
+<p align="center">图3以pagecache为中心的读和预读</p>
+<p>大约一年之后，Linus Torvalds把mmap缺页I/O的预取算法单独列出，从而形成了read-around/read-ahead两个独立算法(图4)。read- around算法适用于那些以mmap方式访问的程序代码和数据，它们具有很强的局域性(locality of reference)特征。当有缺页事件发生时，它以当前页面为中心，往前往后预取共计128KB页面。而readahead算法主要针对read()系统调用，它们一般都具有很好的顺序特性。但是随机和非典型的读取模式也大量存在，因而readahead算法必须具有很好的智能和适应性。</p>
+<p align="center"></p>
+<p align="center">图4 Linux中的read-around, read-ahead和direct read</p>
+<p>又过了一年，通过Steven Pratt、Ram Pai等人的大量工作，readahead算法进一步完善。其中最重要的一点是实现了对随机读的完好支持。随机读在数据库应用中处于非常突出的地位。在此之前，预读算法以离散的读页面位置作为输入，一个多页面的随机读会触发&ldquo;顺序预读&rdquo;。这导致了预读I/O数的增加和命中率的下降。改进后的算法通过监控所有完整的read()调用，同时得到读请求的页面偏移量和数量，因而能够更好的区分顺序读和随机读。</p>
+<p><strong>预读算法概要</strong></p>
+<p>这一节以linux 2.6.22为例，来剖析预读算法的几个要点。</p>
+<p>1.顺序性检测</p>
+<p>为了保证预读命中率，Linux只对顺序读(sequential read)进行预读。内核通过验证如下两个条件来判定一个read()是否顺序读：</p>
+<p>◆这是文件被打开后的第一次读，并且读的是文件首部;</p>
+<p>◆当前的读请求与前一(记录的)读请求在文件内的位置是连续的。</p>
+<p>如果不满足上述顺序性条件，就判定为随机读。任何一个随机读都将终止当前的顺序序列，从而终止预读行为(而不是缩减预读大小)。注意这里的空间顺序性说的是文件内的偏移量，而不是指物理磁盘扇区的连续性。在这里Linux作了一种简化，它行之有效的基本前提是文件在磁盘上是基本连续存储的，没有严重的碎片化。</p>
+<p>2.流水线预读</p>
+<p>当程序在处理一批数据时，我们希望内核能在后台把下一批数据事先准备好，以便CPU和硬盘能流水线作业。Linux用两个预读窗口来跟踪当前顺序流的预读状态：current窗口和ahead窗口。其中的ahead窗口便是为流水线准备的：当应用程序工作在current窗口时，内核可能正在 ahead窗口进行异步预读;一旦程序进入当前的ahead窗口，内核就会立即往前推进两个窗口，并在新的ahead窗口中启动预读I/O。</p>
+<p>3.预读的大小</p>
+<p>当确定了要进行顺序预读(sequential readahead)时，就需要决定合适的预读大小。预读粒度太小的话，达不到应有的性能提升效果;预读太多，又有可能载入太多程序不需要的页面，造成资源浪费。为此，Linux采用了一个快速的窗口扩张过程：</p>
+<p>◆首次预读：readahead_size = read_size * 2; // or *4</p>
+<p>预读窗口的初始值是读大小的二到四倍。这意味着在您的程序中使用较大的读粒度(比如32KB)可以稍稍提升I/O效率。</p>
+<p>◆后续预读：readahead_size *= 2;</p>
+<p>后续的预读窗口将逐次倍增，直到达到系统设定的最大预读大小，其缺省值是128KB。这个缺省值已经沿用至少五年了，在当前更快的硬盘和大容量内存面前，显得太过保守。比如西部数据公司近年推出的WD Raptor 猛禽 10000RPM SATA 硬盘，在进行128KB随机读的时候，只能达到16%的磁盘利用率(图5)。所以如果您运行着Linux服务器或者桌面系统，不妨试着用如下命令把最大预读值提升到1MB看看，或许会有惊喜：</p>
+<p># blockdev&ndash;setra 2048 /dev/sda</p>
+<p>当然预读大小不是越大越好，在很多情况下，也需要同时考虑I/O延迟问题。</p>
+<p align="center"></p>
+<p align="center">图5 128KB I/O的数据定位时间和传输时间比重</p>
+<p align="center">重新发现顺序读</p>
+<p>上一节我们解决了是否/何时进行预读，以及读多少的基本问题。由于现实的复杂性，上述算法并不总能奏效，即使是对于顺序读的情况。例如最近发现的重试读(retried read)的问题。</p>
+<p>重试读在异步I/O和非阻塞I/O中比较常见。它们允许内核中断一个读请求。这样一来，程序提交的后续读请求看起来会与前面被中断的读请求相重叠。如图6所示。</p>
+<center></center>
+<p align="center"></p>
+<p align="center">图6重试读(retried reads)</p>
+<p>Linux 2.6.22无法理解这种情况，于是把它误判为随机读。这里的问题在于&ldquo;读请求&rdquo;并不代表读取操作实实在在的发生了。预读的决策依据应为后者而非前者。最新发布的2.6.23对此作了改进。新的算法以当前读取的页面状态为主要决策依据，并为此新增了一个页面标志位：PG_readahead，它是&ldquo;请作异步预读&rdquo;的一个提示。在每次进行新预读时，算法都会选择其中的一个新页面并标记之。预读规则相应的改为：</p>
+<p>◆当读到缺失页面(missing page)，进行同步预读;</p>
+<p>◆当读到预读页面(PG_readahead page)，进行异步预读。</p>
+<p>这样一来，ahead预读窗口就不需要了：它实际上是把预读大小和提前量两者作了不必要的绑定。新的标记机制允许我们灵活而精确地控制预读的提前量，这有助于将来引入对笔记本省电模式的支持。</p>
+<center></center>
+<p align="center"></p>
+<p align="center">图7 Linux 2.6.23预读算法的工作动态</p>
+<p>另一个越来越突出的问题来自于交织读(interleaved read)。这一读模式常见于多媒体/多线程应用。当在一个打开的文件中同时进行多个流(stream)的读取时，它们的读取请求会相互交织在一起，在内核看来好像是很多的随机读。更严重的是，目前的内核只能在一个打开的文件描述符中跟踪一个流的预读状态。因而即使内核对两个流进行预读，它们会相互覆盖和破坏对方的预读状态信息。对此，我们将在即将发布的2.6.24中作一定改进，利用页面和pagecache所提供的状态信息来支持多个流的交织读。</p>
+<p align="left">预读建议</p>
+<p align="center"></p>
+<p></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/106548.html'>jQuery之Deferred对象详解</a><a>下一篇</a><a href='/php/biji/106550.html'>win10不能召唤小冰打不开怎么办？</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MSSQL产生死锁的根本原因及解决方法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="一、 什么是死锁<br />
+<br />
+<br />
+死锁是指两个或两个以上的进程在执行过程中,因争夺资源而造成的一种互相等待的现象,若无外力作用,它们都将无法推进下去.此时称系统处于死锁状态或系统产" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MSSQL产生死锁的根本原因及解决方法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>一、 什么是死锁<br />
+<br />
+<br />
+死锁是指两个或两个以上的进程在执行过程中,因争夺资源而造成的一种互相等待的现象,若无外力作用,它们都将无法推进下去.此时称系统处于死锁状态或系统产</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><span style="color: #0000ff"><strong>一、 什么是死锁</strong></span><br />
+</p>
+<p>死锁是指两个或两个以上的进程在执行过程中,因争夺资源而造成的一种互相等待的现象,若无外力作用,它们都将无法推进下去.此时称系统处于死锁状态或系统产生了死锁,这些永远在互相等的进程称为死锁进程.<br />
+</p>
+<p><span style="color: #0000ff"><strong>二、 死锁产生的四个必要条件</strong></span><br />
+</p>
+<p>&#8226;互斥条件：指进程对所分配到的资源进行排它性使用，即在一段时间内某资源只由一个进程占用。如果此时还有其它进程请求资源，则请求者只能等待，直至占有资源的进程用毕释放<br />
+</p>
+<p>&#8226;请求和保持条件：指进程已经保持至少一个资源，但又提出了新的资源请求，而该资源已被其它进程占有，此时请求进程阻塞，但又对自己已获得的其它资源保持不放<br />
+</p>
+<p>&#8226;不剥夺条件：指进程已获得的资源，在未使用完之前，不能被剥夺，只能在使用完时由自己释放<br />
+</p>
+<p>&#8226;环路等待条件：指在发生死锁时，必然存在一个进程——资源的环形链，即进程集合{P0，P1，P2，···，Pn}中的P0正在等待一个P1占用的资源；P1正在等待P2占用的资源，……，Pn正在等待已被P0占用的资源<br />
+</p>
+<p>这四个条件是死锁的必要条件，只要系统发生死锁，这些条件必然成立，而只要上述条件之一不满足，就不会发生死锁。<br />
+</p>
+<p><span style="color: #0000ff"><strong>三、 如何处理死锁<br />
+</strong></span></p>
+<p>1) 锁模式<br />
+</p>
+<p><strong>1.共享锁（S）</strong><br />
+</p>
+<p>由读操作创建的锁，防止在读取数据的过程中，其它事务对数据进行更新；其它事务可以并发读取数据。共享锁可以加在表、页、索引键或者数据行上。在SQL SERVER默认隔离级别下数据读取完毕后就会释放共享锁，但可以通过锁提示或设置更高的事务隔离级别改变共享锁的释放时间。<br />
+</p>
+<p><strong>2.独占锁(X)</strong><br />
+</p>
+<p>对资源独占的锁，一个进程独占地锁定了请求的数据源，那么别的进程无法在此数据源上获得任何类型的锁。独占锁一致持有到事务结束。<br />
+</p>
+<p><strong>3.更新锁(U)<br />
+</strong></p>
+<p>更新锁实际上并不是一种独立的锁，而是共享锁与独占锁的混合。当SQL SERVER执行数据修改操作却首先需要搜索表以找到需要修改的资源时，会获得更新锁。<br />
+</p>
+<p>更新锁与共享锁兼容，但只有一个进程可以获取当前数据源上的更新锁，<br />
+</p>
+<p>其它进程无法获取该资源的更新锁或独占锁，更新锁的作用就好像一个序列化阀门（serialization gate），将后续申请独占锁的请求压入队列中。持有更新锁的进程能够将其转换成该资源上的独占锁。更新锁不足以用于更新数据—实际的数据修改仍需要用到独占锁。对于独占锁的序列化访问可以避免转换死锁的发生，更新锁会保留到事务结束或者当它们转换成独占锁时为止。<br />
+</p>
+<p><strong>4. 意向锁(IX,IU,IS)</strong><br />
+</p>
+<p>意向锁并不是独立的锁定模式，而是一种指出哪些资源已经被锁定的机制。<br />
+</p>
+<p>如果一个表页上存在独占锁，那么另一个进程就无法获得该表上的共享表锁，这种层次关系是用意向锁来实现的。进程要获得独占页锁、更新页锁或意向独占页锁，首先必须获得该表上的意向独占锁。同理，进程要获得共享行锁，必须首先获得该表的意向共享锁，以防止别的进程获得独占表锁。<br />
+</p>
+<p><strong>5. 特殊锁模式(Sch_s,Sch_m,BU)<br />
+</strong></p>
+<p>SQL SERVER提供3种额外的锁模式：架构稳定锁、架构修改锁、大容量更新锁。<br />
+</p>
+<p><strong>6.转换锁(SIX,SIU,UIX)</strong><br />
+</p>
+<p>转换锁不会由SQL SERVER 直接请求，而是从一种模式转换到另一种模式所造成的。SQL SERVER 2008支持3种类型的转换锁：SIX、SIU、UIX.其中最常见的是SIX锁，如果事务持有一个资源上的共享锁（S），然后又需要一个IX锁，此时就会出现SIX。<br />
+</p>
+<p><strong>7.键范围锁</strong><br />
+</p>
+<p>键范围锁是在可序列化隔离级别中锁定一定范围内数据的锁。保证在查询数据的键范围内不允许插入数据。</p>
+<p>
+<table border="1" cellspacing="0" cellpadding="0" style="width: 711px">
+<tbody>
+<tr>
+<td valign="top" width="711" colspan="3" nowrap="nowrap">
+<p align="center"><strong>SQL SERVER </strong><strong>锁模式</strong></p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>缩写</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left"><strong>锁模式</strong></p>
+</td>
+<td valign="top" width="587">
+<p align="center"><strong>说明</strong></p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>S</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Shared</p>
+</td>
+<td valign="top" width="587">
+<p align="left">允许其他进程读取但不能修改锁定的资源</p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>X</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Exclusive</p>
+</td>
+<td valign="top" width="587">
+<p align="left">防止别的进程读取或者修改锁定资源中的数据</p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>U</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Update</p>
+</td>
+<td valign="top" width="587">
+<p align="left">防止其它进程获取更新锁或独占锁；在搜索要修改的数据时使用</p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>IS</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Intent shared</p>
+</td>
+<td valign="top" width="587">
+<p align="left">表示该资源的一个组件被共享锁锁定了。只有在表或页级别才能获得这类锁</p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>IU</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Intent update</p>
+</td>
+<td valign="top" width="587">
+<p align="left">表示该资源的一个组件被更新锁锁定了。只有在表或页级别才能获得这类锁</p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>IX</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Intent exclusive</p>
+</td>
+<td valign="top" width="587">
+<p align="left">表示该资源的一个组件被独占锁锁定了。只有在表或页级别才能获得这类锁</p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>SIX</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Shared with intent exclusive</p>
+</td>
+<td valign="top" width="587">
+<p align="left">表示一个正持有共享锁的资源还有一个组件（一页或一行）被独占锁锁定了</p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>SIU</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Shared with intent Update</p>
+</td>
+<td valign="top" width="587">
+<p align="left">表示一个正持有共享锁的资源还有一个组件（一页或一行）被更新锁锁定了</p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>UIX</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Update with intent exclusive</p>
+</td>
+<td valign="top" width="587">
+<p align="left">表示一个正持有更新锁的资源还有一个组件（一页或一行）被独占锁锁定了</p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>Sch-S</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Schema stability</p>
+</td>
+<td valign="top" width="587">
+<p align="left">表示一个使用该表的查询正在被编译</p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>Sch-M</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Schema modification</p>
+</td>
+<td valign="top" width="587">
+<p align="left">表示表的结构正在被修改</p>
+</td>
+</tr>
+<tr>
+<td valign="top" width="51" nowrap="nowrap">
+<p align="left"><strong>BU</strong></p>
+</td>
+<td valign="top" width="73" nowrap="nowrap">
+<p align="left">Bulk Update</p>
+</td>
+<td valign="top" width="587">
+<p align="left">在一个大容量复制操作将数据导入表中并且（手动或自动）应用了TABLOCK查</p>
+<p align="left">询提示时使用</p>
+</td>
+</tr>
+</tbody>
+</table>
+</p>
+<p>2) 锁粒度<br />
+</p>
+<p>SQL SERVER 可以在表、页、行等级别锁定用户的数据资源即非系统资源（系统资源是用闩锁来保护的）。此外SQL SERVER 还可以锁定索引键和索引键范围。<br />
+</p>
+<p>通过sys.dm_tran_locks视图可以查看谁被锁定了（如行，键，页）、锁的模式以及特定资源的标志符。基于sys.dm_tran_locks视图创建如下视图用于查看锁定的资源以及锁模式（通过这个视图可以查看事务锁定的表、页、行以及加在数据资源上的锁类型）。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+CREATE VIEW dblocks AS 
+SELECT request_session_id AS spid, 
+DB_NAME(resource_database_id) AS dbname, 
+CASE WHEN resource_type='object' 
+THEN OBJECT_NAME(resource_associated_entity_id) 
+WHEN resource_associated_entity_id=0 THEN 'n/a' 
+ELSE OBJECT_NAME(p.object_id) END AS entity_name, 
+index_id, 
+resource_type AS RESOURCE, 
+resource_description AS DESCRIPTION, 
+request_mode AS mode, 
+request_status AS STATUS 
+FROM sys.dm_tran_locks t LEFT JOIN sys.partitions p ON p.partition_id=t.resource_associated_entity_id 
+WHERE resource_database_id=DB_ID()</pre>
+</div>
+<p>3) 如何跟踪死锁<br />
+</p>
+<p>通过选择sql server profiler 事件中的如下选项就可以跟踪到死锁产生的相关语句。<br />
+</p>
+<p>4) 死锁案例分析<br />
+</p>
+<p>在该案例中process65db88, process1d0045948为语句1的进程，process629dc8 为语句2的进程； 语句2获取了1689766页上的更新锁，在等待1686247页上的更新锁；而语句1则获取了1686247页上的更新锁在等待1689766页上的更新锁，两个语句等待的资源形成了一个环路，造成死锁。<br />
+</p>
+<p>5) 如何解决死锁<br />
+</p>
+<p>针对如上死锁案例，分析其对应语句执行计划如下：<br />
+</p>
+<p>通过执行计划可以看出，在查找需要更新的数据时使用的是索引扫描，比较耗费性能，这样就造成锁定资源时间过长，增加了语句并发执行时产生死锁的概率。<br />
+</p>
+<p>处理方式：<br />
+</p>
+<p>1． 在表上建立一个聚集索引。<br />
+</p>
+<p>2． 对语句更新的相关字段建立包含索引。<br />
+</p>
+<p>优化后该语句执行计划如下：<br />
+</p>
+<p>优化后的执行计划使用了索引查找，将大幅提升该查询语句的性能，降低了锁定资源的时间，同时也减少了锁定资源的范围，这样就降低了锁资源循环等待事件发生的概率，对于预防死锁的发生会有一定的作用。<br />
+</p>
+<p>死锁是无法完全避免的，但如果应用程序适当处理死锁，对涉及的任何用户及系统其余部分的影响可降至最低（适当处理是指发生错误1205时，应用程序重新提交批处理，第二次尝试大多能成功。一个进程被杀死，它的事务被取消，它的锁被释放，死锁中涉及到的另一个进程就可以完成它的工作并释放锁，所以就不具备产生另一个死锁的条件了。）<br />
+</p>
+<p><span style="color: #0000ff"><strong>四、 如何预防死锁</strong></span><br />
+</p>
+<p>阻止死锁的途径就是避免满足死锁条件的情况发生，为此我们在开发的过程中需要遵循如下原则：<br />
+</p>
+<p>1.尽量避免并发的执行涉及到修改数据的语句。<br />
+</p>
+<p>2.要求每一个事务一次就将所有要使用到的数据全部加锁，否则就不允许执行。<br />
+</p>
+<p>3.预先规定一个加锁顺序，所有的事务都必须按照这个顺序对数据执行封锁。如不同的过程在事务内部对对象的更新执行顺序应尽量保证一致。<br />
+</p>
+<p>4.每个事务的执行时间不可太长，对程序段的事务可考虑将其分割为几个事务。在事务中不要求输入，应该在事务之前得到输入，然后快速执行事务。<br />
+</p>
+<p>5.使用尽可能低的隔离级别。<br />
+</p>
+<p>6.数据存储空间离散法。该方法是指采用各种手段，将逻辑上在一个表中的数据分散的若干离散的空间上去，以便改善对表的访问性能。主要通过将大表按行或者列分解为若干小表，或者按照不同的用户群两种方法实现。<br />
+</p>
+<p>7.编写应用程序，让进程持有锁的时间尽可能短，这样其它进程就不必花太长的时间等待锁被释放。<br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/107700.html'>node.js中的fs.fsyncSync方法使用说明</a><a>下一篇</a><a href='/php/biji/107702.html'>验证码在IE中不刷新而谷歌等浏览器正常的解决方案</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

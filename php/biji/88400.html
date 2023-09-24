@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL优化GROUP BY（松散索引扫描与紧凑索引扫描）_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="满足GROUP BY子句的最一般的方法是扫描整个表并创建一个新的临时表，表中每个组的所有行应为连续的，然后使用该临时表来找到组并应用累积函数(如果有)。在某些情况中，MySQL能够" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL优化GROUP BY（松散索引扫描与紧凑索引扫描）</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>满足GROUP BY子句的最一般的方法是扫描整个表并创建一个新的临时表，表中每个组的所有行应为连续的，然后使用该临时表来找到组并应用累积函数(如果有)。在某些情况中，MySQL能够</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>满足GROUP BY子句的最一般的方法是扫描整个表并创建一个新的临时表，表中每个组的所有行应为连续的，然后使用该临时表来找到组并应用累积函数(如果有)。在某些情况中，MySQL能够做得更好，即通过索引访问而不用创建临时表。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 为GROUP BY使用索引的最重要的前提条件是所有GROUP BY列引用同一索引的属性，并且索引按顺序保存其关键字。是否用索引访问来代替临时表的使用还取决于在查询中使用了哪部分索引、为该部分指定的条件，以及选择的累积函数。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 由于GROUP BY 实际上也同样会进行排序操作，而且与ORDER BY 相比，GROUP BY 主要只是多了排序之后的分组操作。当然，如果在分组的时候还使用了其他的一些聚合函数，那么还需要一些聚合函数的计算。所以，在GROUP BY 的实现过程中，与 ORDER BY 一样也可以利用到索引。在MySQL 中，GROUP BY 的实现同样有多种（三种）方式，其中有两种方式会利用现有的索引信息来完成 GROUP BY，另外一种为完全无法使用索引的场景下使用。下面我们分别针对这三种实现方式做一个分析。</p>
+<p><strong>1、使用松散索引扫描（Loose index scan）实现 GROUP BY</strong></p>
+<p>对“松散索引扫描”的定义，本人看了很多网上的介绍，都不甚明白。在此逻列如下：<br />
+定义1：松散索引扫描，实际上就是当 MySQL 完全利用索引扫描来实现 GROUP BY 的时候，并不需要扫描所有满足条件的索引键即可完成操作得出结果。<br />
+定义2：优化Group By最有效的办法是当可以直接使用索引来完全获取需要group的字段。使用这个访问方法时，MySQL使用对关键字排序的索引的类型（比如BTREE索引）。这使得索引中用于group的字段不必完全涵盖WHERE条件中索引对应的key。由于只包含索引中关键字的一部分，因此称为松散的索引扫描。<br />
+意思是索引中用于group的字段，没必要包含多列索引的全部字段。例如：有一个索引idx(c1,c2,c3)，那么group by c1、group by c1,c2这样c1或c1、c2都只是索引idx的一部分。要注意的是，索引中用于group的字段必须符合索引的“最左前缀”原则。group by c1,c3是不会使用松散的索引扫描的<br />
+例如：<br />
+explain<br />
+SELECT group_id,gmt_create<br />
+FROM group_message<br />
+WHERE user_id&gt;1<br />
+GROUP BY group_id,gmt_create;<br />
+本人理解“定义2”的例子说明<br />
+有一个索引idx(c1,c2,c3)<br />
+SELECT c1, c2 FROM t1 WHERE c1 &lt; const GROUP BY c1, c2;<br />
+索引中用于group的字段为c1,c2<br />
+不必完全涵盖WHERE条件中索引对应的key（where条件中索引，即为c1；c1对应的key，即为idx）<br />
+索引中用于group的字段(c1,c2)只包含索引中关键字(c1,c2,c3)的一部分，因此称为松散的索引扫描。<br />
+要利用到松散索引扫描实现GROUP BY，需要至少满足以下几个条件：<br />
+◆ 查询针对一个单表<br />
+◆ GROUP BY 条件字段必须在同一个索引中最前面的连续位置；<br />
+GROUP BY包括索引的第1个连续部分(如果对于GROUP BY，查询有一个DISTINCT子句，则所有DISTINCT的属性指向索引开头)。<br />
+◆ 在使用GROUP BY 的同时，如果有聚合函数，只能使用 MAX 和 MIN 这两个聚合函数，并且它们均指向相同的列。<br />
+◆ 如果引用(where条件中)到了该索引中GROUP BY 条件之外的字段条件的时候，必须以常量形式存在，但MIN()或MAX() 函数的参数例外；<br />
+&nbsp;&nbsp; 或者说：索引的任何其它部分（除了那些来自查询中引用的GROUP BY）必须为常数(也就是说，必须按常量数量来引用它们)，但MIN()或MAX() 函数的参数例外。<br />
+补充：如果sql中有where语句，且select中引用了该索引中GROUP BY 条件之外的字段条件的时候，where中这些字段要以常量形式存在。<br />
+◆ 如果查询中有where条件，则条件必须为索引，不能包含非索引的字段</p>
+<p>松散索引扫描<br />
+explain<br />
+SELECT group_id,user_id<br />
+FROM group_message<br />
+WHERE group_id between 1 and 4<br />
+GROUP BY group_id,user_id;<br />
+松散索引扫描<br />
+explain<br />
+SELECT group_id,user_id<br />
+FROM group_message<br />
+WHERE user_id&gt;1 and group_id=1<br />
+GROUP BY group_id,user_id;<br />
+非松散索引扫描<br />
+explain<br />
+SELECT group_id,user_id<br />
+FROM group_message<br />
+WHERE abc=1<br />
+GROUP BY group_id,user_id;<br />
+非松散索引扫描<br />
+explain<br />
+SELECT group_id,user_id<br />
+FROM group_message<br />
+WHERE user_id&gt;1 and abc=1<br />
+GROUP BY group_id,user_id;<br />
+松散索引扫描，此类查询的EXPLAIN输出显示Extra列的Using index for group-by</p>
+<p>下面的查询提供该类的几个例子，假定表t1(c1,c2,c3,c4)有一个索引idx(c1，c2，c3)：</p>
+<p>SELECT c1, c2 FROM t1 GROUP BY c1, c2;<br />
+SELECT DISTINCT c1, c2 FROM t1;<br />
+SELECT c1, MIN(c2) FROM t1 GROUP BY c1;<br />
+SELECT c1, c2 FROM t1 WHERE c1 &lt; const GROUP BY c1, c2;<br />
+SELECT MAX(c3), MIN(c3), c1, c2 FROM t1 WHERE c2 &gt; const GROUP BY c1, c2;<br />
+SELECT c2 FROM t1 WHERE c1 &lt; const GROUP BY c1, c2;<br />
+SELECT c1, c2 FROM t1 WHERE c3 = const GROUP BY c1, c2；</p>
+<p>由于上述原因，不能用该快速选择方法执行下面的查询：</p>
+<p>1、除了MIN()或MAX()，还有其它累积函数，例如：<br />
+&nbsp;&nbsp;&nbsp;&nbsp; SELECT c1, SUM(c2) FROM t1 GROUP BY c1;<br />
+2、GROUP BY子句中的域不引用索引开头，如下所示：<br />
+&nbsp;&nbsp;&nbsp;&nbsp; SELECT c1,c2 FROM t1 GROUP BY c2, c3;<br />
+3、查询引用了GROUP BY部分后面的关键字的一部分，并且没有等于常量的等式，例如：<br />
+&nbsp;&nbsp;&nbsp;&nbsp; SELECT c1,c3 FROM t1 GROUP BY c1, c2；<br />
+这个例子中，引用到了c3（c3必须为组合索引中的一个），因为group by 中没有c3。并且没有等于常量的等式。所以不能使用松散索引扫描<br />
+可以这样改一下：SELECT c1,c3 FROM t1 where c3='a' GROUP BY c1, c2<br />
+下面这个例子不能使用松散索引扫描<br />
+SELECT c1,c3 FROM t1 where c3='a' GROUP BY c1, c2<br />
+为什么松散索引扫描的效率会很高？<br />
+答：因为在没有WHERE 子句，也就是必须经过全索引扫描的时候， 松散索引扫描需要读取的键值数量与分组的组数量一样多，也就是说比实际存在的键值数目要少很多。而在WHERE 子句包含范围判断式或者等值表达式的时候， 松散索引扫描查找满足范围条件的每个组的第1 个关键字，并且再次读取尽可能最少数量的关键字。</p>
+<p><strong>2、使用紧凑索引扫描（Tight index scan）实现 GROUP BY</strong></p>
+<p>紧凑索引扫描实现 GROUP BY 和松散索引扫描的区别主要在于：<br />
+紧凑索引扫描需要在扫描索引的时候，读取所有满足条件的索引键，然后再根据读取出的数据来完成 GROUP BY 操作得到相应结果。<br />
+这时候的执行计划的 Extra 信息中已经没有“Using index for group-by”了，但并不是说 MySQL 的 GROUP BY 操作并不是通过索引完成的，只不过是需要访问 WHERE 条件所限定的所有索引键信息之后才能得出结果。这就是通过紧凑索引扫描来实现 GROUP BY 的执行计划输出信息。<br />
+在 MySQL 中，MySQL Query Optimizer 首先会选择尝试通过松散索引扫描来实现 GROUP BY 操作，当发现某些情况无法满足松散索引扫描实现 GROUP BY 的要求之后，才会尝试通过紧凑索引扫描来实现。<br />
+当 GROUP BY 条件字段并不连续或者不是索引前缀部分的时候，MySQL Query Optimizer 无法使用松散索引扫描。<br />
+这时检查where 中的条件字段是否有索引的前缀部分，如果有此前缀部分，且该部分是一个常量，且与group by 后的字段组合起来成为一个连续的索引。这时按紧凑索引扫描。</p>
+<p>SELECT max(gmt_create)<br />
+FROM group_message<br />
+WHERE group_id = 2<br />
+GROUP BY user_id</p>
+<p>需读取group_id=2的所有数据，然后在读取的数据中完成group by操作得到结果。（这里group by 字段并不是一个连续索引，正好where 中group_id正好弥补缺失的索引键，又恰好是一个常量，因此使用紧凑索引扫描）<br />
+group_id user_id 这个顺序是可以使用该索引。如果连接的顺序不符合索引的“最左前缀”原则，则不使用紧凑索引扫描。</p>
+<p>以下例子使用紧凑索引扫描</p>
+<p>GROUP BY中有一个差距，但已经由条件user_id = 1覆盖。<br />
+explain<br />
+SELECT group_id,gmt_create<br />
+FROM group_message<br />
+WHERE user_id = 1 GROUP BY group_id,gmt_create</p>
+<p>GROUP BY不以关键字的第1个元素开始，但是有一个条件提供该元素的常量<br />
+explain<br />
+SELECT group_id,gmt_create<br />
+FROM group_message<br />
+WHERE group_id = 1 GROUP BY user_id,gmt_create</p>
+<p>下面的例子都不使用紧凑索引扫描<br />
+user_id,gmt_create 连接起来并不符合索引“最左前缀”原则<br />
+explain<br />
+SELECT group_id,gmt_create<br />
+FROM group_message<br />
+WHERE user_id = 1 GROUP BY gmt_create<br />
+group_id,gmt_create 连接起来并不符合索引“最左前缀”原则<br />
+explain<br />
+SELECT gmt_create<br />
+FROM group_message<br />
+WHERE group_id=1 GROUP BY gmt_create;</p>
+<p><strong>&nbsp;3、使用临时表实现 GROUP BY</strong></p>
+<p>MySQL Query Optimizer 发现仅仅通过索引扫描并不能直接得到 GROUP BY 的结果之后，他就不得不选择通过使用临时表然后再排序的方式来实现 GROUP BY了。在这样示例中即是这样的情况。 group_id 并不是一个常量条件，而是一个范围，而且 GROUP BY 字段为 user_id。所以 MySQL 无法根据索引的顺序来帮助 GROUP BY 的实现，只能先通过索引范围扫描得到需要的数据，然后将数据存入临时表，然后再进行排序和分组操作来完成 GROUP BY。<br />
+explain<br />
+SELECT group_id<br />
+FROM group_message<br />
+WHERE group_id between 1 and 4<br />
+GROUP BY user_id;<br />
+示例数据库文件</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+-- --------------------------------------------------------
+-- Host:             127.0.0.1
+-- Server version:        5.1.57-community - MySQL Community Server (GPL)
+-- Server OS:          Win32
+-- HeidiSQL version:       7.0.0.4156
+-- Date/time:          2012-08-20 16:52:10
+-- --------------------------------------------------------
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET NAMES utf8 */;
+/*!40014 SET FOREIGN_KEY_CHECKS=0 */;
+
+-- Dumping structure for table test.group_message
+DROP TABLE IF EXISTS `group_message`;
+CREATE TABLE IF NOT EXISTS `group_message` (
+ `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+ `group_id` int(10) unsigned DEFAULT NULL,
+ `user_id` int(10) unsigned DEFAULT NULL,
+ `gmt_create` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ `abc` int(11) NOT NULL DEFAULT '0',
+ PRIMARY KEY (`id`),
+ KEY `group_id_user_id_gmt_create` (`group_id`,`user_id`,`gmt_create`)
+) ENGINE=MyISAM AUTO_INCREMENT=27 DEFAULT CHARSET=utf8;
+
+-- Dumping data for table test.group_message: 0 rows
+DELETE FROM `group_message`;
+/*!40000 ALTER TABLE `group_message` DISABLE KEYS */;
+INSERT INTO `group_message` (`id`, `group_id`, `user_id`, `gmt_create`, `abc`) VALUES
+	(1, 1, 1, '2012-08-20 09:25:35', 1),
+	(2, 2, 1, '2012-08-20 09:25:39', 1),
+	(3, 2, 2, '2012-08-20 09:25:47', 1),
+	(4, 3, 1, '2012-08-20 09:25:50', 2),
+	(5, 3, 2, '2012-08-20 09:25:52', 2),
+	(6, 3, 3, '2012-08-20 09:25:54', 0),
+	(7, 4, 1, '2012-08-20 09:25:57', 0),
+	(8, 4, 2, '2012-08-20 09:26:00', 0),
+	(9, 4, 3, '2012-08-20 09:26:02', 0),
+	(10, 4, 4, '2012-08-20 09:26:06', 0),
+	(11, 5, 1, '2012-08-20 09:26:09', 0),
+	(12, 5, 2, '2012-08-20 09:26:12', 0),
+	(13, 5, 3, '2012-08-20 09:26:13', 0),
+	(14, 5, 4, '2012-08-20 09:26:15', 0),
+	(15, 5, 5, '2012-08-20 09:26:17', 0),
+	(16, 6, 1, '2012-08-20 09:26:20', 0),
+	(17, 7, 1, '2012-08-20 09:26:23', 0),
+	(18, 7, 2, '2012-08-20 09:26:28', 0),
+	(19, 8, 1, '2012-08-20 09:26:32', 0),
+	(20, 8, 2, '2012-08-20 09:26:35', 0),
+	(21, 9, 1, '2012-08-20 09:26:37', 0),
+	(22, 9, 2, '2012-08-20 09:26:40', 0),
+	(23, 10, 1, '2012-08-20 09:26:42', 0),
+	(24, 10, 2, '2012-08-20 09:26:44', 0),
+	(25, 10, 3, '2012-08-20 09:26:51', 0),
+	(26, 11, 1, '2012-08-20 09:26:54', 0);
+/*!40000 ALTER TABLE `group_message` ENABLE KEYS */;
+/*!40014 SET FOREIGN_KEY_CHECKS=1 */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;</pre>
+</div>
+<p>参考文献<br />
+1、MySQL如何优化GROUP BY <br />
+2、详解MySQL分组查询Group By实现原理 <br />
+3、松散的索引扫描(Loose index scan) <br />
+4、MySQL学习笔记</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/88399.html'>C#递归题目实例代码</a><a>下一篇</a><a href='/php/biji/88401.html'>JavaScript indexOf方法入门实例（计算指定字符在字符串中首次出现的位置）</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

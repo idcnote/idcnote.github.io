@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>详解Oracle数据库磁盘I/O优化_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="监控数据库的性能 <br />
+在init.ora参数文件中设置TIMED_STATISTICS=TRUE 和在你的会话层设置ALTER SESSION SET STATISTICS=TRUE 。运行svrmgrl 用 connect internal 注册，在你的" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/122.html"></a></li><li><a href="/php/phpbiji/123.html"></a></li><li><a href="/php/phpbiji/124.html"></a></li><li><a href="/php/phpbiji/125.html"></a></li><li><a href="/php/phpbiji/126.html"></a></li><li><a href="/php/phpbiji/127.html"></a></li><li><a href="/php/phpbiji/128.html"></a></li><li><a href="/php/phpbiji/129.html"></a></li><li><a href="/php/phpbiji/130.html"></a></li><li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">详解Oracle数据库磁盘I/O优化</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>监控数据库的性能 <br />
+在init.ora参数文件中设置TIMED_STATISTICS=TRUE 和在你的会话层设置ALTER SESSION SET STATISTICS=TRUE 。运行svrmgrl 用 connect internal 注册，在你的</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><P><STRONG>监控数据库的性能</STRONG> </P>
+<P>在init.ora参数文件中设置TIMED_STATISTICS=TRUE 和在你的会话层设置ALTER SESSION SET STATISTICS=TRUE 。运行svrmgrl 用 connect internal 注册，在你的应用系统正常活动期间，运行utlbstat.sql 开始统计系统活动，达到一定的时间后，执行utlestat.sql 停止统计。统计结果将产生在report.txt 文件中。(utlbstat.sql utlestat.sql 一般存放在$ORACLE_HOME/RDBMS/ADMIN 子目录下)</P>
+<P><B>优化数据库磁盘I/O</B></P>
+<P><B>检查系统的I/O问题</B></P>
+<P>在UNIX系统中工具sar-d能检查整个系统的iostat(IO statistics)，在NT系统上则使用性能监视器(Performance Monitor).</P>
+<P>反映Oracle文件I/O的进程</P>
+<P align=center></P>
+<P>使用V$FILESTAT确定Oracle数据文件I/O</P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>SELECT NAME,PHYRDS,PHYWRTS FROM V$DATAFILE DF,V$FILESTAT FS WHERE DF.FILE#=FS.FILE# ;</PRE></TD></TR></TBODY></TABLE></P>
+<P><B>使用分布I/O减少磁盘竞争</B></P>
+<P>将数据文件和redo log文件分开</P>
+<P>Striping 表数据</P>
+<P>分开表和索引</P>
+<P>减少与Oracle无关的磁盘I/O</P>
+<P><B>避免动态空间管理</B></P>
+<P>在创建如表或回滚段的数据库实体时，在数据库中会为这些数据分配空间，该空间被称为段。如果数据库操作引起数据增加并超出了分配的表空间，oracle会扩展该段，动态扩展会降低系统性能。</P>
+<P>确定动态扩展</P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>select name,value from v$sysstat where name=’recursive calls’ ;</PRE></TD></TR></TBODY></TABLE></P>
+<P>分配分区</P>
+<P>确定实体的最大大小;</P>
+<P>选择存储参数值，使Oracle分配足够大的分区，在创建实体时可以装入所有数据</P>
+<P><CLK style="FONT-SIZE: 14px; LINE-HEIGHT: 18pt">避免回滚段的动态空间<NOBR oncontextmenu="return false" onmousemove=$cE.MoW() id=clickeyekey2 onmouseover=$cE.s(event,2) style="FONT-SIZE: 14px; COLOR: #6600ff; LINE-HEIGHT: 18pt; BORDER-BOTTOM: #6600ff 1px dotted; BACKGROUND-COLOR: transparent; TEXT-DECORATION: underline" onclick='$cE.c(event,2,"",1)' onmouseout=$cE.OuK()>管理</NOBR></CLK></P>
+<P>回滚段大小由其存储参数所决定，回滚段必须能保存所有交易的回滚入口;</P>
+<P>使用set transaction 命令可以为回滚段赋予交易的合适的大小;</P>
+<P>对长的查询的修改数据，应赋予大的回滚段，以保持所有的回滚入口;</P>
+<P>对OLTP交易，由于频繁交易，每个交易只修改小量的数据，因此赋予小的回滚段。</P>
+<P>减少迁移和链接行</P>
+<P>1. 使用ANALYZE 收集迁移和链接行的信息;</P>
+<P>2. 查询输出表：chained_rows;</P>
+<P>3. 如果有许多迁移和链接行，就需要消除迁移行，方法如下：</P>
+<P>A. 创建与原表相同列的中间表，以保存迁移和链接行;</P>
+<P>B. 从原表中删除迁移和链接行;</P>
+<P>C. 将中间表中的行插入到原表中;</P>
+<P>D. 删除中间表</P>
+<P>4. 删除第一步收集的信息;</P>
+<P>5. 重新使用ANALYZE命令查询输出表</P>
+<P>6. 在输出表中出现的行都是链接行，只能通过增加数据块的大小来清除。</P>
+<P><STRONG>调整排序</STRONG></P>
+<P><B>内存中排序</B></P>
+<P>使用动态表V$SYSSTAT的信息反映排序</P>
+<P>SELECT NAME , VALUE FROM V$SYSSTAT WHERE NAME IN (‘SORTS(MEMORY)’,’SORTS(DISK)’) ;</P>
+<P>SORTS(MEMORY)-不需要使用I/O操作而完全在内存完成的排序数;</P>
+<P>SORTS(DISK)-需要使用I/O操作与磁盘临时段才能完成数据的排序数目。</P>
+<P>增大SORT_AREA_SIZE以避免磁盘排序</P>
+<P><B>使用NOSORT创建非排序的索引</B></P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>CREATE INDEX INDEX_NAME ON TABLE TABLE_NAME(COLUMN_NAME) NOSORT ;</PRE></TD></TR></TBODY></TABLE></P>
+<P><B>调整Checkpoints</B></P>
+<P>一个checkpoint是oracle自动执行的一种操作，当检查点操作时，数据库中的所有缓冲区会写回磁盘，所有数据库的控制文件被更新。Checkpoint频繁发生会加快数据库的恢复，但是增加了I/O次数，会降低系统的性能。</P>
+<P><B>调整LGWR和DBWn I/O</B></P>
+<P>调整LGWR I/O</P>
+<P>每次I/O写的大小依赖于LOG缓冲区的大小，该大小由LOG BUFFER 所设置，缓冲区太大会延迟写操作，太小可能导致频繁的小的I/O操作。如果I/O操作的平均大小很大，那么LOG文件就会成为瓶颈，可以使用STRIPE REDO LOG文件避免这个问题。</P>
+<P>调整DBWN I/O</P>
+<P>使用初始参数DB_WRITER_PROCESSES，可以创建多个数据库写进程。</P>
+<P><B>调整竞争</B></P>
+<P>由多个进程同时请求使用相同的资源时，就产生了竞争</P>
+<P><B>确定竞争问题</B></P>
+<P>视图V$RESOURCE_LIMIT提供了一些系统资源的使用限制。</P>
+<P>如果系统存在无反应的现象，检查V$SYSTEM_EVENT，检查最大平均等待时间的事件;</P>
+<P>如果存在过量的缓冲区等待，检查V$WAITSTAT，确定哪个类型的块有最多的等待次数和最长的等待时间，再查询V$SESSION_WAIT得到每个缓冲区的等待时间。</P>
+<P><B>减少回滚段的竞争</B></P>
+<P>通过检查V$WAITSTAT可以确定回滚段的竞争：</P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>SELECT CLASS,COUNT FROM V$WAITSTAT WHERE CLASS IN </PRE><PRE>(‘SYSTEM UODO HEADER’,’SYSTEM UODO BLOCK’,’UODO HEADER’,’UODO BLOCK’) ;</PRE></TD></TR></TBODY></TABLE></P>
+<P><STRONG>减少调度进程的竞争</STRONG></P>
+<P>检查调度进程的busy率</P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>SELECT NETWORK”PROTOCOL”, SUM(BUSY)/(SUM(BUSY)+SUM(IDLE)) “TOTAL BUSY RATE” </PRE><PRE>FROM V$DISPATCHER GROUP BY NETWORK ;</PRE></TD></TR></TBODY></TABLE></P>
+<P>如果指定协议的调度进程忙的时间超过50%的有效工作时间，那么，增加调度进程可以提高使用该协议连接到oracle的性能。</P>
+<P>检查调度进程相应队列的等待时间</P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>SELECT NETWORK “PROTOCOL” DECODE(SUM(TOTALQ),0.’NO RESPONSES’,</PRE><PRE>SUM(WAIT)/SUM(TOTALQ)||’HUNDREDTHS OF SECONDS’) “AVERAGE WAIT TIME PER RESPONSE” </PRE><PRE>FROM V$QUEUE Q,V$DISPATCHER D WHERE Q.TYPE=’DISPATCHER’ AND Q.PADDR=D.PADDR GROUP BY NETWORK ;</PRE></TD></TR></TBODY></TABLE></P>
+<P>增加调度进程：使用MTS_DISPATCHERS参数和ALTER_SYSTEM命令可以增加调度进程</P>
+<P><STRONG>减少共享服务器进</STRONG>程的竞争</P>
+<P>共享服务器进程竞争可以由<BR>不断增加的请求等待时间所反映，使用如下查询：</CLK></P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>select decode(totalq,0,’No Requests’, wait/totalq||’hundredths of seconds’) </PRE><PRE>“Average Wait Time Per Requests” from v$queue where type=’COMMON’ ;</PRE></TD></TR></TBODY></TABLE></P>
+<P><CLK style="FONT-SIZE: 14px; LINE-HEIGHT: 18pt">使用如下查询可以得到当前运行的<NOBR oncontextmenu="return false" onmousemove=$cE.MoW() id=clickeyekey3 onmouseover=$cE.s(event,3) style="FONT-SIZE: 14px; COLOR: #6600ff; LINE-HEIGHT: 18pt; BORDER-BOTTOM: #6600ff 1px dotted; BACKGROUND-COLOR: transparent; TEXT-DECORATION: underline" onclick='$cE.c(event,3,"",1)' onmouseout=$cE.OuK()>共享</NOBR>服务进程数：</CLK></P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>select count(*) “Shared Server Processes” from V$shared_servers where status!=’QUIT’;</PRE></TD></TR></TBODY></TABLE></P>
+<P>oracle能自动增加共享服务进程，但是MTS_MAX_SERVERS的值可以更改。</P>
+<P>　<B>　减少redo log缓冲区latches竞争</B></P>
+<P>在LGWR进程将redo入口从redo log缓冲区写入redo log文件后，该入口就会被新入口覆盖，供其他log的使用。</P>
+<P>V$SYSSTAT中redo buffer allocation retries 反映用户进程等待redo log空间的次数：</P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>Select name,value from v$sysstat where name=’redo buffer allocation retries’ ;</PRE></TD></TR></TBODY></TABLE></P>
+<P>redo buffer allocation retries的值应该接近0，如果该值持续增加，那么，说明进程需要等待缓冲区的空间。增大参数LOG_BUFFER的值可以增大redo log的大小。</P>
+<P>确定redo log缓冲区latches竞争</P>
+<P>redo分配latch;</P>
+<P>redo复制latches。</P>
+<P>一次只能有一个用户分配缓冲区中的空间，在分配了redo入口的空间后，用户进程将入口复制到缓冲区，其最大大小是由LOG_SMALL_ENTRY_MAX_SIZE指定。Redo复制latches的数目由参数LOG_SIMULTANEOUS_COPIES指定。</P>
+<P>检查redo log活动</P>
+<P>对redo log缓冲区的频繁访问可能导致redo log缓冲区latches竞争，降低系统性能。Oracle在动态表V$LATCH中收集了所有LATCH的统计信息。</P>
+<P>其中：表v$latch反映willing-to-wait 请求的列</P>
+<P>gets-成功的willing-to-wait请求数;</P>
+<P>misses-初始不成功的willing-to-wait请求数;</P>
+<P>sleeps-请求不成功的等待时间;</P>
+<P>表v$latch反映immediate请求的列：</P>
+<P>immediate gets-成功的immediate请求数</P>
+<P>immediate misses-不成功的immediate请求数</P>
+<P>使用如下查询：</P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>select ln.name,gets,misses,immediate_gets,immediate_misses from v$latch l,</PRE><PRE>v$latchname ln where ln.name in (‘redo allocation ’,’redo copy’) and ln.latch#=l.latch# ;</PRE></TD></TR></TBODY></TABLE></P>
+<P>可以计算出各类请求的等待率。</P>
+<P><B>减少latch竞争</B></P>
+<P>要减少redo allocation latch竞争，必须减少单个进程占用latch的时间。要减少这个时间，可以减少该redo allocation latch的复制。减少LOG_SMALL_ENTRY_MAX_SIZE初始参数可以减少在redo allocation latch的redo入口的复制次数和大小。</P>
+<P>减少redo copy Latches竞争可以用增加LOG_SIMULTANEOUS_COPIES的值来增加LATCH数，最多可以达到CPU的两倍。</P>
+<P><B>减少Free List竞争</B></P>
+<P>确定Free List竞争，可以使用以下几步：</P>
+<P>1. 检查V$WAITSTAT，确定DATA BLOCKS的竞争;</P>
+<P>2. 检查V$SYSTEM_EVENT,确定BUFFER BUSY WAITS，如果数值高，表明存在竞争;</P>
+<P>3. 在这种情况下，检查V$SESSION_WAIT查询每个缓冲区的忙等待、FILE、BLOCK及ID;</P>
+<P>4. 使用如下查询得到实体和FREE LIST的名称：</P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>SELECT SEGMENT_NAME,SEGMENT_TYPE FROM DBA_EXTENTS </PRE><PRE>WHERE FILE_ID=file AND BLOCK BETWEEN block_id AND block_id+blocks ;</PRE></TD></TR></TBODY></TABLE></P>
+<P>5. 使用如下查询找到FREE LIST:</P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>SELECT SEGMENT_NAME,FREELISTS FROM DBA_SEGMENTS </PRE><PRE>WHERE SEGMENT_NAME=segment AND SEGMENT_TYPE=type ;</PRE></TD></TR></TBODY></TABLE></P>
+<P>增加Free List</P>
+<P>要减少表的Free list的竞争， 可以使用freelists参数重新创建表，方法有：</P>
+<P>1. 删除旧表，重新创建表;</P>
+<P>2. 通过从旧表选择数据插入到新表，删除旧表，重命名，完成表的重新创建;</P>
+<P>3. 使用Export 和Import，export旧表，删除旧表，import该表</P>
+<P><STRONG>建立和优化数据库文件的方针：</STRONG></P>
+<P><CLK style="FONT-SIZE: 14px; LINE-HEIGHT: 18pt">为表和索引创建<NOBR oncontextmenu="return false" onmousemove=$cE.MoW() id=clickeyekey0 onmouseover=$cE.s(event,0) style="FONT-SIZE: 14px; COLOR: #6600ff; LINE-HEIGHT: 18pt; BORDER-BOTTOM: #6600ff 1px dotted; BACKGROUND-COLOR: transparent; TEXT-DECORATION: underline" onclick='$cE.c(event,0,"",1)' onmouseout=$cE.OuK()>不同</NOBR>的表空间。</CLK></P>
+<P>将表和索引的表空间放在不同的磁盘上。</P>
+<P>将REDO日志和回滚段放在不同的磁盘上。</P>
+<P>将Oracle可执行文件和数据库文件放在单独的磁盘上。</P>
+<P>确定最常用的表、索引，以及他们的表空间，并放在单独的磁盘上。</P>
+<P>不要在Oracle数据磁盘上安装其他第三方软件。</P>
+<P><B>监控磁盘I/O的方法：</B></P>
+<P>用以下查询语句可以得到各表空间读写次数，phyrds+phywrts 即是磁盘I/O量。应按前面讲的方针调整数据文件的分布方式。</P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>select name,phyrds,phywrts from v$datafile,</PRE><PRE>v$filestat where v$datafile.file# = v$filestat.file#</PRE></TD></TR></TBODY></TABLE></P>
+<P>结果如下：</P>
+<P>
+<TABLE cellSpacing=0 borderColorDark=#ffffff cellPadding=2 width=400 align=center borderColorLight=#999999 border=1>
+<TBODY>
+<TR>
+<TD class=code bgColor=#e6e6e6><PRE>NAME PHYRDS PHYWRTS<P>-------------------------------------------------- ---------- ----------
+</P><P>/u/oracle/OraHome/oradata/pb/system01.dbf 2511 8
+</P><P>/u/oracle/OraHome/oradata/pb/tools01.dbf 5 2</P><P>/u/oracle/OraHome/oradata/pb/rbs01.dbf 18 20
+</P><P>/u/oracle/OraHome/oradata/pb/temp01.dbf 4 2
+</P><P>/u/oracle/OraHome/oradata/pb/users01.dbf 45 5
+</P><P>/u/oracle/OraHome/oradata/pb/indx01.dbf 4 2</P><P>/u/oracle/OraHome/oradata/pb/drsys01.dbf 4 2
+</P><P>7 rows selected</P></PRE></TD></TR></TBODY></TABLE></P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/25823.html'>MSSQL 首字母替换成大写字母</a><a>下一篇</a><a href='/php/biji/25826.html'>在解决ul居中问题时想到的几点</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

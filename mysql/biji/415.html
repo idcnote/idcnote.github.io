@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL5.5 部署的一个问题的深入分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL5.5 部署的一个问题的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+MySQL部署
+
+" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL5.5 部署的一个问题的深入分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:16:05                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL5.5 部署的一个问题的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+MySQL部署
+
+</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL5.5 部署的一个问题的深入分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p></p>
+<h3>MySQL部署</h3>
+<p></p>
+<p> 目前公司部署MySQL是通过平台化操作的，周五的时候，平台暂时出了点儿问题，手上有个需求比较着急，就直接手动的部署了一下，由于好长时间没有部署环境了，竟然有些手生，这里把部署的步骤以及遇到的问题记录下来，希望对大家有所帮助。</p>
+<p>1、一般情况下，部署有三种常用的方式，第一种是yum的方式，也就是rpm包，第二种是源码的方式，也就是source code，第三种是二进制包，也就是tar.gz格式的包，解压之后即可，我采用的是第三种方法，部署的MySQL版本是5.5.19版本。</p>
+<p>2、首先来看下错误吧：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+启动服务的语句：
+/usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysqld_safe --defaults=/data/mysql_4310/my.cnf &amp;
+
+ [Note] InnoDB: Waiting for purge to start
+ [Note] InnoDB: Percona XtraDB (http://www.percona.com) 5.7.16-10 started; log sequence number 0
+ [Note] Plugin 'FEDERATED' is disabled.
+20190621_11:25:41mysqld: Table 'mysql.plugin' doesn't exist
+ [ERROR] Can't open the mysql.plugin table. Please run mysql_upgrade to create it.
+ [ERROR] unknown variable 'thread_concurrency=8'
+ [ERROR] Aborting</code></pre>
+<p>MySQL5.5 部署的一个问题</p>
+<p> 可以看到，一共报了两个错误，第一个是不能打开mysql.plugin这个表，第二个错误是参数错误，这个参数thread_concurrency无法识别。</p>
+<p> 对于第二个问题，可以确认是配置文件里面的参数问题，因为我使用的是常规的5.7的配置文件，改了几个参数，所以这个参数很有可能是漏改了，改掉即可。主要是第一个问题，这个时候，我进行了下面的尝试。</p>
+<p>3、解决方式</p>
+<p></p>
+<h3>尝试1：尝试重新启动</h3>
+<p></p>
+<p>使用service mysql start的方法：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root]# service mysql_4310 start
+Starting MySQL.....The server quit without updating PID fil[FAILED]/mysql_4310/tmp/mysql.pid).</code></pre>
+<p>MySQL5.5 部署的一个问题</p>
+<p>发现服务还是无法启动，错误日志的输出不变。</p>
+<p></p>
+<h3>尝试2：看到了错误后面的提示，运行mysql_upgrade方法</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root bin]# ./mysql_upgrade --protocol=tcp -P4310 -p
+Enter password: 
+Looking for 'mysql' as: ./mysql
+Looking for 'mysqlcheck' as: ./mysqlcheck
+Running 'mysqlcheck' with connection arguments: '--protocol=tcp' '--port=4310' 
+./mysqlcheck: Got error: 2003: Can't connect to MySQL server on 'localhost' (111) when trying to connect</code></pre>
+<p>MySQL5.5 部署的一个问题</p>
+<p>看来还是不行，这个时候我严重怀疑是配置文件的问题:。</p>
+<p></p>
+<h3>尝试3：从线上环境中搞来了一个mysql5.5的配置文件，然后重新替换新的配置文件，重新启动：</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@ mysql_4310]# /usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysqld_safe --defaults-file=/data/mysql_4310/my.cnf &amp; 
+[1] 63529
+[root@ mysql_4310]# 190621 11:51:37 mysqld_safe Logging to '/data/mysql_4310/log/hb30_web_wechat_answers-121_246.err'.
+190621 11:51:37 mysqld_safe Starting mysqld daemon with databases from /data/mysql_4310/data
+190621 11:51:40 mysqld_safe mysqld from pid file /data/mysql_4310/tmp/mysql.pid ended</code></pre>
+<p>MySQL5.5 部署的一个问题</p>
+<p>查看错误日志：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+查看错误日志：
+[Note] Plugin 'FEDERATED' is disabled.
+-5.5.19-linux2.6-x86_64/bin/mysqld: Unknown error 1146
+[ERROR] Can't open the mysql.plugin table. Please run mysql_upgrade to create it.
+InnoDB: The InnoDB memory heap is disabled
+InnoDB: Mutexes and rw_locks use GCC atomic builtins
+InnoDB: Compressed tables use zlib 1.2.3
+InnoDB: Using Linux native AIO
+InnoDB: Initializing buffer pool, size = 4.0G
+InnoDB: Completed initialization of buffer pool
+t specified data file /data/mysql_4310/ibdata1 did not exist:
+tabase to be created!
+ InnoDB: Setting file /data/mysql_4310/ibdata1 size to 1000 MB
+ physically writes the file full: wait...
+ in MB: 100 200 300 400 500 600 700 800 900 1000
+ InnoDB: Data file /data/mysql_4310/ibdata2 did not exist: new to be created
+ InnoDB: Setting file /data/mysql_4310/ibdata2 size to 100 MB
+ physically writes the file full: wait...
+ in MB: 100
+og file /data/mysql_4310/innodblog/ib_logfile0 is of different size 0 1073741824 bytes
+cified in the .cnf file 0 134217728 bytes!
+[ERROR] Plugin 'InnoDB' init function returned error.
+[ERROR] Plugin 'InnoDB' registration as a STORAGE ENGINE failed.
+[ERROR] Aborting</code></pre>
+<p>MySQL5.5 部署的一个问题</p>
+<p>发现最先面出现了新的错误，提示Innodb 初始化函数返回了错误，无法使用innodb存储引擎。到这里，我开始怀疑是不是初始化的时候，就有错误，导致服务不可用，于是想着重新初始化一遍数据字典，重新起服务，看看行不行。</p>
+<p></p>
+<h3>尝试4：重新初始化数据字典</h3>
+<p></p>
+<p></p>
+<h3> 尝试使用initialize-insecure方法重新初始化，发现失败了。</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root mysql_4310]# /usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysqld
+ --initialize-insecure 
+--defaults-file=/data/mysql_4310/my.cnf 
+--datadir=/data/mysql_4310/data 
+--basedir=/usr/local/mysql-5.5.19-linux2.6-x86_64 &amp;
+[1] 7045
+
+
+
+[1]+ Exit 2  /usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysqld 
+--initialize-insecure 
+--defaults-file=/data/mysql_4310/my.cnf 
+--datadir=/data/mysql_4310/data 
+--basedir=/usr/local/mysql-5.5.19-linux2.6-x86_64</code></pre>
+<p>MySQL5.5 部署的一个问题</p>
+<p>错误日志还是之前的日志，提示mysql.plugin表不存在，除此之外，还多了一行，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[ERROR] /usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysqld: unknown option '--initialize-insecure'</code></pre>
+<p>MySQL5.5 部署的一个问题</p>
+<p>于是上官方文档上面查看了--initialize-insecure参数，发现这个参数在mysql5.5版本没有，然后5.5版本的是initialize参数，于是换成这个initialize参数，重新初始化，然后报错如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@ ]/usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysqld --defaults-file=/data/mysql_4310/my.cnf --datadir=/data/mysql_4310/data --basedir=/usr/local/mysql-5.5.19-linux2.6-x86_64 --initialize &amp;
+
+[1]+ Exit 2     /usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysqld --defaults-file=/data/mysql_4310/my.cnf --datadir=/data/mysql_4310/data --basedir=/usr/local/mysql-5.5.19-linux2.6-x86_64 --initialize</code></pre>
+<p>MySQL5.5 部署的一个问题</p>
+<p>此时，查看官方文档，发现MySQL5.5版本的初始化使用的是mysql_install_db命令而不是mysqld命令，而mysql_install_db这个工具不在/usr/local/mysql-5.5.19-linux2.6-x86_64/bin目录中，而在/usr/local/mysql-5.5.19-linux2.6-x86_64/scripts目录下面，于是通过cp命令将其拷贝到指定目录，然后进行初始化，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@ mysql_4310]# /usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysql_install_db 
+--defaults-file=/data/mysql_4310/my.cnf 
+[root@ mysql_4310]# ll | grep install
+[root@ mysql_4310]# /usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysql_install_db 
+--defaults-file=/data/mysql_4310/my.cnf 
+--datadir=/data/mysql_4310/data 
+--basedir=/usr/local/mysql-5.5.19-linu
+[1] 16365
+[root@ mysql_4310]# 
+Installing MySQL system tables...
+OK
+Filling help tables...
+OK
+
+To start mysqld at boot time you have to copy
+support-files/mysql.server to the right place for your system
+
+PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL root USER !
+To do so, start the server, then issue the following commands:
+
+/usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysqladmin -u root password 'new-password'
+/usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysqladmin -u root -h tk01-devt-mysql-7-200 password 'new-password'
+
+Alternatively you can run:
+/usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysql_secure_installation
+
+which will also give you the option of removing the test
+databases and anonymous user created by default. This is
+strongly recommended for production servers.
+
+See the manual for more instructions.
+
+You can start the MySQL daemon with:
+cd /usr/local/mysql-5.5.19-linux2.6-x86_64 ; /usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysqld_safe &amp;
+
+You can test the MySQL daemon with mysql-test-run.pl
+cd /usr/local/mysql-5.5.19-linux2.6-x86_64/mysql-test ; perl mysql-test-run.pl
+
+Please report any problems with the /usr/local/mysql-5.5.19-linux2.6-x86_64/scripts/mysqlbug script!
+
+
+[1]+ Done     /usr/local/mysql-5.5.19-linux2.6-x86_64/bin/mysql_install_db --defaults-file=/data/mysql_4310/my.cnf --datadir=/data/mysql_4310/data --basedir=/usr/local/mysql-5.5.19-linux2.6-x86_64</code></pre>
+<p>MySQL5.5 部署的一个问题</p>
+<p>结果成功。</p>
+<p></p>
+<h3>总结如下：</h3>
+<p></p>
+<p>1、MySQL5.5版本的初始化使用mysql_install_db工具，而不是mysqld工具</p>
+<p>2、MySQL5.5版本的初始化使用--initialize参数</p>
+<p>以上就是MySQL5.5 部署的一个问题的详细内容，更多关于MySQL 部署的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL5.5 部署的一个问题的深入分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/414.html'>MySQL|update字段为相同的值是否会记录binlog的解决办法</a><a>下一篇</a><a href='/mysql/biji/416.html'>MySQL通过Navicat实现远程连接的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

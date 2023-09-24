@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>千万级记录的Discuz论坛导致MySQL CPU 100%的优化笔记_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了千万级记录的Discuz论坛导致MySQL CPU 100%的优化笔记，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！发现" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">千万级记录的Discuz论坛导致MySQL CPU 100%的优化笔记</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:22:43                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了千万级记录的Discuz论坛导致MySQL CPU 100%的优化笔记，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！发现</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了千万级记录的Discuz论坛导致MySQL CPU 100%的优化笔记，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>发现此主机运行了几个 Discuz 的论坛程序， Discuz论坛的好几个表也存在着这个问题。于是顺手一并解决，cpu占用再次降下来了。　　前几天，一位朋友通过这篇文章找到了我，说他就是运行最新的 discuz 版本，MySQL 占用 CPU 100%，导致系统假死，每天都要重启好几次，花了一个多月的时间一直没有解决，希望我帮忙一下。经过检查，他的这个论坛最重要的几个表中，目前 cdb_members 表，有记录 6.2 万；cdb_threads 表，有记录 11万；cdb_posts表，有记录 1740 万；所有数据表的记录加起来，超过 2000 万；数据库的大小超过 1GB。经过半天的调试，总算完成了 discuz 论坛优化，于是将其解决经过记录在这篇文章中。　　2007年3月我发现 discuz 论坛的数据库结构设计有一些疏忽，有许多查询子句的条件比较，都没有建立 Index 索引。当时我所检查的那个数据表，记录只有几千条，因此对 CPU 负荷不大。现在这个数据库表，上千万的记录检索，可以想象，如果数据表结构设计不规范，没有提供索引，所耗费的时间是一个恐怖的数字。有关 MySQL 建立索引的重要性，可以参见我的这篇文章底部的说明　　为了调试方便，我从 dizcus 的官网下载了其最新的 Dizcus! 5.5.0 论坛程序．　　我首先检查了 my.ini 的参数配置，一切正常。进入 MySQL 的命令行，调用 show processlist 语句，查找负荷最重的 SQL 语句，结合 Discuz 论坛的源码，发现有以下语句导致 CPU 上升：
+<p>代码如下:</p>
+<pre>
+<code> 
+mysql&gt; show processlist; 
++-----+------+----------------+---------+---------+------+------------+--------- 
+-----------------------------------------------------------------+ 
+| Id | User | Host | db | Command | Time | State | Info 
+
++-----+------+----------------+---------+---------+------+------------+--------- 
+-----------------------------------------------------------------+ 
+| 363 | root | localhost:1393 | history | Query | 0 | statistics | SELECT C 
+OUNT(*) FROM cdb_pms WHERE msgfromid=11212 AND folder=&#39;outbox&#39; | 
++-----+------+----------------+---------+---------+------+------------+--------- 
+</code></pre>检查 cdb_pms 表的结构：
+<p>代码如下:</p>
+<pre>
+<code> 
+mysql&gt; show columns from cdb_pms; 
++-----------+------------------------+------+-----+---------+----------------+ 
+| Field | Type | Null | Key | Default | Extra | 
++-----------+------------------------+------+-----+---------+----------------+ 
+| pmid | int(10) unsigned | NO | PRI | NULL | auto_increment | 
+| msgfrom | varchar(15) | NO | | | | 
+| msgfromid | mediumint(8) unsigned | NO | MUL | 0 | | 
+| msgtoid | mediumint(8) unsigned | NO | MUL | 0 | | 
+| folder | enum(&#39;inbox&#39;,&#39;outbox&#39;) | NO | | inbox | | 
+| new | tinyint(1) | NO | | 0 | | 
+| subject | varchar(75) | NO | | | | 
+| dateline | int(10) unsigned | NO | | 0 | | 
+| message | text | NO | | | | 
+| delstatus | tinyint(1) unsigned | NO | | 0 | | 
++-----------+------------------------+------+-----+---------+----------------+ 
+10 rows in set (0.00 sec) 
+</code></pre>这条语句: <font color="#ff0000">WHERE msgfromid=11212 AND folder=&#39;outbox&#39;</font>，我们看到，在 cdb_pms 表中，msgfromid 字段已经建立了索引，但是，folder 字段并没有。目前这个表已经有记录 7823 条。显然，这会对查询造成一定影响。于是为其建立索引：
+<p>代码如下:</p>
+<pre>
+<code> 
+mysql&gt; ALTER TABLE `cdb_pms` ADD INDEX ( `folder` ); 
+Query OK, 7823 rows affected (1.05 sec) 
+Records: 7823 Duplicates: 0 Warnings: 0 
+</code></pre>继续检查：
+<p>代码如下:</p>
+<pre>
+<code> 
+mysql&gt; show processlist; 
++------+------+----------------+---------+---------+------+------------+-------- 
+-------------------------------------------------------------------------------- 
+--------------+ 
+| Id | User | Host | db | Command | Time | State | Info 
+
+| 
++------+------+----------------+---------+---------+------+------------+-------- 
+-------------------------------------------------------------------------------- 
+--------------+ 
+
+| 1583 | root | localhost:2616 | history | Query | 0 | statistics | SELECT 
+t.tid, t.closed, f.*, ff.* , f.fid AS fid 
+FROM cdb_threads t 
+INNER JOIN cdb_forums f | 
++------+------+----------------+---------+---------+------+------------+-------- 
+-------------------------------------------------------------------------------- 
+--------------+ 
+1 rows in set (0.00 sec) 
+</code></pre>这条 SQL 语句是针对最重要的数据表 cdb_threads 进行操作的，由于 show processlist 没有将这条 SQL 语句全部显示完全，经对比 Discuz 论坛的源码，此SQL语句的原型位于 common.inc.php 的 Line 283，内容如下：
+<p>代码如下:</p>
+<pre>
+<code> 
+$query = $db-&gt;query(&quot;SELECT t.tid, t.closed,&quot;.(defined(&#39;SQL_ADD_THREAD&#39;) ? 
+SQL_ADD_THREAD : &#39;&#39;).&quot; f.*, ff.* $accessadd1 $modadd1, f.fid AS fid 
+FROM {$tablepre}threads t 
+INNER JOIN {$tablepre}forums f ON f.fid=t.fid 
+LEFT JOIN {$tablepre}forumfields ff ON ff.fid=f.fid $accessadd2 $modadd2 
+WHERE t.tid=&#39;$tid&#39;&quot;.($auditstatuson ? &#39;&#39; : &quot; AND t.displayorder&gt;=0&quot;).&quot; LIMIT 1&quot;); 
+</code></pre>经检查，数据表 cdb_threads, 并没有针对 displayorder 字段建立索引。在 discuz 论坛中，displayorder字段多次参与了 Where 子句的比较。于是为其建立索引：
+<p>代码如下:</p>
+<pre>
+<code> 
+mysql&gt; ALTER TABLE `cdb_threads` ADD INDEX ( `displayorder` ); 
+Query OK, 110330 rows affected (2.36 sec) 
+Records: 110330 Duplicates: 0 Warnings: 0 
+</code></pre>此时 cpu 已经轻微下降了一部分。继续检查，发现 下面这条 discuz 的 SQL 语句，也导致负荷增加，这条语句位于 rss.php 程序中的第 142 行。
+<p>代码如下:</p>
+<pre>
+<code> 
+$query = $db-&gt;query(&quot;SELECT t.tid, t.readperm, t.price, t.author, t.dateline, t.subject, p.message 
+FROM {$tablepre}threads t 
+LEFT JOIN {$tablepre}posts p ON p.tid=t.tid AND p.first=1 
+WHERE t.fid=&#39;$fid&#39; AND t.displayorder&gt;=0 
+ORDER BY t.dateline DESC LIMIT $num&quot;); 
+</code></pre>在这个 Order by 子句中，用到了 cdb_threads 表中的 dataline 字段。这个字段是用来存储 unixtime 的时间戳，在整个论坛程序中，大部分时候数据的排序也是基于这个字段，竟然没有建立索引。于是加上：
+<p>代码如下:</p>
+<pre>
+<code> 
+mysql&gt; ALTER TABLE `cdb_threads` ADD INDEX ( `dateline` ); 
+Query OK, 110330 rows affected (12.27 sec) 
+Records: 110330 Duplicates: 0 Warnings: 0 
+</code></pre>查找占用 CPU 高负茶的 SQL 语句，是一件麻烦而又枯燥的事，需要一条一条排除、分析。后面的工作，都是依此类推，经过检查，共查出有八处地方，需要增加索引，如果你也碰到了 discuz 5.5.0 论坛导致 cpu 占用 100% 的情况，可以直接将下列语句复制过去，在 mysql 的命令行下执行即可：
+<p>代码如下:</p>
+<pre>
+<code> 
+ALTER TABLE `cdb_pms` ADD INDEX ( `folder` ); 
+ALTER TABLE `cdb_threads` ADD INDEX ( `displayorder` ); 
+ALTER TABLE `cdb_threads` ADD INDEX ( `dateline` ); 
+ALTER TABLE `cdb_threads` ADD INDEX ( `closed` ); 
+ALTER TABLE `cdb_threadsmod` ADD INDEX ( `dateline` ); 
+ALTER TABLE `cdb_sessions` ADD INDEX ( `invisible` ); 
+ALTER TABLE `cdb_forums` ADD INDEX ( `type` ); 
+ALTER TABLE `cdb_forums` ADD INDEX ( `displayorder` ); 
+</code></pre>注意：&ldquo;cdb_&rdquo; 是 discuz 论坛的默认数据表前缀。如果你的表名前缀不是 &ldquo;cdb_&rdquo;，则应该改成你对应的表名。例如：my_threads, my_pms 等等。
+<p></p>
+<p></p>
+<p>　　完成这些结构的优化之后，整个系统的 CPU 负荷在 10%~20%左右震荡，问题解决。</p>
+<p></p>
+<p>　　我很奇怪，设计数据库结构，是一个数据库开发人员的基本功，discuz 论坛好歹也是一个发展了有六七年的论坛了，为何数据库结构设计得如此糟糕？我想也许有如下三个原因：</p>
+<p></p>
+<ul>
+	<li>数据库开发人员设计时本身的疏忽</li>
+	<li>故意留下的缺陷，当普通论坛没有上数量级的记录时，不会感觉到这个问题，当数据量增大（例如千万级），此问题突现，以便针对用户提供个性服务收取服务费．呵呵，估且以最大的恶意来猜测此事，玩笑而已，不必当真。:)　</li>
+	<li>另一个可能就是用户的论坛是从低版本升级而来，程序升了级，但数据结构也许没有做相应的更新</li>
+</ul>
+<p></p>
+<p></p>
+<h2>附1: 补充笔记 2007-07-09</h2>
+<p></p>
+<p>　　今天查看网站日志的 reffer, 发现在 discuz 的官方论坛上，有人就此文引起了一些争论: http://www.discuz.net/thread-673887-1-1.html。discuz 的管理员和管理员有如下言论：</p>
+<blockquote>
+<p><b>引用自 cnteacher</b>:</p>
+<p>恰恰相反，discuz 的优化措施和数据库的索引是按照大规模论坛设计的。</p>
+<p>TO 一楼：数据库结构的设计都是按照程序应用来进行的，使用任何非Discuz! 标准版本以外的代码和程序，或者变更标准数据结构，均可能遇到不可预知的各种问题。</p>
+<p><b>引用自 童虎</b>:</p>
+<p>你们可以看看xxxxx, xxxx之类的比较大型的网站，这种网站使用dz论坛都没有问题，说明dz标准程序是没有问题，出现楼主说的情况，多半属于服务器或者安装一些插件造成的</p></blockquote>
+<p>　　显然将问题推给插件的原因是不正确的．举个简单的例子：在最新的 discuz 5.5.0 forumdisplay.php 第183 行，有如下语句：</p>
+<pre>
+<tt>$query = $db-&gt;query(&quot;SELECT uid, groupid, username, invisible,
+ lastactivity, action FROM {$tablepre}sessions 
+ WHERE $guestwhere fid=&#39;$fid&#39; AND <font color="#ff0000">invisible</font>=0&quot;);
+</tt></pre>　　这里的 invisible 并没有建立索引。本文中有评论认为 session 表是内存表, 速度会很快。理论是如此。不过我在 show processlist 中，观察到上面这条语句占用了大量 CPU， 所以也将其一并加上了 index。cdb_threads 中的 closed 等字段, 也多次参与 where 运算, 也没有建立索引。这些运算的语句, 是 discuz 自己的程序中的。
+<p></p>
+<p></p>
+<h2>附2: 补充笔记 2007-11-11</h2>　　自从这篇笔记发表以来，在我的这篇文章的评论、以及我的联系消息中，就经常收到许多下面两种类型的评论和邮件：一、许多技术人员批评我胡说八道、Dizcus 论坛不需要做优化或者不能乱建索引的；二、许多使用Dizcus 的站长找我&ldquo;冰天雪地裸体跪求&rdquo;解决他们的 CPU 占用 100% 的问题。
+<p></p>
+<p>　　一、关于 <b>MySQL 数据库优化技术</b>上的争论，我的观点再次声明如下：</p>
+<p></p>
+<ol>
+	<li>技术上的争论是可以放开了讨论的。而我的水平也确实只是半瓶水，对数据库的理论知识也只懂这么点，牛牛们的批评，我虚心接心，非常感谢。但是，评论里的批评不要上升到人身攻击，否则，我的地盘我作主，直接删除。
+	<p></p>
+	<p></p></li>
+	<li>数据库的优化，要涉及到的方方面面很多。关说理论是没有用的，得靠事实说话。一个千万级数据库的实例优化说明不了问题，两个千万级的数据库优化也许还说明不了问题，但我相信，三个、四个、五个总是可以说明问题的，－－截止到 2007.11.09，我已经帮助朋友优化过五个记录数超过 1000 万的 discuz 论坛了。我想<font color="#ff0000">事实胜于雄辩</font>：优化之前，cpu 都是 100%；优化之后，cpu 降到 30%~40% 左右。没错，做 ADD INDEX　会增加数据库 INSERT/UPDATE 时的开销，但别忘了论坛最主要的操作，是 SELECT 查询。</li>
+</ol>
+<p></p>
+<p>　　二、关于找我帮忙<b>解决数据库优化</b>的评论和邮件，答复如下:</p>
+<p></p>
+<ol>
+	<li>数据库的优化，不同的版本有不同的实际情况，优化一个 database，短则三两小时，慢则半天一天。请大家理解这个中年老男人养家的压力，我的精力有限，不可能一一帮到。</li>
+	<li><font color="#ff0000">对于没有收入的个人网站，我可以在周六周日的空余时间内帮忙。请事先与我联系好。</font></li>
+	<li><font color="#ff0000">对于有收入的网站，嗯嗯，自觉点，请带价格与我联系，或者直接安排美女请我吃饭，否则免谈。:)</font> <b>请不要</b>来信问&ldquo;<b>优化我们这个论坛你要多少费用？</b>&rdquo;这样没营养的话，而是直接说&ldquo;<b>帮我们优化 XXXX 论坛， XXXX RMB 可以不？</b>&rdquo;，我觉得合适就做。大家都很忙，我的时间很值钱，你要我自己报价，我怕吓着你。</li>
+	<li><font color="#ff0000">请通过 http://www.xiaohui.com/support/ 与我联系</font>。不要在评论里留个 QQ 号然后要我加你，我不会时时盯着评论看。</li>
+</ol>
+<p></p>
+<p></p>
+<h2>附3: 补充笔记 2007-11-17: 关于装有首页四格插件的 dz 论坛导致 MySQL 占用 大量CPU 的分析</h2>　　今天手机巴士的站长( http://bbs.sj84.com )找到我，他的基于 Discuz 的论坛，也存在 CPU 占用 100% 的问题，服务器从 Win 2003 换到　CentOS，内存 2G, CPU 1.86G,　数据：cdb_threads 4 万，cdb_posts 96 万，cdb_members 35 万，已经按我上面文章所说的优化过索引。按说这个配置足够运行论坛了，但问题一直得不到解决。
+<p></p>
+<p>　　经过调试，将慢查询的结果 dump 到 /usr/local/mysql/var/localhost-slow.log，运行 /usr/local/mysql/bin/mysqldumpslow /usr/local/mysql/var/localhost-slow.log 查看，结合 show processlist 命令，发现慢查询集中在下列语句:</p>
+<pre>
+<tt>SELECT t.*, f.name FROM cdb_threads t, cdb_forums f WHERE 
+t.fid&lt;&gt;&#39;S&#39; 
+AND f.fid=t.fid 
+AND f.fid NOT IN (N,N,N,N) 
+AND t.closed NOT LIKE &#39;S&#39; 
+AND t.replies !=N 
+AND t.displayorder&gt;=N 
+ORDER BY t.views DESC LIMIT N, N</tt></pre>　　然而搜索 Dizcus 论坛的源码，并没有找到这行代码。怀疑是插件的原因。经查，论坛装了首页四格的插件，这行语句位于 include/toplist.php 中: 仔细检查这行代码，发现存在许多性能或语法规范上的问题：
+<p></p>
+<p></p>
+<ol>
+	<li><b>AND t.closed NOT LIKE &#39;S&#39;</b>:t.closed 是数值字段，不应该用 LIKE &#39;S&#39; 的形式参与比较。　</li>
+	<li><b>ORDER BY t.views:</b> t.views 在 dizcus 的原始数据表中，是没有做索引的。</li>
+	<li><b>SELECT t.*</b>: 这种写法，是不被推荐的。如果要选择某个表内的所有字段，最好是按实全部写出来，例如：select t.aa, t.bb, t.cc, t.dd, ...</li>
+	<li><b>WHERE　t.fid &lt;&gt; &#39;S&#39;</b>: t.fid 是数值型字段，不应该写成 字符比较的形式。这个对性能影响不大，是个编程规范的问题。</li>
+	<li>....</li>
+</ol>
+<p></p>
+<p>　　toplist.php 的其他三条 sql 语句，都存在这些问题。如果要针对他的 sql 语句去优化 MySQL 结构，会带来不良的后果；如果直接改他的 toplist.php 程序，如果站长以后升级　toplist.php 又怕带来不兼容问题。于是我建议他干脆关闭首页四格插件。</p>
+<p>　　关闭首页四格插件之后，CPU 降到 18% 左右震荡，表现非常良好。</p>
+<p>　　如果是我来写首页四格的程序，我不会采用这种方案，我会用定时15分钟或30分钟查询一次数据库，将结果写入 TXT 文件或临时表，然后程序再从中读取，效率会高许多。</p>
+<p>　　结论：</p>
+<p></p>
+<ol>
+	<li>如果装了插件的论坛碰到　CPU 高负荷时，建议关掉插件再评估性能。</li>
+	<li>慎装第三方插件。没事不要乱插。:)</li>
+</ol>
+<p></p>
+<h2>附4：补充笔记 2008-06-10：这篇文章，重要的是分析过程，而不是进行修正的那段代码</h2>
+<p>　　最近有几位在评论中留言，以及给我 EMAIL，说到将我在文中给出的 那8行 ALTER TABLE 代码，在他的出现 CPU 100% 的 dz 论坛上，用了之后没有效果。</p>
+<p>　　我的解释如下：这段代码，不能保证在 dz 的所有版本下通用。具体问题，要具体分析。这段代码，是我在 Dizcus! 5.5.0 的版本的基本下进行分析得出的校正结果。其他的版本，不敢保证。</p>
+<p>　　这篇文章的重点，并不是作为结果的这段代码，<b>而是如何得出这个结果的分析过程。知道了原理，你自己一样可以分析。</b></p>
+
+<p>注：关于千万级记录的Discuz论坛导致MySQL CPU 100%的优化笔记的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1119.html'>Ubuntu与windows双系统下共用MySQL数据库的方法</a><a>下一篇</a><a href='/mysql/biji/1121.html'>MySQL筛选GROUP BY多个字段组合时的用法分享</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL8.0的内存消耗的实现方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL8.0的内存消耗的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	1、innodb_" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL8.0的内存消耗的实现方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:14:40                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL8.0的内存消耗的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	1、innodb_</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL8.0的内存消耗的实现方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<div id="navCategory">
+<h5 class="catalogue">目录</h5>
+<ul class="first_class_ul">
+	<li>1、innodb_buffer_pool_size</li>
+	<li>2、innodb_log_buffer_size
+	<ul class="second_class_ul">
+		<li>1、查看</li>
+		<li>2、在配置文件中写上相关的参数，开启统计，以memory/innodb/row_log_buf为例，配置文件修改的如下：</li>
+		<li>3、启动实例，并在performance_schema数据库的memory_summary_global_by_event_name表中查看内存统计结果。</li>
+	</ul></li>
+</ul>
+<p> 在MySQL8.0在启动的时候，会配置各种各样的buffer和cache来提高数据库的性能。如果我们在一台服务器上配置了MySQL8.0的服务，那么这台服务器的内存会同时被操作系统、MySQL8.0服务、以及其他应用程序所共享。</p>
+<p> 生产环境中，经常会遇到内存的报警，在处理这些报警之前，你需要知道MySQL本身消耗内存最多的点在哪里，这样才能比较直观的判断出来你的MySQL服务占用的内存有多少，以及如何降低MySQL本身的内存消耗。</p>
+<p> 在MySQL配置文件中，最常用的两个内存相关的参数是innodb_buffer_pool_size、innodb_log_buffer_size,我们来看这两个参数。</p>
+<p class="maodian"></p>
+<h2>1、innodb_buffer_pool_size</h2>
+<p>这个参数定义了buffer pool的大小，大家可能都比较熟悉，buffer pool中的内容包含innodb 表、索引、以及其他的辅助buffer，buffer pool的大小对MySQL系统性能影响比较大，默认情况下，MySQL8.0配置的buffer pool大小是128MB，通常情况下，如果是单机单实例，没有其他业务，那么MySQL官方建议配置的大小为系统内存的50%到75%之间。当然，如果你的服务器上还部署了其他的应用程序，那么你需要酌情减小这个比例，从而腾出内存。</p>
+<p>如果你的操作系统的内存很充裕，你可以设置多个innodb buffer pool实例，可以使用下面的参数来调整这个实例的个数：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show variables like '%innodb_buffer_pool_instances%';
++------------------------------+-------+
+| Variable_name    | Value |
++------------------------------+-------+
+| innodb_buffer_pool_instances | 1  |
++------------------------------+-------+
+1 row in set (0.00 sec)</code></pre>
+<p>分析分析MySQL8.0的内存消耗</p>
+<p class="maodian"></p>
+<h2>2、innodb_log_buffer_size</h2>
+<p>这个参数定义了innodb存储引擎向磁盘上写redo log之前，最多在内存中缓存数据的大小，默认是16MB。这个值增加之后，大的事务可以不用在事务提交之前将redo log落盘。如果你的update、delete和insert操作影响行数比较多，那么你需要考虑增大这个值。</p>
+<p>重点来了：</p>
+<p>在操作系统里面，MySQL占用的内存不仅仅是上述两个内存配置参数有关，通常情况下，我们计算MySQL占用的内存的时候，会使用下面4个值相加的方式：</p>
+<p>1、innodb_buffer_pool_size</p>
+<p>2、key_buffer_size (这个参数通常是myisam表占用内存的关键参数)</p>
+<p>3、max_connections*(sort_buffer_size+read_buffer_size+binlog_cache_size) (这三个是连接级别的buffer)</p>
+<p>4、max_connections*2MB</p>
+<p>所以当你使用top命令看到你的MySQL占用的内存远远超过innodb_buffer_pool_size的时候，你需要考虑的另外一个关键因素是连接数是否超标了，一旦连接数过高，那么上述3、4这两部分消耗的内存将会非常多。</p>
+<p>当然，上面列举的，是MySQL最主要占用内存的几个因素，除此之外，其他的内存消耗的地方，可以查看官方文档：</p>
+<p>https://dev.mysql.com/doc/refman/8.0/en/memory-use.html</p>
+<p>上述文档中，还有介绍我们如何使用performance_schema来监控MySQL的内存使用，这里我提一下整个流程，详细的细节以及参数介绍请参看官方文档。</p>
+<p class="maodian"></p>
+<h3>1、查看</h3>
+<p>performance_schema.setup_instruments</p>
+<p>这张表，找到你关注的内存变量的名称（直接搜索，结果有490多条，分为好几个大类，一定记得过滤自己关注的参数）。举个例子，我们搜索memory/innodb相关参数，代表innodb存储引擎占用的内存，结果如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; SELECT * FROM performance_schema.setup_instruments  WHERE NAME LIKE '%memory/innodb%';
++-------------------------------------------+---------+-------+-------------------+------------+---------------+
+| NAME          | ENABLED | TIMED | PROPERTIES  | VOLATILITY | DOCUMENTATION |
++-------------------------------------------+---------+-------+-------------------+------------+---------------+
+| memory/innodb/adaptive hash index   | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/log and page archiver  | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/buf_buf_pool    | YES  | NULL | global_statistics |   0 | NULL   |
+| memory/innodb/buf_stat_per_index_t  | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/clone      | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/dict_stats_bg_recalc_pool_t | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/dict_stats_index_map_t  | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/dict_stats_n_diff_on_level | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/other      | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/partitioning    | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/row_log_buf     | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/row_merge_sort    | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/std       | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/trx_sys_t::rw_trx_ids  | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/undo::Tablespaces   | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/ut_lock_free_hash_t   | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/api0api      | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/api0misc     | YES  | NULL |     |   0 | NULL   |
+| memory/innodb/btr0btr      | YES  | NULL |     |   0 | NULL   |</code></pre>
+<p>分析分析MySQL8.0的内存消耗</p>
+<p class="maodian"></p>
+<h3>2、在配置文件中写上相关的参数，开启统计，以memory/innodb/row_log_buf为例，配置文件修改的如下：</h3>
+<p>代码如下：</p>
+<pre>
+<code>
+performance-schema-instrument='memory/innodb/row_log_buf=COUNTED'</code></pre>
+<p>分析分析MySQL8.0的内存消耗</p>
+<p class="maodian"></p>
+<h3>3、启动实例，并在performance_schema数据库的memory_summary_global_by_event_name表中查看内存统计结果。</h3>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT * FROM performance_schema.memory_summary_global_by_event_name WHERE EVENT_NAME LIKE 'memory/innodb/row_log_buf'\G</code></pre>
+<p>分析分析MySQL8.0的内存消耗</p>
+<p>当然，你还可以根据sys表中的结果，查看每个大类的聚合结果，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; SELECT SUBSTRING_INDEX(event_name,'/',2) AS
+  code_area, FORMAT_BYTES(SUM(current_alloc))
+  AS current_alloc
+  FROM sys.x$memory_global_by_current_bytes
+  GROUP BY SUBSTRING_INDEX(event_name,'/',2)
+  ORDER BY SUM(current_alloc) DESC;
++---------------------------+---------------+
+| code_area     | current_alloc |
++---------------------------+---------------+
+| memory/innodb    | 843.24 MiB |
+| memory/performance_schema | 81.29 MiB  |
+| memory/mysys    | 8.20 MiB  |
+| memory/sql    | 2.47 MiB  |
+| memory/memory    | 174.01 KiB |
+| memory/myisam    | 46.53 KiB  |
+| memory/blackhole   | 512 bytes  |
+| memory/federated   | 512 bytes  |
+| memory/csv    | 512 bytes  |
+| memory/vio    | 496 bytes  |
++---------------------------+---------------+</code></pre>
+<p>分析分析MySQL8.0的内存消耗</p>
+<p>更详细的信息，请参见官方文档。</p>
+<p>以上就是详解分析MySQL8.0的内存消耗的详细内容，更多关于MySQL8.0 内存消耗的资料请关注512笔记其它相关文章！</p></div>
+
+<p>注：关于MySQL8.0的内存消耗的实现方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/264.html'>MySQL的COUNT(*)的性能的解决办法</a><a>下一篇</a><a href='/mysql/biji/266.html'>解决node连接MySQL数据库遇到的问题</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

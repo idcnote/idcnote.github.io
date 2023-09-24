@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>详解java中动态代理实现机制_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="代理模式是常用的java设计模式，它的特征是代理类与委托类有同样的接口，代理类主要负责为委托类预处理消息、过滤消息、把消息转发给委托类，以及事后处理消息等。代理类与委托类" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">详解java中动态代理实现机制</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>代理模式是常用的java设计模式，它的特征是代理类与委托类有同样的接口，代理类主要负责为委托类预处理消息、过滤消息、把消息转发给委托类，以及事后处理消息等。代理类与委托类</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>代理模式是常用的java设计模式，它的特征是代理类与委托类有同样的接口，代理类主要负责为委托类预处理消息、过滤消息、把消息转发给委托类，以及事后处理消息等。代理类与委托类之间通常会存在关联关系，一个代理类的对象与一个委托类的对象关联，代理类的对象本身并不真正实现服务，而是通过调用委托类的对象的相关方法，来提供特定的服务。</p>
+<p><strong>JAVA各种动态代理实现的比较</strong></p>
+<p style="text-align: center"></p>
+<p><strong>接口</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+interface AddInterface{
+ int add(int a, int b);
+}
+
+interface SubInterface{
+ int sub(int a, int b);
+}
+
+</pre>
+</div>
+<p><strong>实现类</strong><br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+class Arithmetic implements AddInterface, SubInterface{
+ @Override
+ public int sub(int a, int b) {
+  return a-b;
+ }
+
+ @Override
+ public int add(int a, int b) {
+  return a+b;
+ }
+}
+
+</pre>
+</div>
+<p><strong>方式1:</strong><span style="color: #800000"><strong> JDK自带的动态代理</strong></span></p>
+<p>1、实现方式</p>
+<p>　　Java在JDK1.3后引入的动态代理机制，使我们可以在运行期动态的创建代理类。使用动态代理实现AOP需要有四个角色：被代理的类，被代理类的接口，织入器，和InvocationHandler，而织入器使用接口反射机制生成一个代理类，然后在这个代理类中织入代码。被代理的类是AOP里所说的目标，InvocationHandler是切面，它包含了Advice和Pointcut。</p>
+<p style="text-align: center"></p>
+<p>2、vInvocationHandler接口的实现</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+class JdkDPQueryHandler implements InvocationHandler{
+ private Arithmetic real;
+ public JdkDPQueryHandler(Arithmetic real){
+  this.real = real;
+ }
+ @Override
+ public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+  String methodName = method.getName();
+  System.out.println(method);
+  System.out.println("the method: " + methodName + "开始, 参数: "+Arrays.asList(args));
+  Object result = method.invoke(real, args);
+  System.out.println("the method: "+methodName+"结束, 结果: " + result);
+  return result;
+ }
+}</pre>
+</div>
+<p>3、创建代理类并且调用代理类</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class Main{
+ private static int a = 4, b = 2;
+ 
+ public static Object createJDKProxy(Arithmetic real){
+  Object proxyArithmetic = Proxy.newProxyInstance(real.getClass().getClassLoader(),
+    real.getClass().getInterfaces(), new JdkDPQueryHandler(real)); 
+  return proxyArithmetic;
+ }
+ 
+ public static void main(String[] args){
+  Arithmetic real = new Arithmetic();
+  Object proxyArithmetic = createJDKProxy(real);
+  ((AddInterface)proxyArithmetic).add(a, b);
+  ((SubInterface)proxyArithmetic).sub(a, b);
+ }
+}
+</pre>
+</div>
+<p><strong>方式2：</strong><span style="color: #800000"><strong>动态字节码生成（cglib）</strong></span></p>
+<p>1、实现方式</p>
+<p>　　Enhancer和MethodInterceptor。Enhancer可以用来动态的生成一个类，这个类可以继承指定的一个类，实现指定的一些接口。同时,Enhancer在生成一个类之前需要指定一个Callback，当类方法调用时，方法的执行被分配给这个Callback，MethodInterceptor是一个使用比较多的继承自Callback的接口，它只有一个方法声明。</p>
+<p style="text-align: center"><br />
+</p>
+<p>2、接口InvocationHandler（jdk中）和接口MethodInterceptor（cglib中）对比</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public interface MethodInterceptor extends Callback { 
+ public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,MethodProxy proxy) throws Throwable; 
+} 
+public interface InvocationHandler { 
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable; 
+} 
+</pre>
+</div>
+<p>&nbsp;　&nbsp; 从参数构成上，methodInterceptor的输入参数比Invocationhandler多1个，其实前3个参数对象的含义与Invocationhandler的含义是相同的。<br />
+　　第一个参数表示调用方法来自哪个对象；<br />
+　　第二个参数表示调用方法的Method对象；<br />
+　　第三个参数表示此次调用的输入参数列表；<br />
+　　多出来的参数是MethodProxy 类型的，它应该是cglib生成用来代替Method对象的一个对象，使用MethodProxy比调用JDK自身的Method直接执行方法效率会有提升。<br />
+3、实现1</p>
+<p>MethodInterceptor接口的实现</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+class CglibDPQueryInterceptor implements MethodInterceptor{
+ private Arithmetic real;
+ public CglibDPQueryInterceptor(Arithmetic real){
+  this.real = real;
+ }
+ 
+ @Override
+ public Object intercept(Object target, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+  String methodName = method.getName();
+  System.out.println(method);
+  System.out.println("the method: " + methodName + "开始, 参数: "+Arrays.asList(args));
+  //Object result = method.invoke(real, args);//两种方式都是可以得
+  Object result = proxy.invoke(real, args);
+  System.out.println("the method: "+methodName+"结束, 结果: " + result);
+  return result;
+ }
+}
+</pre>
+</div>
+<p>创建代理类并调用代理类</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class Main{
+ private static int a = 4, b = 2;
+ public static Object createCglibProxy(Arithmetic real){
+   Enhancer enhancer = new Enhancer();
+   enhancer.setCallback(new CglibDPQueryInterceptor(real));
+   enhancer.setInterfaces(real.getClass().getInterfaces());
+   return enhancer.create();
+ }
+ 
+ public static void main(String[] args){
+  Arithmetic real = new Arithmetic();  
+  Object proxyArithmetic = createCglibProxy(real);  
+  ((AddInterface)proxyArithmetic).add(a, b);
+  ((SubInterface)proxyArithmetic).sub(a, b);
+ }
+}</pre>
+</div>
+<p>注意了，MethodProxy在对执行函数的时候，提供了2个方法</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public Object invoke (Object obj, Object[] args) throws Throwable 
+public Object invokeSuper(Object obj, Object[] args) throws Throwable</pre>
+</div>
+<p>　　其中，javadoc上说这个invoke()方法可以用于相同类中的其他对象的方法执行，也就是说这个方法中的obj需要传入相同一个类的另一个对象（上述方法中就是传入了Arithmetic类的不同对象），否则会进入无限递归循环（测试之后还真是出现了StackOverflowError）。仔细的想一想就会发现，public Object intercept(Object target, Method method, Object[] args, MethodProxy proxy)中的target是实现的代理类对象，通过target调用add()方法时会触发intercept()方法被调用，如果在intercept()方法中再调用method.invoke(target， args)，就相当于add()方法中又调用add()方法，导致无限的递归循环。但是如果执行method.invoke(real， args)则不会，因为real和target是同一个类不同对象，real是真实逻辑主题，target是真实主题real的代理。</p>
+<p>　　下面一个例子来模拟一下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+interface SolveInterface{
+ void solve();
+}
+
+class Real implements SolveInterface{
+ public void solve(){
+  System.out.println("Real Solve!");
+ }
+}
+
+class Target extends Real{
+ private Object obj;
+ 
+ public void setObject(Object obj){
+  this.obj = obj;
+ }
+ 
+ private void invoke(){
+  try {
+   Method method = SolveInterface.class.getMethod("solve", new Class[]{});
+   method.invoke(obj, new Class[]{});
+  } catch (Exception e) {
+   e.printStackTrace();
+  }
+ }
+ public void solve(){
+  System.out.println("Target Solve!");
+  invoke();
+ }
+}
+
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class Main{public static void main(String[] args) throws Exception{   
+    Target target = new Target();
+    target.setObject(new Real());//正确
+    //target.setObject(target);//发生循环调用
+    target.solve();
+  }
+}
+</pre>
+</div>
+<p>其实Method的invoke()方法会根据obj的类型去调用对应的solve()方法，也就是多态性。</p>
+<p>4、实现2</p>
+<p>　　MethodInterceptor接口的实现</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+class CglibDPQueryInterceptor implements MethodInterceptor{
+  
+  @Override
+  public Object intercept(Object target, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+    String methodName = method.getName();
+    System.out.println(method);
+    System.out.println("the method: " + methodName + "开始, 参数: "+Arrays.asList(args));
+    // 打印类信息 ：target.getClass()；省略
+    Object result = proxy.invokeSuper(target, args);
+    System.out.println("the method: "+methodName+"结束, 结果: " + result);
+    return result;
+  }
+}
+</pre>
+</div>
+<p>创建代理类并调用代理类</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class Main{
+  private static int a = 4, b = 2;
+public static Object createCglibProxy(){
+     Enhancer enhancer = new Enhancer();
+     enhancer.setCallback(new CglibDPQueryInterceptor());
+     enhancer.setSuperclass(Arithmetic.class);
+     return enhancer.create();
+  }
+  
+  public static void main(String[] args){
+    Arithmetic real = new Arithmetic();
+
+    Object proxyArithmetic = createCglibProxy();
+    
+    ((AddInterface)proxyArithmetic).add(a, b);
+    ((SubInterface)proxyArithmetic).sub(a, b);
+  }
+}
+
+</pre>
+</div>
+<p>　　注意了，实现2中Enhancer 没有设置接口，因为设置了Superclass了（也就是代理类的父类是Arithmetic），我们的代理类会继承它，而Arithmetic已经实现了我们的接口。为了证明这一点，可以在MethodInterceptor的 intercept方法中打印 target.getClass()的类信息，你会发现cglib的两种方式代理类的父类是不同的。如下：</p>
+<p>　　实现1：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class com.test.Arithmetic$$EnhancerByCGLIB$$4fa786eb extends java.lang.Object
+</pre>
+</div>
+<p>　　实现2：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class com.test.Arithmetic$$EnhancerByCGLIB$$4fa786eb extends com.test.Arithmetic
+</pre>
+</div>
+<p><strong>方式3：</strong><span style="color: #800000"><strong>javassist生成动态代理（代理工厂创建 或者 动态代码创建）　　</strong></span></p>
+<p>　　Javassist是一个编辑字节码的框架，可以让你很简单地操作字节码。它可以在运行期定义或修改Class。使用Javassist实现AOP的原理是在字节码加载前直接修改需要切入的方法。这比使用Cglib实现AOP更加高效，并且没太多限制，实现原理如下图：</p>
+<p style="text-align: center"></p>
+<p style="text-align: center"></p>
+<p>实现1：</p>
+<p>接口的实现</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+class JavassistDPQueryHandler implements MethodHandler{
+
+  @Override
+  public Object invoke(Object target, Method method, Method proxy, Object[] args) throws Throwable {
+    String methodName = method.getName();
+    System.out.println(method);
+    System.out.println("the method: " + methodName + "开始, 参数: "+Arrays.asList(args));
+    Object result = proxy.invoke(target, args);
+    System.out.println("the method: "+methodName+"结束, 结果: " + result);
+    return result;
+  }
+}
+</pre>
+</div>
+<p>创建代理类并调用代理类</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class Main{
+  private static int a = 4, b = 2;
+public static Object createJavassistProxy() throws Exception{
+    ProxyFactory factory = new ProxyFactory();
+    factory.setSuperclass(Arithmetic.class);
+    factory.setHandler(new JavassistDPQueryHandler());
+    return factory.createClass().newInstance();
+  }
+  
+  public static void main(String[] args) throws Exception{
+    Arithmetic real = new Arithmetic();
+    
+    Object proxyArithmetic = createJavassistProxy();
+    
+    ((AddInterface)proxyArithmetic).add(a, b);
+    ((SubInterface)proxyArithmetic).sub(a, b);
+  }
+}</pre>
+</div>
+<p>注意：MethodHandler接口中invoke方法的定义，如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public Object invoke(Object target, Method method, Method proxy, Object[] args)</pre>
+</div>
+<p>method代表调用方法的Method对象，proxy是代理类产生并代替method的对象，否则用method.invoke(target, args)会产生无限循环调用。</p>
+<p>实现2：</p>
+<p>　　javassist使用动态java代码常见代理过程和前文的方法略有不同。javassist内部可以通过动态java代码，生成字节码。这种方式创建的动态代理可以非常灵活，甚至可以在运行时产生业务逻辑。</p>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+//自定义拦截器接口
+interface InterceptorHandler { 
+  
+  /** 
+   * 调用动态代理对象的方法将反射本方法，可在本方法实现中添加类似AOP的事前事后操作，只有在本方法体中加入如下代码 
+   * 被代理的方法才会被执行，返回值将返回给代理最后返回给程序 
+   * @param obj Object 被代理的对象 
+   * @param method Method 被代理对象的方法 
+   * @param args Object[] 被代理对象的方法的参数 
+   * @return Object 被代理对象的方法执行后的返回值 
+   * @throws Throwable 
+   */ 
+  public Object invoke(Object obj, Method method, Object[] args) throws Throwable; 
+} 
+
+//拦截器的实现
+class InterceptorHandlerImpl implements InterceptorHandler{
+  @Override
+  public Object invoke(Object obj, Method method, Object[] args) throws Throwable {
+    String methodName = method.getName();
+    System.out.println(method);
+    System.out.println("the method: " + methodName + "开始, 参数: "+Arrays.asList(args));
+    Object result = method.invoke(obj, args);
+    System.out.println("the method: "+methodName+"结束, 结果: " + result);
+    return result;
+  }
+}
+
+
+class MyProxyImpl { 
+  /** 动态代理类的类名后缀 */ 
+  private final static String PROXY_CLASS_NAME_SUFFIX = "$MyProxy_"; 
+  /** 拦截器接口 */ 
+  private final static String INTERCEPTOR_HANDLER_INTERFACE = "com.test.InterceptorHandler"; 
+  /** 动态代理类的类名索引，防止类名重复 */ 
+  private static int proxyClassIndex = 1; 
+   
+  /** 
+   * 暴露给用户的动态代理接口，返回某个接口的动态代理对象，注意本代理实现需和com.cuishen.myAop.InterceptorHandler拦截器配合 
+   * 使用，即用户要使用本动态代理，需先实现com.cuishen.myAop.InterceptorHandler拦截器接口 
+   * @param interfaceClassName String 要动态代理的接口类名, e.g test.StudentInfoService 
+   * @param classToProxy String 要动态代理的接口的实现类的类名, e.g test.StudentInfoServiceImpl 
+   * @param interceptorHandlerImplClassName String 用户提供的拦截器接口的实现类的类名 
+   * @return Object 返回某个接口的动态代理对象 
+   * @throws InstantiationException 
+   * @throws IllegalAccessException 
+   * @throws NotFoundException 
+   * @throws CannotCompileException 
+   * @throws ClassNotFoundException 
+   * @see com.cuishen.myAop.InterceptorHandler 
+   */ 
+  public static Object newProxyInstance(String interfaceClassName, String classToProxy, String interceptorHandlerImplClassName) throws InstantiationException, IllegalAccessException, NotFoundException, CannotCompileException, ClassNotFoundException { 
+    Class interfaceClass = Class.forName(interfaceClassName); 
+    Class interceptorHandlerImplClass = Class.forName(interceptorHandlerImplClassName); 
+    return dynamicImplementsInterface(classToProxy, interfaceClass, interceptorHandlerImplClass); 
+  } 
+   
+  /** 
+   * 动态实现要代理的接口 
+   * @param classToProxy String 要动态代理的接口的实现类的类名, e.g test.StudentInfoServiceImpl 
+   * @param interfaceClass Class 要动态代理的接口类, e.g test.StudentInfoService 
+   * @param interceptorHandlerImplClass Class 用户提供的拦截器接口的实现类 
+   * @return Object 返回某个接口的动态代理对象 
+   * @throws NotFoundException 
+   * @throws CannotCompileException 
+   * @throws InstantiationException 
+   * @throws IllegalAccessException 
+   */ 
+  private static Object dynamicImplementsInterface(String classToProxy, Class interfaceClass, Class interceptorHandlerImplClass) throws NotFoundException, CannotCompileException, InstantiationException, IllegalAccessException { 
+    ClassPool cp = ClassPool.getDefault(); 
+    String interfaceName = interfaceClass.getName(); 
+    //动态指定代理类的类名 
+    String proxyClassName = interfaceName + PROXY_CLASS_NAME_SUFFIX + proxyClassIndex++; 
+    //要实现的接口的包名+接口名 
+    String interfaceNamePath = interfaceName; 
+     
+    CtClass ctInterface = cp.getCtClass(interfaceNamePath); 
+    CtClass cc = cp.makeClass(proxyClassName); 
+    cc.addInterface(ctInterface); 
+    Method [] methods = interfaceClass.getMethods(); 
+    for(int i = 0; i &lt; methods.length; i++) { 
+      Method method = methods[i]; 
+      dynamicImplementsMethodsFromInterface(classToProxy, cc, method, interceptorHandlerImplClass, i); 
+    } 
+    return (Object)cc.toClass().newInstance(); 
+  } 
+   
+  /** 
+   * 动态实现接口里的方法 
+   * @param classToProxy String 要动态代理的接口的实现类的类名, e.g test.StudentInfoServiceImpl 
+   * @param implementer CtClass 动态代理类的包装 
+   * @param methodToImpl Method 动态代理类里面要实现的接口方法的包装 
+   * @param interceptorClass Class 用户提供的拦截器实现类 
+   * @param methodIndex int 要实现的方法的索引 
+   * @throws CannotCompileException 
+   */ 
+  private static void dynamicImplementsMethodsFromInterface(String classToProxy, CtClass implementer, Method methodToImpl, Class interceptorClass, int methodIndex) throws CannotCompileException { 
+    String methodCode = generateMethodCode(classToProxy, methodToImpl, interceptorClass, methodIndex); 
+    CtMethod cm = CtNewMethod.make(methodCode, implementer); 
+    implementer.addMethod(cm); 
+  } 
+   
+  /** 
+   * 动态组装方法体，当然代理里面的方法实现并不是简单的方法拷贝，而是反射调用了拦截器里的invoke方法，并将接收到的参数进行传递 
+   * @param classToProxy String 要动态代理的接口的实现类的类名, e.g test.StudentInfoServiceImpl 
+   * @param methodToImpl Method 动态代理类里面要实现的接口方法的包装 
+   * @param interceptorClass Class 用户提供的拦截器实现类 
+   * @param methodIndex int 要实现的方法的索引 
+   * @return String 动态组装的方法的字符串 
+   */ 
+  private static String generateMethodCode(String classToProxy, Method methodToImpl, Class interceptorClass, int methodIndex) { 
+    String methodName = methodToImpl.getName(); 
+    String methodReturnType = methodToImpl.getReturnType().getName(); 
+    Class[] parameters = methodToImpl.getParameterTypes(); 
+    Class[] exceptionTypes = methodToImpl.getExceptionTypes(); 
+    StringBuffer exceptionBuffer = new StringBuffer(); 
+    //组装方法的Exception声明 
+    if(exceptionTypes.length &gt; 0) exceptionBuffer.append(" throws "); 
+    for(int i = 0; i &lt; exceptionTypes.length; i++) { 
+      if(i != exceptionTypes.length - 1) exceptionBuffer.append(exceptionTypes[i].getName()).append(","); 
+      else exceptionBuffer.append(exceptionTypes[i].getName()); 
+    } 
+    StringBuffer parameterBuffer = new StringBuffer(); 
+    //组装方法的参数列表 
+    for(int i = 0; i &lt; parameters.length; i++) { 
+      Class parameter = parameters[i]; 
+      String parameterType = parameter.getName(); 
+      //动态指定方法参数的变量名 
+      String refName = "a" + i; 
+      if(i != parameters.length - 1) parameterBuffer.append(parameterType).append(" " + refName).append(","); 
+      else parameterBuffer.append(parameterType).append(" " + refName); 
+    } 
+    StringBuffer methodDeclare = new StringBuffer(); 
+    //方法声明，由于是实现接口的方法，所以是public 
+    methodDeclare.append("public ").append(methodReturnType).append(" ").append(methodName).append("(").append(parameterBuffer).append(")").append(exceptionBuffer).append(" {\n"); 
+    String interceptorImplName = interceptorClass.getName(); 
+    //方法体 
+    methodDeclare.append(INTERCEPTOR_HANDLER_INTERFACE).append(" interceptor = new ").append(interceptorImplName).append("();\n"); 
+    //反射调用用户的拦截器接口 
+    methodDeclare.append("Object returnObj = interceptor.invoke(Class.forName(\"" + classToProxy + "\").newInstance(), Class.forName(\"" + classToProxy + "\").getMethods()[" + methodIndex + "], "); 
+    //传递方法里的参数 
+    if(parameters.length &gt; 0) methodDeclare.append("new Object[]{");  
+    for(int i = 0; i &lt; parameters.length; i++) { 
+      //($w) converts from a primitive type to the corresponding wrapper type: e.g. 
+      //Integer i = ($w)5; 
+      if(i != parameters.length - 1) methodDeclare.append("($w)a" + i + ","); 
+      else methodDeclare.append("($w)a" + i); 
+    } 
+    if(parameters.length &gt; 0) methodDeclare.append("});\n"); 
+    else methodDeclare.append("null);\n"); 
+    //对调用拦截器的返回值进行包装 
+    if(methodToImpl.getReturnType().isPrimitive()) { 
+      if(methodToImpl.getReturnType().equals(Boolean.TYPE)) methodDeclare.append("return ((Boolean)returnObj).booleanValue();\n"); 
+      else if(methodToImpl.getReturnType().equals(Integer.TYPE)) methodDeclare.append("return ((Integer)returnObj).intValue();\n"); 
+      else if(methodToImpl.getReturnType().equals(Long.TYPE)) methodDeclare.append("return ((Long)returnObj).longValue();\n"); 
+      else if(methodToImpl.getReturnType().equals(Float.TYPE)) methodDeclare.append("return ((Float)returnObj).floatValue();\n"); 
+      else if(methodToImpl.getReturnType().equals(Double.TYPE)) methodDeclare.append("return ((Double)returnObj).doubleValue();\n"); 
+      else if(methodToImpl.getReturnType().equals(Character.TYPE)) methodDeclare.append("return ((Character)returnObj).charValue();\n"); 
+      else if(methodToImpl.getReturnType().equals(Byte.TYPE)) methodDeclare.append("return ((Byte)returnObj).byteValue();\n"); 
+      else if(methodToImpl.getReturnType().equals(Short.TYPE)) methodDeclare.append("return ((Short)returnObj).shortValue();\n"); 
+    } else { 
+      methodDeclare.append("return (" + methodReturnType + ")returnObj;\n"); 
+    } 
+    methodDeclare.append("}"); 
+    System.out.println(methodDeclare.toString()); 
+    return methodDeclare.toString(); 
+  } 
+   
+} 
+
+public class Main{   
+  public static void main(String[] args) throws Exception{  
+　　　　 //分别对应 代理类要实现的接口类名， 需要代理类的类名， 用户自定义拦截器实现类的类名
+    Object proxyArithmetic = MyProxyImpl.newProxyInstance("com.test.ArithmeticInterface", "com.test.Arithmetic", 
+　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　"com.test.InterceptorHandlerImpl");
+    ((ArithmeticInterface)proxyArithmetic).add(a, b);
+    ((ArithmeticInterface)proxyArithmetic).sub(a, b);    
+  }
+}
+</pre>
+</div>
+<p>打印一下动态实现接口的代码如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public int add(int a0,int a1) {
+com.test.InterceptorHandler interceptor = new com.test.InterceptorHandlerImpl();
+Object returnObj = interceptor.invoke(Class.forName("com.test.Arithmetic").newInstance(), Class.forName("com.test.Arithmetic").getMethods()[0], new Object[]{($w)a0,($w)a1});
+return ((Integer)returnObj).intValue();
+}
+public int sub(int a0,int a1) {
+com.test.InterceptorHandler interceptor = new com.test.InterceptorHandlerImpl();
+Object returnObj = interceptor.invoke(Class.forName("com.test.Arithmetic").newInstance(), Class.forName("com.test.Arithmetic").getMethods()[1], new Object[]{($w)a0,($w)a1});
+return ((Integer)returnObj).intValue();
+}</pre>
+</div>
+<p>以上就是关于java中动态代理实现机制的详细介绍，希望对大家的学习有所帮助。<br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/96267.html'>JS模拟bootstrap下拉菜单效果实例</a><a>下一篇</a><a href='/php/biji/96269.html'>一个简洁的PHP可逆加密函数(分享)</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>解决磁盘写满导致MySQL复制失败的问题_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了解决磁盘写满导致MySQL复制失败的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	案" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">解决磁盘写满导致MySQL复制失败的问题</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:19:09                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了解决磁盘写满导致MySQL复制失败的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	案</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了解决磁盘写满导致MySQL复制失败的问题，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<div id="navCategory">
+<h5 class="catalogue">目录</h5>
+<ul class="first_class_ul">
+	<li>案例场景</li>
+	<li>解决问题</li>
+	<li>一点总结</li>
+</ul>
+<p class="maodian"></p>
+<h2>案例场景</h2>
+<p>  今天在线上发现一个问题，由于监控没有覆盖到，某台机器的磁盘被写满了，导致线上MySQL主从复制出现问题。问题如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+localhost.(none)&gt;show slave status\G
+*************************** 1. row ***************************
+               Slave_IO_State:
+                  Master_Host: 10.xx.xx.xx
+                  Master_User: replica
+                  Master_Port: 5511
+                Connect_Retry: 60
+              Master_Log_File:
+          Read_Master_Log_Pos: 4
+               Relay_Log_File: relay-bin.001605
+                Relay_Log_Pos: 9489761
+        Relay_Master_Log_File:
+             Slave_IO_Running: No
+            Slave_SQL_Running: No
+                   Last_Errno: 13121
+                   Last_Error: Relay log read failure: Could not parse relay log event entry. 
+The possible reasons are: the master's binary log is corrupted (you can check this by running 
+'mysqlbinlog' on the binary log), the slave's relay log is corrupted (you can check this by 
+running 'mysqlbinlog' on the relay log), a network problem, the server was unable to fetch a
+ keyring key required to open an encrypted relay log file, or a bug in the master's or 
+slave's MySQL code. If you want to check the master's binary log or slave's relay log, 
+you will be able to know their names by issuing 'SHOW SLAVE STATUS' on this slave.</code></pre>
+<p>磁盘写满导致MySQL复制失败的解决方案</p>
+<p>于是查看error log，发现error log中的内容如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+2021-03-31T11:34:39.367173+08:00 11 [Warning] [MY-010897] [Repl] Storing MySQL user name or 
+password information in the master info repository is not secure and is therefore not 
+recommended. Please consider using the USER and PASSWORD connection options for START SLAVE; 
+see the 'START SLAVE Syntax' in the MySQL Manual for more information.
+
+2021-03-31T11:34:39.368161+08:00 12 [ERROR] [MY-010596] [Repl] Error reading relay log 
+event for channel '': binlog truncated in the middle of event; consider out of disk space
+
+2021-03-31T11:34:39.368191+08:00 12 [ERROR] [MY-013121] [Repl] Slave SQL for channel '': Relay 
+log read failure: Could not parse relay log event entry. The possible reasons are: the master's 
+binary log is corrupted (you can check this by running 'mysqlbinlog' on the binary log), the 
+slave's relay log is corrupted (you can check this by running 'mysqlbinlog' on the relay log),
+ a network problem, the server was unable to fetch a keyring key required to open an encrypted
+ relay log file, or a bug in the master's or slave's MySQL code. If you want to check the 
+master's binary log or slave's relay log, you will be able to know their names by issuing 'SHOW
+ SLAVE STATUS' on this slave. Error_code: MY-013121
+
+2021-03-31T11:34:39.368205+08:00 12 [ERROR] [MY-010586] [Repl] Error running query, slave SQL
+ thread aborted. Fix the problem, and restart the slave SQL thread with "SLAVE START". We 
+stopped at log 'mysql-bin.000446' position 9489626</code></pre>
+<p>磁盘写满导致MySQL复制失败的解决方案</p>
+<p>从描述中可以看到，error log是比较智能的，发现了磁盘问题，并提示我们需要&quot;consideroutofdiskspace&quot;</p>
+<p class="maodian"></p>
+<h2>解决问题</h2>
+<p>   登录服务器，很快就发现是MySQL所在的服务器磁盘使用率达到100%了，问题原因跟error log中的内容一致。</p>
+<p>   现在就解决这个问题。基本的思路就是清理磁盘文件，然后重新搭建复制关系，这个过程似乎比较简单，但是实际操作中，在搭建复制关系的时候出现了下面的报错：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+### 基于gtid的复制，想重新搭建复制关系
+localhost.(none)&gt;reset slave;
+ERROR 1371 (HY000): Failed purging old relay logs: Failed during log reset
+
+localhost.(none)&gt;reset slave all;
+ERROR 1371 (HY000): Failed purging old relay logs: Failed during log reset</code></pre>
+<p>磁盘写满导致MySQL复制失败的解决方案</p>
+<p>第一步：因为复制是基于gtid进行的，所以直接记录show slave status的状态后，就可以重新reset slave，并利用change master语句来重建复制关系了。</p>
+<p>但是却出现上面的报错，从报错信息看是mysql无法完成purge relay log的操作，这看起来不科学。好吧，既然你自己不能完成purge relay logs的操作，那就让我来帮你吧。</p>
+<p>第二步：手工rm -f 删除所有的relay log，发现报错变成了：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+localhost.(none)&gt;reset slave all;
+ERROR 1374 (HY000): I/O error reading log index file</code></pre>
+<p>磁盘写满导致MySQL复制失败的解决方案</p>
+<p>嗯，好吧，问题没有得到解决。</p>
+<p>然后思考了下，既然不能通过手工reset slave 来清理relay log，直接stop</p>
+<p>slave 然后change master行不行呢？</p>
+<p>第三步：直接stop slave，然后change master，不执行reset slave all的语句，结果如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+localhost.(none)&gt;change master to master_host='10.13.224.31',
+    -&gt; master_user='replica',
+    -&gt; master_password='eHnNCaQE3ND',
+    -&gt; master_port=5510,
+    -&gt; master_auto_position=1;
+ERROR 1371 (HY000): Failed purging old relay logs: Failed during log reset</code></pre>
+<p>磁盘写满导致MySQL复制失败的解决方案</p>
+<p>得，问题依旧。</p>
+<p>第四步：反正复制已经报错断开了，执行个start slave看看，结果戏剧性的一幕出现了：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+localhost.(none)&gt;start slave;
+ERROR 2006 (HY000): MySQL server has gone away
+No connection. Trying to reconnect...
+Connection id:    262
+Current database: *** NONE ***
+
+
+Query OK, 0 rows affected (0.01 sec)
+
+
+localhost.(none)&gt;
+[root@ ~]#</code></pre>
+<p>磁盘写满导致MySQL复制失败的解决方案</p>
+<p>执行start slave之后，实例直接挂了。</p>
+<p>到这里，复制彻底断开了，从库实例已经挂了。</p>
+<p>第五步：看看实例还能不能重启，尝试重启实例，发现实例还能起来。实例重新起来后，查看复制关系，结果如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+localhost.(none)&gt;show slave status\G
+*************************** 1. row ***************************
+               Slave_IO_State: Queueing master event to the relay log
+                  Master_Host: 10.xx.xx.xx
+                  Master_User: replica
+                  Master_Port: 5511
+                Connect_Retry: 60
+              Master_Log_File: 
+          Read_Master_Log_Pos: 4
+               Relay_Log_File: relay-bin.001605
+                Relay_Log_Pos: 9489761
+        Relay_Master_Log_File:
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: No
+                   Last_Errno: 13121
+                   Last_Error: Relay log read failure: Could not parse relay log event entry.
+ The possible reasons are: the master's binary log is corrupted (you can check this by running 
+'mysqlbinlog' on the binary log), the slave's relay log is corrupted (you can check this by 
+running 'mysqlbinlog' on the relay log), a network problem, the server was unable to fetch a 
+keyring key required to open an encrypted relay log file, or a bug in the master's or slave's 
+MySQL code. If you want to check the master's binary log or slave's relay log, you will be able 
+to know their names by issuing 'SHOW SLAVE STATUS' on this slave.
+                 Skip_Counter: 0</code></pre>
+<p>磁盘写满导致MySQL复制失败的解决方案</p>
+<p>复制关系依旧报错。</p>
+<p>第六步：重新reset slave all看看，结果成功了。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+localhost.(none)&gt;stop slave;
+Query OK, 0 rows affected (0.00 sec)
+
+
+localhost.(none)&gt;reset slave all;
+Query OK, 0 rows affected (0.03 sec)</code></pre>
+<p>磁盘写满导致MySQL复制失败的解决方案</p>
+<p>第七步：重新搭建复制关系并启动复制</p>
+<p>代码如下：</p>
+<pre>
+<code>
+localhost.(none)&gt;change master to master_host='10.xx.xx.xx',
+    -&gt; master_user='replica',
+    -&gt; master_password='xxxxx',
+    -&gt; master_port=5511,
+    -&gt; master_auto_position=1;
+Query OK, 0 rows affected, 2 warnings (0.01 sec)
+
+
+localhost.(none)&gt;start slave;
+Query OK, 0 rows affected (0.00 sec)
+
+
+localhost.(none)&gt;show slave status\G
+*************************** 1. row ***************************
+               Slave_IO_State: Waiting for master to send event
+                  Master_Host: 10.xx.xx.xx
+                  Master_User: replica
+                  Master_Port: 5511
+                Connect_Retry: 60
+                          ...
+             Slave_IO_Running: Yes
+            Slave_SQL_Running: Yes</code></pre>
+<p>磁盘写满导致MySQL复制失败的解决方案</p>
+<p>发现实例的复制关系可以建立起来了。</p>
+<p class="maodian"></p>
+<h2>一点总结</h2>
+<p>  当磁盘写满的情况发生之后，mysql服务无法向元信息表中写数据，relay log也可能已经不完整了，如果直接清理了服务器上的磁盘数据，再去重新change master修改主从复制关系，可能会出现报错，不能直接修复，因为这不是一个正常的主从复制关系断裂场景。</p>
+<p> 所以，正确的做法应该是：</p>
+<p>1、清理服务器的磁盘</p>
+<p>2、重启复制关系断开的那个从库</p>
+<p>3、重新reset slave all、change master来搭建主从复制关系即可</p>
+<p> 如果有更好的方法，还请不吝赐教。</p>
+<p>以上就是磁盘写满导致MySQL复制失败的解决方案的详细内容，更多关于MySQL复制失败的解决方案的资料请关注512笔记其它相关文章！</p></div>
+
+<p>注：关于解决磁盘写满导致MySQL复制失败的问题的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/748.html'>MySQL数字类型自增的坑的解决办法</a><a>下一篇</a><a href='/mysql/biji/750.html'>MySQL collation方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

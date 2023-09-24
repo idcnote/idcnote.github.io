@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>java中LRU缓存实现_java教程_IDC笔记</title>
+    <meta name="keywords" content=",java教程" />
+    <meta name="description" content="LRU是Least Recently Used 的缩写，翻译过来就是“最近最少使用”，LRU缓存就是使用这种原理实现，简单的说就是缓存一定量的数据，当超过设定的阈值时就把一些过期的数据删除掉。比" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java入门			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/start/184.html">第一个Java程序</a></li><li><a href="/java/start/185.html">如何运行Java程序</a></li><li><a href="/java/start/186.html">Java标识符与关键字</a></li><li><a href="/java/start/187.html">Java注释</a></li><li><a href="/java/start/188.html">Java常量</a></li><li><a href="/java/start/189.html">Java基本数据类型</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java运算符和表达式			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/operators/190.html">Java运算符和表达式</a></li><li><a href="/java/operators/191.html">Java算数运算符实例讲解</a></li><li><a href="/java/operators/192.html">Java关系运算符实例讲解</a></li><li><a href="/java/operators/193.html">Java逻辑运算符实例讲解</a></li><li><a href="/java/operators/194.html">Java位运算符实例讲解</a></li><li><a href="/java/operators/195.html">Java赋值运算符实例讲解</a></li><li><a href="/java/operators/196.html">Java条件运算符实例讲解</a></li><li><a href="/java/operators/197.html">Java instanceof运算符实例讲解</a></li><li><a href="/java/operators/198.html">Java运算符的优先级和结合性</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java流程控制			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/control/200.html">Java if条件分支语句</a></li><li><a href="/java/control/199.html">Java语句</a></li><li><a href="/java/control/201.html">Java switch开关语句</a></li><li><a href="/java/control/203.html">Java while循环语句</a></li><li><a href="/java/control/202.html">Java for循环语句</a></li><li><a href="/java/control/205.html">Java break语句</a></li><li><a href="/java/control/204.html">Java do-while循环语句</a></li><li><a href="/java/control/206.html">Java continue语句</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/objects/209.html">Java方法</a></li><li><a href="/java/objects/208.html">Java成员变量</a></li><li><a href="/java/objects/207.html">Java类</a></li><li><a href="/java/objects/211.html">Java创建对象</a></li><li><a href="/java/objects/210.html">Java类的构造方法</a></li><li><a href="/java/objects/213.html">Java对象的引用和实体</a></li><li><a href="/java/objects/212.html">Java使用对象</a></li><li><a href="/java/objects/216.html">Java实例变量和类变量</a></li><li><a href="/java/objects/215.html">Java参数传值</a></li><li><a href="/java/objects/214.html">Java类与程序的基本结构</a></li><li><a href="/java/objects/217.html">Java实例方法和类方法</a></li><li><a href="/java/objects/218.html">Java方法重载</a></li><li><a href="/java/objects/222.html">Java访问权限</a></li><li><a href="/java/objects/221.html">Java import语句</a></li><li><a href="/java/objects/220.html">Java包</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java子类与继承			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java接口与实现			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java内部类与异常类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java常用实用类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+	    <a href="/java/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>JAVA笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">java中LRU缓存实现</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>LRU是Least Recently Used 的缩写，翻译过来就是“最近最少使用”，LRU缓存就是使用这种原理实现，简单的说就是缓存一定量的数据，当超过设定的阈值时就把一些过期的数据删除掉。比</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>LRU是Least Recently Used 的缩写，翻译过来就是&ldquo;最近最少使用&rdquo;，LRU缓存就是使用这种原理实现，简单的说就是缓存一定量的数据，当超过设定的阈值时就把一些过期的数据删除掉。</p>
+<p>比如我们缓存10000条数据，当数据小于10000时可以随意添加，当超过10000时就需要把新的数据添加进来，同时要把过期数据删除，以确保我们最大缓存10000条，那怎么确定删除哪条过期数据呢，采用LRU算法实现的话就是将最老的数据删掉。</p>
+<p>下面来说下Java版的LRU缓存实现：（推荐：java视频教程）</p>
+<p>Java里面实现LRU缓存通常有两种选择，一种是使用LinkedHashMap，一种是自己设计数据结构，使用链表+HashMap</p>
+<p><span style="font-size: 16px;"><strong>LRU Cache的LinkedHashMap实现</strong></span></p>
+<p>LinkedHashMap自身已经实现了顺序存储，默认情况下是按照元素的添加顺序存储，也可以启用按照访问顺序存储，即最近读取的数据放在最前面，最早读取的数据放在最后面，然后它还有一个判断是否删除最老数据的方法，默认是返回false，即不删除数据。</p>
+<p>我们使用LinkedHashMap实现LRU缓存的方法就是对LinkedHashMap实现简单的扩展，扩展方式有两种，一种是inheritance，一种是delegation。</p>
+<pre class="brush:js;toolbar:false">
+//LinkedHashMap的一个构造函数，当参数accessOrder为true时，即会按照访问顺序排序，最近访问的放在最前，最早访问的放在后面
+public LinkedHashMap(int initialCapacity, float loadFactor, boolean accessOrder) {
+        super(initialCapacity, loadFactor);
+        this.accessOrder = accessOrder;
+}
+
+//LinkedHashMap自带的判断是否删除最老的元素方法，默认返回false，即不删除老数据
+//我们要做的就是重写这个方法，当满足一定条件时删除老数据
+protected boolean removeEldestEntry(Map.Entry&lt;K,V&gt; eldest) {
+        return false;
+}</pre>
+<p><span style="font-size: 16px;"><strong>LRU缓存LinkedHashMap(inheritance)实现</strong></span></p>
+<p>采用inheritance方式实现比较简单，而且实现了Map接口，在多线程环境使用时可以使用 Collections.synchronizedMap()方法实现线程安全操作</p>
+<pre class="brush:js;toolbar:false">
+package cn.lzrabbit.structure.lru;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * Created by liuzhao on 14-5-15.
+ */
+public class LRUCache2&lt;K, V&gt; extends LinkedHashMap&lt;K, V&gt; {
+    private final int MAX_CACHE_SIZE;
+
+    public LRUCache2(int cacheSize) {
+        super((int) Math.ceil(cacheSize / 0.75) + 1, 0.75f, true);
+        MAX_CACHE_SIZE = cacheSize;
+    }
+
+    @Override
+    protected boolean removeEldestEntry(Map.Entry eldest) {
+        return size() &gt; MAX_CACHE_SIZE;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry&lt;K, V&gt; entry : entrySet()) {
+            sb.append(String.format(&quot;%s:%s &quot;, entry.getKey(), entry.getValue()));
+        }
+        return sb.toString();
+    }
+}</pre>
+<p>这样算是比较标准的实现吧，实际使用中这样写还是有些繁琐，更实用的方法时像下面这样写，省去了单独见一个类的麻烦</p>
+<pre class="brush:js;toolbar:false">
+final int cacheSize = 100;
+Map&lt;String, String&gt; map = new LinkedHashMap&lt;String, String&gt;((int) Math.ceil(cacheSize / 0.75f) + 1, 0.75f, true) {
+    @Override
+    protected boolean removeEldestEntry(Map.Entry&lt;String, String&gt; eldest) {
+    return size() &gt; cacheSize;
+    }
+};</pre>
+<p><span style="font-size: 16px;"><strong>LRU缓存LinkedHashMap(delegation)实现</strong></span></p>
+<p>delegation方式实现更加优雅一些，但是由于没有实现Map接口，所以线程同步就需要自己搞定了</p>
+<pre class="brush:js;toolbar:false">
+package cn.lzrabbit.structure.lru;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Created by liuzhao on 14-5-13.
+ */
+public class LRUCache3&lt;K, V&gt; {
+
+    private final int MAX_CACHE_SIZE;
+    private final float DEFAULT_LOAD_FACTOR = 0.75f;
+    LinkedHashMap&lt;K, V&gt; map;
+
+    public LRUCache3(int cacheSize) {
+        MAX_CACHE_SIZE = cacheSize;
+        //根据cacheSize和加载因子计算hashmap的capactiy，+1确保当达到cacheSize上限时不会触发hashmap的扩容，
+        int capacity = (int) Math.ceil(MAX_CACHE_SIZE / DEFAULT_LOAD_FACTOR) + 1;
+        map = new LinkedHashMap(capacity, DEFAULT_LOAD_FACTOR, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry eldest) {
+                return size() &gt; MAX_CACHE_SIZE;
+            }
+        };
+    }
+
+    public synchronized void put(K key, V value) {
+        map.put(key, value);
+    }
+
+    public synchronized V get(K key) {
+        return map.get(key);
+    }
+
+    public synchronized void remove(K key) {
+        map.remove(key);
+    }
+
+    public synchronized Set&lt;Map.Entry&lt;K, V&gt;&gt; getAll() {
+        return map.entrySet();
+    }
+
+    public synchronized int size() {
+        return map.size();
+    }
+
+    public synchronized void clear() {
+        map.clear();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry entry : map.entrySet()) {
+            sb.append(String.format(&quot;%s:%s &quot;, entry.getKey(), entry.getValue()));
+        }
+        return sb.toString();
+    }
+}</pre>
+<p><span style="font-size: 16px;"><strong>LRU Cache的链表+HashMap实现</strong></span></p>
+<p>注：此实现为非线程安全，若在多线程环境下使用需要在相关方法上添加synchronized以实现线程安全操作</p>
+<pre class="brush:js;toolbar:false">
+package cn.lzrabbit.structure.lru;
+
+
+import java.util.HashMap;
+
+/**
+ * Created by liuzhao on 14-5-12.
+ */
+public class LRUCache1&lt;K, V&gt; {
+
+    private final int MAX_CACHE_SIZE;
+    private Entry first;
+    private Entry last;
+
+    private HashMap&lt;K, Entry&lt;K, V&gt;&gt; hashMap;
+
+    public LRUCache1(int cacheSize) {
+        MAX_CACHE_SIZE = cacheSize;
+        hashMap = new HashMap&lt;K, Entry&lt;K, V&gt;&gt;();
+    }
+
+    public void put(K key, V value) {
+        Entry entry = getEntry(key);
+        if (entry == null) {
+            if (hashMap.size() &gt;= MAX_CACHE_SIZE) {
+                hashMap.remove(last.key);
+                removeLast();
+            }
+            entry = new Entry();
+            entry.key = key;
+        }
+        entry.value = value;
+        moveToFirst(entry);
+        hashMap.put(key, entry);
+    }
+
+    public V get(K key) {
+        Entry&lt;K, V&gt; entry = getEntry(key);
+        if (entry == null) return null;
+        moveToFirst(entry);
+        return entry.value;
+    }
+
+    public void remove(K key) {
+        Entry entry = getEntry(key);
+        if (entry != null) {
+            if (entry.pre != null) entry.pre.next = entry.next;
+            if (entry.next != null) entry.next.pre = entry.pre;
+            if (entry == first) first = entry.next;
+            if (entry == last) last = entry.pre;
+        }
+        hashMap.remove(key);
+    }
+
+    private void moveToFirst(Entry entry) {
+        if (entry == first) return;
+        if (entry.pre != null) entry.pre.next = entry.next;
+        if (entry.next != null) entry.next.pre = entry.pre;
+        if (entry == last) last = last.pre;
+
+        if (first == null || last == null) {
+            first = last = entry;
+            return;
+        }
+
+        entry.next = first;
+        first.pre = entry;
+        first = entry;
+        entry.pre = null;
+    }
+
+    private void removeLast() {
+        if (last != null) {
+            last = last.pre;
+            if (last == null) first = null;
+            else last.next = null;
+        }
+    }
+
+
+    private Entry&lt;K, V&gt; getEntry(K key) {
+        return hashMap.get(key);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        Entry entry = first;
+        while (entry != null) {
+            sb.append(String.format(&quot;%s:%s &quot;, entry.key, entry.value));
+            entry = entry.next;
+        }
+        return sb.toString();
+    }
+
+    class Entry&lt;K, V&gt; {
+        public Entry pre;
+        public Entry next;
+        public K key;
+        public V value;
+    }
+}</pre>
+<p><span style="font-size: 16px;"><strong>LinkedHashMap的FIFO实现</strong></span></p>
+<p>FIFO是First Input First Output的缩写，也就是常说的先入先出，默认情况下LinkedHashMap就是按照添加顺序保存，我们只需重写下removeEldestEntry方法即可轻松实现一个FIFO缓存，简化版的实现代码如下</p>
+<pre class="brush:js;toolbar:false">
+final int cacheSize = 5;
+LinkedHashMap&lt;Integer, String&gt; lru = new LinkedHashMap&lt;Integer, String&gt;() {
+    @Override
+    protected boolean removeEldestEntry(Map.Entry&lt;Integer, String&gt; eldest) {
+    return size() &gt; cacheSize;
+    }
+};</pre>
+<p><span style="font-size: 16px;"><strong>调用示例</strong></span></p>
+<p>测试代码</p>
+<pre class="brush:js;toolbar:false">
+package cn.lzrabbit.structure.lru;
+
+import cn.lzrabbit.ITest;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * Created by liuzhao on 14-5-15.
+ */
+public class LRUCacheTest  {
+
+    public static void main(String[] args) throws Exception {
+        System.out.println(&quot;start...&quot;);
+
+        lruCache1();
+        lruCache2();
+        lruCache3();
+        lruCache4();
+     
+        System.out.println(&quot;over...&quot;);
+    }
+ 
+
+ static   void lruCache1() {
+        System.out.println();
+        System.out.println(&quot;===========================LRU 链表实现===========================&quot;);
+        LRUCache1&lt;Integer, String&gt; lru = new LRUCache1(5);
+        lru.put(1, &quot;11&quot;);
+        lru.put(2, &quot;11&quot;);
+        lru.put(3, &quot;11&quot;);
+        lru.put(4, &quot;11&quot;);
+        lru.put(5, &quot;11&quot;);
+        System.out.println(lru.toString());
+        lru.put(6, &quot;66&quot;);
+        lru.get(2);
+        lru.put(7, &quot;77&quot;);
+        lru.get(4);
+        System.out.println(lru.toString());
+        System.out.println();
+    }
+
+
+static   &lt;T&gt; void lruCache2() {
+        System.out.println();
+        System.out.println(&quot;===========================LRU LinkedHashMap(inheritance)实现===========================&quot;);
+        LRUCache2&lt;Integer, String&gt; lru = new LRUCache2(5);
+        lru.put(1, &quot;11&quot;);
+        lru.put(2, &quot;11&quot;);
+        lru.put(3, &quot;11&quot;);
+        lru.put(4, &quot;11&quot;);
+        lru.put(5, &quot;11&quot;);
+        System.out.println(lru.toString());
+        lru.put(6, &quot;66&quot;);
+        lru.get(2);
+        lru.put(7, &quot;77&quot;);
+        lru.get(4);
+        System.out.println(lru.toString());
+        System.out.println();
+    }
+
+  static  void lruCache3() {
+        System.out.println();
+        System.out.println(&quot;===========================LRU LinkedHashMap(delegation)实现===========================&quot;);
+        LRUCache3&lt;Integer, String&gt; lru = new LRUCache3(5);
+        lru.put(1, &quot;11&quot;);
+        lru.put(2, &quot;11&quot;);
+        lru.put(3, &quot;11&quot;);
+        lru.put(4, &quot;11&quot;);
+        lru.put(5, &quot;11&quot;);
+        System.out.println(lru.toString());
+        lru.put(6, &quot;66&quot;);
+        lru.get(2);
+        lru.put(7, &quot;77&quot;);
+        lru.get(4);
+        System.out.println(lru.toString());
+        System.out.println();
+    }
+
+  static  void lruCache4() {
+        System.out.println();
+        System.out.println(&quot;===========================FIFO LinkedHashMap默认实现===========================&quot;);
+        final int cacheSize = 5;
+        LinkedHashMap&lt;Integer, String&gt; lru = new LinkedHashMap&lt;Integer, String&gt;() {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry&lt;Integer, String&gt; eldest) {
+                return size() &gt; cacheSize;
+            }
+        };
+        lru.put(1, &quot;11&quot;);
+        lru.put(2, &quot;11&quot;);
+        lru.put(3, &quot;11&quot;);
+        lru.put(4, &quot;11&quot;);
+        lru.put(5, &quot;11&quot;);
+        System.out.println(lru.toString());
+        lru.put(6, &quot;66&quot;);
+        lru.get(2);
+        lru.put(7, &quot;77&quot;);
+        lru.get(4);
+        System.out.println(lru.toString());
+        System.out.println();
+    }
+
+}</pre>
+<p>运行结果</p>
+<pre class="brush:js;toolbar:false">
+&quot;C:Program Files (x86)Javajdk1.6.0_10injava&quot; -Didea.launcher.port=7535 &quot;-Didea.launcher.bin.path=C:Program Files (x86)JetBrainsIntelliJ IDEA 13.0.2in&quot; -Dfile.encoding=UTF-8 -classpath &quot;C:Program Files (x86)Javajdk1.6.0_10jrelibcharsets.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibdeploy.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibjavaws.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibjce.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibjsse.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibmanagement-agent.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibplugin.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibesources.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibt.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibextdnsns.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibextlocaledata.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibextsunjce_provider.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibextsunmscapi.jar;C:Program Files (x86)Javajdk1.6.0_10jrelibextsunpkcs11.jar;D:SVNprojectsJavaJava.Algorithm	arget	est-classes;D:SVNprojectsJavaJava.Algorithm	argetclasses;C:Program Files (x86)JetBrainsIntelliJ IDEA 13.0.2libidea_rt.jar&quot; com.intellij.rt.execution.application.AppMain Main
+start...
+
+===========================LRU 链表实现===========================
+5:11 4:11 3:11 2:11 1:11 
+4:11 7:77 2:11 6:66 5:11 
+
+
+===========================LRU LinkedHashMap(inheritance)实现===========================
+1:11 2:11 3:11 4:11 5:11 
+5:11 6:66 2:11 7:77 4:11 
+
+
+===========================LRU LinkedHashMap(delegation)实现===========================
+1:11 2:11 3:11 4:11 5:11 
+5:11 6:66 2:11 7:77 4:11 
+
+
+===========================FIFO LinkedHashMap默认实现===========================
+{1=11, 2=11, 3=11, 4=11, 5=11}
+{3=11, 4=11, 5=11, 6=66, 7=77}
+
+over...
+
+Process finished with exit code 0</pre>
+<p>更多java知识请关注java基础教程栏目。</p><!-- .entry-wrapper --></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span>[!--zhushi--]</span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/java/biji/584.html'>java判断指定日期是星期几</a><a>下一篇</a><a href='/java/biji/586.html'>java怎么输入数字</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

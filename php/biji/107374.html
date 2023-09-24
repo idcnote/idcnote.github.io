@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>异步的SQL数据库封装详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="引言<br />
+我一直在寻找一种简单有效的库，它能在简化数据库相关的编程的同时提供一种异步的方法来预防死锁。<br />
+我找到的大部分库要么太繁琐，要么灵活性不足，所以我决定自己写个。<br />
+使" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">异步的SQL数据库封装详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>引言<br />
+我一直在寻找一种简单有效的库，它能在简化数据库相关的编程的同时提供一种异步的方法来预防死锁。<br />
+我找到的大部分库要么太繁琐，要么灵活性不足，所以我决定自己写个。<br />
+使</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>引言</strong></p>
+<p>我一直在寻找一种简单有效的库，它能在简化数据库相关的编程的同时提供一种异步的方法来预防死锁。</p>
+<p>我找到的大部分库要么太繁琐，要么灵活性不足，所以我决定自己写个。</p>
+<p>使用这个库，你可以轻松地连接到任何 SQL-Server 数据库，执行任何存储过程或 T-SQL 查询，并异步地接收查询结果。这个库采用 C# 开发，没有其他外部依赖。</p>
+<p><strong>背景</strong></p>
+<p>你可能需要一些事件驱动编程的背景知识，但这不是必需的。</p>
+<p><strong>使用</strong></p>
+<p>这个库由两个类组成：</p>
+<p>1、BLL (Business Logic Layer) 提供访问MS-SQL数据库、执行命令和查询并将结果返回给调用者的方法和属性。你不能直接调用这个类的对象，它只供其他类继承.<br />
+2、DAL (Data Access Layer) 你需要自己编写执行SQL存储过程和查询的函数，并且对于不同的表你可能需要不同的DAL类。<br />
+首先，你需要像这样创建 DAL 类：</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+namespace SQLWrapper 
+{ 
+ public class DAL : BLL 
+ { 
+  public DAL(string server, string db, string user, string pass) 
+  { 
+   base.Start(server, db, user, pass); 
+  } 
+ 
+  ~DAL() 
+  { 
+   base.Stop(eStopType.ForceStopAll); 
+  } 
+ 
+  /////////////////////////////////////////////////////////// 
+  // TODO: Here you can add your code here... 
+ } 
+} 
+</pre>
+</div>
+<p>由于BLL类维护着处理异步查询的线程，你需要提供必要的数据来拼接连接字符串。千万别忘了调用`Stop`函数，否则析构函数会强制调用它。</p>
+<p><strong>NOTE</strong>：如果需要连接其他非MS-SQL数据库，你可以通过修改BLL类中的`CreateConnectionString`函数来生成合适的连接字符串。</p>
+<p>为了调用存储过程，你应该在DAL中编写这种函数:</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+public int MyStoreProcedure(int param1, string param2) 
+{ 
+  // 根据存储过程的返回类型创建用户数据 
+  StoredProcedureCallbackResult userData = new StoredProcedureCallbackResult(eRequestType.Scalar); 
+   
+  // 在此定义传入存储过程的参数，如果没有参数可以省略 &lt;span style="line-height:1.5;font-size:9pt;"&gt;userData.Parameters = new System.Data.SqlClient.SqlParameter[] { &lt;/span&gt;     
+ new System.Data.SqlClient.SqlParameter("@param1", param1), 
+    new System.Data.SqlClient.SqlParameter("@param2", param2), 
+  }; 
+   
+  // Execute procedure... 
+  if (!ExecuteStoredProcedure("usp_MyStoreProcedure", userData)) 
+    throw new Exception("Execution failed"); 
+     
+  // 等待执行完成... 
+  // 等待时长为 &lt;userdata.tswaitforresult&gt; 
+  // 执行未完成返回 &lt;timeout&gt; 
+  if (WaitSqlCompletes(userData) != eWaitForSQLResult.Success) 
+    throw new Exception("Execution failed"); 
+     
+  // Get the result... 
+  return userData.ScalarValue; 
+} </pre>
+</div>
+<p>正如你所看到的，存储过程的返回值类型可以是`Scalar`,`Reader`和`NonQuery`。对于 `Scalar`，`userData`的`ScalarValue`参数有意义(即返回结果)；对于`NonQuery`，`userData`的 `AffectedRows`参数就是受影响的行数；对于`Reader`类型，`ReturnValue`就是函数的返回值，另外你可以通过 `userData`的`resultDataReader`参数访问recordset。</p>
+<p>再看看这个示例:</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+public bool MySQLQuery(int param1, string param2) 
+{ 
+  // Create user data according to return type of store procedure in SQL(这个注释没有更新,说明《注释是魔鬼》有点道理) 
+  ReaderQueryCallbackResult userData = new ReaderQueryCallbackResult(); 
+   
+  string sqlCommand = string.Format("SELECT TOP(1) * FROM tbl1 
+   WHERE code = {0} AND name LIKE &apos;%{1}%&apos;", param1, param2); 
+   
+  // Execute procedure... 
+  if (!ExecuteSQLStatement(sqlCommand, userData)) 
+    return false; 
+     
+  // Wait until it finishes... 
+  // Note, it will wait (userData.tsWaitForResult) 
+  // for the command to be completed otherwise returns &lt;timeout&gt; 
+  if (WaitSqlCompletes(userData) != eWaitForSQLResult.Success) 
+    return false; 
+     
+  // Get the result... 
+  if(userData.resultDataReader.HasRows && userData.resultDataReader.Read()) 
+  { 
+    // Do whatever you want.... 
+    int field1 = GetIntValueOfDBField(userData.resultDataReader["Field1"], -1); 
+    string field2 = GetStringValueOfDBField(userData.resultDataReader["Field2"], null); 
+    Nullable&lt;datetime&gt; field3 = GetDateValueOfDBField(userData.resultDataReader["Field3"], null); 
+    float field4 = GetFloatValueOfDBField(userData.resultDataReader["Field4"], 0); 
+    long field5 = GetLongValueOfDBField(userData.resultDataReader["Field5"], -1); 
+  } 
+  userData.resultDataReader.Dispose(); 
+   
+  return true; 
+} </pre>
+</div>
+<p>在这个例子中，我们调用 `ExecuteSQLStatement` 直接执行了一个SQL查询，但思想跟 `ExecuteStoredProcedure` 是一样的。</p>
+<p>我们使用 `resultDataReader` 的 `.Read()` 方法来迭代处理返回的结果集。另外提供了一些helper方法来避免叠代中由于NULL字段、GetIntValueOfDBField 等引起的异常。</p>
+<p>如果你要执行 SQL 命令而不是存储过程，需要传入 ExecuteSQLStatement 的 userData 有三类：</p>
+<p>1、ReaderQueryCallbackResult userData：适用于有返回recordset的语句，可以通过userData.resultDataReader获得对返回的recordset的访问。<br />
+2、NonQueryCallbackResult userData：适用于像UPDATE这种没有返回内容的语句，可以使用userData.AffectedRows检查执行的结果。<br />
+3、ScalarQueryCallbackResult userData：用于查询语句只返回一个标量值的情况，例如`SELECT code FROM tbl WHEN ID=10`，通过userData.ScalarValue 取得返回的结果。<br />
+对于存储过程，只有一种需要传入 ExecuteStoredProcedure 的数据类型。但在声明变量时你需要指明存储过程的返回值类型：</p>
+<p>StoredProcedureCallbackResult userData(eRequestType)：除了声明不同外，其他操作与上面相同。<br />
+<strong>异步地使用代码</strong></p>
+<p>假使你不希望调用线程被查询阻塞，你需要周期性地调用 `WaitSqlCompletes` 来检查查询是否完成，执行是否失败。</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+/// &lt;summary&gt; 
+/// 你需要周期性地调用WaitSqlCompletes(userData, 10) 
+/// 来查看结果是否可用! 
+/// &lt;/summary&gt; 
+public StoredProcedureCallbackResult MyStoreProcedureASYNC(int param1, string param2) 
+{ 
+  // Create user data according to return type of store procedure in SQL 
+  StoredProcedureCallbackResult userData = new StoredProcedureCallbackResult(eRequestType.Reader); 
+   
+  // If your store procedure accepts some parameters, define them here, 
+  // or you can omit it incase there is no parameter definition 
+  userData.Parameters = new System.Data.SqlClient.SqlParameter[] { 
+    new System.Data.SqlClient.SqlParameter("@param1", param1), 
+    new System.Data.SqlClient.SqlParameter("@param2", param2), 
+  }; 
+   
+  // Execute procedure... 
+  if (!ExecuteStoredProcedure("usp_MyStoreProcedure", userData)) 
+    throw new Exception("Execution failed"); 
+     
+  return userData; 
+} </pre>
+</div>
+<p>在调用线程中你需要这样做:</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+... 
+DAL.StoredProcedureCallbackResult userData = myDal.MyStoreProcedureASYNC(10,"hello"); 
+... 
+// each time we wait 10 milliseconds to see the result... 
+switch(myDal.WaitSqlCompletes(userData, 10)) 
+{ 
+case eWaitForSQLResult.Waiting: 
+ goto WAIT_MORE; 
+case eWaitForSQLResult.Success: 
+ goto GET_THE_RESULT; 
+default: 
+ goto EXECUTION_FAILED; 
+} 
+... </pre>
+</div>
+<p><strong>数据库状态</strong></p>
+<p>在 BLL 中只有一个异步地提供数据库状态的事件。如果数据库连接被断开了(通常是由于网络问题)，OnDatabaseStatusChanged 事件就会被挂起。</p>
+<p>另外，如果连接恢复了，这个事件会被再次挂起来通知你新的数据库状态。</p>
+<p><strong>有趣的地方</strong></p>
+<p>在我开发代码的时候，我明白了连接字符串中的连接时限（connection timeout）和SQL命令对象的执行时限（execution timeout）同样重要。</p>
+<p>首先，你必须意识到最大容许时限是在连接字符串中定义的，并可以给出一些执行指令比连接字符串中的超时时间更长的时间。</p>
+<p>其次，每一个命令都有着它们自己的执行时限，在这里的代码中默认为30秒。你可以很容易地修改它，使它适用于所有类型的命令，就像这样：</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+userData.tsWaitForResult = TimeSpan.FromSeconds(15); </pre>
+</div>
+<p>以上就是异步的SQL数据库封装全部过程，希望对大家的学习有所帮助。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/107373.html'>Android 关机弹出选择菜单的深入解析</a><a>下一篇</a><a href='/php/biji/107375.html'>Ajax 无刷新在注册用户名时判断是否为空是否被使用</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

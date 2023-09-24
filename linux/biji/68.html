@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Linuxt通过命令lsof或者extundelete工具恢复误删除的文件或者目录_IDC笔记</title>
+    <meta name="keywords" content=",Linux常用命令" />
+    <meta name="description" content="Linux不像windows有那么显眼的回收站，不是简单的还原就可以了。<br />
+linux删除文件还原可以分为两种情况，一种是删除以后在进程存在删" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+            <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> Linux命令大全            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/linux/1.html">Linux常用命令(手册)大全</a></li><li><a href="/linux/linux/2.html">Linux命令格式</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 系统管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/system/3.html">Linux ls命令:显示指定工作目录下的内容</a></li><li><a href="/linux/system/4.html">Linux pwd命令:显示当前工作目录</a></li><li><a href="/linux/system/5.html">Linux cd命令:切换工作目录</a></li><li><a href="/linux/system/6.html">Linux date命令:显示或设置系统时间</a></li><li><a href="/linux/system/7.html">Linux su命令:切换用户</a></li><li><a href="/linux/system/9.html">Linux man命令:查看帮助信息</a></li><li><a href="/linux/system/8.html">Linux clear命令:清除屏幕</a></li><li><a href="/linux/system/11.html">Linux whoami命令:显示目前登录用户名</a></li><li><a href="/linux/system/10.html">Linux who命令:显示目前登录用户信息</a></li><li><a href="/linux/system/13.html">Linux ps命令:显示进程状态</a></li><li><a href="/linux/system/12.html">Linux free命令:显示系统内存状态</a></li><li><a href="/linux/system/15.html">Linux help命令:显示帮助信息</a></li><li><a href="/linux/system/14.html">Linux top命令:查看系统活跃进程</a></li><li><a href="/linux/system/18.html">Linux shutdown命令:关机或重启</a></li><li><a href="/linux/system/17.html">Linux halt命令:关闭系统</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 文件管理与编辑命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/file/27.html">Linux mkdir命令:创建目录</a></li><li><a href="/linux/file/29.html">Linux cat命令:连接文件并打印到标准输出设备上</a></li><li><a href="/linux/file/28.html">Linux more命令:显示文本文件内容</a></li><li><a href="/linux/file/30.html">Linux grep命令:检索文件内容</a></li><li><a href="/linux/file/31.html">Linux rm命令:删除文件或目录</a></li><li><a href="/linux/file/32.html">Linux touch命令:修改文件的时间</a></li><li><a href="/linux/file/34.html">Linux cp命令:复制文件或目录</a></li><li><a href="/linux/file/33.html">Linux ln命令:创建链接</a></li><li><a href="/linux/file/35.html">Linux find命令:查找文件</a></li><li><a href="/linux/file/37.html">Linux mv命令:移动或重命名文件或目录</a></li><li><a href="/linux/file/36.html">Linux split命令:分割文件</a></li><li><a href="/linux/file/40.html">Linux head命令:查看文件前几行</a></li><li><a href="/linux/file/39.html">Linux less命令:分页显示文件内容</a></li><li><a href="/linux/file/38.html">Linux vi/vim命令:文本编辑器</a></li><li><a href="/linux/file/42.html">Linux wc命令:统计字节数、字数、行数</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 压缩与解压命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/compression/55.html">Linux unzip命令:解压文件或目录</a></li><li><a href="/linux/compression/54.html">Linux zip命令:压缩文件或目录</a></li><li><a href="/linux/compression/56.html">Linux tar命令:归档工具</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 磁盘管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/disk/57.html">Linux df命令:显示磁盘空间使用情况</a></li><li><a href="/linux/disk/59.html">Linux quota命令:显示磁盘已使用的空间与限制</a></li><li><a href="/linux/disk/58.html">Linux mount命令:挂载文件系统</a></li><li><a href="/linux/disk/62.html">Linux ip命令:执行网络管理任务</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 网络设置与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/network/61.html">Linux netstat命令:显示网络状态</a></li><li><a href="/linux/network/60.html">Linux ifconfig命令:配置或显示网络接口信息</a></li><li><a href="/linux/network/63.html">Linux ping命令:测试主机间网络连通性</a></li><li><a href="/linux/network/65.html">Linux finger命令:查找并显示用户信息</a></li><li><a href="/linux/network/64.html">Linux wall命令:发送广播</a></li><li><a href="/linux/network/67.html">Linux rlogin命令:远端登入</a></li><li><a href="/linux/network/66.html">Linux rcp命令:远程文件复制</a></li>        </ul>
+    </li>
+        <li>
+        <a href="/linux/biji/" class="waves-effect">
+            <i class="icon-share"></i>
+            <span>Linux笔记
+                <span class="float-right menu-arrow">
+                <i class="mdi mdi-chevron-right"></i>
+                </span>
+            </span>
+        </a>
+    </li>
+    </ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+</div>
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="page-title-box">
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <h1 class="page-title">Linuxt通过命令lsof或者extundelete工具恢复误删除的文件或者目录</h1>
+                    </div>
+                </div>
+                <!-- end row -->
+            </div>
+            <!-- end page-title -->
+            <!-- START ROW -->
+            <div class="panel panel-forbid">
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+                <div class="panel-content">
+                <span>Linux不像windows有那么显眼的回收站，不是简单的还原就可以了。<br />
+linux删除文件还原可以分为两种情况，一种是删除以后在进程存在删</span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+                <div class="panel-content">
+                <span><p><span style="color: #000000;">Linux不像windows有那么显眼的回收站，不是简单的还原就可以了。</span><br /><span style="color: #000000;">linux删除文件还原可以分为两种情况，一种是删除以后在进程存在删除信息，一种是删除以后进程都找不到，只有借助于工具还原。这里分别检查介绍下</span></p>
+<p><span style="color: #000000;">一，误删除文件进程还在的情况。</span><br /><span style="color: #000000;">这种一般是有活动的进程存在持续标准输入或输出，到时文件被删除后，进程PID还是存在。这也就是有些服务器删除一些文件但是磁盘不释放的原因。比如当前举例说明：</span><br /><span style="color: #000000;">通过一个shell终端对一个测试文件做cat追加操作：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup ~]# echo  &quot;hello  py&quot; &gt; testdelete.py
+[[email&nbsp;protected]_backup ~]# cat  &gt;&gt; testdelete.py 
+hello delete
+</pre>
+<p><span style="color: #000000;">另外一个终端查看这个文件可以清楚看到内容：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup ~]# cat testdelete.py 
+hello  py
+hello delete
+</pre>
+<p><span style="color: #000000;">此时，在当前服务器删除文件rm -f ./testdelete.py</span><br /><span style="color: #000000;">命令查看这个目录，文件已经不存在了，那么现在我们将其恢复出来。</span><br /><span style="color: #000000;">1，lsof查看删除的文件进程是否还存在。这里用到一个命令lsof，如没有安装请自行yum或者apt-get。类似这种情况，我们可以先lsof查看删除的文件 是否还在：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup ~]# lsof | grep deleted
+mysqld     1512   mysql    5u      REG              252,3          0    6312397 /tmp/ibzW3Lot (deleted)
+cat       20464    root    1w      REG              252,3         23    1310722 /root/testdelete.py (deleted)
+</pre>
+<p><span style="color: #000000;">幸运的是这种情况进程还存在 ，那么开始进行恢复 操作。</span><br /><span style="color: #000000;">2，恢复。</span><br /><span style="color: #000000;">恢复命令：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+cp /proc/pid/fd/1  /指定目录/文件名
+</pre>
+<p><span style="color: #000000;">进入 进程目录，一般是进入/proc/pid/fd/,针对当前情况：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup ~]# cd   /proc/20464/fd
+[[email&nbsp;protected]_backup fd]# ll
+total 0
+lrwx------ 1 root root 64 Nov 15 18:12 0 &gt; /dev/pts/1
+l-wx------ 1 root root 64 Nov 15 18:12 1 &gt; /root/testdelete.py (deleted)
+lrwx------ 1 root root 64 Nov 15 18:12 2 &gt; /dev/pts/1
+</pre>
+<p><span style="color: #000000;">恢复操作：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+cp 1 /tmp/testdelete.py
+</pre>
+<p><span style="color: #000000;">查看文件：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup fd]# cat  /tmp/testdelete.py
+hello  py
+hello delete
+</pre>
+<p><span style="color: #000000;">恢复完成。</span></p>
+<p><strong><span style="color: #000000;">二，误删除的文件进程已经不存在，借助于工具还原。</span></strong><br /><span style="color: #000000;">创建准备删除的目录并echo一个 带有内容的文件：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup 21yunwei]# tree
+.
+├── deletetest
+│&nbsp;&nbsp; └── mail
+│&nbsp;&nbsp;     └── test.py
+├── lost+found
+└── passwd
+
+3 directories, 2 files
+[[email&nbsp;protected]_backup 21yunwei]# cat /21yunwei/deletetest/mail/test.py 
+hello Dj
+[[email&nbsp;protected]_backup 21yunwei]# tail  -2  passwd 
+haproxy:x:500:502::/home/haproxy:/bin/bash
+tcpdump:x:72:72::/:/sbin/nologin
+
+</pre>
+<p><span style="color: #000000;">执行删除操作：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup 21yunwei]# rm  -rf    ./*
+[[email&nbsp;protected]_backup 21yunwei]# ll
+total 0
+</pre>
+<p><span style="color: #000000;">现在开始进行误删除文件的恢复。这种情况一般是没有守护进行或者后台进程对其持续输入，所以删除就删除 了，lsof也看不到。就要借助于工具。这里我们采用的工具是extundelete第三方工具。恢复步骤如下：</span></p>
+<p><span style="color: #000000;">1，停止对当前分区做任何操作，防止inode被覆盖。inode被覆盖基本就告别自行车了。比如停止所在分区的服务，卸载目录所在的设备，有必要的情况下都可以断网。</span><br /><span style="color: #000000;">2，通过dd命令对 当前分区进行备份，防止第三方软件恢复失败导致数据丢失。适合数据非常重要的情况，这里测试，就没有备份，如备份可以考虑如下方式：</span><br /><span style="color: #000000;">dd if=/path/filename of=/dev/vdc1</span><br /><span style="color: #000000;">3,通过umount命令，对当前设备分区卸载。或者fuser 命令。</span><br /><span style="color: #000000;">umount /dev/vdb1 或者 umount /21yunwei</span><br /><span style="color: #000000;">如果提示设备busy，可以用fuser命令强制卸载：fuser -m -v -i -k /21yunwei</span><br /><span style="color: #000000;">4,下载第三方工具extundelete安装，搜索误删除的文件进行还原。</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+wget  /d/file/p/20221029/extundelete-0.2.4.tar.bz2
+tar jxvf extundelete-0.2.4.tar.bz2
+cd  extundelete-0.2.4
+./configure 
+make
+make  install
+</pre>
+<p><span style="color: #000000;">扫描误删除的文件：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup extundelete-0.2.4]# extundelete  --inode 2 /dev/vdb1
+NOTICE: Extended attributes are not restored.
+Loading filesystem metadata ... 8 groups loaded.
+Group: 0
+Contents of inode 2:
+
+.
+.省略N行
+
+File name                                       | Inode number | Deleted status
+.                                                 2
+..                                                2
+lost+found                                        11             Deleted
+deletetest                                        12             Deleted
+passwd                                            14             Deleted
+
+</pre>
+<p><span style="color: #000000;">通过扫描发现了我们删除的文件夹，现在执行恢复操作。</span><br /><span style="color: #000000;">（1）恢复单一文件passwd</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup /]# extundelete /dev/vdb1 --restore-file passwd   
+NOTICE: Extended attributes are not restored.
+Loading filesystem metadata ... 8 groups loaded.
+Loading journal descriptors ... 46 descriptors loaded.
+Successfully restored file passwd
+
+</pre>
+<p><span style="color: #000000;">恢复文件是放到了当前目录RECOVERED_FILES。</span><br /><span style="color: #000000;">查看恢复的文件：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup /]# tail  -5  RECOVERED_FILES/passwd 
+mysql:x:497:500::/home/mysql:/bin/false
+nginx:x:496:501::/home/nginx:/sbin/nologin
+zabbix:x:495:497:Zabbix Monitoring System:/var/lib/zabbix:/sbin/nologin
+haproxy:x:500:502::/home/haproxy:/bin/bash
+tcpdump:x:72:72::/:/sbin/nologin
+</pre>
+<p><span style="color: #000000;">（2）恢复目录deletetest</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup /]# extundelete /dev/vdb1 --restore-directory  deletetest 
+NOTICE: Extended attributes are not restored.
+Loading filesystem metadata ... 8 groups loaded.
+Loading journal descriptors ... 46 descriptors loaded.
+Searching for recoverable inodes in directory deletetest ... 
+5 recoverable inodes found.
+Looking through the directory structure for deleted files ... 
+[[email&nbsp;protected]_backup /]# cat  RECOVERED_FILES/deletetest/mail/test.py 
+hello Dj
+</pre>
+<p><span style="color: #000000;">（3）恢复所有</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup /]# extundelete /dev/vdb1 --restore-all
+NOTICE: Extended attributes are not restored.
+Loading filesystem metadata ... 8 groups loaded.
+Loading journal descriptors ... 46 descriptors loaded.
+Searching for recoverable inodes in directory / ... 
+5 recoverable inodes found.
+Looking through the directory structure for deleted files ... 
+0 recoverable inodes still lost. 
+[[email&nbsp;protected]_backup /]# cd RECOVERED_FILES/
+[[email&nbsp;protected]_backup RECOVERED_FILES]# tree
+.
+├── deletetest
+│&nbsp;&nbsp; └── mail
+│&nbsp;&nbsp;     └── test.py
+└── passwd
+
+2 directories, 2 files
+</pre>
+<p><span style="color: #000000;">（4），恢复指定inode。</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup /]# extundelete /dev/vdb1 --restore-inode 14
+NOTICE: Extended attributes are not restored.
+Loading filesystem metadata ... 8 groups loaded.
+Loading journal descriptors ... 46 descriptors loaded.
+[[email&nbsp;protected]_backup /]# tail  -5   /RECOVERED_FILES/file.14 
+mysql:x:497:500::/home/mysql:/bin/false
+nginx:x:496:501::/home/nginx:/sbin/nologin
+zabbix:x:495:497:Zabbix Monitoring System:/var/lib/zabbix:/sbin/nologin
+haproxy:x:500:502::/home/haproxy:/bin/bash
+tcpdump:x:72:72::/:/sbin/nologin
+</pre>
+<p><span style="color: #000000;">注意恢复inode的时候，恢复 出来的文件名和之前不一样，需要单独进行改名。内容是没问题的。</span></p>
+<p><span style="color: #000000;">更多的extundelete用法请参考extundelete &ndash;help选项参数说明，当前恢复所有的操作完成。</span></p><!-- .entry-wrapper --></span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+                <div class="panel-content">
+                <span>[!--zhushi--]</span>                                     
+                </div>
+
+            </div>
+
+            <!-- END ROW -->
+            <div class="newsPage">
+                <div class="newsPageTurn">
+                    <span><a>上一篇</a><a href='/linux/biji/22.html'>VC6.0断点调试教程</a><a>下一篇</a><a href='/linux/biji/69.html'>Linux 系统目录结构详细介绍说明</a></span>
+                </div>
+            </div>
+        </div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+                <li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<!-- container-fluid -->
+    </div>
+<!-- content -->
+    <footer class="footer">
+    © 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    </footer>
+</div>
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

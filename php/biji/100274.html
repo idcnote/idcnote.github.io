@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>详解JavaEE使用过滤器实现登录(用户自动登录 安全登录 取消自动登录黑用户禁止登录)_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="在我们生活中，对于账户的自动登录已经很常见了，所以利用过滤器实现这个功能。<br />
+主要介绍用户的自动登录和取消自动登录，以及实现一天自动登录或者n天实现自动登录，当用户ip被加入" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">详解JavaEE使用过滤器实现登录(用户自动登录 安全登录 取消自动登录黑用户禁止登录)</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>在我们生活中，对于账户的自动登录已经很常见了，所以利用过滤器实现这个功能。<br />
+主要介绍用户的自动登录和取消自动登录，以及实现一天自动登录或者n天实现自动登录，当用户ip被加入</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>在我们生活中，对于账户的自动登录已经很常见了，所以利用过滤器实现这个功能。</p>
+<p><span style="color: #ff0000">主要介绍用户的自动登录和取消自动登录，以及实现一天自动登录或者n天实现自动登录，当用户ip被加入到黑名单之后，直接利用过滤器返回一个警告页面。</span></p>
+<p>过滤器的功能很是强大，我们只需要在写好的前台后servlet之后进行添加就可以实现这个功能</p>
+<p>Ps:这个仅仅只是一个演示而已，里面的访问数据库的部分，自己随意模拟了下，主要是突出实现自动登录的功能。</p>
+<p><span style="color: #0000ff"><strong>前台代码：</strong></span></p>
+<p>前台代码是成功与否都在这个页面显示。用到的技术：<span style="color: #ff0000">jstl标签的应用，session读取值</span></p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+&lt;%@ page language="java" import="java.util.*" pageEncoding="utf-8"%&gt; 
+&lt;%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%&gt; 
+&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"&gt; 
+&lt;html&gt; 
+&lt;head&gt; 
+&lt;/head&gt; 
+&lt;body&gt; 
+&lt;c:if test="${!empty sessionScope.error }"&gt; 
+你的密码或用户名错误。&lt;!-- 显示后就需要把里面的值移走 --&gt; 
+&lt;c:remove var="error" scope="session"/&gt; 
+&lt;/c:if&gt; 
+&lt;c:if test="${empty sessionScope.user }" var="boo"&gt; 
+&lt;h2&gt;这是登录的页面&lt;/h2&gt; 
+&lt;form action="&lt;c:url value='/LoginServlet'/&gt;" method="post"&gt; 
+NAME:&lt;input type="text" name="name" /&gt;&lt;br/&gt; 
+PWD:&lt;input type="text" name="pwd" /&gt;&lt;br/&gt; 
+不自动登录:&lt;input type="radio" name="time" value="0" /&gt;&lt;br/&gt; 
+一天:&lt;input type="radio" name="time" value="1" /&gt;&lt;br/&gt; 
+七天:&lt;input type="radio" name="time" value="7" /&gt;&lt;br/&gt; 
+&lt;input type="submit" value="提交" /&gt; 
+&lt;/form&gt; 
+&lt;/c:if&gt; 
+&lt;c:if test="${!boo }"&gt; 
+欢迎您，${sessionScope.user },登录成功 
+&lt;a href=""&gt;模块一 &lt;/a&gt; 
+&lt;a href=""&gt;模块2 &lt;/a&gt; 
+&lt;a href="&lt;c:url value='/CancelAutoLogin'/&gt;"&gt;取消自动登录&lt;/a&gt; 
+&lt;/c:if&gt; 
+&lt;/body&gt; 
+&lt;/html&gt; </pre>
+</div>
+<p style="text-align: center"></p>
+<p><span style="color: #0000ff"><strong>servlet的实现代码：</strong></span></p>
+<p>和以前的代码一样，只负责和前台交互即可：里面用到的技术有<span style="color: #ff0000">url编码，值存在cookie里面，存在session里面，页面跳转</span>（转发）</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public void doPost(HttpServletRequest request, HttpServletResponse response) 
+throws ServletException, IOException { 
+String name=request.getParameter("name"); 
+String pwd=request.getParameter("pwd"); 
+String time=request.getParameter("time"); 
+if(name!=null && pwd!=null && name.equals(pwd)){//此处随意写写，后面应该去servvice--&gt;dao访问数据库 
+//这里假设登录成功了，我们把信息存入session里面 
+request.getSession().setAttribute("user", name); 
+//兼容中文，我们需要进行编码 
+name=URLEncoder.encode(name, "utf-8"); 
+pwd=URLEncoder.encode(pwd, "utf-8"); 
+Cookie c =new Cookie("autologin", name+","+pwd);//这个value不能采用这种方式的，安全性考虑，我们必须知道采用加密，或者二次加密， 
+int _time=60*60*24*Integer.valueOf(time); 
+c.setMaxAge(_time); 
+response.addCookie(c); 
+response.sendRedirect(request.getContextPath()+"/index.jsp");//在过滤器中默认的设置是拦截重定向，转发是内部直接转发，不过过滤器，不好办，但是只需要在web.xml中配置就可以了。 
+}else{ 
+request.getSession().setAttribute("error", "1"); 
+response.sendRedirect(request.getContextPath()+"/index.jsp"); 
+} 
+} </pre>
+</div>
+<p>到现在为止，都感觉没有什么技术，和以前的代码一个，现在就是Filter的作用了。</p>
+<p><span style="color: #ff0000"><strong>安全登录：</strong></span></p>
+<p>之前我们采用过动态导入来进行安全登录，防止用户进入项目之后，不用登录，随意输入都可以进入界面，动态导入能够实现这个功能，但是，采用过滤器更好。</p>
+<p>在过滤器中一般写的都是dofilter();只需要判断session容器里面是否为null,为null这说明这是没有登录的，直接踢回登录界面，否，则放行</p>
+<p><strong>代码呈上：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public void doFilter(ServletRequest request, ServletResponse response, 
+FilterChain chain) throws IOException, ServletException { 
+HttpServletRequest req=(HttpServletRequest) request; 
+HttpServletResponse resp=(HttpServletResponse) response; 
+String session=(String) req.getSession().getAttribute("user"); 
+if(session==null){ 
+System.out.println("非正常登录"); 
+resp.sendRedirect(req.getContextPath()+"/index.jsp"); 
+}else{ 
+System.out.println("成功登录"); 
+chain.doFilter(req, resp); 
+} 
+} </pre>
+</div>
+<p><span style="color: #0000ff"><strong>字符编码：</strong></span></p>
+<p>字符编码的问题，以前每一次都需要在servlet的dopost（）里面自己手动输入，request.setCharacterEncoding("utf-8");每一个servlet都需要输入，太麻烦，我们采用过滤器实现；</p>
+<p><strong>代码呈上：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+&lt;span style="font-size:18px;"&gt;public void doFilter(ServletRequest request, ServletResponse response, 
+FilterChain chain) throws IOException, ServletException { 
+request.setCharacterEncoding(character);//去客户端接收的编码 
+response.setContentType("text/html;charset=utf-8");//设置发出去的编码 
+chain.doFilter(request, response); 
+} 
+
+@Override 
+public void init(FilterConfig config) throws ServletException { 
+character=config.getInitParameter("character");//a&lt;/span&gt;&lt;span style="font-size: 18px; font-family: Arial, Helvetica, sans-serif;"&gt;haracter 设置为全局变量，&lt;/span&gt;&lt;span style="font-size:18px;"&gt; 
+}&lt;/span&gt; </pre>
+</div>
+<p>再上面的character定义为全局变量，初始值在web.xml中配置。</p>
+<p><strong>web.xml代码呈上：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+&lt;filter&gt; 
+&lt;filter-name&gt;character&lt;/filter-name&gt; 
+&lt;filter-class&gt;cn.hncu.Filter.CharacterFilter&lt;/filter-class&gt; 
+&lt;init-param&gt; 
+&lt;param-name&gt;character&lt;/param-name&gt; 
+&lt;param-value&gt;UTF-8&lt;/param-value&gt; 
+&lt;/init-param&gt; 
+&lt;/filter&gt; </pre>
+</div>
+<p><span style="color: #ff0000"><strong>自动登录：</strong></span></p>
+<p>主要思路：自动登录需要判断session里面是都存有值，有，则登录过了，没有，就去本地cookie查找，存在，去数据库匹配，若匹配成功，就把session容器添加值。</p>
+<p><strong>代码呈上：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public void doFilter(ServletRequest request, ServletResponse response, 
+FilterChain chain) throws IOException, ServletException { 
+//自动登录，必须要设置session里面是都有值，有，则当前登录过，没有，就要去访问cookie里面的数据，cookie里面的数据 
+//是否和数据库里面的匹配，是，将session里面的值在这里设置，否，放走 
+HttpServletRequest req=(HttpServletRequest) request; 
+HttpServletResponse resp =(HttpServletResponse) response; 
+String session =(String) req.getSession().getAttribute("user"); 
+if(session==null){//说明当前没有登录过 
+Cookie cs[]=req.getCookies(); 
+if(cs!=null){ 
+for(Cookie c:cs){ 
+if(c.getName().equals("autologin")){ 
+String value=c.getValue();//这是经过加密的，但是我们仅仅只是采用逗号连接了一下。 
+String[] strs=value.split(",");//在logserlvet里面采用的是先编码，再采用逗号连接，我们这里需要反过来 
+String name=URLDecoder.decode(strs[0], "utf-8"); 
+String pwd=URLDecoder.decode(strs[1], "utf-8"); 
+//将name,pwd数据拿到后台访问数据库，我们这里只是随便写写 
+if(name.equals(pwd)){ 
+req.getSession().setAttribute("user", name);//设置session里面的参数 
+break; 
+} 
+} 
+} 
+} 
+} 
+chain.doFilter(req, resp);//一定要放走哦。。 
+} </pre>
+</div>
+<p style="text-align: center"></p>
+<p><span style="color: #ff0000"><strong>黑名单用户</strong></span></p>
+<p>黑名单用户，不准登录，直接告诉它结果</p>
+<p><strong>代码呈上：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public void doFilter(ServletRequest request, ServletResponse response, 
+FilterChain chain) throws IOException, ServletException { 
+HttpServletRequest req=(HttpServletRequest) request; 
+HttpServletResponse resp=(HttpServletResponse) response; 
+String ip=req.getRemoteAddr();//获取访问的ip; 
+System.out.println(ip+"IIPP"); 
+if(set.contains(ip)){//在黑名单之内 
+System.out.println("set"); 
+resp.getWriter().print("您属于黑名单..&lt;a href='"+req.getContextPath()+"/index.jsp'&gt;返回&lt;/a&gt;"); 
+//返回也是不行的，因为index向服务器请求的时候就直接拦截了 
+}else{ 
+chain.doFilter(req, resp); 
+} 
+}</pre>
+</div>
+<p>黑名单返回的类型为list最好，我这里是自己手动添加，原本应该从写一个工具类从数据库读取，不止能查，还能增删改--黑名单。<br />
+</p>
+<p><strong>代码呈上：</strong></p>
+<p>Hashset 定义为全局变量，set里面含有contain，效率很高。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public void init(FilterConfig arg0) throws ServletException { 
+//这里是黑名单列表，从数据库中调取出来。这里只是简单的模拟下 
+set.add("192.132.0.12");//这是黑IP,这个是从后台数据库拿到的。 
+set.add("localhost"); 
+set.add("192.132.32.4"); 
+set.add("127.0.0.1"); 
+}</pre>
+</div>
+<p style="text-align: center"></p>
+<p><span style="color: #ff0000"><strong>取消自动登录</strong></span></p>
+<p>当一直自动登录认为不安全，所以我们设置没有自动登录</p>
+<p>之前我们知道，自动登录靠的是cookie里面存的技术，所以这里我们只需要将cookie删除就可以了</p>
+<p>因为取消自动登录是超链接，所以写的是servlet.</p>
+<p><strong>代码呈上：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public void doPost(HttpServletRequest req, HttpServletResponse resp) 
+throws ServletException, IOException { 
+Cookie cc=new Cookie("autologin", "");//删除cookie的方法，就建立一个同名connkie，然后设置cookie的setmaxage=0； 
+cc.setMaxAge(0); 
+cc.setPath(req.getContextPath()); 
+resp.addCookie(cc); 
+resp.sendRedirect(req.getContextPath()+"/index.jsp"); 
+} </pre>
+</div>
+<p>上面这些就能实现这些简答的功能了。</p>
+<p>以上所述是小编给大家介绍的详解JavaEE使用过滤器实现用户自动登录 安全登录 取消自动登录黑用户禁止登录的相关知识，希望对大家有所帮助，如果大家有任何疑问请给我留言，小编会及时回复大家的。在此也非常感谢大家对phpstudy网站的支持！</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/100273.html'>揭秘SQL Server 2014有哪些新特性(1)-内存数据库</a><a>下一篇</a><a href='/php/biji/100275.html'>当前流行的JavaScript代码风格指南</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

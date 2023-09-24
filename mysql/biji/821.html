@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>解决MySQL DDL 引发的同步延迟的问题_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了解决MySQL DDL 引发的同步延迟的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言
+写作案" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">解决MySQL DDL 引发的同步延迟的问题</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:19:51                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了解决MySQL DDL 引发的同步延迟的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言
+写作案</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了解决MySQL DDL 引发的同步延迟的问题，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h2>前言</h2>
+<p>写作案例分析，主要是工具介绍&amp;推荐。MySQL 的同步机制比较单纯，主库上执行过的 DML 和 DDL 会在从库上再执行一次，那么主库上需要 10min 才能执行完的 DDL 理论上在从库至少也要花费 10min 才能执行完，这意味着从库的同步会延迟 10min 以上，等 DDL 执行完之后才会继续追同步。</p>
+<h2>解决方案</h2>
+<p>从 MySQL 的同步原理来看，主要是 DDL 这个单独的操作会花费太久的时间，导致从库也会被卡主。那么解决这个问题的办法就很容易想到：&ldquo;拆解&rdquo; DDL 的操作，把一个大操作（大事务同理）拆分成多个小操作，减少单次操作的时间。</p>
+<p>&ldquo;拆解&rdquo; DDL 操作一般会用到 MySQL Online DDL 的工具，比如 pt-osc，facebook-osc，oak-online-alter-table，gh-ost 等。这些工具的思路都比较类似，创建一个源表的镜像表，先执行完表结构变更，再把源表的全量数据和增量数据都同步过去，因此可以避免单个 DDL 操作引发的同步延迟。</p>
+<h2>工具介绍</h2>
+<p>本文会介绍 gh-ost，由 Github 维护的 MySQL online DDL 工具，同样使用了镜像表的形式，但是放弃了使用低效的 trigger，而是从 binlog 中提取需要的增量数据来保持镜像表与源表的数据一致性。整个 Online DDL 操作仅在最终 rename 源表与镜像表时会阻塞几秒钟的读写。</p>
+<h2>工作原理</h2>
+<p>go-ost 的操作流程大致如下：</p>
+<ul>
+	<li>在 Master 中创建镜像表（_tablename_gho）和心跳表（_tablename_ghc）。</li>
+	<li>向心跳表中写入 Online-DDL 的进度以及时间。</li>
+	<li>在镜像表上执行 ALTER 操作。</li>
+	<li>伪装成 slave 连接到 Master 的某个 Slave 实例上获取 binlog 的信息（默认连接 Slave，也可以连 Master）。</li>
+	<li>在 Master 中完成镜像表的数据同步：
+	<ul>
+		<li>从源表中拷贝数据到镜像表；</li>
+		<li>依据 Binlog 信息完成增量数据的变更;</li>
+	</ul></li>
+	<li>在源表上加锁;</li>
+	<li>确认心跳表中的时间，确保数据是完全同步的；</li>
+	<li>用镜像表替换源表。</li>
+	<li>Online DDL 完成。</li>
+	<li>未来考虑会支持的功能或特性：
+	<ul>
+		<li>支持外键。</li>
+		<li>gh-ost 进程意外中断以后，可以新启动一个进程继续进行 Online DDL。</li>
+	</ul></li>
+</ul>
+<p>_tablename_ghc 内容如下：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<h2>使用限制</h2>
+<ul>
+	<li>binlog 格式必须使用 row，且binlog_row_image必须是 FULL。</li>
+	<li>需求的权限为SUPER, REPLICATION CLIENT, REPLICATION SLAVE on *.* and ALL on dbname.*
+	<ul>
+		<li>如果确认 binlog 的格式为 row，那么可以加上 -assume-rbr，则不再需要 super 权限。</li>
+		<li>由于不支持 REPLICATION 相关的权限，TiDB 无法使用。</li>
+	</ul></li>
+	<li>不支持外键。
+	<ul>
+		<li>不论源表是主表还是子表，都无法使用。</li>
+	</ul></li>
+	<li>不支持触发器。</li>
+	<li>不支持包含 JSON 列的主键。</li>
+	<li>迁移表需要有显示定义的主键，或者有非空的唯一索引。</li>
+	<li>迁移工具不区分大小写英文字母，如果存在同名，但是大小写不同的表则无法迁移。</li>
+	<li>迁移表的主键或者非空唯一索引包含枚举类型时，迁移效率会大幅度降低。</li>
+</ul>
+<h2>使用注意</h2>
+<ul>
+	<li>如果源表有非常多的数据，尽量分批次删除。
+	<ul>
+		<li>delete from table tablename_old limit 5000;</li>
+		<li>或者在业务空闲时段用truncate table tablename_old清空表数据之后再 drop 表。</li>
+	</ul></li>
+	<li>单个 MySQL 实例上启动多个 gh-ost 来进行多个表的 Online DDL 操作时要制定-replica-server-id参数</li>
+	<li>务必注意可用的磁盘空间，尤其是操作大表的时候。
+	<ul>
+		<li>gh-ost 的镜像表包含源表的所有数据，会额外占用一倍的磁盘。</li>
+		<li>gh-ost 在操作的过程中会产生大量的 binlog，且binlog_row_image必须为 FULL，会占用比较多的磁盘空间。</li>
+	</ul></li>
+	<li>rename 列的操作可能会有问题，考虑 drop 和 add 的操作结合起来。</li>
+</ul>
+<h2>使用示例</h2>
+<p>github 官网有安装包可以下载，参考 release note。</p>
+<p>实际命令可以参考下面这个（已开启了 row 模式）：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+gh-ost --max-load=Threads_running=50 \
+            --critical-load=Threads_running=100 \
+            --chunk-size=3000 --user="temp" --password="test" --host=10.10.1.10 \
+            --allow-on-master --database="sbtest" --table="sbtest1" \
+            --alter="engine=innodb" --cut-over=default \
+            --exact-rowcount --concurrent-rowcount --default-retries=120 \
+            --timestamp-old-table -assume-rbr --panic-flag-file=/tmp/ghost.panic.flag \
+            --execute</code></pre>
+<p>MySQL DDL 引发的同步延迟该如何解决</p>
+<h2>部分参数说明</h2>
+<p>以上文的命令内容为准：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+max-load=Threads_running=50         超过50个client在执行SQL查询时,暂停Online DDL操作
+critical-load=Threads_running=100   超过100个client在执行SQL查询时,中断Online DDL操作
+chunk-size=3000                     每一次同步操作处理3000行数据
+allow-on-master                     允许在主库执行Online DDL相关的所有操作
+alter                               Online DDL的操作,仅需要部分alter语句(方括号部分)
+                                     例：alter table sbtest.sbtest1 [add column t int not NULL]
+cut-over=default                     数据同步完成后自动进行镜像表与源表的切换
+exact-rowcount                       精确计算行数,提供更准确的进度
+timestamp-old-table                 使用时间戳来命名旧表
+assume-rbr                           跳过重启slave线程与row format检查,设置后无需super权限
+panic-flag-file                      创建该文件后,会强制中断Online DDL操作</code></pre>
+<p>MySQL DDL 引发的同步延迟该如何解决</p>
+<p>除了这些参数以外，gh-ost 还提供了非常多的方式来从外部暂停或者强制中止 Online DDL 的操作，详细的信息可以使用gh-ost --help命令进行查看。</p>
+<h2>输出结果示例</h2>
+<p>代码如下：</p>
+<pre>
+<code>
+# Migrating `sbtest`.`sbtest1`; Ghost table is `sbtest`.`_sbtest1_gho`
+# Migrating 10.10.1.10:3306; inspecting10.10.1.10:3306; executing on localhost-debian
+# Migration started at Thu Jul 30 11:30:17 +0800 2020
+# chunk-size: 3000; max-lag-millis: 1500ms; dml-batch-size: 10; max-load: Threads_running=50; critical-load: Threads_running=100; nice-ratio: 0.000000
+# throttle-additional-flag-file: /tmp/gh-ost.throttle
+# panic-flag-file: /tmp/ghost.panic.flag
+# Serving on unix socket: /tmp/gh-ost.sbtest.sbtest1.sock
+Copy: 0/9863066 0.0%; Applied: 0; Backlog: 0/1000; Time: 0s(total), 0s(copy); streamer: mysql-bin.000050:31635038; Lag: 0.03s, State: migrating; ETA: N/A
+Copy: 0/9863066 0.0%; Applied: 0; Backlog: 0/1000; Time: 1s(total), 1s(copy); streamer: mysql-bin.000050:31639503; Lag: 0.03s, State: migrating; ETA: N/A
+Copy: 69000/9999998 0.7%; Applied: 0; Backlog: 0/1000; Time: 2s(total), 2s(copy); streamer: mysql-bin.000050:44815698; Lag: 0.03s, State: migrating; ETA: 4m49s
+Copy: 135000/9999998 1.4%; Applied: 0; Backlog: 0/1000; Time: 3s(total), 3s(copy); streamer: mysql-bin.000050:57419220; Lag: 0.03s, State: migrating; ETA: 3m39s
+Copy: 195000/9999998 2.0%; Applied: 0; Backlog: 0/1000; Time: 4s(total), 4s(copy); streamer: mysql-bin.000050:68877374; Lag: 0.03s, State: migrating; ETA: 3m21s
+......（省略）
+Copy: 9729000/9999998 97.3%; Applied: 0; Backlog: 0/1000; Time: 3m16s(total), 3m16s(copy); streamer: mysql-bin.000057:8595335; Lag: 0.04s, State: migrating; ETA: 5s
+[2020/07/30 11:33:32] [info] binlogsyncer.go:723 rotate to (mysql-bin.000057, 4)
+Copy: 9774000/9999998 97.7%; Applied: 0; Backlog: 0/1000; Time: 3m17s(total), 3m17s(copy); streamer: mysql-bin.000057:17190073; Lag: 0.03s, State: migrating; ETA: 4s
+[2020/07/30 11:33:32] [info] binlogsyncer.go:723 rotate to (mysql-bin.000057, 4)
+Copy: 9822000/9999998 98.2%; Applied: 0; Backlog: 0/1000; Time: 3m18s(total), 3m18s(copy); streamer: mysql-bin.000057:26357495; Lag: 0.04s, State: migrating; ETA: 3s
+Copy: 9861000/9999998 98.6%; Applied: 0; Backlog: 0/1000; Time: 3m19s(total), 3m19s(copy); streamer: mysql-bin.000057:33806865; Lag: 0.03s, State: migrating; ETA: 2s
+Copy: 9903000/9999998 99.0%; Applied: 0; Backlog: 0/1000; Time: 3m20s(total), 3m20s(copy); streamer: mysql-bin.000057:41828922; Lag: 0.03s, State: migrating; ETA: 1s
+Copy: 9951000/9999998 99.5%; Applied: 0; Backlog: 0/1000; Time: 3m21s(total), 3m21s(copy); streamer: mysql-bin.000057:50996347; Lag: 0.03s, State: migrating; ETA: 0s
+Copy: 9999998/9999998 100.0%; Applied: 0; Backlog: 0/1000; Time: 3m22s(total), 3m21s(copy); streamer: mysql-bin.000057:60354465; Lag: 0.03s, State: migrating; ETA: due
+# Migrating `sbtest`.`sbtest1`; Ghost table is `sbtest`.`_sbtest1_gho`
+# Migrating 10.10.1.10:3306; inspecting 10.10.1.10:3306; executing onlocalhost-debian
+# Migration started at Thu Jul 30 11:30:17 +0800 2020
+# chunk-size: 3000; max-lag-millis: 1500ms; dml-batch-size: 10; max-load: Threads_running=50; critical-load: Threads_running=100; nice-ratio: 0.000000
+# throttle-additional-flag-file: /tmp/gh-ost.throttle
+# panic-flag-file: /tmp/ghost.panic.flag
+# Serving on unix socket: /tmp/gh-ost.sbtest.sbtest1.sock
+Copy: 9999998/9999998 100.0%; Applied: 0; Backlog: 0/1000; Time: 3m23s(total), 3m21s(copy); streamer: mysql-bin.000057:60359997; Lag: 0.03s, State: migrating; ETA: due
+[2020/07/30 11:33:41] [info] binlogsyncer.go:164 syncer is closing...
+[2020/07/30 11:33:41] [error] binlogstreamer.go:77 close sync with err: sync is been closing...
+[2020/07/30 11:33:41] [info] binlogsyncer.go:179 syncer is closed</code></pre>
+<p>MySQL DDL 引发的同步延迟该如何解决</p>
+<p>可以看到日志内容中输出了详细的进度百分比和迁移的剩余时间，在预估维护结束的时间，查看 DDL 执行进度的时候会非常方便。</p>
+<h2>腾讯云数据库 MySQL 使用注意</h2>
+<ul>
+	<li>腾讯云数据库 MySQL 默认的binlog_row_image为 MINIMAL，使用前需要在控制主动调整为 FULL（在线变更，即时生效）。</li>
+	<li>包括腾讯云数据库，阿里云数据库，容器中的 MySQL 等都可能会遇到端口的问题，加上--aliyun-rds参数即可。
+	<ul>
+		<li>报错信息类似于FATAL Unexpected database port reported。</li>
+		<li>相关讨论参考 issues。</li>
+	</ul></li>
+</ul>
+<h2>总结一下</h2>
+<p>gh-ost 输出的信息，迁移数据的效率，以及支持的功能都比 pt-osc 等工具要优秀，而 gh-ost 工具的问题（例如磁盘空间）在其他工具也会遇到，因此在 DDL 操作又想避免延迟等问题时，推荐优先考虑 gh-ost。</p>
+<p>以上就是MySQL DDL 引发的同步延迟该如何解决的详细内容，更多关于MySQL DDL 引发的同步延迟的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于解决MySQL DDL 引发的同步延迟的问题的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/820.html'>MySQL 5.0.67最新版替代MySQL 5.0.51b版本官方下载</a><a>下一篇</a><a href='/mysql/biji/822.html'>MySQL中获取得最后一条记录的语句</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

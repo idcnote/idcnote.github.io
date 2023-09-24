@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL B-Tree 索引的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL B-Tree 索引的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+B-Tree 索引
+
+不同" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL B-Tree 索引的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:13:05                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL B-Tree 索引的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+B-Tree 索引
+
+不同</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL B-Tree 索引的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p></p>
+<h3>B-Tree 索引</h3>
+<p></p>
+<p>不同的存储引擎也可能使用不同的存储结构，i如，NDB集群存储引擎内部实现使用了T-Tree结构存储这种索引，即使其名字是BTREE；InnoDB使用的是B+Tree。</p>
+<p>B-Tree通常一位这所有的值都是按顺序存储的，并且每一个叶子页道根的距离相同。下图大致反应了InnoDB索引是如何工作的。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>为什么mysql索引要使用B+树，而不是B树，红黑树</h3>
+<p></p>
+<p>看完上面的文章就可以理解为何B-Tree索引能够快速访问数据了。因为存储引擎不再需要进行全表扫描获取需要的数据，叶子节点包含了所有元素信息，每一个叶子节点指针都指向下一个节点，所以很适合查找范围数据。</p>
+<p>索引对多个值进行排列的依据是CREATE TABLE 语句中定义索引时的顺序。</p>
+<p>那么，索引排序的规则就是按照 last_name ,first_name ,dob 的顺序来的。</p>
+<p>可以使用 B-Tree 索引的查询类型B-Tree索引适用于全键值、键值范围或键前缀查找。键前缀查找只是用于根据最左前缀查找。</p>
+<p>举个粒子：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+CREATE TABLE People (
+  last_name VARCHAR ( 50 ) NOT NULL,
+  first_name VARCHAR ( 50 ) NOT NULL,
+  dob date NOT NULL,
+  gender enum ( 'm', 'f' ) NOT NULL,
+KEY ( last_name, first_name, dob ) 
+);</code></pre>
+<p>浅析MySQL B-Tree 索引</p>
+<p>这个表的索引如下：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>type结果</h3>
+<p></p>
+<p>type结果值从好到坏依次是：</p>
+<p>system &gt; const &gt; eq_ref &gt; ref &gt; fulltext &gt; ref_or_null &gt; index_merge &gt; unique_subquery &gt; index_subquery &gt; range &gt; index &gt; ALL</p>
+<p>一般来说，得保证查询至少达到range级别，最好能达到ref，否则就可能会出现性能问题。</p>
+<p>possible_keys：sql所用到的索引</p>
+<p>key：显示MySQL实际决定使用的键（索引）。如果没有选择索引，键是NULL</p>
+<p>（1）全值匹配全值匹配指的是和索引中的所有列进行匹配。</p>
+<p>例如上面的People表的索引（last_name,first_name,dob）可以用于查找last_name=&#39;Cuba Allen&#39;,first_name=&#39;Chuang&#39;,dob=&#39;1996-01-01&#39;的人。这就是使用了索引中的所有列进行匹配，即全值匹配。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; EXPLAIN select * from People where last_name = 'aaa' and first_name = 'bbb' and dob='2020-11-20' \G;
+*************************** 1. row ***************************
+     id: 1
+ select_type: SIMPLE
+    table: People
+ partitions: NULL
+    type: ref
+possible_keys: last_name
+     key: last_name  &lt;-----可以看到这个key就是我们定义的索引
+   key_len: 307
+     ref: const,const,const
+    rows: 1
+  filtered: 100.00
+    Extra: NULL
+1 row in set, 1 warning (0.00 sec)
+
+ERROR: 
+No query specified</code></pre>
+<p>浅析MySQL B-Tree 索引</p>
+<p>（2）匹配最左前缀可以只使用索引的第一个列进行匹配。</p>
+<p>例如可以用于查找last_name=&#39;aaa&#39;的人，即用于查找姓为Zeng的人，这里只使用了索引的最左列进行匹配，即匹配最左前缀。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; EXPLAIN select * from People where last_name = 'aaa' \G;
+*************************** 1. row ***************************
+     id: 1
+ select_type: SIMPLE
+    table: People
+ partitions: NULL
+    type: ref
+possible_keys: last_name
+     key: last_name  &lt;----使用了索引
+   key_len: 152
+     ref: const
+    rows: 3
+  filtered: 100.00
+    Extra: NULL
+1 row in set, 1 warning (0.00 sec)
+
+ERROR: 
+No query specified</code></pre>
+<p>浅析MySQL B-Tree 索引</p>
+<p>（3）匹配列前缀可以只匹配某一列的值的开头部分。</p>
+<p>例如可以用于查找last_name LIKE &lsquo;a%&#39;的人，即用于查找所有以Z开头的姓的人，这里只使用了索引最左列的前缀进行匹配，即匹配列前缀。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; EXPLAIN select * from People where last_name = 'a%' \G;
+*************************** 1. row ***************************
+     id: 1
+ select_type: SIMPLE
+    table: People
+ partitions: NULL
+    type: ref
+possible_keys: last_name
+     key: last_name   &lt;---使用了索引
+   key_len: 152
+     ref: const
+    rows: 1
+  filtered: 100.00
+    Extra: NULL
+1 row in set, 1 warning (0.00 sec)
+
+ERROR: 
+No query specified</code></pre>
+<p>浅析MySQL B-Tree 索引</p>
+<p>（4）匹配范围值可以只适用索引的第一列查找符合某个范围内的数据。</p>
+<p>例如可以用于查找last_name BETWEEN &lsquo;aaa&#39; AND &lsquo;aaabbbccc&#39;的人，即用于查找姓在aaa和aaabbbccc之间的人，这里只使用了索引最左列的前缀进行范围匹配，即匹配范围值。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; EXPLAIN select * from People where last_name BETWEEN 'aaa' and 'aaabbbccc'\G;
+*************************** 1. row ***************************
+     id: 1
+ select_type: SIMPLE
+    table: People
+ partitions: NULL
+    type: range
+possible_keys: last_name
+     key: last_name  &lt;---使用了索引
+   key_len: 152
+     ref: NULL
+    rows: 3
+  filtered: 100.00
+    Extra: Using index condition
+1 row in set, 1 warning (0.00 sec)
+
+ERROR: 
+No query specified</code></pre>
+<p>浅析MySQL B-Tree 索引</p>
+<p>（5）精确匹配某一列并范围匹配另外一列可以使第一列全匹配，第二列范围匹配。</p>
+<p>例如可以用于查找last_name=&#39;aaa&#39; AND first_name LIKE &#39;b%&#39;的人，即用于查找姓是Zeng，名字以C开头的人，这里使用了索引的最左列精确匹配，第二列进行范围匹配。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; EXPLAIN select * from People where last_name = 'aaa' and first_name like 'b%'\G;
+*************************** 1. row ***************************
+     id: 1
+ select_type: SIMPLE
+    table: People
+ partitions: NULL
+    type: range
+possible_keys: last_name
+     key: last_name  &lt;---使用了索引
+   key_len: 304
+     ref: NULL
+    rows: 1
+  filtered: 100.00
+    Extra: Using index condition
+1 row in set, 1 warning (0.00 sec)
+
+ERROR: 
+No query specified</code></pre>
+<p>浅析MySQL B-Tree 索引</p>
+<p>（6）只访问索引的查询查询只需访问索引，而无须访问数据行。</p>
+<p>例如select last_name, first_name where last_name=&#39;aaa&#39;; 这里只查询索引所包含的last_name和first_name列，则无须读取数据行。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; explain select last_name,first_name,dob from People where last_name = 'aaa'
+*************************** 1. row ***************************
+      id: 1
+ select_type: SIMPLE
+    table: People
+  partitions: NULL
+     type: ref
+possible_keys: last_name
+     key: last_name
+   key_len: 152
+     ref: const
+     rows: 1
+   filtered: 100.00
+    Extra: Using index
+1 row in set, 1 warning (0.00 sec)
+
+ERROR: 
+No query specified</code></pre>
+<p>浅析MySQL B-Tree 索引</p>
+<p></p>
+<h3>B-Tree 的限制</h3>
+<p></p>
+<p>（1）只能按照索引的最左列开始查找。例如People表中的索引无法用于查找first_name为&#39;bbb&#39;的人，也无法查找某个特定生日的人，因为这两个列都不是最左数据列。</p>
+<p>（2）只能按照索引最左列的最左前缀进行匹配。例如People表中的索引无法查找last_name LIKE &lsquo;%b&#39;的人，虽然last_name就是此索引的最左列，但MySQL索引无法查找以&lsquo;b&#39;结尾的last_name的记录。</p>
+<p>（3）只能按照索引定义的顺序从左到右进行匹配，不能跳过索引中的列。例如People表中的索引无法用于查找last_name=&#39;a&#39; AND bod=&#39;1996-01-01&#39;的人，因为MySQL无法跳过索引中的某一列而使用索引中最左列和排在末尾的列进行组合。如果不指定索引中中间的列，则MySQL只能使用索引的最左列，即第一列。</p>
+<p>（4）如果查询中有某个列的范围查询，则其右边所有列都无法使用索引优化查找。例如有这样一个查询：where last_name=&#39;a&#39; AND first_name LIKE &#39;b%&#39; AND dob=&#39;1996-01-01&#39;; 这个查询只能使用索引的前两列，因为这里LIKE是一个范围条件，则first_name后面的索引列都将失效。（优化点：尽量不要在索引列中使用LIKE等范围条件，改用多个等于条件来替代，保证后面的索引列能生效。）</p>
+<p>以上就是浅析MysQL B-Tree 索引的详细内容，更多关于MysQL B-Tree 索引的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL B-Tree 索引的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/92.html'>MySQL5.7.31 64位免安装版使用的解决办法</a><a>下一篇</a><a href='/mysql/biji/94.html'>MySQL 8.0.22 winx64安装配置的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

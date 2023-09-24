@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server 查询性能优化之走出索引的误区示例_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server 查询性能优化之走出索引的误区示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！据了解绝大多" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server 查询性能优化之走出索引的误区示例</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:47:00                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server 查询性能优化之走出索引的误区示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！据了解绝大多</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server 查询性能优化之走出索引的误区示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>据了解绝大多数开发人员对于索引的理解都是一知半解，局限于大多数日常工作没有机会、也什么没有必要去关心、了解索引，实在哪天某个查询太慢了找到查询条件建个索引就ok，哪天又有个查询慢了，再建立个索引就是，或者干脆把整个查询SQL直接发给DBA，让DBA直接帮忙优化了，所以造成的状况就是开发人员对于索引的理解、认识很局限，以下就把我个人对于索引的理解及浅薄认识和大家分享下，希望能解除一些大家的疑惑，一起走出索引的误区误区1.在表上建立了索引，在查询时用到了索引的列，索引就一定会生效　　首先明确下这样的观点是错误的，SQL Server查询优化器是基于开销进行选择的优化器，通过一系列复杂判断来决定是否使用索引、使用什么类型索引、使用那个索引。SQL Server内部维护着索引列上的数据的统计，统计信息会随着索引列内容的变化而变化，索引的有效期完全取决于索引列上的统计信息，随着数据的变化关于索引的检索机制也随之变化。对于查询优化器来说始终保持查询开销最低始终是其的不二选择，如果一个非聚集索引的列上有大量的重复值，那么这个索引就不会有什么存在的意义，这也是为什么不建议在类似性别，bit类型上面建立非聚集索引的原因。　　说到这里可能会有人疑惑，我在性别列上建一个索引，性别只有两个值男、女，当我我们查询条件中有性别这个字段时最起码会过滤掉一半的数据，能大幅缩小我们需要检索的数据范围，怎么会没用呢？(事实上这也是我曾经困惑的地方)，对我们理解的没错，比如说Users表性别列Gender上建立索引IX_Gender，执行select Gender from Users where Gender=&#39;男&#39; ，这个查询效率非常高而且也成功使用了索引IX_Gender，然而我们这样写SQL的时候少之又少，更多的我们会写这样的SQL:select UserID,UserName,Phone,Email from Users where Gender=&#39;男&#39; 这时再去看看查询计划根本没用使用索引IX_Gender，而是进行了一个聚集索引扫描或者表扫描，查询条件where Gender=&#39;男&#39; 明明在IX_Gender里面定义了，为什么没使用呢，这一切罪恶的根源就在于书签查找(RID、键查找)，好了关于书签查找不是我们要讨论的话题，在这里只想告诉大家，索引不是万能的，索引不是创建了就一定有效。误区2.聚集索引扫描用到了聚集索引索引，所以性能很高　　一般来说我们可以认为聚集索引是效率最高的索引，但聚集索引扫描绝不代表高效，本质上聚集索引扫描就是表扫描，一般出现扫描字样时代表缺少索引或者索引无效，所以我们日常应用中应该避免在查询计划中看到扫描字样，更多的出现聚集索引查找、索引查找才真正的使用到了索引，才是王道。误区3.聚集索引扫描(表扫描)是全表扫描，所以只要出现了表扫描就一定代表性能低下　　在误区2中我们说到应该尽量避免出现聚集索引扫描或者表扫描，这是我们必须要坚持的原则，但这并不代表这出现表扫描就一定性能低下，有些情况下表扫描反而比索引查找有着更高的效率(一般出现在返回数据量较大，出现大量书签查找的情况下)误区4.查询计划中看到了键查找或者RID查找时有着很高的性能　　键查找和RID查找统称为书签查找，和错误认识正好相反，出现书签查找反而代表着性能低下，有些情况下甚至有着比表扫描更低的效率，因此我们应该尽量避免书签查找。在返回数据量较小时，书签查找对性能影响不大，若返回数据量较大，书签查找会严重影响查询性能，因此我们建立索引时应该尽量覆盖要返回的所有列，当然索引列数是有限的而且也不能单纯的为了避免书签查找而在索引中包含大量的列，可以使用覆盖索引来解决书签查找问题，或者需要大数据量返回时尽量使用聚集索引；同时这也是为什么常听说的不要使用select *,而只选择需要的列进行输出，因为select *很容易导致书签查找，毕竟我们不打可能在所有列上建立索引，也不可能所有查询都使用聚集索引(使用聚集索引和表扫描时不存在书签查找)误区5.查询开销统计中的逻辑读次数是读取的记录数　　天真的我曾经也这么认为，查询计划中逻辑读次数就是读取的记录数，然而看我们的查询4.1全表扫描返回830行数据，为啥逻辑读只有22次，而查询4.5同样是返回830行数据，逻辑读为啥1724次呢，一次读取一条的话逻辑读22次最多返回22行数据，逻辑读1724次的话应该返回1724条数据吧，有点小晕，这里解释下逻辑读次数是指读取的页面数，一个面8KB，8个页面构成一个区64KB，对于我们的示例表来说22个页面足以存下所有数据，所以表扫描时只需读取22次就可以了，那查询4.5为啥读取了1724次呢，就算一个页面就一条数据按理说最多800多次也可以读取完毕了，这是因为Sql Server对数据读取的最小单位就是页，哪怕读取一条数据也需要读取整页数据，而非聚集索引的读是随机读哪怕多条记录在同一页上也会导致多次重复读取，外加书签查找导致了这么多的逻辑读，这也是为什么非聚集索引不适合读取大量数据的原因之一。我们以Northwind数据库表Orders表为示例进行下演示　1.先将Orders表的索引全部删除　4.在OrderID上面创建聚集索引，索引列为OrderID　　
+<p>代码如下:</p>
+<pre>
+<code> 
+create unique clustered index IX_OrderID on Orders(OrderID) 
+</code></pre>3.在Orders表上创建非聚集索引IX_OrderDatecreate index IX_OrderDate on Orders(OrderDate)4.设置查询分析器选中包含实际的执行计划（右键--&gt;包含实际的执行计划），打开IO统计，并依次执行以下查询
+<p>代码如下:</p>
+<pre>
+<code> 
+set statistics io on 
+select * from Orders 
+select * from Orders where OrderDate&lt;=&#39;1996-7-10&#39; 
+select * from Orders where OrderDate&lt;=&#39;1997-1-1&#39; 
+
+--强制使用索引IX_OrderDate 查询日期1997-1-1 
+select * from Orders with(index=IX_OrderDate) where OrderDate&lt;=&#39;1997-1-1&#39; 
+
+--强制使用索引IX_OrderDate查询日2000-1-1 
+select * from Orders with(index=IX_OrderDate) where OrderDate&lt;=&#39;2001-1-1&#39; 
+</code></pre>4.1 执行 select * from Orders 的查询开销及查询计划　　　　可以看到执行的聚集索引扫描，逻辑读22次，没有使用索引，返回行数830行　　　　【图片暂缺】【图片暂缺】
+<p>　　4.2 执行select * from Orders where OrderDate&lt;=&#39;1996-7-10&#39; 的查询开销借查询计划　　　　可以看到成功使用了在OrderDate上面建立的索引IX_OrderDate，逻辑读次数为14，返回行数6行</p>
+<p>　　【图片暂缺】【图片暂缺】　　4.3 执行select * from Orders where OrderDate&lt;=&#39;1997-1-1&#39; 的查询开销及查询计划　　　　可以看到虽然我们在OrderDate上面建立了索引IX_OrderDate，但执行计划并没有使用索引IX_OrderDate而是执行了一个聚集索引扫描，逻辑读次数22而这个查询与4.2的区别仅仅在于OrderDate的值不一样，返回行数154行　　【图片暂缺】【图片暂缺】　　4.4 执行select * from Orders with(index=IX_OrderDate) where OrderDate&lt;=&#39;1997-1-1&#39; 的查询开销及查询计划　　　　可以看到查询条件和4.3完全一致，我们强制使用了IX_OrderDate，返回记录数和4.3完全一致，但逻辑读达到了328次，返回行数154行　　　　【图片暂缺】　　　　【图片暂缺】</p>
+<p>　　4.5 执行select * from Orders with(index=IX_OrderDate) where OrderDate&lt;=&#39;2001-1-1&#39; 查询开销及查询计划</p>
+<p>　　　　同样我们强制使用了索引IX_OrderDate，查询条件进行改变，逻辑读达到了1724次，返回行数数830行　　　　【图片暂缺】</p>
+<p>　　　　【图片暂缺】</p>
+<p></p>
+<table border="0" style="WIDTH: 850px">
+	<caption>查询统计</caption>
+	<tbody>
+		<tr>
+			<td>查询SQL</td>
+			<td>索引</td>
+			<td>返回行数</td>
+			<td>逻辑读次数</td>
+		</tr>
+		<tr>
+			<td>4.1 select * from Orders</td>
+			<td>聚集索引扫描</td>
+			<td>830</td>
+			<td>22</td>
+		</tr>
+		<tr>
+			<td>4.2 select * from Orders where OrderDate&lt;=&#39;1996-7-10&#39;</td>
+			<td>IX_OrderDate</td>
+			<td>6</td>
+			<td>14</td>
+		</tr>
+		<tr>
+			<td>4.3 select * from Orders where OrderDate&lt;=&#39;1997-1-1&#39;</td>
+			<td>聚集索引扫描</td>
+			<td>154</td>
+			<td>22</td>
+		</tr>
+		<tr>
+			<td>4.4 select * from Orders with(index=IX_OrderDate) where OrderDate&lt;=&#39;1997-1-1&#39;</td>
+			<td>强制使用IX_OrderDate</td>
+			<td>154</td>
+			<td>328</td>
+		</tr>
+		<tr>
+			<td>4.5 select * from Orders with(index=IX_OrderDate) where OrderDate&lt;=&#39;2001-1-1&#39;</td>
+			<td>强制使用IX_OrderDate</td>
+			<td>830</td>
+			<td>1724</td>
+		</tr>
+	</tbody>
+</table>
+<p>通过对比以上查询我们可以知道虽然我们建立了索引，但索引并不总是有效，强制使用索引只会带来更低的效率，查询优化器会根据索引列的统计信息自动选择最优的查询计划进行执行。查询4.3和4.4查询条件完全一样，虽然我们建立了索引IX_OrderDate，但查询优化器并没有采用而是选择了开销更低的聚集索引扫描，在我们强制使用了索引后查询开销反而激增从逻辑读22次达到了328次，而我们仅仅查询到了154行数据；在查询4.5中我们继续强制使用索引，改变查询条件的值，在返回830行数据的情况下逻辑读次数达到了1724次，而返回相同数据的查询4.1仅仅执行了22次逻辑读。</p>
+<p>　　困惑：通过查询4.1我们知道Orders表一共才有830条数据，为什么我们在查询4.5中强制使用索引后逻辑读达到了恐怖的1724次呢，即便一条数据读取一次也才不过830次啊。</p>
+<p>　　解惑：查询4.5强制使用索引后，查询优化器首先去到索引IX_OrderDate上面检索，然后在根据索引IX_OrderDate去找聚集索引指针，根据聚集索引指针去聚簇索引叶子节点(实际数据行)查找数据(书签查找)，才导致了更大的查询开销。</p>
+<p>　　结论：　　　　1.索引不是万能的，查询列上建立了索引不代表就一定会使用索引(参见结论2)　　　　2.绝大多数情况下查询优化器会根据索引列上的数据统计信息自动选择最优的执行计划，而且查询计划会随着数据量变化而变化，所以如果不是有必要不要使用索引提示来强制使用某索引　　　　3.聚集索引扫描、表扫描不代表一定低效(表扫描不存在书签查找，使用非聚集索引返回大量行时，若存在书签查找反而不如表扫描性能高)　　　　4.索引查找不一定高效(非聚集索引查找时容易出现书签查找)　　　　5.书签查找会降低查询效率，尤其是大范围读取数据时会严重影响效率，所以应该尽量避免书签查找或出现书签查找时尽量返回较少的数据行　　　　6.需要注意下查询开销统计里的逻辑读是指读取的页面数而不是数据行数</p>
+<p>　示例中采用的语句及数据仅作为演示使用，实际开发应用中要比示例的数据复杂的多，同一个查询在不同的环境下可能产生完全相反的结果，如何应用好还主要在于我们个人的认识和理解，希望有幸看到本文的朋友能借此加深一些对索引的理解和认识，走出索引的误区，开发出高性能的应用。</p>
+<p>　　本人不是DBA，只是一名普通的开发人员，以上均为实际工作中的一些经验、体会，鉴于本人水平非常有限，有说的不对或理解不到位的地方还望各位大神给予指正，以免误导他人，不胜感激。</p>
+<p>后续会继续写一些关于Sql Server查询性能优化方面的实践经验，主要包含以下几方面Sql Server查询性能优化之建立合理的索引Sql Server查询性能优化之避免书签查找Sql Server查询性能优化之复用查询计划Sql Server查询性能优化之选择合适的字段类型附上用的数据表：DemoDB.rar从Northwind数据库分离出来的，仅用了其中的Orders表此文章属懒惰的肥兔原创</p>
+
+<p>注：关于SQL Server 查询性能优化之走出索引的误区示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3487.html'>SQL Server透明数据加密(TDE)库的备份和还原</a><a>下一篇</a><a href='/mysql/biji/3489.html'>SQL Server 通用的删除服务器上的所有相同后缀的临时表</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

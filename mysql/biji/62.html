@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL锁阻塞的的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL锁阻塞的的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+日常维护中，经常会碰到线" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL锁阻塞的的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:12:48                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL锁阻塞的的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+日常维护中，经常会碰到线</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL锁阻塞的的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>日常维护中，经常会碰到线程被阻塞，导致数据库响应非常慢，下面就看看如何获取是哪个线程导致了阻塞的。</p>
+<h2>1. 环境说明</h2>
+<p>RHEL 6.4 x86_64 + MySQL 5.6.19</p>
+<p>事务隔离级别：RR</p>
+<h2>2. 测试过程</h2>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<h2>3. 查看锁阻塞线程信息</h2>
+<p>这里用几中方法进行分析：</p>
+<h3>3.1 使用show processlist查看</h3>
+<p>代码如下：</p>
+<pre>
+<code>
+MySQL [(none)]&gt; show processlist;
++----+------+-----------+------+---------+------+--------------+------------------------------------------+
+| Id | User | Host  | db | Command | Time | State  | Info          |
++----+------+-----------+------+---------+------+--------------+------------------------------------------+
+| 2 | root | localhost | NULL | Query | 0 | init   | show processlist       |
+| 3 | root | localhost | test | Query | 70 | Sending data | select count(*) from t3 a,t3 b   |
+| 4 | root | localhost | test | Query | 65 | updating  | delete from emp where empno=7788   |
+| 7 | root | localhost | test | Query | 68 | updating  | update emp set sal=3500 where empno=7788 |
++----+------+-----------+------+---------+------+--------------+------------------------------------------+
+4 rows in set (0.00 sec)</code></pre>
+<p>MySQL锁阻塞的深入分析</p>
+<p>如果数据库存在较多线程的话，这种方法确实不太好确认的。</p>
+<h3>3.2 直接使用show engine innodb status查看</h3>
+<p>代码如下：</p>
+<pre>
+<code class="language-sql">------------
+TRANSACTIONS
+------------
+Trx id counter 4131
+Purge done for trx's n:o &lt; 4119 undo n:o &lt; 0 state: running but idle
+History list length 126
+LIST OF TRANSACTIONS FOR EACH SESSION:
+---TRANSACTION 0, not started
+MySQL thread id 2, OS thread handle 0x7f953ffff700, query id 115 localhost root init
+show engine innodb status
+---TRANSACTION 4130, ACTIVE 41 sec starting index read
+mysql tables in use 1, locked 1
+LOCK WAIT 2 lock struct(s), heap size 360, 1 row lock(s)
+MySQL thread id 4, OS thread handle 0x7f953ff9d700, query id 112 localhost root updating
+delete from emp where empno=7788
+------- TRX HAS BEEN WAITING 41 SEC FOR THIS LOCK TO BE GRANTED: ## 等待了41s
+RECORD LOCKS space id 16 page no 3 n bits 88 index `PRIMARY` of table `test`.`emp` trx id 4130 lock_mode X locks rec but not gap waiting
+Record lock, heap no 9 PHYSICAL RECORD: n_fields 10; compact format; info bits 0 ## 线程4在等待往test.emp中的主键上加X锁，page num=3
+ 0: len 4; hex 80001e6c; asc l;;
+ 1: len 6; hex 000000001018; asc  ;;
+ 2: len 7; hex 91000001420084; asc  B ;;
+ 3: len 5; hex 53434f5454; asc SCOTT;;
+ 4: len 7; hex 414e414c595354; asc ANALYST;;
+ 5: len 4; hex 80001d8e; asc  ;;
+ 6: len 4; hex 208794f0; asc  ;;
+ 7: len 4; hex 80000bb8; asc  ;;
+ 8: SQL NULL;
+ 9: len 4; hex 80000014; asc  ;;
+ 
+------------------
+---TRANSACTION 4129, ACTIVE 45 sec starting index read
+mysql tables in use 1, locked 1
+LOCK WAIT 2 lock struct(s), heap size 360, 1 row lock(s)
+MySQL thread id 7, OS thread handle 0x7f953ff6c700, query id 111 localhost root updating
+update emp set sal=3500 where empno=7788
+------- TRX HAS BEEN WAITING 45 SEC FOR THIS LOCK TO BE GRANTED: ## 等待了45s
+RECORD LOCKS space id 16 page no 3 n bits 88 index `PRIMARY` of table `test`.`emp` trx id 4129 lock_mode X locks rec but not gap waiting
+Record lock, heap no 9 PHYSICAL RECORD: n_fields 10; compact format; info bits 0 ## 线程7在等待往test.emp中的主键上加X锁，page num=3
+ 0: len 4; hex 80001e6c; asc l;;
+ 1: len 6; hex 000000001018; asc  ;;
+ 2: len 7; hex 91000001420084; asc  B ;;
+ 3: len 5; hex 53434f5454; asc SCOTT;;
+ 4: len 7; hex 414e414c595354; asc ANALYST;;
+ 5: len 4; hex 80001d8e; asc  ;;
+ 6: len 4; hex 208794f0; asc  ;;
+ 7: len 4; hex 80000bb8; asc  ;;
+ 8: SQL NULL;
+ 9: len 4; hex 80000014; asc  ;;
+ 
+------------------
+---TRANSACTION 4128, ACTIVE 51 sec
+2 lock struct(s), heap size 360, 1 row lock(s)
+MySQL thread id 3, OS thread handle 0x7f953ffce700, query id 110 localhost root cleaning up</code></pre>
+<p>MySQL锁阻塞的深入分析</p>
+<p>我们知道，主要根因还是thread=3引起的，但从innodb status中却无法分析得到这个结果。</p>
+<p>从上面来看，线程4和线程7都在等待往test.emp中的主键上加X锁，page num=3，但是线程7等待的时间为45s，而线程4等待的时间为41s，是较线程7之后申请的锁，所以可以判断是线程7阻塞了线程4。至于线程7为什么出现等待，这里分析不到根因。</p>
+<h3>3.3 使用mysqladmin debug查看</h3>
+<p># mysqladmin -S /tmp/mysql3306.sock debug</p>
+<p>然后在error日志中，会看到：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+Thread database.table_name   Locked/Waiting  Lock_type
+ 
+ 
+3  test.t3      Locked - read   Low priority read lock
+7  test.emp     Locked - write  High priority write lock</code></pre>
+<p>MySQL锁阻塞的深入分析</p>
+<p>这种方法中，能找到线程ID=3和7是阻塞者，但还是不太准确，判断不出来线程7也是被线程ID=3阻塞的。</p>
+<h3>3.4 使用innodb_lock_monitor来获取阻塞锁线程</h3>
+<p>代码如下：</p>
+<pre>
+<code>
+MySQL [test]&gt; CREATE TABLE innodb_lock_monitor (a INT) ENGINE=INNODB; ## 随便在一个数据库中创建这个表，就会打开lock monitor
+Query OK, 0 rows affected, 1 warning (0.07 sec)
+ 
+MySQL [test]&gt; show warnings\G
+*************************** 1. row ***************************
+ Level: Warning
+ Code: 131
+Message: Using the table name innodb_lock_monitor to enable diagnostic output is deprecated and may be removed in future releases. Use INFORMATION_SCHEMA or PERFORMANCE_SCHEMA tables or SET GLOBAL innodb_status_output=ON.
+1 row in set (0.00 sec)</code></pre>
+<p>MySQL锁阻塞的深入分析</p>
+<p>说明：这个在5.6中有一个warning，但不影响使用。</p>
+<p>然后再使用show engine innodb status查看：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+------------
+TRANSACTIONS
+------------
+Trx id counter 4667
+Purge done for trx's n:o &lt; 4659 undo n:o &lt; 0 state: running but idle
+History list length 138
+LIST OF TRANSACTIONS FOR EACH SESSION:
+---TRANSACTION 0, not started
+MySQL thread id 9, OS thread handle 0x7f813c5f7700, query id 152 localhost root init
+show engine innodb status
+---TRANSACTION 4663, ACTIVE 78 sec starting index read
+mysql tables in use 1, locked 1
+LOCK WAIT 2 lock struct(s), heap size 360, 1 row lock(s)
+MySQL thread id 4, OS thread handle 0x7f813c628700, query id 149 localhost root updating
+delete from emp where empno=7788
+------- TRX HAS BEEN WAITING 78 SEC FOR THIS LOCK TO BE GRANTED:  ## 等待了78s
+RECORD LOCKS space id 16 page no 3 n bits 88 index `PRIMARY` of table `test`.`emp` trx id 4663 lock_mode X locks rec but not gap waiting
+Record lock, heap no 9 PHYSICAL RECORD: n_fields 10; compact format; info bits 0 ## 线程4在等待往test.emp中的主键上加X锁，page num=3
+ 0: len 4; hex 80001e6c; asc  l;;
+ 1: len 6; hex 000000001018; asc    ;;
+ 2: len 7; hex 91000001420084; asc   B ;;
+ 3: len 5; hex 53434f5454; asc SCOTT;;
+ 4: len 7; hex 414e414c595354; asc ANALYST;;
+ 5: len 4; hex 80001d8e; asc   ;;
+ 6: len 4; hex 208794f0; asc   ;;
+ 7: len 4; hex 80000bb8; asc   ;;
+ 8: SQL NULL;
+ 9: len 4; hex 80000014; asc   ;;
+ 
+------------------
+TABLE LOCK table `test`.`emp` trx id 4663 lock mode IX  ## 在给主键行上加X锁之前，先要在表上加意向锁IX
+RECORD LOCKS space id 16 page no 3 n bits 88 index `PRIMARY` of table `test`.`emp` trx id 4663 lock_mode X locks rec but not gap waiting
+Record lock, heap no 9 PHYSICAL RECORD: n_fields 10; compact format; info bits 0
+ 0: len 4; hex 80001e6c; asc  l;;
+ 1: len 6; hex 000000001018; asc    ;;
+ 2: len 7; hex 91000001420084; asc   B ;;
+ 3: len 5; hex 53434f5454; asc SCOTT;;
+ 4: len 7; hex 414e414c595354; asc ANALYST;;
+ 5: len 4; hex 80001d8e; asc   ;;
+ 6: len 4; hex 208794f0; asc   ;;
+ 7: len 4; hex 80000bb8; asc   ;;
+ 8: SQL NULL;
+ 9: len 4; hex 80000014; asc   ;;
+ 
+---TRANSACTION 4662, ACTIVE 81 sec starting index read
+mysql tables in use 1, locked 1
+LOCK WAIT 2 lock struct(s), heap size 360, 1 row lock(s)
+MySQL thread id 7, OS thread handle 0x7f813c5c6700, query id 148 localhost root updating
+update emp set sal=3500 where empno=7788
+------- TRX HAS BEEN WAITING 81 SEC FOR THIS LOCK TO BE GRANTED: ## 等待了81s
+RECORD LOCKS space id 16 page no 3 n bits 88 index `PRIMARY` of table `test`.`emp` trx id 4662 lock_mode X locks rec but not gap waiting
+Record lock, heap no 9 PHYSICAL RECORD: n_fields 10; compact format; info bits 0 ## 线程7在等待往test.emp中的主键上加X锁，page num=3
+ 0: len 4; hex 80001e6c; asc  l;;
+ 1: len 6; hex 000000001018; asc    ;;
+ 2: len 7; hex 91000001420084; asc   B ;;
+ 3: len 5; hex 53434f5454; asc SCOTT;;
+ 4: len 7; hex 414e414c595354; asc ANALYST;;
+ 5: len 4; hex 80001d8e; asc   ;;
+ 6: len 4; hex 208794f0; asc   ;;
+ 7: len 4; hex 80000bb8; asc   ;;
+ 8: SQL NULL;
+ 9: len 4; hex 80000014; asc   ;;
+ 
+------------------
+TABLE LOCK table `test`.`emp` trx id 4662 lock mode IX  ## 在给主键行上加X锁之前，先要在表上加意向锁IX
+RECORD LOCKS space id 16 page no 3 n bits 88 index `PRIMARY` of table `test`.`emp` trx id 4662 lock_mode X locks rec but not gap waiting
+Record lock, heap no 9 PHYSICAL RECORD: n_fields 10; compact format; info bits 0
+ 0: len 4; hex 80001e6c; asc  l;;
+ 1: len 6; hex 000000001018; asc    ;;
+ 2: len 7; hex 91000001420084; asc   B ;;
+ 3: len 5; hex 53434f5454; asc SCOTT;;
+ 4: len 7; hex 414e414c595354; asc ANALYST;;
+ 5: len 4; hex 80001d8e; asc   ;;
+ 6: len 4; hex 208794f0; asc   ;;
+ 7: len 4; hex 80000bb8; asc   ;;
+ 8: SQL NULL;
+ 9: len 4; hex 80000014; asc   ;;
+ 
+---TRANSACTION 4615, ACTIVE 1579 sec, thread declared inside InnoDB 1222
+mysql tables in use 2, locked 0
+2 lock struct(s), heap size 360, 1 row lock(s)
+MySQL thread id 3, OS thread handle 0x7f813c659700, query id 147 localhost root Sending data
+select count(*) from t3 a,t3 b  ## 这是线程3当前正在执行的SQL
+Trx read view will not see trx with id &gt;= 4662, sees &lt; 4659
+TABLE LOCK table `test`.`emp` trx id 4615 lock mode IX ## 线程3中正在拥有表上的意向IX锁，并且有test.emp表上主键的行级X锁，page num=3
+RECORD LOCKS space id 16 page no 3 n bits 88 index `PRIMARY` of table `test`.`emp` trx id 4615 lock_mode X locks rec but not gap
+Record lock, heap no 9 PHYSICAL RECORD: n_fields 10; compact format; info bits 0
+ 0: len 4; hex 80001e6c; asc  l;;
+ 1: len 6; hex 000000001018; asc    ;;
+ 2: len 7; hex 91000001420084; asc   B ;;
+ 3: len 5; hex 53434f5454; asc SCOTT;;
+ 4: len 7; hex 414e414c595354; asc ANALYST;;
+ 5: len 4; hex 80001d8e; asc   ;;
+ 6: len 4; hex 208794f0; asc   ;;
+ 7: len 4; hex 80000bb8; asc   ;;
+ 8: SQL NULL;
+ 9: len 4; hex 80000014; asc   ;;</code></pre>
+<p>MySQL锁阻塞的深入分析</p>
+<p>为什么线程3当前执行的是一个select t3表操作，但却锁住了test.emp表上page num=3？</p>
+<p>有可能是线程3之前对test.emp表的操作事务没有及时提交导致。</p>
+<p>所以得出：线程3阻塞了线程7，而线程7又阻塞了线程4，所以根因就是线程3，让线程3尽快提交或是kill掉即可。</p>
+<h2>4. 结论</h2>
+<p>在分析innodb中锁阻塞时，几种方法的对比情况：</p>
+<p>（1）使用show processlist查看不靠谱；</p>
+<p>（2）直接使用show engine innodb status查看，无法判断到问题的根因；</p>
+<p>（3）使用mysqladmin debug查看，能看到所有产生锁的线程，但无法判断哪个才是根因；</p>
+<p>（4）开启innodb_lock_monitor后，再使用show engine innodb status查看，能够找到锁阻塞的根因。</p>
+<p>原文链接：https://blog.csdn.net/hw_libo/article/details/39080809</p>
+<p>到此这篇关于MySQL锁阻塞深入分析的文章就介绍到这了,更多相关MySQL锁阻塞内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL锁阻塞的的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/61.html'>解决MySQL免安装版步骤解压后找不到密码的问题</a><a>下一篇</a><a href='/mysql/biji/63.html'>解决MySQL绕过授予information_schema中对象时报ERROR 1044（4200）错误的问题</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

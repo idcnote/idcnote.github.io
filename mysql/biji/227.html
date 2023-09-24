@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL使用binlog日志做数据恢复的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL使用binlog日志做数据恢复的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+MySQL的" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL使用binlog日志做数据恢复的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:14:17                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL使用binlog日志做数据恢复的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+MySQL的</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL使用binlog日志做数据恢复的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>MySQL的binlog日志是MySQL日志中非常重要的一种日志，记录了数据库所有的DML操作。通过binlog日志我们可以进行数据库的读写分离、数据增量备份以及服务器宕机时的数据恢复。</p>
+<p>定期备份固然可以在服务器发生宕机的时候快速的恢复数据，但传统的全量备份不可能做到实时，所以在发生宕机的时候，也会损伤一部分数据，如果这个时候开启了binlog日志，那么可以通过binlog来对没有做备份的这一阶段损失的数据进行恢复。如果了解Redis的朋友，可能想到了，Redis有两种持久化方式，分别是AOF和RDB。RDB就类似于MySQL的全量复制，AOF就类似于MySQL的binlog。</p>
+<p>关于数据的恢复这里在说一点，既然binlog这么好，是不是开启了binlog就不需要定期做备份了呢，不要这样做。为什么呢，因为binlog的数据量非常大，另外就是使用binlog做数据的恢复性能会非常低。因为binlog是对操作的记录，比如某一时刻，我先插入了一条数据，然后将这条数据删除了，本身数据是没了，但有两条操作。如果是全量备份，肯定没有这条数据，如果使用binlog需要执行一条插入和一条删除操作，因此性能和文件大小都是比较大的。</p>
+<p>啰嗦了一堆，下面说关于数据恢复的问题：</p>
+<p>在正式开始之前，先来说一说mysql完整备份数据库，以及恢复数据库的方法</p>
+<h3>备份数据库：</h3>
+<p>首先我们来创建一个数据库，mytest</p>
+<p>代码如下：</p>
+<pre>
+<code>
+create database mytest;</code></pre>
+<p>MySQL使用binlog日志做数据恢复的实现</p>
+<p></p>
+<h3>接着我们来创建一张表</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+use mytest;
+create table t1(id int ,name varchar(20));
+
+</code></pre>
+<p>MySQL使用binlog日志做数据恢复的实现</p>
+<p></p>
+<h3>然后我们插入两条数据</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+insert into t1 values (1,'xiaoming');
+insert into t1 values (2,'xiaohong');
+
+</code></pre>
+<p>MySQL使用binlog日志做数据恢复的实现</p>
+<p></p>
+<h3>下面我们对mytest数据库进行备份，备份到/root/bakup/</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysqldump -uroot -p -B -F -R -x --master-data=2 mytest | gzip &gt; /root/backup/bak_$(date +%F).sql.gz
+
+</code></pre>
+<p>MySQL使用binlog日志做数据恢复的实现</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>参数说明：</h3>
+<p></p>
+<p>-B：指定数据库</p>
+<p>-F：刷新日志</p>
+<p>-R：备份存储过程等</p>
+<p>-x：锁表</p>
+<p>--master-data：在备份语句里添加CHANGE MASTER语句以及binlog文件及位置点信息</p>
+<h3>查看备份文件</h3>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>这样呢，我们就把数据做了一个完整的备份。下面来删除数据库，然后通过备份数据进行恢复数据库。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+gzip -d bakup_xxx.gz
+mysql -uroot -p &lt; bakup_xxx.sql</code></pre>
+<p>MySQL使用binlog日志做数据恢复的实现</p>
+<p>这样我们就把数据导入到库里了。</p>
+<p>继续上面的操做，我们新增xiaoli和xiaozhao这两条数据，并把xiaozhao这条记录删除掉。</p>
+<p>在删除之前，我们先来刷新binlog日志，生成一个新的日志，那么我们之后所要操做的内容都会被记录到新的日志文件中。（通过前面binlog日志的详细说明我们知道，每次刷新和服务重启的时候，都会生成一个binlog日志文件。）</p>
+<p>代码如下：</p>
+<pre>
+<code>
+flush logs;
+show master status;
+</code></pre>
+<p>MySQL使用binlog日志做数据恢复的实现</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>我们注意，binlog的文件是0009，位置是在154，这两个信息很重要</p>
+<p>下面我们来做插入和删除操作</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: left">这个时候我们应该是来查看一下binlog日志的状态，以便与我们一会来进行恢复到此状态，但是，真正的环境中我们并不知道这个状态，因此这里也就不去查看这个状态了，这个状态的值可以通过后面查看binlog日志文件来进行分析。下面我们开始误操作：</p>
+<p>我们来把xiaozhao删除掉</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>这样数据就删除掉了，下面我们再来查看binlog的状态</p>
+<p>代码如下：</p>
+<pre>
+<code>
+show master status;</code></pre>
+<p>MySQL使用binlog日志做数据恢复的实现</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>这个时候我们发现我删除操作是个错误的操作，要进行恢复，那么该如何恢复呢？这个时候我们就可以通过binlog的position来进行恢复。在进行其他的处理之前，我们建议，马上再执行一次flush logs，也就是让出错的部分就集中在这么一个binlog日志文件中。</p>
+<p>我们来查看0009的binlog日志。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>我们看到delete_rows 结束点是928这个点，起始点是在755这个点，我们可以把操作的这些数据删除到我们上次备份的内容，然后通过执行binlog来进行恢复，当然恢复到755这个点之前。比如我上次备份的是整个数据库，我就可以把整个数据库删除，然后通过备份文件恢复，然后再通过binlog做增量恢复。这样数据就回来了。这里就不再进行删库了，我们直接演示使用binlog日志恢复数据的方法</p>
+<p>语法如下</p>
+<p><code>mysqlbinlog mysql-bin.0000xx | mysql -u用户名 -p密码 数据库名</code></p>
+<p>比如我们要把所有的操作都恢复（不包括我们的删除，我们知道删除是在755点上）：</p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+mysqlbinlog mysql-bin.000009 --start-position 154 --stop-position 755 | mysql -uroot -p mytest
+
+</code></pre>
+<p>MySQL使用binlog日志做数据恢复的实现</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>再来查看表</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>我们发现xiaozhao又回来了，当然了，这里多了一个xiali，是因为我之前并没有删除备份前的数据。当然了，我们在恢复的过程中可以选择只恢复xiaozhao这么一块内容</p>
+<p>下面是binlog日志恢复中一些常用的参数</p>
+<p>--start-datetime：从二进制日志中读取指定等于时间戳或者晚于本地计算机的时间</p>
+<p>--stop-datetime：从二进制日志中读取指定小于时间戳或者等于本地计算机的时间 取值和上述一样</p>
+<p>--start-position：从二进制日志中读取指定position 事件位置作为开始。</p>
+<p>--stop-position：从二进制日志中读取指定position 事件位置作为事件截至</p>
+<p>到此这篇关于MySQL使用binlog日志做数据恢复的实现的文章就介绍到这了,更多相关MySQL binlog数据恢复内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL使用binlog日志做数据恢复的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/226.html'>MySQL5.7 MySQLdump备份与恢复的解决办法</a><a>下一篇</a><a href='/mysql/biji/228.html'>MySQL双主（主主）架构配置的实现方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

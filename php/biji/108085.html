@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>1亿条记录的MongoDB数据库随机查询性能测试_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="mongdb性能压力测试，随机查询，数据量1亿条记录 <br />
+操作系统centos6.4x64位 <br />
+从测试结果看，当mongodb将数据全部载入到内存后，查询速度根据文档的大小，性能瓶颈通常会是在网络流量和" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">1亿条记录的MongoDB数据库随机查询性能测试</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>mongdb性能压力测试，随机查询，数据量1亿条记录 <br />
+操作系统centos6.4x64位 <br />
+从测试结果看，当mongodb将数据全部载入到内存后，查询速度根据文档的大小，性能瓶颈通常会是在网络流量和</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><P>mongdb性能压力测试，随机查询，数据量1亿条记录 </P>
+<P>操作系统centos6.4x64位 </P>
+<P>从测试结果看，当mongodb将数据全部载入到内存后，查询速度根据文档的大小，性能瓶颈通常会是在网络流量和CPU的处理性能（该次测试中当数据全部在内存后，纯粹的查询速度可以稳定在10W/S左右，系统load可以维持在1以下，由于此时CPU已经被使用到极限了，当并发再大时load值会直线飙升，性能急剧下降）。 </P>
+<P>压力生成服务器与Mongodb服务器基本配置 </P>
+<P>cpu型号：Intel(R) Xeon(R) CPU E5-2630 0 @ 2.30GHz </P>
+<P>内存：64G </P>
+<P>硬盘：10K转速 6块做RAID0，raid卡cache 1G（磁盘的IO性能决定MONGODB将非热点数据载入到内存的速度，当热点数据全部在内存后，IO性能可以忽略） </P>
+<P>网卡速度：接入千兆交互机，速度1000MB </P>
+<P>数据结构，user_id为索引键值为0-99999999，数据总大小约37G左右，全部载入内存后约32G </P>
+<P>&gt; db.thing.findOne(); </P>
+<P>{ </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "_id" : ObjectId("51fd6830c6db9d15676f89ef"), </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "ip" : "192.168.168.254", </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "g_roup" : "kiwi", </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "mac" : "of:fd:67:8c:2f:8f", </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "address" : "hongmei1801num", </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "user_id" : 10000000, </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "name" : "user10000000", </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "title" : "system", </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "database" : "mongodb", </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "telphone" : NumberLong("15718441234"), </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "mail" : "yj@chinapnr.com", </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "os" : "win7", </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "company" : "chinapnr" </P>
+<P>} </P>
+<P>压力生成脚本开启40个进程，并发随机查询 </P>
+<P>[root@mdb-166 app]# cat mselectmongodb.py&nbsp; </P>
+<P>import time,pymongo,multiprocessing,random,string&nbsp; </P>
+<P>class SqlToMongo: </P>
+<P>&nbsp;&nbsp;&nbsp; def m_sql(self,x,y): </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; server="mongodb://python:oracle@192.168.4.167:27017/syslog" </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; conn=pymongo.Connection(server) </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; db=conn.syslog </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; col=db.thing </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; start=x*y </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; end=start+x </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for i in xrange(start,end): </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; d=random.randint(start,end) </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; val=col.find({"user_id":d}) </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; a=list(val) </P>
+<P>def gen_load(x,taskid): </P>
+<P>&nbsp;&nbsp;&nbsp; task=SqlToMongo() </P>
+<P>&nbsp;&nbsp;&nbsp; print "task %s start!" % taskid </P>
+<P>&nbsp;&nbsp;&nbsp; task.m_sql(x,taskid) </P>
+<P>if __name__ == "__main__":&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; inser_number=2500000 </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pro_pool = multiprocessing.Pool(processes=101) </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; print time.strftime('%Y-%m-%d:%H-%M-%S',time.localtime(time.time())) </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; start_time=time.time() </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; manager = multiprocessing.Manager() </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for i in xrange(40): </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; taskid=i&nbsp;&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pro_pool.apply_async(gen_load,args=(inser_number,taskid))&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pro_pool.close() </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pro_pool.join() </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; elapsed = time.time()-start_time </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; print elapsed </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; time.sleep(1) </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; print "Sub-process(es) done."&nbsp; </P>
+<P>压力生成服务器负载，同时开启80个并发时抗不住了 </P>
+<P>top - 17:12:59 up 2 days,&nbsp; 7:34,&nbsp; 4 users,&nbsp; load average: 35.87, 29.41, 18.16 </P>
+<P>Tasks: 487 total,&nbsp; 64 running, 423 sleeping,&nbsp;&nbsp; 0 stopped,&nbsp;&nbsp; 0 zombie </P>
+<P>Cpu0&nbsp; : 88.1%us, 10.6%sy,&nbsp; 0.0%ni,&nbsp; 1.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu1&nbsp; : 87.7%us, 10.9%sy,&nbsp; 0.0%ni,&nbsp; 1.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu2&nbsp; : 87.7%us, 11.0%sy,&nbsp; 0.0%ni,&nbsp; 1.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu3&nbsp; : 88.0%us, 10.3%sy,&nbsp; 0.0%ni,&nbsp; 1.7%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu4&nbsp; : 87.7%us, 11.0%sy,&nbsp; 0.0%ni,&nbsp; 1.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu5&nbsp; : 88.7%us,&nbsp; 9.9%sy,&nbsp; 0.0%ni,&nbsp; 1.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu6&nbsp; : 40.2%us,&nbsp; 3.3%sy,&nbsp; 0.0%ni,&nbsp; 0.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi, 56.1%si,&nbsp; 0.0%st </P>
+<P>Cpu7&nbsp; : 89.7%us,&nbsp; 8.9%sy,&nbsp; 0.0%ni,&nbsp; 1.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu8&nbsp; : 88.1%us, 10.6%sy,&nbsp; 0.0%ni,&nbsp; 1.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu9&nbsp; : 89.7%us,&nbsp; 9.3%sy,&nbsp; 0.0%ni,&nbsp; 1.0%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu10 : 88.7%us,&nbsp; 9.9%sy,&nbsp; 0.0%ni,&nbsp; 1.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu11 : 88.4%us, 10.2%sy,&nbsp; 0.0%ni,&nbsp; 1.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Mem:&nbsp; 65909128k total,&nbsp; 5409148k used, 60499980k free,&nbsp;&nbsp;&nbsp; 90680k buffers </P>
+<P>Swap:&nbsp; 8388600k total,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0k used,&nbsp; 8388600k free,&nbsp; 4392420k cached </P>
+<P>&nbsp;&nbsp; PID USER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PR&nbsp; NI&nbsp; VIRT&nbsp; RES&nbsp; SHR S %CPU %MEM&nbsp;&nbsp;&nbsp; TIME+&nbsp; COMMAND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>&nbsp;13342 root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20&nbsp;&nbsp; 0&nbsp; 178m 9056 1480 R 15.9&nbsp; 0.0&nbsp;&nbsp; 5:15.79 python mselectmongodb.py&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>&nbsp;13430 root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20&nbsp;&nbsp; 0&nbsp; 178m 8976 1468 R 15.9&nbsp; 0.0&nbsp;&nbsp; 3:05.26 python mselectmongodb.py&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>&nbsp;13321 root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20&nbsp;&nbsp; 0&nbsp; 178m 9000 1464 R 15.6&nbsp; 0.0&nbsp;&nbsp; 5:17.26 python mselectmongodb.py&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>........&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>&nbsp;13311 root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20&nbsp;&nbsp; 0&nbsp; 178m 8980 1464 R 14.9&nbsp; 0.0&nbsp;&nbsp; 5:21.70 python mselectmongodb.py&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>系统负载， </P>
+<P>[root@mdb-167 ~]# top </P>
+<P>并发进程80的系统负载 </P>
+<P>[root@mdb-167 ~]# top </P>
+<P>top - 17:08:33 up&nbsp; 4:49,&nbsp; 5 users,&nbsp; load average: 0.00, 0.00, 1.05 </P>
+<P>Tasks: 287 total,&nbsp;&nbsp; 2 running, 285 sleeping,&nbsp;&nbsp; 0 stopped,&nbsp;&nbsp; 0 zombie </P>
+<P>Cpu0&nbsp; : 60.1%us, 31.4%sy,&nbsp; 0.0%ni,&nbsp; 8.5%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu1&nbsp; : 57.8%us, 33.0%sy,&nbsp; 0.0%ni,&nbsp; 9.2%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu2&nbsp; : 58.4%us, 31.4%sy,&nbsp; 0.0%ni, 10.1%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu3&nbsp; : 54.8%us, 33.9%sy,&nbsp; 0.0%ni, 11.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu4&nbsp; : 55.8%us, 31.8%sy,&nbsp; 0.0%ni, 12.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu5&nbsp; : 53.4%us, 32.9%sy,&nbsp; 0.0%ni, 13.7%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu6&nbsp; : 31.4%us, 12.7%sy,&nbsp; 0.0%ni,&nbsp; 0.0%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi, 55.9%si,&nbsp; 0.0%st </P>
+<P>Cpu7&nbsp; : 61.0%us, 31.7%sy,&nbsp; 0.0%ni,&nbsp; 7.2%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu8&nbsp; : 59.7%us, 32.3%sy,&nbsp; 0.0%ni,&nbsp; 8.0%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu9&nbsp; : 59.0%us, 32.4%sy,&nbsp; 0.0%ni,&nbsp; 8.6%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu10 : 59.4%us, 31.4%sy,&nbsp; 0.0%ni,&nbsp; 9.2%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu11 : 57.8%us, 32.1%sy,&nbsp; 0.0%ni, 10.1%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Mem:&nbsp; 65909128k total, 34281160k used, 31627968k free,&nbsp;&nbsp;&nbsp; 50416k buffers </P>
+<P>Swap:&nbsp; 8388600k total,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0k used,&nbsp; 8388600k free, 33502796k cached </P>
+<P>&nbsp;&nbsp; PID USER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PR&nbsp; NI&nbsp; VIRT&nbsp; RES&nbsp; SHR S %CPU %MEM&nbsp;&nbsp;&nbsp; TIME+&nbsp; COMMAND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>&nbsp; 2924 mdb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20&nbsp;&nbsp; 0 80.7g&nbsp; 31g&nbsp; 31g S 1092.6 50.7 458:42.39 /app/mongodb/bin/mongod -f /app/mongodb/etc/mdb.conf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>&nbsp; 1967 root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp; 0 S&nbsp; 0.3&nbsp; 0.0&nbsp;&nbsp; 0:05.40 [kondemand/6]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>&nbsp; 1996 root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20&nbsp;&nbsp; 0 10964&nbsp; 720&nbsp; 432 S&nbsp; 0.3&nbsp; 0.0&nbsp;&nbsp; 0:05.12 irqbalance&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>&nbsp; 3045 mdb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20&nbsp;&nbsp; 0 84500&nbsp; 38m 7076 S&nbsp; 0.3&nbsp; 0.1&nbsp;&nbsp; 0:01.99 mongostat -h 127.0.0.1 --port 27017 -u root -p xxxxx&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>mongstat监控&nbsp; </P>
+<P>insert&nbsp; query update delete getmore command flushes mapped&nbsp; vsize&nbsp;&nbsp;&nbsp; res faults&nbsp;&nbsp;&nbsp; locked db idx miss %&nbsp;&nbsp;&nbsp;&nbsp; qr|qw&nbsp;&nbsp; ar|aw&nbsp; netIn netOut&nbsp; conn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; time&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 92408&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 20|0&nbsp;&nbsp;&nbsp;&nbsp; 5m&nbsp;&nbsp;&nbsp; 28m&nbsp;&nbsp;&nbsp; 82&nbsp;&nbsp; 17:08:32&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 92827&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 19|0&nbsp;&nbsp;&nbsp;&nbsp; 5m&nbsp;&nbsp;&nbsp; 28m&nbsp;&nbsp;&nbsp; 82&nbsp;&nbsp; 17:08:33&nbsp; </P>
+<P>....... </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 93717&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 25|0&nbsp;&nbsp;&nbsp;&nbsp; 5m&nbsp;&nbsp;&nbsp; 28m&nbsp;&nbsp;&nbsp; 82&nbsp;&nbsp; 17:08:38&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 92193&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.1%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp; 11|0&nbsp;&nbsp;&nbsp;&nbsp; 5m&nbsp;&nbsp;&nbsp; 28m&nbsp;&nbsp;&nbsp; 82&nbsp;&nbsp; 17:08:39&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 92250&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 25|0&nbsp;&nbsp;&nbsp;&nbsp; 5m&nbsp;&nbsp;&nbsp; 28m&nbsp;&nbsp;&nbsp; 82&nbsp;&nbsp; 17:08:40&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 93790&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp; 16|0&nbsp;&nbsp;&nbsp;&nbsp; 5m&nbsp;&nbsp;&nbsp; 28m&nbsp;&nbsp;&nbsp; 82&nbsp;&nbsp; 17:08:41&nbsp; </P>
+<P>网络流量 </P>
+<P>[root@mdb-167 app]# ./check_netflow.py -l 1 -i p1p1 -t 1 </P>
+<P>IN 1 seconds network transmit and receive average(KB) </P>
+<P>transmit=34101,receive=11370 </P>
+<P>transmit=34354,receive=11452 </P>
+<P>..... </P>
+<P>transmit=33957,receive=11322 </P>
+<P>transmit=34045,receive=11353 </P>
+<P>transmit=34244,receive=11416 </P>
+<P>磁盘IO </P>
+<P>[root@mdb-167 ~]# tail -f mselectmongodb&nbsp; </P>
+<P>Device:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rrqm/s&nbsp;&nbsp; wrqm/s&nbsp;&nbsp;&nbsp;&nbsp; r/s&nbsp;&nbsp;&nbsp;&nbsp; w/s&nbsp;&nbsp;&nbsp; rkB/s&nbsp;&nbsp;&nbsp; wkB/s avgrq-sz avgqu-sz&nbsp;&nbsp; await&nbsp; svctm&nbsp; %util </P>
+<P>sda&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 7.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 4.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 48.00&nbsp;&nbsp;&nbsp; 24.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00 </P>
+<P>Device:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rrqm/s&nbsp;&nbsp; wrqm/s&nbsp;&nbsp;&nbsp;&nbsp; r/s&nbsp;&nbsp;&nbsp;&nbsp; w/s&nbsp;&nbsp;&nbsp; rkB/s&nbsp;&nbsp;&nbsp; wkB/s avgrq-sz avgqu-sz&nbsp;&nbsp; await&nbsp; svctm&nbsp; %util </P>
+<P>sda&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00 </P>
+<P>..... </P>
+<P>sda&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00 </P>
+<P>Device:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rrqm/s&nbsp;&nbsp; wrqm/s&nbsp;&nbsp;&nbsp;&nbsp; r/s&nbsp;&nbsp;&nbsp;&nbsp; w/s&nbsp;&nbsp;&nbsp; rkB/s&nbsp;&nbsp;&nbsp; wkB/s avgrq-sz avgqu-sz&nbsp;&nbsp; await&nbsp; svctm&nbsp; %util </P>
+<P>sda&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 7.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 5.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 48.00&nbsp;&nbsp;&nbsp; 19.20&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00&nbsp;&nbsp; </P>
+<P>二、并发进程达到120的时候系统负载（由于CPU的处理能力，系统已经无法承受） </P>
+<P>top - 16:57:57 up&nbsp; 3:47,&nbsp; 5 users,&nbsp; load average: 58.18, 30.82, 16.40 </P>
+<P>Tasks: 288 total,&nbsp;&nbsp; 1 running, 287 sleeping,&nbsp;&nbsp; 0 stopped,&nbsp;&nbsp; 0 zombie </P>
+<P>Cpu0&nbsp; : 59.6%us, 40.2%sy,&nbsp; 0.0%ni,&nbsp; 0.2%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu1&nbsp; : 59.3%us, 40.5%sy,&nbsp; 0.0%ni,&nbsp; 0.2%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu2&nbsp; : 59.0%us, 40.8%sy,&nbsp; 0.0%ni,&nbsp; 0.2%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu3&nbsp; : 58.7%us, 41.0%sy,&nbsp; 0.0%ni,&nbsp; 0.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu4&nbsp; : 58.8%us, 40.9%sy,&nbsp; 0.0%ni,&nbsp; 0.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu5&nbsp; : 58.8%us, 40.9%sy,&nbsp; 0.0%ni,&nbsp; 0.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu6&nbsp; : 27.2%us, 13.1%sy,&nbsp; 0.0%ni,&nbsp; 0.1%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi, 59.6%si,&nbsp; 0.0%st </P>
+<P>Cpu7&nbsp; : 60.5%us, 39.3%sy,&nbsp; 0.0%ni,&nbsp; 0.2%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu8&nbsp; : 60.2%us, 39.5%sy,&nbsp; 0.0%ni,&nbsp; 0.2%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu9&nbsp; : 59.8%us, 39.9%sy,&nbsp; 0.0%ni,&nbsp; 0.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu10 : 59.5%us, 40.2%sy,&nbsp; 0.0%ni,&nbsp; 0.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Cpu11 : 59.4%us, 40.4%sy,&nbsp; 0.0%ni,&nbsp; 0.3%id,&nbsp; 0.0%wa,&nbsp; 0.0%hi,&nbsp; 0.0%si,&nbsp; 0.0%st </P>
+<P>Mem:&nbsp; 65909128k total, 34278248k used, 31630880k free,&nbsp;&nbsp;&nbsp; 45652k buffers </P>
+<P>Swap:&nbsp; 8388600k total,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0k used,&nbsp; 8388600k free, 33501056k cached </P>
+<P>&nbsp;&nbsp; PID USER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PR&nbsp; NI&nbsp; VIRT&nbsp; RES&nbsp; SHR S %CPU %MEM&nbsp;&nbsp;&nbsp; TIME+&nbsp; COMMAND&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>&nbsp; 2924 mdb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20&nbsp;&nbsp; 0 80.7g&nbsp; 31g&nbsp; 31g S 1193.2 50.4 165:06.51 /app/mongodb/bin/mongod -f /app/mongodb/etc/mdb.conf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>mongstat监控 </P>
+<P>insert&nbsp; query update delete getmore command flushes mapped&nbsp; vsize&nbsp;&nbsp;&nbsp; res faults&nbsp;&nbsp;&nbsp; locked db idx miss %&nbsp;&nbsp;&nbsp;&nbsp; qr|qw&nbsp;&nbsp; ar|aw&nbsp; netIn netOut&nbsp; conn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; time&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0 103334&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.7g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.1%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 56|0&nbsp;&nbsp;&nbsp;&nbsp; 6m&nbsp;&nbsp;&nbsp; 31m&nbsp;&nbsp; 122&nbsp;&nbsp; 16:55:19&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0 103299&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.7g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 55|0&nbsp;&nbsp;&nbsp;&nbsp; 6m&nbsp;&nbsp;&nbsp; 31m&nbsp;&nbsp; 122&nbsp;&nbsp; 16:55:20&nbsp; </P>
+<P>...... </P>
+<P>&nbsp;&nbsp;&nbsp; *0 102858&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.7g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 66|0&nbsp;&nbsp;&nbsp;&nbsp; 6m&nbsp;&nbsp;&nbsp; 31m&nbsp;&nbsp; 122&nbsp;&nbsp; 16:55:26&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0 103201&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.7g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 60|0&nbsp;&nbsp;&nbsp;&nbsp; 6m&nbsp;&nbsp;&nbsp; 31m&nbsp;&nbsp; 122&nbsp;&nbsp; 16:55:27&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0 102381&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.7g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.1%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp; 89|0&nbsp;&nbsp;&nbsp;&nbsp; 6m&nbsp;&nbsp;&nbsp; 31m&nbsp;&nbsp; 122&nbsp;&nbsp; 16:55:28&nbsp; </P>
+<P>磁盘IO </P>
+<P>[root@mdb-167 ~]# tail -f mselectmongodb&nbsp; </P>
+<P>Device:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rrqm/s&nbsp;&nbsp; wrqm/s&nbsp;&nbsp;&nbsp;&nbsp; r/s&nbsp;&nbsp;&nbsp;&nbsp; w/s&nbsp;&nbsp;&nbsp; rkB/s&nbsp;&nbsp;&nbsp; wkB/s avgrq-sz avgqu-sz&nbsp;&nbsp; await&nbsp; svctm&nbsp; %util </P>
+<P>sda&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 7.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 4.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 48.00&nbsp;&nbsp;&nbsp; 24.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00 </P>
+<P>Device:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rrqm/s&nbsp;&nbsp; wrqm/s&nbsp;&nbsp;&nbsp;&nbsp; r/s&nbsp;&nbsp;&nbsp;&nbsp; w/s&nbsp;&nbsp;&nbsp; rkB/s&nbsp;&nbsp;&nbsp; wkB/s avgrq-sz avgqu-sz&nbsp;&nbsp; await&nbsp; svctm&nbsp; %util </P>
+<P>..... </P>
+<P>Device:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rrqm/s&nbsp;&nbsp; wrqm/s&nbsp;&nbsp;&nbsp;&nbsp; r/s&nbsp;&nbsp;&nbsp;&nbsp; w/s&nbsp;&nbsp;&nbsp; rkB/s&nbsp;&nbsp;&nbsp; wkB/s avgrq-sz avgqu-sz&nbsp;&nbsp; await&nbsp; svctm&nbsp; %util </P>
+<P>sda&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00 </P>
+<P>Device:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rrqm/s&nbsp;&nbsp; wrqm/s&nbsp;&nbsp;&nbsp;&nbsp; r/s&nbsp;&nbsp;&nbsp;&nbsp; w/s&nbsp;&nbsp;&nbsp; rkB/s&nbsp;&nbsp;&nbsp; wkB/s avgrq-sz avgqu-sz&nbsp;&nbsp; await&nbsp; svctm&nbsp; %util </P>
+<P>sda&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp;&nbsp; 7.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 5.00&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 48.00&nbsp;&nbsp;&nbsp; 19.20&nbsp;&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00&nbsp;&nbsp; 0.00&nbsp;&nbsp; </P>
+<P>网络流量 </P>
+<P>transmit=37567,receive=12525 </P>
+<P>...... </P>
+<P>transmit=37691,receive=12568 </P>
+<P>transmit=37592,receive=12534 </P>
+<P>transmit=37480,receive=12498 </P>
+<P>以下是mongodb从测试开始时的查询速度变化过程，当数据逐步载入内存后，查询速度也在逐步提高，大约会花费了20分钟将所有数据载入到了内存。 </P>
+<P>[mdb@mdb-167 ~]$ more&nbsp; mselectmongodb&nbsp; </P>
+<P>connected to: 127.0.0.1:27017 </P>
+<P>insert&nbsp; query update delete getmore command flushes mapped&nbsp; vsize&nbsp;&nbsp;&nbsp; res faults&nbsp;&nbsp; locked db idx miss %&nbsp;&nbsp;&nbsp;&nbsp; qr|qw&nbsp;&nbsp; ar|aw&nbsp; netIn netOut&nbsp; conn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; time&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp; 679&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 494m&nbsp;&nbsp;&nbsp; 671 syslog:1.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 40k&nbsp;&nbsp; 213k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:37:16&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp; 562&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 500m&nbsp;&nbsp;&nbsp; 625 syslog:0.9%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 36|0&nbsp;&nbsp;&nbsp;&nbsp; 2|0&nbsp;&nbsp;&nbsp; 33k&nbsp;&nbsp; 176k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:37:17&nbsp; </P>
+<P>.......... </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp; 626&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 550m&nbsp;&nbsp;&nbsp; 667 syslog:1.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 36|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp; 36k&nbsp;&nbsp; 196k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:37:24&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp; 649&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 557m&nbsp;&nbsp;&nbsp; 671 syslog:0.9%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 35|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp; 38k&nbsp;&nbsp; 202k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:37:25&nbsp; </P>
+<P>insert&nbsp; query update delete getmore command flushes mapped&nbsp; vsize&nbsp;&nbsp;&nbsp; res faults&nbsp;&nbsp; locked db idx miss %&nbsp;&nbsp;&nbsp;&nbsp; qr|qw&nbsp;&nbsp; ar|aw&nbsp; netIn netOut&nbsp; conn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; time&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp; 706&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 565m&nbsp;&nbsp;&nbsp; 709 syslog:1.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 39|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp; 41k&nbsp;&nbsp; 221k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:37:26&nbsp; </P>
+<P>.......... </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp; 992&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 954m&nbsp;&nbsp;&nbsp; 751 syslog:1.1%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp; 58k&nbsp;&nbsp; 309k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:38:12&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp; 942&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 964m&nbsp;&nbsp;&nbsp; 759 syslog:0.9%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 55k&nbsp;&nbsp; 294k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:38:13&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1026&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 974m&nbsp;&nbsp;&nbsp; 813 syslog:0.8%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 60k&nbsp;&nbsp; 319k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:38:14&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1062&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 985m&nbsp;&nbsp;&nbsp; 826 syslog:0.8%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 62k&nbsp;&nbsp; 331k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:38:15&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1044&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 995m&nbsp;&nbsp;&nbsp; 800 syslog:0.9%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 61k&nbsp;&nbsp; 325k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:38:16&nbsp; </P>
+<P>insert&nbsp; query update delete getmore command flushes mapped&nbsp; vsize&nbsp;&nbsp;&nbsp; res faults&nbsp;&nbsp; locked db idx miss %&nbsp;&nbsp;&nbsp;&nbsp; qr|qw&nbsp;&nbsp; ar|aw&nbsp; netIn netOut&nbsp; conn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; time&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1005&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 1005m&nbsp;&nbsp;&nbsp; 785 syslog:0.7%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 30|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp; 59k&nbsp;&nbsp; 313k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:38:17&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1008&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 1015m&nbsp;&nbsp;&nbsp; 737 syslog:0.9%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp; 59k&nbsp;&nbsp; 314k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:38:18&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1137&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp;&nbsp;&nbsp; 1g&nbsp;&nbsp;&nbsp; 853 syslog:0.7%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 67k&nbsp;&nbsp; 354k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:38:19&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp; 993&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 1.01g&nbsp;&nbsp;&nbsp; 768 syslog:0.9%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 58k&nbsp;&nbsp; 310k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:38:20&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1114&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 1.02g&nbsp;&nbsp;&nbsp; 811 syslog:1.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 65k&nbsp;&nbsp; 346k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:38:21&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1001&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 1.03g&nbsp;&nbsp;&nbsp; 744 syslog:1.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp; 59k&nbsp;&nbsp; 312k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:38:22&nbsp; </P>
+<P>.......... </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1892&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.03g&nbsp;&nbsp;&nbsp; 900 syslog:0.7%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp; 111k&nbsp;&nbsp; 587k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:39:44&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1881&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.04g&nbsp;&nbsp;&nbsp; 894 syslog:0.7%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 111k&nbsp;&nbsp; 583k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:39:45&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1927&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.06g&nbsp;&nbsp;&nbsp; 902 syslog:0.8%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 113k&nbsp;&nbsp; 598k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:39:46&nbsp; </P>
+<P>insert&nbsp; query update delete getmore command flushes mapped&nbsp; vsize&nbsp;&nbsp;&nbsp; res faults&nbsp;&nbsp; locked db idx miss %&nbsp;&nbsp;&nbsp;&nbsp; qr|qw&nbsp;&nbsp; ar|aw&nbsp; netIn netOut&nbsp; conn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; time&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1950&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.07g&nbsp;&nbsp;&nbsp; 912 syslog:0.6%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 37|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp; 115k&nbsp;&nbsp; 605k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:39:47&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2086&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.09g&nbsp;&nbsp;&nbsp; 901 syslog:0.8%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp; 123k&nbsp;&nbsp; 647k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:39:48&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 1774&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 2.1g&nbsp;&nbsp;&nbsp; 846 syslog:0.8%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 105k&nbsp;&nbsp; 551k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:39:49&nbsp; </P>
+<P>....... </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2589&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.56g&nbsp;&nbsp;&nbsp; 933&nbsp; syslog:0.8%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp; 152k&nbsp;&nbsp; 803k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:18&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2289&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.58g&nbsp;&nbsp;&nbsp; 849&nbsp; syslog:0.9%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 135k&nbsp;&nbsp; 710k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:19&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2523&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.59g&nbsp;&nbsp;&nbsp; 930&nbsp; syslog:0.7%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 148k&nbsp;&nbsp; 781k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:20&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2636&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.61g&nbsp;&nbsp;&nbsp; 878&nbsp; syslog:0.8%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp; 155k&nbsp;&nbsp; 817k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:21&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2509&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.63g&nbsp;&nbsp;&nbsp; 889&nbsp; syslog:0.7%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp; 148k&nbsp;&nbsp; 777k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:22&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2637&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.65g&nbsp;&nbsp;&nbsp; 916&nbsp; syslog:0.7%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 155k&nbsp;&nbsp; 817k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:23&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2575&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.67g&nbsp;&nbsp;&nbsp; 911&nbsp; syslog:0.8%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 151k&nbsp;&nbsp; 798k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:24&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2516&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.68g&nbsp;&nbsp;&nbsp; 873&nbsp; syslog:6.5%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 16|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 148k&nbsp;&nbsp; 779k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:25&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2498&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp;&nbsp; 2.7g&nbsp;&nbsp;&nbsp; 879&nbsp; syslog:0.8%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 147k&nbsp;&nbsp; 774k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:26&nbsp; </P>
+<P>insert&nbsp; query update delete getmore command flushes mapped&nbsp; vsize&nbsp;&nbsp;&nbsp; res faults&nbsp;&nbsp;&nbsp; locked db idx miss %&nbsp;&nbsp;&nbsp;&nbsp; qr|qw&nbsp;&nbsp; ar|aw&nbsp; netIn netOut&nbsp; conn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; time&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2536&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.72g&nbsp;&nbsp;&nbsp; 872&nbsp; syslog:0.7%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 149k&nbsp;&nbsp; 786k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:27&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2826&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.74g&nbsp;&nbsp;&nbsp; 959&nbsp; syslog:0.8%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp; 166k&nbsp;&nbsp; 876k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:28&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 2676&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 2.75g&nbsp;&nbsp;&nbsp; 925&nbsp; syslog:0.8%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 158k&nbsp;&nbsp; 829k&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:40:29&nbsp; </P>
+<P>....... </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 8934&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 4.85g&nbsp;&nbsp; 1088&nbsp; syslog:0.6%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp; 527k&nbsp;&nbsp;&nbsp;&nbsp; 2m&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:41:50&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 9583&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 4.89g&nbsp;&nbsp; 1161&nbsp; syslog:0.6%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 2|0&nbsp;&nbsp; 565k&nbsp;&nbsp;&nbsp;&nbsp; 2m&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:41:51&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 8982&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 4.93g&nbsp;&nbsp; 1107&nbsp; syslog:0.6%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 23|0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp; 530k&nbsp;&nbsp;&nbsp;&nbsp; 2m&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:41:52&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 9950&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.6g&nbsp; 4.97g&nbsp;&nbsp; 1067&nbsp; syslog:0.5%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp; 587k&nbsp;&nbsp;&nbsp;&nbsp; 3m&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:41:53&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp; 9580&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; 40.1g&nbsp; 80.6g&nbsp; 5.01g&nbsp;&nbsp; 1084&nbsp; syslog:0.7%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp; 565k&nbsp;&nbsp;&nbsp;&nbsp; 2m&nbsp;&nbsp;&nbsp; 42&nbsp;&nbsp; 16:41:54&nbsp; </P>
+<P>....... </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 92475&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 18|0&nbsp;&nbsp;&nbsp;&nbsp; 5m&nbsp;&nbsp;&nbsp; 28m&nbsp;&nbsp;&nbsp; 82&nbsp;&nbsp; 16:53:28&nbsp; </P>
+<P>insert&nbsp; query update delete getmore command flushes mapped&nbsp; vsize&nbsp;&nbsp;&nbsp; res faults&nbsp;&nbsp;&nbsp; locked db idx miss %&nbsp;&nbsp;&nbsp;&nbsp; qr|qw&nbsp;&nbsp; ar|aw&nbsp; netIn netOut&nbsp; conn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; time&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 92832&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 19|0&nbsp;&nbsp;&nbsp;&nbsp; 5m&nbsp;&nbsp;&nbsp; 28m&nbsp;&nbsp;&nbsp; 82&nbsp;&nbsp; 16:53:29&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 92077&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 12|0&nbsp;&nbsp;&nbsp;&nbsp; 5m&nbsp;&nbsp;&nbsp; 28m&nbsp;&nbsp;&nbsp; 82&nbsp;&nbsp; 16:53:30&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 93296&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.1%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0|0&nbsp;&nbsp;&nbsp; 18|0&nbsp;&nbsp;&nbsp;&nbsp; 5m&nbsp;&nbsp;&nbsp; 28m&nbsp;&nbsp;&nbsp; 82&nbsp;&nbsp; 16:53:31&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 91269&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 3|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp; 10|0&nbsp;&nbsp;&nbsp;&nbsp; 5m&nbsp;&nbsp;&nbsp; 28m&nbsp;&nbsp;&nbsp; 82&nbsp;&nbsp; 16:53:32&nbsp; </P>
+<P>&nbsp;&nbsp;&nbsp; *0&nbsp; 93878&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp; *0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp; 1|0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; 40.1g&nbsp; 80.7g&nbsp; 31.9g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; syslog:0.0%&nbsp; </P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/108084.html'>iOS应用中发送HTTP的get请求以及HTTP异步请求的方法</a><a>下一篇</a><a href='/php/biji/108086.html'>Win8.1系统在安全模式下杀毒教程</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

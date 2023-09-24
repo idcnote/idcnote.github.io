@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Oracle误删除表数据后的数据恢复详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="Oracle误删除表数据后的恢复详解<br />
+<br />
+ <br />
+<br />
+测试环境：<br />
+<br />
+SYSTEM:IBM AIX 5L                         Oracle Version:10gR2<br />
+<br />
+ <br />
+1. undo_retention参数的查询与修改<br />
+使用show parame" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Oracle误删除表数据后的数据恢复详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>Oracle误删除表数据后的恢复详解<br />
+<br />
+ <br />
+<br />
+测试环境：<br />
+<br />
+SYSTEM:IBM AIX 5L                         Oracle Version:10gR2<br />
+<br />
+ <br />
+1. undo_retention参数的查询与修改<br />
+使用show parame</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>Oracle误删除表数据后的恢复详解<br />
+&nbsp;<br />
+测试环境：<br />
+SYSTEM:IBM AIX 5L&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Oracle Version:10gR2<br />
+&nbsp;</p>
+<p><strong>1. undo_retention参数的查询与修改</strong></p>
+<p>使用show parameter undo命令查看当前的数据库参数undo_retention设置。<br />
+显示如下：<br />
+SQL&gt; show parameter undo</p>
+<p>NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TYPE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VALUE<br />
+------------------------------------ ----------- ------------------------------<br />
+undo_management&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AUTO<br />
+undo_retention&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; integer&nbsp;&nbsp;&nbsp;&nbsp; 900<br />
+undo_tablespace&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UNDOTBS2<br />
+undo_retention(保持力)，900单位是秒，即15分钟。<br />
+<strong>修改默认的undo_retention参数设置：<br />
+</strong>SQL&gt; ALTER SYSTEM SET undo_retention=10800 SCOPE=BOTH;</p>
+<p>System altered.</p>
+<p>SQL&gt; show parameter undo</p>
+<p>NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TYPE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VALUE<br />
+------------------------------------ ----------- ------------------------------<br />
+undo_management&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AUTO<br />
+undo_retention&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; integer&nbsp;&nbsp;&nbsp;&nbsp; 10800<br />
+undo_tablespace&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UNDOTBS2<br />
+undo_retention 10800，单位秒，即3小时。</p>
+<p><strong>2. oracle误删除表数据后的的快速恢复功能方法</strong></p>
+<p>2.1 方法一<br />
+通过oracle提供的回闪功能<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+exec dbms_flashback.enable_at_time(to_date('2011-04-15 08:21:00','yyyy-mm-dd hh24:mi:ss'));
+set serveroutput on
+DECLARE r_temp hr.job_history%ROWTYPE;
+CURSOR c_temp IS SELECT * FROM hr.job_history;
+BEGIN
+OPEN c_temp;
+dbms_flashback.disable;
+LOOP
+FETCH c_temp INTO r_temp;
+EXIT WHEN c_temp%NOTFOUND;
+insert into hr.job_history(EMPLOYEE_ID,JOB_ID,START_DATE,END_DATE) values (r_temp.EMPLOYEE_ID,r_temp.JOB_ID,r_temp.START_DATE,r_temp.END_DATE);
+commit;
+END LOOP;
+CLOSE c_temp;
+END;
+</pre>
+</div>
+<p>这种办法可以将删除的数据恢复到对应的表中，首先要保证该用户有执行dbms_flashback包的权限。</p>
+<p>2.2 方法二<br />
+insert into hr.job_history<br />
+select * from hr.job_history as of timestamp to_timestamp('2011-04-15 08:20:00', 'yyyy-mm-dd hh24:mi:ss');<br />
+这种方法简单，容易掌握，功能和上面的一样，此处的时间为你误操作之前的时间，最好是离误操作比较近的，因为oracle保存在回滚保持段里的数据时间有一定的时间限制，这个限制由undo_retention 这个参数值决定。</p>
+<p>查看FIRST_CHANGE#,NEXT_CHANGE#,FIRST_TIME<br />
+SQL&gt; set pagesize 9999<br />
+SQL&gt; col fscn for 999999999<br />
+SQL&gt; col nscn for 999999999<br />
+SQL&gt; select name,FIRST_CHANGE# fscn,NEXT_CHANGE# nscn,FIRST_TIME from v$archived_log;</p>
+<p>当前的SCN为:<br />
+SQL&gt; select dbms_flashback.get_system_change_number fscn from dual;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FSCN<br />
+----------<br />
+&nbsp;&nbsp; 3435958</p>
+<p>使用应用用户尝试闪回<br />
+SQL&gt; connect username/password<br />
+Connected.</p>
+<p>现有数据:<br />
+SQL&gt; select count(*) from hs_passport;<br />
+&nbsp; COUNT(*)<br />
+----------<br />
+&nbsp;&nbsp;&nbsp; 851998<br />
+创建恢复表：<br />
+SQL&gt; create table hs_passport_recov as select * from hs_passport where 1=0;</p>
+<p>Table created.</p>
+<p>选择SCN向前恢复：<br />
+SQL&gt; select count(*) from hs_passport as of scn 12929970422;<br />
+&nbsp; COUNT(*)<br />
+----------<br />
+&nbsp;&nbsp;&nbsp; 861686</p>
+<p>尝试多个SCN，获取最佳值（如果能得知具体时间，那么可以获得准确的数据闪回）<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SQL&gt; select count(*) from hs_passport as of scn &scn;
+Enter value for scn: 12929941968
+old  1: select count(*) from hs_passport as of scn &scn
+new  1: select count(*) from hs_passport as of scn 12929941968
+ COUNT(*)
+----------
+  861684
+
+SQL&gt; /
+Enter value for scn: 12927633776
+old  1: select count(*) from hs_passport as of scn &scn
+new  1: select count(*) from hs_passport as of scn 12927633776
+select count(*) from hs_passport as of scn 12927633776
+           *
+ERROR at line 1:
+ORA-01466: unable to read data - table definition has changed
+
+SQL&gt; /
+Enter value for scn: 12929928784
+old  1: select count(*) from hs_passport as of scn &scn
+new  1: select count(*) from hs_passport as of scn 12929928784
+
+ COUNT(*)
+----------
+  825110
+
+SQL&gt; /
+Enter value for scn: 12928000000
+old  1: select count(*) from hs_passport as of scn &scn
+new  1: select count(*) from hs_passport as of scn 12928000000
+select count(*) from hs_passport as of scn 12928000000
+           *
+ERROR at line 1:
+ORA-01466: unable to read data - table definition has changed
+
+</pre>
+</div>
+<p>最后选择恢复到SCN为12929941968的时间点<br />
+SQL&gt; insert into hs_passport_recov select * from hs_passport as of scn 12929941968;</p>
+<p>861684 rows created.</p>
+<p>SQL&gt; commit;</p>
+<p>Commit complete.</p>
+<p>数据恢复简单例子<br />
+在过去，如果用户误删/更新了数据后，作为用户并没有什么直接的方法来进行恢复，他们必须求助DBA来对数据库进行恢复，到了Oracle9i，这一难堪的局面有所改善。Oracle 9i中提供了一项新的技术手段--闪回查询，用户使用闪回查询可以及时取得误操作前的数据，并可以针对错误进行相应的恢复措施，而这一切都无需DBA干预。</p>
+<p><strong>3. 下面我们通过一个例子来具体说明闪回查询的用法</strong></p>
+<p>示例<br />
+3.1 使用闪回查询前必须确定下面两个参数：<br />
+UNDO_MANAGEMENT = AUTO<br />
+undo_retention = 10800; <br />
+这个时间可以随便设，它表示在系统中保留提交了的UNDO信息的时间，10800就是保留3小时，即180分钟。<br />
+3.2 使用闪回查询<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SQL&gt; conn /as sysdba
+Connected.
+SQL&gt; drop user lsf cascade;
+
+User dropped.
+
+SQL&gt; create user lsf identified by lsf;
+
+User created.
+
+SQL&gt; grant connect,resource to lsf;
+
+Grant succeeded.
+
+SQL&gt; grant execute on dbms_flashback to lsf;
+
+Grant succeeded.
+
+SQL&gt; conn lsf/lsf
+Connected.
+SQL&gt; create table T(id int, name varchar2(20));
+
+Table created.
+
+SQL&gt; insert into T values(1,'lsf');
+
+1 row created.
+
+SQL&gt; insert into T values(2,'lsf');
+
+1 row created.
+
+SQL&gt; insert into T values(3,'lsf');
+
+1 row created.
+
+SQL&gt; commit;
+
+Commit complete.
+
+SQL&gt; select * from T;
+
+    ID NAME
+---------- ------------------------------------------------------------
+     1 lsf
+     2 lsf
+     3 lsf
+
+SQL&gt; set time on
+10:12:50 SQL&gt; delete from T where id=1;
+
+1 row deleted.
+
+10:13:02 SQL&gt; commit;
+
+Commit complete.
+
+10:13:10 SQL&gt; select * from T;
+
+    ID NAME
+---------- ------------------------------------------------------------
+     2 lsf
+     3 lsf
+
+10:13:18 SQL&gt; execute DBMS_FLASHBACK.ENABLE_AT_TIME(to_date('2011-04-15 10:12:50','YYYY-MM-DD HH24:MI:SS'));
+
+PL/SQL procedure successfully completed.
+
+10:13:50 SQL&gt; select * from T;
+
+    ID NAME
+---------- ------------------------------------------------------------
+     1 lsf
+     2 lsf
+     3 lsf
+
+10:13:57 SQL&gt; execute DBMS_FLASHBACK.DISABLE;
+
+PL/SQL procedure successfully completed.
+
+10:15:48 SQL&gt; select * from T;
+
+    ID NAME
+---------- ------------------------------------------------------------
+     2 lsf
+     3 lsf
+
+</pre>
+</div>
+<p>3.3 使用闪回查询恢复数据<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+10:16:59 SQL&gt; truncate table T;
+
+Table truncated.
+
+10:18:15 SQL&gt; select * from T;
+
+no rows selected
+
+10:18:22 SQL&gt; insert into T values(1,'lsf');
+
+1 row created.
+
+10:19:42 SQL&gt; insert into T values(2,'lsf');
+
+1 row created.
+
+10:19:48 SQL&gt; insert into T values(3,'lsf');
+
+1 row created.
+
+10:19:55 SQL&gt; insert into T values(4,'lsf');
+
+1 row created.
+
+10:20:07 SQL&gt; insert into T values(5,'lsf');
+
+1 row created.
+
+10:20:15 SQL&gt; insert into T values(6,'lsf');
+
+1 row created.
+
+10:20:21 SQL&gt; commit;
+
+Commit complete.
+
+10:20:26 SQL&gt; select * from T;
+
+    ID NAME
+---------- ------------------------------------------------------------
+     1 lsf
+     2 lsf
+     3 lsf
+     4 lsf
+     5 lsf
+     6 lsf
+
+6 rows selected.
+
+10:20:56 SQL&gt; delete T;
+
+6 rows deleted.
+
+10:21:27 SQL&gt; commit;
+
+Commit complete.
+
+10:21:40 SQL&gt; declare
+10:22:29  2 cursor flash_recover is
+10:22:43  3 select * from T;
+10:22:50  4 t_recode T%rowtype;
+10:23:11  5 begin
+10:23:14  6 DBMS_FLASHBACK.ENABLE_AT_TIME(to_date('2011-04-15 10:20:56','YYYY-MM-DD HH24:MI:SS'));
+10:24:22  7 open flash_recover;
+10:24:39  8 DBMS_FLASHBACK.DISABLE;
+10:24:59  9 loop
+10:25:05 10 FETCH flash_recover into t_recode;
+10:25:24 11 EXIT WHEN flash_recover%NOTFOUND;
+10:25:45 12 insert into T values(t_recode.id,t_recode.name);
+10:26:35 13 end loop;
+10:26:39 14 CLOSE FLASH_RECOVER;
+10:26:50 15 commit;
+10:26:56 16 end;
+10:26:58 17 /
+
+PL/SQL procedure successfully completed.
+
+10:27:00 SQL&gt; select * from T;
+
+    ID NAME
+---------- ------------------------------------------------------------
+     1 lsf
+     2 lsf
+     3 lsf
+     4 lsf
+     5 lsf
+     6 lsf
+
+6 rows selected.
+
+</pre>
+</div>
+<p>我们可以已经恢复了所有的6条纪录，但是由于闪回查询的局限性，有可能不能恢复所有的6条记录，原因就在下面。</p>
+<p><strong>4. 局限性<br />
+</strong>4.1 闪回查询是基于SCN的，虽然我们执行的是：<br />
+DBMS_FLASHBACK.ENABLE_AT_TIME(to_date('2011-04-15 10:20:56','YYYY-MM-DD HH24:MI:SS'));<br />
+但Oracle并不会精确的这个时间点，而是ROUND DOWN到最近的一次SCN，然后从这个SCN开始进行恢复。而Oracle 9i是每五分钟记录一次SCN的，并将SCN和对应时间的映射做个纪录。 <br />
+因此如果使用DBMS_FLASHBACK.ENABLE_AT_TIME来进行恢复，为了避免恢复失败，我们可以先等5分钟，然后再进行恢复。<br />
+使用DBMS_FLASHBACK.ENABLE_AT_TIME进行恢复还有一个缺点，那就是在Oracle 9i中SCN和对应时间的映射信息只会保留5天，因此我们无法通过DBMS_FLASHBACK.ENABLE_AT_TIME来恢复5天前的数据。如果你想使用闪回查询来恢复5天前的数据，你必须自己来确定需要恢复的SCN，然后使用DBMS_FLASHBACK.ENABLE_AT_SYSTEM_CHANGE_NUMBER(SCN_NUMBER); 来定位你的恢复时间点，下面是使用方法：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+10:27:27 SQL&gt; VARIABLE SCN_SAVE NUMBER;
+10:32:47 SQL&gt; EXECUTE :SCN_SAVE := DBMS_FLASHBACK.GET_SYSTEM_CHANGE_NUMBER;
+
+PL/SQL procedure successfully completed.
+
+10:33:24 SQL&gt; print SCN_SAVE;
+
+ SCN_SAVE
+----------
+  3438420
+
+10:33:41 SQL&gt; execute DBMS_FLASHBACK.ENABLE_AT_SYSTEM_CHANGE_NUMBER(:SCN_SAVE);
+
+PL/SQL procedure successfully completed.
+
+10:34:31 SQL&gt; select * from T;
+
+    ID NAME
+---------- ------------------------------------------------------------
+     1 lsf
+     2 lsf
+     3 lsf
+     4 lsf
+     5 lsf
+     6 lsf
+
+6 rows selected.</pre>
+</div>
+<p>另外，在使用DBMS_FLASHBACK.ENABLE_AT_TIME前，你必须设定你的NLS_DATE_FORMAT的精确程度，Oracle默认的是精确到天，如果你不设定，像上面的例子你不会得到预期结果。<br />
+4.2 如果你使用sysdate和DBMS_FLASHBACK.GET_SYSTEM_CHANGE_NUMBER来获取时间点或者SCN值，你必须注意它们取得都是当前的时间点和SCN值。<br />
+4.3 你只能在事务开始时进入闪回查询模式，如果之前有DML操作，则必须COMMIT。<br />
+4.4 闪回查询无法恢复到表结构改变之前，因为闪回查询使用的当前的数据字典。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/85751.html'>.Net 调用存储过程取到return的返回值</a><a>下一篇</a><a href='/php/biji/85753.html'>bootstrap学习笔记之初识bootstrap</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

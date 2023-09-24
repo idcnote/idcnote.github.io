@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>深入分析iOS应用中对于图片缓存的管理和使用_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="我们的 iOS 应用都包含了大量的图像。创建富有吸引力的视图，主要依赖于大量的装饰图片，所有这些首先必须从远程服务器获取。如果每次打开应用都要从服务器一次又一次的获取每" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">深入分析iOS应用中对于图片缓存的管理和使用</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>我们的 iOS 应用都包含了大量的图像。创建富有吸引力的视图，主要依赖于大量的装饰图片，所有这些首先必须从远程服务器获取。如果每次打开应用都要从服务器一次又一次的获取每</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>我们的 iOS 应用都包含了大量的图像。创建富有吸引力的视图，主要依赖于大量的装饰图片，所有这些首先必须从远程服务器获取。如果每次打开应用都要从服务器一次又一次的获取每个图像，那么用户体验肯定达不到好的效果，所以本地缓存远程图像是非常有必要的。</p>
+<p><strong>两种方式加载本地图片<br />
+1.通过imageNamed:方法加载图片<br />
+</strong>用过这种方式加载图片，一旦图片加载到内存中，那么就不会销毁，一直到程序退出。（也就是说imageNamed:会有图片缓存的功能，当下次访问图片的时候速度会更快。）<br />
+用这种方式加载图片，图片的内存管理并不受程序员控制。<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="1220" class="copybut" id="copybut1220" onclick="doCopy('code1220')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code1220"><br />
+UIImage *image = [UIImage imageNamed: @“image”]<br />
+</div><br />
+的意思是创建一个UIImage对象，并不是说image这个本身就是一张图片，而是image指向一张图片。在创建这个对象的时候实际上并没有把真正的图片加载到内存里，而是等到用到图片的时候才会加载。<br />
+如上例，如果把image对象设置为nil，如果是其它对象，那么没有强指针指向一个对象，这个对象就会销毁；但是即使image = nil，它会指向的图片资源也不会销毁。<br />
+<strong>2.通过imageWithContentsOfFile:方式加载图片<br />
+</strong>使用这个方法加载图片，当指向图片对象的指针销毁或指向其它对象，这个图片对象没有其它强指针指向，这个图片对象会销毁，不会一直在内存中停留。</p>
+<p>因为没有缓存，所以如果相同的图片多次加载，那么也会有多个图片对象来占用内存，而不是用缓存的图片。</p>
+<p>使用这个方法，需要file的全路径（之前用NSString, NSArray之类的加载文件也是一样的，比如stringWithContentsOfFile:，看到file就知道是需要传入全路径。）<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="92934" class="copybut" id="copybut92934" onclick="doCopy('code92934')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code92934"><br />
+NSString *imagePath = [[NSBundle mainBundle] pathForResource:imageName ofType:@"png"];<br />
+UIImage *image = [UIImage imageWithContentsOfFile:imagePath];<br />
+</div><br />
+注意如果图片在Images.xcassets中，是不能使用这个方法的。所以说想要自己进行图片的内存管理（不希望有缓存图片），那么要将图片资源直接拖入工程，而不是放在Images.xcassets中。</p>
+<p><br />
+<strong>快速队列和慢速队列<br />
+</strong>我们设置了两个队列，一个串行，一个并行。在屏幕上被迫切要求的图片进入并行队列（fastQueue），可能晚点才需要的图片进入串行队列（slowQueue）。<br />
+就UITableView的实现而言，这意味着在屏幕上的表格单元从fastQueue获取图片， 每个关闭的屏幕行的图片从slowQueue预加载。</p>
+<p><strong>现在不需要处理图片</strong></p>
+<p>假设我们要从服务器上请求包含30条事件的一页资讯回来，一旦这些内容请求回来时我们就可以排队等待预取其中的每一张图。<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="70908" class="copybut" id="copybut70908" onclick="doCopy('code70908')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code70908"><br />
+- (void)pageLoaded:(NSArray *)newEvents {&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; for (SGEvent *event in newEvents) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [SGImageCache slowGetImageForURL:event.imageURL thenDo:nil];&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }<br />
+}<br />
+</div><br />
+slowGetImageForURL:这个方法将图片添加到slowQueue这个队列当中，允许它们在不阻塞网络通信的前提下被一张一张的取出来。<br />
+thenDo:这个代码块在这里是没有被实现，是因为我们目前还不需要对图片做任何事情。所有我们需要做的就是确保它们在本地磁盘缓存当中，并且随时准备在屏幕上滑动表格时来使用。</p>
+<p><strong>现在就要处理图片</strong></p>
+<p>显示在屏幕上的表格希望立即显示它们的图片，所以在table cell子类当中实现：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="10429" class="copybut" id="copybut10429" onclick="doCopy('code10429')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code10429"><br />
+- (void)setEvent:(SGEvent *)event {&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; __weak SGEventCell *me = self;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; [SGImageCache getImageForURL:event.imageURL thenDo:^(UIImage *image) {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; me.imageView.image = image;&nbsp;&nbsp;&nbsp; }<br />
+&nbsp;&nbsp;&nbsp; ];<br />
+}<br />
+</div><br />
+getImageForURL:这个方法将抓取图片的过程添加到fastQueue这个队列当中，意味着只要iOS系统允许，它们会并行被地执行。如果抓取图片的过程已经存在于slowQueue队列当中，它会被移动到fastQueue队列中，从而避免重复请求。</p>
+<p><strong>一直异步</strong></p>
+<p>等等，getImageForURL:不是一个异步方法吗？如果你明知道图片已经在缓存中，但是却不想在主线程上立即使用它吗？直觉告诉你那是错误的。<br />
+从磁盘上加载图片太费资源，同样解压图片也会费很多资源。可以在滑动的过程当中进行配置和添加表格，这最后一件你想在滑动表格时做的事是很危险地，因为它会阻塞主线程，会有卡顿的现象出现。<br />
+使用getImageForURL:可以让磁盘加载的动作脱离主线程，于是当thenDo:这个用于收尾工作的代码块执行的时候它已经有了一个UIImage实例，从而不会有滑动卡顿的危险。如果图片已经存在于本地缓存当中，用于收尾工作的代码块会在下一次运行周期执行，并且用户不会注意到两者之间的差别。他们会注意到的是滑动不会卡顿了。</p>
+<p><strong>现在，不需要你快速执行</strong></p>
+<p>如果用户很快的滑动表格到底部，几十或几百个表格单元会出现在屏幕上，并向fastQueue请求图片数据，然后很快地从屏幕上消失。突然间这个并行地队列会将大量实际上不再需要的图片请求充斥进网络。当用户最终停止滑动时，那些当前屏幕上相应的表格单元视图会将它们的图片请求至于那些并不急需的请求后面，因此网络阻塞了。<br />
+这就是 wheremoveTaskToSlowQueueForURL:这个方法的产生的原因.<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="91866" class="copybut" id="copybut91866" onclick="doCopy('code91866')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code91866"><br />
+// a table cell is going off screen- <br />
+(void)tableView:(UITableView *)table&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+didEndDisplayingCell:(UITableViewCell *)cell&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+forRowAtIndexPath:(NSIndexPath*)indexPath {&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp; // we don't need it right now, so move it to the slow queue&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp; [SGImageCache moveTaskToSlowQueueForURL:[[(id)cell event] imageURL]];<br />
+}<br />
+</div><br />
+这确保在fastQueue中的只会有真正需要被快速执行的任务。任何以前认为需要快速执行但现在不需要的任务会被移至slowQueue中。</p>
+<p><strong>重点和选择</strong></p>
+<p>已经有相当多的iOS图片缓存库。它们中一些库只针对某些应用场景，一些库提供了不同场景一定的可扩展性。我们的库即没有专门针对某些应用场景，也没有太多大而全的特性。针对我们的用户我们有三类基本的重点：<br />
+<strong>重点 1: 最好的帧率<br />
+</strong>很多的库都非常专注在这一点上，使用一些高度定制和复杂的方法，尽管基准没有决定性地显示这样有效。我们发现最好的帧率由这些决定：<br />
+将对磁盘的访问（并且几乎其它的所有）脱离主线程。<br />
+使用UIImage的内存缓存来避免不必要的磁盘访问和图片解压。</p>
+<p><strong>重点 2: 让最最重要的图片优先显示<br />
+</strong>大多数的库都考虑让队列管理成为别人关心的事。对于我们的应用，这几乎是最重要的点。<br />
+让正确的图片在正确的时间显示在屏幕上可以归结为一个简单的问题：“我们现在就需要它显示还是过一会儿？”。那些需要立即显示的图片是并行加载地，而其它所有东西都被添加到串行队列中。所有之前急迫的事但现在不急迫的话就会从fastQueue分到slowQueue中。并且当fastQueue在工作时，slowQueue是处于挂起状态的。<br />
+这让那些急需显示的图片可以单独访问网络，同时也确保了一张非急需显示的图片可以在过一会成为一张急需显示的图片，因为它已经存到了缓存当中，随时准备用于显示。</p>
+<p><strong>重点 3: 尽可能简单的API<br />
+</strong>大多数库都做到了这一点。许多库为了隐藏细节内容而提供了UIImageView的分类，并且许多库让抓取一张图片的流程变得尽可能的便利。针对我们经常做的三件事，我们的库选定了三个主要的方法：<br />
+快速抓到一张图<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="74112" class="copybut" id="copybut74112" onclick="doCopy('code74112')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code74112"><br />
+__weak SGEventCell *me = self;[SGImageCache getImageForURL:event.imageURL thenDo:^(UIImage *image) {&nbsp;&nbsp;&nbsp; me.imageView.image = image;}];<br />
+</div><br />
+排队等待一张我们一会才需要的图片<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="815" class="copybut" id="copybut815" onclick="doCopy('code815')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code815"><br />
+[SGImageCache slowGetImageForURL:event.imageURL thenDo:nil];<br />
+</div><br />
+通知缓存一张急需显示的图已经不需要立刻显示<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="20705" class="copybut" id="copybut20705" onclick="doCopy('code20705')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code20705"><br />
+[SGImageCache moveTaskToSlowQueueForURL:event.imageURL];<br />
+</div></p>
+<p><strong>结论</strong></p>
+<p>通过专注于预取，队列管理，从主线程移除耗时的任务，并且依赖于UIImage内置的内存缓存，我们努力从一个简单的软件包中得到好的结果。<br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/96321.html'>js添加绑定事件的方法</a><a>下一篇</a><a href='/php/biji/96323.html'>怎么快速隐藏Win8桌面图标 win8隐藏桌面图标图文教程</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

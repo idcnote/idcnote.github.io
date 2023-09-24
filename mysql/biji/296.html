@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL性能优化之如何高效正确的使用索引的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL性能优化之如何高效正确的使用索引的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL性能优化之如何高效正确的使用索引的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:14:56                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL性能优化之如何高效正确的使用索引的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL性能优化之如何高效正确的使用索引的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>实践是检验真理的唯一途径，本篇只是站在索引使用的全局来定位的，你只需要通读全篇并结合具体的例子，或回忆以往使用过的地方，对整体有个全面认识，并理解索引是如何工作的，就可以了。在后续使用索引，或者优化索引时，可以从这些方面出发，进一步来加深对索引正确高效的使用。</p>
+<p>一、索引失效</p>
+<p>索引失效，是一个老生常谈的话题了。只要提到数据库优化、使用索引，都能一口气说出一大堆索引失效的场景，什么不能用、什么不该用这类的话，在此，我就不再一一罗列啰嗦了。</p>
+<p>索引失效，是指表中有字段创建了索引，由于sql语句书写不当导致索引失效的情况。</p>
+<p>在sql语句中，将索引列作为表达式的一部分、参与函数/数学等运算，将会导致索引失效。</p>
+<p>例如，下面这个查询无法使用age列的索引：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id,name,age from t_user where age + 1 = 7;</code></pre>
+<p>MySQL性能优化之如何高效正确的使用索引</p>
+<p>很容易看出where中的表达式其实等价于age=8，但是MySQL无法自动解析这个表达式，这完全是用户行为。</p>
+<p>（在上一篇文章中，我们知道MySQL先在索引上按值进行查找，然后返回索引值对应的数据行，一旦对索引列进行运算，则将无法正确的找到对应的数据行，从而改为全表逐行扫描查询对比）</p>
+<p>二、前缀索引和索引选择性</p>
+<p>有时候将内容很长的列作为索引列，这将会让索引变得很大而且很慢。如果非要在该列添加索引，解决策略就是上一篇文章提到过的模拟哈希索引。</p>
+<p>通常可以索引开始的部分字符，这样可以大大节约索引空间，从而提高索引效率，但这样也会降低索引的选择性。</p>
+<p>索引的选择性是指，不重复的索引值(也称为基数)和表数据的记录总数T的比值，范围从1/T到1之间。索引的选择性越高，则查询效率越高，因为选择性高的索引可以让MySQL在查找时过滤掉更多的行。</p>
+<p>唯一索引的选择性为1，这是最好的索引选择性，性能也是最好的。</p>
+<p>对于BLOB、TEXT或很大的VARCHAR类型的列，作为查询条件时（原则上是要避免这样的操作，但有时总是情非得已），该列必须使用前缀索引，这样来提高查询性能。因为MySQL是不允许索引这些列的完整长度的。</p>
+<p>三、多列索引</p>
+<p>多列索引，是指为每个列创立独立的索引。</p>
+<p>在SQL优化时，有人会采取&ldquo;把where条件里面的列都建上索引&rdquo;，希望能够对查询性能有所优化。但实际上这样的优化是非常错误的，这样一来最好的情况下也只能是&ldquo;一星&rdquo;索引，其性能比起真正最优的索引可能差几个数据级。有时如果无法设计一个&ldquo;三星&rdquo;索引，那么不如忽略掉where子句，集中精力优化索引列的顺序，或者创建一个全覆盖索引。</p>
+<blockquote>
+<p>三星索引：在Lahdenmaki和Leach编写的Relational Database Index Design and the Optimizers一书中，提到如何评价一个索引是否适合某个查询的&ldquo;三星系统&rdquo;：索引将相关的记录放到一起则获得&ldquo;一星&rdquo;；如果索引中的数据顺序和查找中的排序顺序一致则获得&ldquo;二星&rdquo;；如果索引中的列包含了查询中需要的全部列则获得&ldquo;三星&rdquo;。</p></blockquote>
+<p>在多个列上建立独立的单列索引，大部分情况下并不能提高MySQL的查询性能。这也是将其错误的做法。</p>
+<p>MySQL5.0及之后版本引入了索引合并策略，一定程度上可以使用表上的多个单列索引来定位指定的行。更早的MySQL只能使用其中某一个单列索引，然而这个情况下没有哪一个独立的单列索引是非常有效的。</p>
+<p>索引合并策略有时候是一种优化的结果，但实际上更多时候说明了表上的索引建的很糟糕：</p>
+<p>1）当出现对多个索引做相交操作时（通常由多个AND条件），通常意味着需要一个包含所有相关列的多列索引，而不是多个独立的单列索引。</p>
+<p>2）当需要对多个索引做联合操作室（通常有多个OR条件），通常需要耗费大量的CPU和内存资源在算法的缓存、排序和合并操作上。特别是当其中有些索引的选择性不高，需要合并扫描返回的大量数据的时候。</p>
+<p>3）优化器不会把这些计算到&ldquo;查询成本&rdquo;中，优化器只关心随机页面读取。这会使得查询的成本被&ldquo;低估&rdquo;，导致该执行计划还不如直接走全表扫描。这样做不但会消耗更多的CPU和内存资源，还可能会影响查询的并发性，但如果是单独运行这样的查询，则往往会忽略对并发性的影响。</p>
+<p>如果在执行计划EXPLAIN中看到索引合并，应该好好检查一下查询和表的结构，看是不是已经是最优的。也可以通过参数optimizer_switch来关闭索引合并功能，也可以使用IGNORE INDEX提示让优化器忽略掉某些索引。</p>
+<p>对于多列索引，只要查询的条件中用到了最左边的列，索引一般就不会失效。</p>
+<p>举例说明如下：</p>
+<p>表t_user创建了(id,name)的多列索引，具体如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show create table t_user;
++--------+---------------+
+| Table | Create Table |
++--------+---------------+
+| t_user | CREATE TABLE `t_user` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`name` varchar(255) DEFAULT NULL,
+`age` int(11) DEFAULT NULL,
+KEY `idx` (`id`,`name`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 |
++--------+-----------------------------------------+
+1 row in set</code></pre>
+<p>MySQL性能优化之如何高效正确的使用索引</p>
+<p>根据id进行查询，具体如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; explain select * from t_user where id = 1;
++----+-------------+--------+------------+------+---------------+-----+---------+-------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys | key | key_len | ref  | rows | filtered | Extra |
++----+-------------+--------+------------+------+---------------+-----+---------+-------+------+----------+-------+
+| 1 | SIMPLE   | t_user | NULL    | ref | idx      | idx | 4    | const |  1 |   100 | NULL |
++----+-------------+--------+------------+------+---------------+-----+---------+-------+------+----------+-------+
+1 row in set</code></pre>
+<p>MySQL性能优化之如何高效正确的使用索引</p>
+<p>从执行计划中的type可以看出，索引是有效的。但如果根据name进行查询，则索引将会失效(全表扫描)，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; explain select * from t_user where name = 'xcbeyond';
++----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys | key | key_len | ref | rows | filtered | Extra    |
++----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-------------+
+| 1 | SIMPLE   | t_user | NULL    | ALL | NULL     | NULL | NULL  | NULL |  7 |  14.29 | Using where |
++----+-------------+--------+------------+------+---------------+------+---------+------+------+----------+-------------+
+1 row in set</code></pre>
+<p>MySQL性能优化之如何高效正确的使用索引</p>
+<p>四、选择合适的索引列顺序</p>
+<p>索引列顺序实在是非常重要的。正确的顺序依赖于使用该索引的查询，并且同时需要考虑如何更好的满足排序和分组的需要（只用于B-Tree索引，哈希或者其他索引存储数据并不是顺序存储）。</p>
+<p>在一个多列B-Tree索引中，索引列的顺序意味着索引首先按照最左列进行排列。所以索引可以按照升序或者降序进行扫描，以满足符合列顺序的order by，group by和distinct等子句的查询需求。</p>
+<p>所以多列索引列的顺序至关重要。对于如何选择索引的列顺序有一个经验法则：将选择性最高的索引放在索引的最前列。在某些场景这个经验时非常有用，但是通常不如避免随机IO和排序那么重要，考虑问题需要更全面。</p>
+<p>当不需要考虑排序和分组时，将选择性最高的列放在前面通常是很好的。这时候索引的作用只是用于优化where条件的查找。这种情况下，这样设计的索引确实能够最快的过滤出需要的行，对于在where的子句中只是用了索引部分前缀列的查询来说选择性也更高。然而性能不只是依赖于所有索引列的选择性，也和查询条件的具体值有关，也就是和值的分布有关（需要根据那些运行频率最高的查询来调整索引列的顺序，让这种情况下的索引列的选择性最高）。</p>
+<p>五、聚簇索引</p>
+<p>聚簇索引并不是一种单独的索引类型，而是一种数据存储方式，将数据存储与索引放到了一块，找到索引页就找到了数据。具体的细节依赖于其实现方式，但<code>InnoDB</code>的聚簇索引实际上在同一个结构中保存了B-Tree索引和数据行。</p>
+<blockquote>
+<p>非聚簇索引：将数据存储与索引分开存储，索引结构的叶子节点指向了数据的对应行。当需要访问数据时（通过索引访问数据），在内存中直接搜索索引，然后通过索引找到磁盘相应数据，这也就是为什么索引不在key buffer命中时，速度慢的原因。</p></blockquote>
+<p>当表有聚簇索引时，它的数据行实际上存放在索引的叶子页中。&ldquo;聚簇&rdquo;表示数据行和相邻的键值紧凑的存储在一起。因为无法同时把数据行存放在两个不同的地方，所以一个表只能有一个聚簇索引。</p>
+<p>聚簇索引的设定：</p>
+<p>默认为主键。如果没有定义主键，<code>InnoDB</code>会选择一个唯一的非空索引代替。如果没有这样的索引，<code>InnoD</code>会隐式定义一个主键来作为聚簇索引。<code>InnoDB</code>只聚集在同一个页面中的记录，包括相邻键值的页面可能会相距甚远。</p>
+<p>(看到这里，如果你对B-Tree索引结构熟悉的话，就知道为啥[key、data]作为一个二元组存放在一个节点了)</p>
+<p>聚簇主键可能对性能有帮助，但也可能导致严重的性能问题。所以需要仔细的考虑聚簇索引，尤其是将表的存储引擎从InnoDB改成其他引擎的时候（反过来也一样）。</p>
+<p>聚簇索引的优点：</p>
+<ul>
+	<li>可以把相关数据保存在一起。例如实现电子邮箱时，可以根据用户ID来聚集数据，这样子只需要从磁盘中读取少数的数据也技能获取某个用户的全部邮件。</li>
+	<li>数据访问更快。聚簇索引把索引和数据都放在同一个B-Tree中，因此从聚簇索引中获取数据比从非聚簇索引中要快。</li>
+	<li>使用覆盖索引扫描的查询可以直接使用页节点中的主键值。</li>
+</ul>
+<p>聚簇索引的缺点：</p>
+<ul>
+	<li>最大限度的提高了I/O密集型应用的性能，但如果数据全部都放在内存中，则访问的顺序就没那么重要了，聚簇索引也就没什么优势了。</li>
+	<li>插入速度严重依赖于插入顺序。按照主键的顺序插入是加载数据到InnoDB表中速度最快的方式。但如果不是按照逐渐顺序加载数据，那么在加载完成后最好使用OPTIMIZE TABLE重新组织一下表。</li>
+	<li>更新聚簇索引列的代价很高。因为要强制InnoDB将每个被更新的行移动到新的位置。</li>
+	<li>基于聚簇索引的表在插入新行，或者主键被更新导致移动行的时候，可能面临&ldquo;页分裂&rdquo;的问题。当行的主键值要求必须将这一行插入到某个已满的页中时，存储引擎会将该页分裂成两个页来容纳该行，这就是一次页分裂操作，这也意味着这样导致表占用更多的磁盘空间。</li>
+	<li>聚簇索引可能导致全表扫描变慢，尤其是行比较稀疏时，或者由于页分裂导致数据存储不连续的时候。</li>
+	<li>二级索引(非聚簇索引)可能比想想的要更大。因为二级索引的叶子结点包含了引用行的主键列。</li>
+	<li>二级索引访问需要两次索引查找，而不是一次。</li>
+</ul>
+<p>六、覆盖索引</p>
+<p>通常大家都会根据查询的where条件来创建合适的索引，不过这也只是索引优化的一个方面。设计优秀的索引应该考虑到整个查询，而不单单是where条件部分。索引确实是一种查找数据的高效方式，但是MySQL也可以使用索引来直接获取列的数据，这样就不再需要读取数据行。如果一个索引包含所有需要查询的字段值，我们就称其为&ldquo;覆盖索引&rdquo;，即：一个索引覆盖where条件的所有列。</p>
+<p>覆盖索引的好处如下：</p>
+<ul>
+	<li>索引条目通常远小于数据行的大小，所以如果只需要读取索引，那么MySQL就会极大的减少数据访问量。这对缓存的负载非常重要，因为这种情况下响应时间大部分花费在数据拷贝下。覆盖索引对于I/O密集型的应用也有帮助，因为索引比数据更小，更容易全部放进去内存。</li>
+	<li>因为索引是按照列值顺序存储的，对于I/O密集型的范围查询会比随机从磁盘读取每一行数据的I/O要少的多。对于某些存储引擎，例如<code>MyISAM</code>和<code>Percona XtraDB</code>，甚至可以通过<code>POTIMIZE</code>命令使得索引完全顺序排列，这样就可以让简单的范围查询能使用完全排序的索引访问。</li>
+	<li>一些存储引擎，如<code>MyISAM</code>在内存中只缓存索引。数据则依赖于操作系统来缓存，因此要访问数据需要一次系统调用。这可能会导致严重的性能问题，尤其是那些系统调用占了数据访问中的最大开销的场景。</li>
+	<li>由于<code>InnoDB</code>的聚簇索引，覆盖索引对于InnoDB表特别有用。InnoDB的二级索引在叶子节点保存了行的主键值，所以如果二级主键能够覆盖查询，则可以避免对主键索引的二次查询</li>
+</ul>
+<p>不是所有类型的索引都可以成为覆盖索引。覆盖索引必须要存储索引列，而哈希索引、空间索引和全文索引等都不存储索引列的值，所以MySQL只能使用B-Tree所以来做覆盖索引，另外不同的存储引擎实现覆盖索引的方式也不同，而且不是所有的引擎都支持覆盖索引。</p>
+<p>七、使用索引扫描来排序</p>
+<p>MySQL有两种方式可以生成有序的结果集：通过排序操作，或者按索引顺序扫描。如果<code>EXPLAIN</code>出来的type列的值为<code>index</code>，则说明MySQL使用了索引扫描来做排序。</p>
+<p>扫描索引本身是很快的，因为只需要从一条索引记录移动到紧接着的下一条记录。但如果索引不能覆盖查询所需的全部列，那就不得不每扫描一条索引记录就都回表查询一次对应的行。这基本上都是随机I/O，因此按索引顺序读取数据的速度通常要比顺序的全表扫描慢，尤其是在I/O密集型的工作负载时。</p>
+<p>MySQL可以使用同一个索引既满足排序，又用于查找行。因此，如果可能，设计索引时应该尽可能的同时满足这两种情况，即：索引列作为排序列。</p>
+<ul>
+	<li>只有当索引的列顺序和<code>order by</code>子句的顺序完全一致，并且所有列的排序方向都一样时，MySQL才能够使用索引来对结果做排序。</li>
+	<li>如果查询需要关联多张表，则只有当<code>order by</code>子句引用的字段全部为第一个表时，才能使用索引做排序。<code>order by</code>子句和查找性查询的限制是一样的：需要满足索引的最左前缀的要求；否则，MySQL都需要执行的顺序操作，而无法使用索引排序。</li>
+</ul>
+<p>八、冗余、重复索引</p>
+<p>重复索引，是指在相同列上按照相同的顺序创建的相同类型的索引。应该避免这样的创建重复索引，发现以后也应该立即移除。</p>
+<p>比如：　　　</p>
+<p>代码如下：</p>
+<pre>
+<code>
+create table test{
+ id int not null primary key,
+ a int not null,
+ b int not null,
+ unique(id)
+ index(id)
+}engine=InnoDB;</code></pre>
+<p>MySQL性能优化之如何高效正确的使用索引</p>
+<p>一个经验不足的人可能是想创建一个主键，先加上唯一限制<code>(unique(id))，</code>然后再加上索引<code>(index(id))</code>以供查询使用。然而唯一限制和主键限制都是通过索引使用，因此，上面的写法实际上在相同的列上创建了三个重复的索引。通常并没有理由要这样做，除非是在同一列上创建不同类型的索引来满足不同的查询需求。</p>
+<p>冗余索引和重复索引有一些不同，比如：如果创建了索引<code>（A,B）</code>，再创建<code>（A）</code>那就是冗余索引，因为A就是前一个索引的前缀索引。索引<code>（A,B）</code>完全就可以当做A来使用。但是如果创建了索引<code>（B,A）</code>那就不是冗余索引了，索引B也不是。因为B不是索引<code>(A,B）</code>的最左前缀索引。另外，其他不同类型的索引，例如哈希，全文索引也不会是B-Tree的冗余索引。</p>
+<p>冗余索引通常发生在为表添加新索引的时候。例如，有人可能会增加一个新的索引<code>（A,B）</code>而不是拓展已有的索引<code>（A）</code>，还有一种情况是将一个索引扩展为<code>（A,ID）</code>，其中的ID是主键，对于<code>InnoDB</code>来说主键列已经包含在二级索引当中了， 所以这也是冗余的。</p>
+<p>大多数情况下不需要冗余索引，应该尽量扩展已有的索引而不是创建新的索引。但也有时候处于性能方面的考虑需要冗余索引，因为扩展已有的索引会导致其变得太大 ，从而影响其他使用该索引的查询的性能。例如，在一个整数列索引上添加一个很长的<code>varchar</code>列，那性能可能会急剧下降。特别是有索引把这个索引当中覆盖索引时，或者这是<code>MyISAM</code>表并且有很多范围查询的时候。</p>
+<p>解决冗余索引和重复索引的方法非常简单，删除这些索引就可以。但是首先要做的事找出这样的索引。可以通过写一些复杂的访问<code>information_schema</code>表的查询来找，不过还有两个更简单的方法就是使用<code>Shlomi Noach</code>的<code>common_schema</code>中的一些视图来定位（common_schema是一系列可以安装在服务器上的常用的存储和视图）。另外一个方法就是使用<code>Percona Toolkit</code>中的<code>pt_duplicate-key-checker</code>，该工具通过分析表结构来找出冗余和重复索引。</p>
+<p>九、未使用的索引</p>
+<p>除了冗余索引和重复索引，可能还会有一些服务器永远不用的索引。这样的索引完全是累赘，建议直接删除。</p>
+<p>可以使用<code>Performance_schema</code>中的<code>table_io_waits_summary_by_index_usage</code>表进行查找：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT object_schema, object_name, index_name FROM performance_schema.table_io_waits_summary_by_index_usage WHERE index_name IS NOT NULL AND count_star = 0 ORDER BY object_schema, object_name, index_name;</code></pre>
+<p>MySQL性能优化之如何高效正确的使用索引</p>
+<p>十、索引和锁</p>
+<p>索引可以让查询锁定更少的行。如果你的查询从不访问那些不需要的行，那么就会锁定更少的行，从两个方面来看这对性能都有什么好处。</p>
+<p>首先，虽然<code>InnoDB</code>的行锁效率很高，内存使用也很少，但是锁定行的时候仍然会带来额外的开销，其次，锁定超过需要的行会增加锁争用并减少并发性。</p>
+<p>十一、总结</p>
+<p>通过上面大篇文字的讲解，都是用来说明如何高效的使用索引，避免错误使用。索引是一个看似简单，但实际用起来却是非常复杂的东西，要想真正用好它，需要不断的实践。实践是检验真理的唯一途径，本篇只是站在索引使用的全局来定位的，你只需要通读全篇并结合具体的例子，或回忆以往使用过的地方，对整体有个全面认识，并理解索引是如何工作的，就可以了。在后续使用索引，或者优化索引时，可以从这些方面出发，进一步来加深对索引正确高效的使用。</p>
+<p>在平时使用索引中，有以下几点总结及建议：</p>
+<ol>
+	<li>在区分度高的字段上面建立索引可以有效的使用索引，区分度太低，无法有效的利用索引，可能需要扫描所有数据页，此时和不使用索引区别不大。</li>
+	<li>联合索引，注意最左匹配原则：必须按照从左到右的顺序匹配，MySQL会一直向右匹配直到遇到范围查询<code>(&gt;、&lt;、between、like)</code>就停止匹配，比如<code>a = 1 and b = 2 and c &gt; 3 and d = 4</code>如果建立(a,b,c,d)顺序的索引，d是用不到索引的，如果建立(a,b,d,c)的索引则都可以用到，a,b,d的顺序可以任意调整。</li>
+	<li>查询记录的时候，少使用*，尽量去利用索引覆盖，可以减少回表操作，提升效率。</li>
+	<li>有些查询可以采用联合索引，进而使用到索引下推，也可以减少回表操作，提升效率。</li>
+	<li>禁止对索引字段使用函数、运算符操作，这样将会使索引失效。</li>
+	<li>字符串字段和数字比较的时候会使索引无效。</li>
+	<li>模糊查询 <code>&#39;%值%&#39; </code>会使索引无效，变为全表扫描，但是<code> &#39;值%&#39;</code> 这种可以有效利用索引。</li>
+	<li>排序中尽量使用到索引字段，这样可以减少排序，提升查询效率。</li>
+</ol>
+<p>以上就是MySQL性能优化之如何高效正确的使用索引的详细内容，更多关于MySQL 索引的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL性能优化之如何高效正确的使用索引的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/295.html'>MySQL复制表三种及grant解析的解决办法</a><a>下一篇</a><a href='/mysql/biji/297.html'>MySQL的lru链表的深入分析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

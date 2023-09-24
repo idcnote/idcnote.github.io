@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>mybatis的动态sql详解（精）_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="MyBatis 的一个强大的特性之一通常是它的动态 SQL 能力。如果你有使用 JDBC 或其他 相似框架的经验,你就明白条件地串联 SQL 字符串在一起是多么的痛苦,确保不能忘了空 格或" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">mybatis的动态sql详解（精）</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>MyBatis 的一个强大的特性之一通常是它的动态 SQL 能力。如果你有使用 JDBC 或其他 相似框架的经验,你就明白条件地串联 SQL 字符串在一起是多么的痛苦,确保不能忘了空 格或</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>MyBatis 的一个强大的特性之一通常是它的动态 SQL 能力。如果你有使用 JDBC 或其他 相似框架的经验,你就明白条件地串联 SQL 字符串在一起是多么的痛苦,确保不能忘了空 格或在列表的最后省略逗号。动态 SQL 可以彻底处理这种痛苦。</p>
+<p>通常使用动态SQL不可能是独立的一部分,MyBatis当然使用一种强大的动态SQL语言来改进这种情形,这种语言可以被用在任意映射的SQL语句中。</p>
+<p>动态SQL元素和使用 JSTL或其他相似的基于XML的文本处理器相似。在MyBatis之前的版本中,有很多的元素需要来了解。MyBatis3大大提升了它们,现在用不到原先一半 的元素就能工作了。MyBatis采用功能强大的基于OGNL的表达式来消除其他元素。</p>
+<p><strong>MyBatis中用于实现动态SQL的元素主要有：</strong><br />
+</p>
+<p>if<br />
+</p>
+<p>choose（when，otherwise）<br />
+</p>
+<p>trim<br />
+</p>
+<p>where<br />
+</p>
+<p>set<br />
+</p>
+<p>foreach</p>
+<p>if就是简单的条件判断，利用if语句我们可以实现某些简单的条件选择。</p>
+<p>先来看如下一个例子：</p>
+<p><strong>Xml代码 </strong></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+&lt;select id="dynamicIfTest" parameterType="Blog" resultType="Blog"&gt; 
+ select * from t_blog where 11 = 1 
+ &lt;if test="title != null"&gt; 
+  and title = #{title} 
+ &lt;/if&gt; 
+ &lt;if test="content != null"&gt; 
+  and content = #{content} 
+ &lt;/if&gt; 
+ &lt;if test="owner != null"&gt; 
+  and owner = #{owner} 
+ &lt;/if&gt; 
+&lt;/select&gt;</pre>
+</div>
+<p>这条语句的意思非常简单，如果你提供了title参数，那么就要满足title=#{title}，同样如果你提供了Content和Owner的时候，它们也需要满足相应的条件，之后就是返回满足这些条件的所有Blog，这是非常有用的一个功能，以往我们使用其他类型框架或者直接使用JDBC的时候， 如果我们要达到同样的选择效果的时候，我们就需要拼SQL语句，这是极其麻烦的，比起来，上述的动态SQL就要简单多了。</p>
+<p>choose元素的作用就相当于JAVA中的switch语句，基本上跟JSTL中的choose的作用和用法是一样的，通常都是与when和otherwise搭配的。</p>
+<p>看如下一个例子：</p>
+<p><strong>Xml代码</strong></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+&lt;select id="dynamicChooseTest" parameterType="Blog" resultType="Blog"&gt; 
+ select * from t_blog where 11 = 1 
+ &lt;choose&gt; 
+  &lt;when test="title != null"&gt; 
+   and title = #{title} 
+  &lt;/when&gt; 
+  &lt;when test="content != null"&gt; 
+   and content = #{content} 
+  &lt;/when&gt; 
+  &lt;otherwise&gt; 
+   and owner = "owner1" 
+  &lt;/otherwise&gt; 
+ &lt;/choose&gt; 
+&lt;/select&gt;</pre>
+</div>
+<p>when元素表示当when中的条件满足的时候就输出其中的内容，跟JAVA中的switch效果差不多的是按照条件的顺序，当when中有条件满足的时候，就会跳出choose，即所有的when和otherwise条件中，只有一个会输出，当所有的我很条件都不满足的时候就输出otherwise中的内容。</p>
+<p>所以上述语句的意思非常简单， 当title!=null的时候就输出and titlte = #{title}，不再往下判断条件，当title为空且content!=null的时候就输出and content = #{content}，当所有条件都不满足的时候就输出otherwise中的内容。</p>
+<p>where语句的作用主要是简化SQL语句中where中的条件判断的，先看一个例子，再解释一下where的好处。</p>
+<p><strong>Xml代码</strong></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+&lt;select id="dynamicWhereTest" parameterType="Blog" resultType="Blog"&gt; 
+ select * from t_blog 
+ &lt;where&gt; 
+  &lt;if test="title != null"&gt; 
+   title = #{title} 
+  &lt;/if&gt; 
+  &lt;if test="content != null"&gt; 
+   and content = #{content} 
+  &lt;/if&gt; 
+  &lt;if test="owner != null"&gt; 
+   and owner = #{owner} 
+  &lt;/if&gt; 
+ &lt;/where&gt; 
+&lt;/select&gt;</pre>
+</div>
+<p>&nbsp;where元素的作用是会在写入where元素的地方输出一个where，另外一个好处是你不需要考虑where元素里面的条件输出是什么样子的，MyBatis会智能的帮你处理，如果所有的条件都不满足那么MyBatis就会查出所有的记录，如果输出后是and 开头的，MyBatis会把第一个and忽略，当然如果是or开头的，MyBatis也会把它忽略；此外，在where元素中你不需要考虑空格的问题，MyBatis会智能的帮你加上。像上述例子中，如果title=null， 而content != null，那么输出的整个语句会是select * from t_blog where content = #{content}，而不是select * from t_blog where and content = #{content}，因为MyBatis会智能的把首个and 或 or 给忽略。</p>
+<p>trim元素的主要功能是可以在自己包含的内容前加上某些前缀，也可以在其后加上某些后缀，与之对应的属性是prefix和suffix；可以把包含内容的首部某些内容覆盖，即忽略，也可以把尾部的某些内容覆盖，对应的属性是prefixOverrides和suffixOverrides；正因为trim有这样的功能，所以我们也可以非常简单的利用trim来代替where元素的功能，示例代码如下：</p>
+<p><strong>Xml代码</strong></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+&lt;select id="dynamicTrimTest" parameterType="Blog" resultType="Blog"&gt; 
+ select * from t_blog 
+ &lt;trim prefix="where" prefixOverrides="and |or"&gt; 
+  &lt;if test="title != null"&gt; 
+   title = #{title} 
+  &lt;/if&gt; 
+  &lt;if test="content != null"&gt; 
+   and content = #{content} 
+  &lt;/if&gt; 
+  &lt;if test="owner != null"&gt; 
+   or owner = #{owner} 
+  &lt;/if&gt; 
+ &lt;/trim&gt; 
+&lt;/select&gt;</pre>
+</div>
+<p>set元素主要是用在更新操作的时候，它的主要功能和where元素其实是差不多的，主要是在包含的语句前输出一个set，然后如果包含的语句是以逗号结束的话将会把该逗号忽略，如果set包含的内容为空的话则会出错。有了set元素我们就可以动态的更新那些修改了的字段。下面是一段示例代码：</p>
+<p><strong>Xml代码 </strong><br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+&lt;update id="dynamicSetTest" parameterType="Blog"&gt; 
+ update t_blog 
+ &lt;set&gt; 
+  &lt;if test="title != null"&gt; 
+   title = #{title}, 
+  &lt;/if&gt; 
+  &lt;if test="content != null"&gt; 
+   content = #{content}, 
+  &lt;/if&gt; 
+  &lt;if test="owner != null"&gt; 
+   owner = #{owner} 
+  &lt;/if&gt; 
+ &lt;/set&gt; 
+ where id = #{id} 
+&lt;/update&gt;</pre>
+</div>
+<p>&nbsp;上述示例代码中，如果set中一个条件都不满足，即set中包含的内容为空的时候就会报错。</p>
+<p>foreach的主要用在构建in条件中，它可以在SQL语句中进行迭代一个集合。foreach元素的属性主要有item，index，collection，open，separator，close。item表示集合中每一个元素进行迭代时的别名，index指定一个名字，用于表示在迭代过程中，每次迭代到的位置，open表示该语句以什么开始，separator表示在每次进行迭代之间以什么符号作为分隔符，close表示以什么结束，在使用foreach的时候最关键的也是最容易出错的就是collection属性，该属性是必须指定的，但是在不同情况下，该属性的值是不一样的，主要有一下3种情况：<br />
+</p>
+<p>1.如果传入的是单参数且参数类型是一个List的时候，collection属性值为list<br />
+</p>
+<p>2.如果传入的是单参数且参数类型是一个array数组的时候，collection的属性值为array<br />
+</p>
+<p>3.如果传入的参数是多个的时候，我们就需要把它们封装成一个Map了，当然单参数也可以封装成map，实际上如果你在传入参数的时候，在MyBatis里面也是会把它封装成一个Map的，map的key就是参数名，所以这个时候collection属性值就是传入的List或array对象在自己封装的map里面的key</p>
+<p><span style="color: #ff0000">下面分别来看看上述三种情况的示例代码：</span></p>
+<p><strong>1.单参数List的类型：</strong></p>
+<p>Xml代码&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+&lt;select id="dynamicForeachTest" resultType="Blog"&gt; 
+ select * from t_blog where id in 
+ &lt;foreach collection="list" index="index" item="item" open="(" separator="," close=")"&gt; 
+  #{item} 
+ &lt;/foreach&gt; 
+&lt;/select&gt;</pre>
+</div>
+<p>&nbsp;上述collection的值为list，对应的Mapper是这样的</p>
+<p><strong>Java代码 </strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public List&lt;Blog&gt; dynamicForeachTest(List&lt;Integer&gt; ids); </pre>
+<br />
+</div>
+<p><strong>测试代码：<br />
+</strong></p>
+<p>Java代码</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+@Test 
+public void dynamicForeachTest() { 
+ SqlSession session = Util.getSqlSessionFactory().openSession(); 
+ BlogMapper blogMapper = session.getMapper(BlogMapper.class); 
+ List&lt;Integer&gt; ids = new ArrayList&lt;Integer&gt;(); 
+ ids.add(1); 
+ ids.add(3); 
+ ids.add(6); 
+ List&lt;Blog&gt; blogs = blogMapper.dynamicForeachTest(ids); 
+ for (Blog blog : blogs) 
+  System.out.println(blog); 
+ session.close(); 
+}</pre>
+</div>
+<p><strong>&nbsp;2.单参数array数组的类型：</strong></p>
+<p>Xml代码</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+&lt;select id="dynamicForeach2Test" resultType="Blog"&gt; 
+ select * from t_blog where id in 
+ &lt;foreach collection="array" index="index" item="item" open="(" separator="," close=")"&gt; 
+  #{item} 
+ &lt;/foreach&gt; 
+&lt;/select&gt; </pre>
+</div>
+<p>&nbsp;<strong>上述collection为array，对应的Mapper代码：</strong></p>
+<p>Java代码</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public List&lt;Blog&gt; dynamicForeach2Test(int[] ids); </pre>
+<br />
+</div>
+<p>对应的测试代码：</p>
+<p>Java代码</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+@Test 
+public void dynamicForeach2Test() { 
+ SqlSession session = Util.getSqlSessionFactory().openSession(); 
+ BlogMapper blogMapper = session.getMapper(BlogMapper.class); 
+ int[] ids = new int[] {1,3,6,9}; 
+ List&lt;Blog&gt; blogs = blogMapper.dynamicForeach2Test(ids); 
+ for (Blog blog : blogs) 
+  System.out.println(blog); 
+ session.close(); 
+}</pre>
+</div>
+<p><strong>3.自己把参数封装成Map的类型</strong></p>
+<p>Xml代码</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+&lt;select id="dynamicForeach3Test" resultType="Blog"&gt; 
+ select * from t_blog where title like "%"#{title}"%" and id in 
+ &lt;foreach collection="ids" index="index" item="item" open="(" separator="," close=")"&gt; 
+  #{item} 
+ &lt;/foreach&gt; 
+&lt;/select&gt;</pre>
+</div>
+<p>上述collection的值为ids，是传入的参数Map的key，对应的Mapper代码：</p>
+<p>Java代码</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public List&lt;Blog&gt; dynamicForeach3Test(Map&lt;String, Object&gt; params); </pre>
+<br />
+</div>
+<p><strong>&nbsp; 对应测试代码：</strong></p>
+<p>Java代码</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+@Test 
+public void dynamicForeach3Test() { 
+ SqlSession session = Util.getSqlSessionFactory().openSession(); 
+ BlogMapper blogMapper = session.getMapper(BlogMapper.class); 
+ final List&lt;Integer&gt; ids = new ArrayList&lt;Integer&gt;(); 
+ ids.add(1); 
+ ids.add(2); 
+ ids.add(3); 
+ ids.add(6); 
+ ids.add(7); 
+ ids.add(9); 
+ Map&lt;String, Object&gt; params = new HashMap&lt;String, Object&gt;(); 
+ params.put("ids", ids); 
+ params.put("title", "中国"); 
+ List&lt;Blog&gt; blogs = blogMapper.dynamicForeach3Test(params); 
+ for (Blog blog : blogs) 
+  System.out.println(blog); 
+ session.close(); 
+}</pre>
+</div>
+<p>以上内容是本文叙述mybatis的动态sql详解，希望大家喜欢。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/94836.html'>C++实现将数组中的值反转</a><a>下一篇</a><a href='/php/biji/94838.html'>CSS固定宽度的三列布局运用实例解析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

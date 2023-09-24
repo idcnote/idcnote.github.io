@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL备份恢复设计思路的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL备份恢复设计思路的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+背景
+首先交代一" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL备份恢复设计思路的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:13:32                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL备份恢复设计思路的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+背景
+首先交代一</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL备份恢复设计思路的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h3>背景</h3>
+<p>首先交代一下背景，由于某些因素的限制，我们公司目前的备份策略采用的是隔天全备的方案，增量备份则使用的是binlog server的方式，那么如何快速恢复就成为了我们需要思考的问题</p>
+<h3>恢复需求</h3>
+<p>根据我以往的一些经验来说，通常需要从备份恢复数据的场景有如下几种：</p>
+<p>1.被误删库了</p>
+<p>2.被误删表了，类型为TRUNCATE或者DROP</p>
+<p>3.被误删列了，类型为ALTER ... DROP COLUMN</p>
+<p>4.被误删数据了，类型为DELETE或者UPDATE或者REPLACE</p>
+<p>5.表空间损坏或出现坏块了</p>
+<p>根据场景来说，我们可以大致分为两类：</p>
+<ul>
+	<li>第一类为不可逆恢复，也就是通常的DDL，比如上述的1、2、3、5等场景</li>
+	<li>第二类为可逆的恢复，通常可以利用binlog进行回滚（要求binlog格式为ROW，binlog_image为FULL），也就是对应上述的场景4</li>
+</ul>
+<p>对于第二类的恢复需求一般来说都比较容易处理，可以利用binlog回滚工具，例如业界比较著名的有binlog2sql以及MyFlash等，这里暂不赘述，我们重点来讨论第一类需求。</p>
+<p>为了达到快速恢复的目的，业界DBA经常会采用的方式就是部署一个延迟从库来解决，我们公司目前 所有的核心DB都部署了延迟从库。但是即便有了延迟从库，假设我们错过了延迟的时间，或者在后续利用延迟从库恢复的时候指定错了位点，导致了误删DDL同样应用到了从库，这个时候我们就没有办法利用延迟从库这根救命稻草了。</p>
+<h3>全备恢复（异机恢复）</h3>
+<p>此时，我们只能通过备份来进行数据恢复了。首先我们需要恢复全备，通常来说就是xtrabackup备份的物理备份了。假设你的备份在远程的机器上，那么你可能需要做如下几步动作来进行全备恢复：</p>
+<ol>
+	<li>将备份scp或者rsync到目标实例机器上</li>
+	<li>假设备份文件是压缩的情况下，需要解压</li>
+	<li>解压完成后，需要apply redo log</li>
+	<li>更改文件权限</li>
+	<li>假设你直接将文件拷贝到的目标实例的datadir目录下，那么这一步你就可以直接启动mysqld，假设不是，那么你还需要将数据文件move-back或者copy-back到目标实例的datadir</li>
+	<li>实例启动</li>
+</ol>
+<h3>增备恢复</h3>
+<p>到这里，全备已经恢复完成了，接下来需要做的就是增量恢复了。按照我们之前的备份方案，我们需要通过binlog来完成增量数据的恢复。对于binlog恢复，我们通常需要以下几个步骤</p>
+<ol>
+	<li>确定全备对应的binlog位点，也就是需要恢复的起始点</li>
+	<li>解析主库的binlog，确定误删数据的位点，作为我们恢复的终点</li>
+	<li>利用mysqlbinlog &mdash;start-position &mdash;stop-position+管道的方式，将binlog恢复到目标实例上</li>
+</ol>
+<p>binlog恢复的方式有很多种，你可以用的是原先master上的binlog，也可以用binlogserver上的binlog，需要做的就是找到binlog恢复的终点即可。</p>
+<h3>增备恢复优化</h3>
+<p>到这里，你可能会觉得，利用binlog恢复有点麻烦。确实是这样的，利用mysqlbinlog命令并没有办法指定恢复到哪个GTID，只能通过解析binlog，找到需要恢复到的GTID对应的pos位点才行，这对于自动化来说实现起来会比较麻烦。另外，如果利用mysqlbinlog命令恢复，属于单线程恢复，假设需要恢复的binlog量比较多的话，那么这个增量恢复的时间可想而知。</p>
+<p>那么有什么办法能加速binlog应用呢？这里我们就想到了MySQL5.7的并行复制，如果我们能用到sql thread的并行复制，是不是这个问题就解决了呢？</p>
+<h3>master上binlog恢复</h3>
+<p>我们回到全备恢复的位点，我们将新实例作为原先的master的slave，然后恢复到指定的GTID位置就可以了呢？没错，这是一种非常简便又轻松还不容易出错的方式，并且还可以利用并行复制的原理来加速binlog应用的目的。但是这种方式的一个要求就是原先的master最老的binlog包含了我们需要的起始恢复位点，这个很容易想到，所以，这将成为我们首选的恢复方式。</p>
+<h3>binlogserver上binlog恢复</h3>
+<p>假设原先master上的binlog已经被purge了，那么我们那需要从binlog上去恢复。有人可能会想到将binlogserver上的binlog拷贝到原先的master上，然后通过修改binlog index来达到注册的目的，实际上这并不可取，具体原因可以见《手动注册binlog文件造成主从异常》。</p>
+<p>我们可以采取的方式是什么呢？就是利用binlogserver做成伪装master，然后将从库change上去，其思想就是欺骗slave，让slave的io_thread将缺失的binlog拉取过来，sql_thread并行应用binlog event（我们将在下一节具体演示这种方式）。</p>
+<h3>优化后的恢复流程</h3>
+<p>经过优化以后，我们的增备恢复流程就变成了，首先通过master上的binlog进行恢复，如果发现master上的binlog已经被purge了，那么通过binlogserver上的binlog进行恢复，这样一来我认为是比较科学合理的恢复流程。</p>
+<p>各种恢复方式时效性对比</p>
+<p style="text-align: center"><!---ecms -ecms -ecms 
+【图缺】
+--></p>
+<h3>业务恢复</h3>
+<p>到这里，我们已经完成了全量+增量的备份数据恢复，这个时候需要同研发确认数据，确认完成以后将对应的表恢复到原先的master，通常采用的方式有：</p>
+<ol>
+	<li>mysqldump导出+导入目标实例</li>
+	<li>表空间传输</li>
+</ol>
+<h3>总结</h3>
+<p>本节主要介绍了备份恢复的设计流程，在我们没有办法优化全备恢复的情况下，我们通过优化增量备份方式和流程达到缩短恢复时间的目的。并且需要说明的一点是，本节介绍的目前我还没有完全测试，不保证每个点都是正确的，还需要进一步验证，验证通过以后我也会通知大家，并且结合到现有的数据库运维平台，做到自动化恢复</p>
+<p>最后还是提醒几点：</p>
+<ol>
+	<li>数据是无形的财产，请广大DBA朋友务必做好备份并做好备份验证</li>
+	<li>如果有条件的情况下，尽量部署延迟从库</li>
+	<li>做好恢复预案，免得恢复的时候手忙脚乱，菊花打紧</li>
+	<li>根据场景选择合适的恢复手段，尽量缩短恢复时间</li>
+</ol>
+<p>以上就是MySQL备份恢复设计思路的详细内容，更多关于MySQL备份恢复的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL备份恢复设计思路的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/140.html'>解决MySQL删除用户 bug的问题</a><a>下一篇</a><a href='/mysql/biji/142.html'>清除MySQL注册表的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

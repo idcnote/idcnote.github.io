@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>深入JVM剖析Java的线程堆栈_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="在这篇文章里我将教会你如何分析JVM的线程堆栈以及如何从堆栈信息中找出问题的根因。在我看来线程堆栈分析技术是Java EE产品支持工程师所必须掌握的一门技术。在线程堆栈中" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">深入JVM剖析Java的线程堆栈</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>在这篇文章里我将教会你如何分析JVM的线程堆栈以及如何从堆栈信息中找出问题的根因。在我看来线程堆栈分析技术是Java EE产品支持工程师所必须掌握的一门技术。在线程堆栈中</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>在这篇文章里我将教会你如何分析JVM的线程堆栈以及如何从堆栈信息中找出问题的根因。在我看来线程堆栈分析技术是Java EE产品支持工程师所必须掌握的一门技术。在线程堆栈中存储的信息，通常远超出你的想象，我们可以在工作中善加利用这些信息。</p>
+<p>我的目标是分享我过去十几年来在线程分析中积累的知识和经验。这些知识和经验是在各种版本的JVM以及各厂商的JVM供应商的深入分析中获得的，在这个过程中我也总结出大量的通用问题模板。</p>
+<p>那么，准备好了么，现在就把这篇文章加入书签，在后续几周中我会给大家带来这一系列的专题文章。还等什么，请赶紧给你的同事和朋友分享这个线程分析培训计划吧。</p>
+<p>听上去是不错，我确实是应该提升我的线程堆栈分析技能...但我要从哪里开始呢？</p>
+<p>我的建议是跟随我来完成这个线程分析培训计划。下面是我们会覆盖到的培训内容。同时，我会把我处理过的实际案例分享给大家，以便与大家学习和理解。</p>
+<p>1) 线程堆栈概述及基础知识<br />
+2) 线程堆栈的生成原理以及相关工具<br />
+3) 不同JVM线程堆栈的格式的差异（Sun HotSpot、IBM JRE、Oracal JRockit）<br />
+4) 线程堆栈日志介绍以及解析方法<br />
+5) 线程堆栈的分析和相关的技术<br />
+6) 常见的问题模板（线程竟态、死锁、IO调用挂死、垃圾回收/OutOfMemoryError问题、死循环等）<br />
+7) 线程堆栈问题实例分析</p>
+<p>我希望这一系列的培训能给你带来确实的帮助，所以请持续关注每周的文章更新。</p>
+<p>但是如果我在学习过程中有疑问或者无法理解文章中的内容该怎么办？</p>
+<p>不用担心，把我当做你的导师就好。任何关于线程堆栈的问题都可以咨询我（前提是问题不能太low）。请随意选择下面的几种方式与我取得联系：</p>
+<p>1) 直接本文下面发表评论（不好意思的话可以匿名）<br />
+2) 将你的线程堆栈数据提交到Root Cause Analysis forum<br />
+3) 发Email给我，地址是 @phcharbonneau@hotmail.com</p>
+<p>能帮我分析我们产品上遇到的问题么？</p>
+<p>当然可以，如果你愿意的话可以把你的堆栈现场数据通过邮件或论坛 Root Cause Analysis forum发给我。处理实际问题是才是学习提升技能的王道。</p>
+<p>我真心期望大家能够喜欢这个培训。所以我会尽我所能去为你提供高质量的材料，并回答大家的各种问题。</p>
+<p>在介绍线程堆栈分析技术和问题模式之前，先要给大家讲讲基础的内容。所以在这篇帖子里，我将先覆盖到最基本的内容，这样大家就能更好的去理解JVM、中间件、以及Java EE容器之间的交互。</p>
+<p><strong>Java VM 概述</strong></p>
+<p>Java虚拟机是Jave EE 平台的基础。它是中间件和应用程序被部署和运行的地方。</p>
+<p>JVM向中间件软件和你的Java/Java EE程序提供了下面这些东西:</p>
+<p>–&nbsp;&nbsp; （二进制形式的）Java / Java EE 程序运行环境<br />
+–&nbsp;&nbsp; 一些程序功能特性和工具 (IO 基础设施，数据结构，线程管理，安全，监控 等等.)<br />
+–&nbsp;&nbsp; 借助垃圾回收的动态内存分配与管理</p>
+<p>你的JVM可以驻留在许多的操作系统 (Solaris, AIX, Windows 等等.)之上，并且能根据你的物理服务器配置，你可以在每台物理/虚拟服务器上安装1到多个JVM进程.</p>
+<p><strong>JVM与中间件之间的交互</strong></p>
+<p>下面这张图展示了JVM、中间件和应用程序之间的高层交互模型。<br />
+</p>
+<p></p>
+<p>图中展示的JVM、中间件和应用程序件之间的一些简单和典型的交互。如你所见，标准Java EE应用程序的线程的分配实在中间件内核与JVM之间完成的。（当然也有例外，应用程序可以直接调用API来创建线程，这种做法并不常见，而且在使用的过程中也要特别的小心）</p>
+<p>同时，请注意一些线程是由JVM内部来进行管理的，典型的例子就是垃圾回收线程，JVM内部使用这个线程来做并行的垃圾回收处理。</p>
+<p>因为大多数的线程分配都是由Java EE容器完成的，所以能够理解和认识线程堆栈跟踪，并能从线程堆栈数据中识别出它来，对你而言很重要. 这可以让你能够快速的知道Java EE容器正要执行的是什么类型的请求.</p>
+<p>从一个线程转储堆栈的分析角度来看，你将能了解从JVM发现的线程池之间的不同，并识别出请求的类型.</p>
+<p>最后一节会向你提供对于HotSop VM而言什么是JVM线程堆栈的一个概述，还有你将会遇到的各种不同的线程. 而对 IBM VM 线程堆栈形式详细内容将会在第四节向你提供.</p>
+<p>请注意你可以从根本原因分析论坛获得针对本文的线程堆栈示例.</p>
+<p><strong>JVM 线程堆栈——它是什么&#63;</strong></p>
+<p>JVM线程堆栈是一个给定时间的快照，它能向你提供所有被创建出来的Java线程的完整清单.</p>
+<p>每一个被发现的Java线程都会给你如下信息:</p>
+<p>– 线程的名称；经常被中间件厂商用来识别线程的标识，一般还会带上被分配的线程池名称以及状态 (运行，阻塞等等.)</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; – 线程类型 & 优先级，例如 : daemon prio=3 ** 中间件程序一般以后台守护的形式创建他们的线程，这意味着这些线程是在后台运行的；它们会向它们的用户提供服务，例如：向你的Java EE应用程序 **</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; – Java线程ID，例如 : tid=0x000000011e52a800 ** 这是通过 java.lang.Thread.getId() 获得的Java线程ID，它常常用自增长的长整形 1..n** 实现</p>
+<p><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; – 原生线程ID，例如 : nid=0x251c** ，之所以关键是因为原生线程ID可以让你获得诸如从操作系统的角度来看那个线程在你的JVM中使用了大部分的CPU时间等这样的相关信息. **</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; – Java线程状态和详细信息，例如: waiting for monitor entry [0xfffffffea5afb000] java.lang.Thread.State: BLOCKED (on object monitor)<br />
+** 可以快速的了解到线程状态极其当前阻塞的可能原因 **</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; – Java线程栈跟踪；这是目前为止你能从线程堆栈中找到的最重要的数据. 这也是你花费最多分析时间的地方，因为Java栈跟踪向提供了你将会在稍后的练习环节了解到的导致诸多类型的问题的根本原因，所需要的90%的信息。</p>
+<p><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; – Java 堆内存分解; 从HotSpot VM 1.6版本开始，在线程堆栈的末尾处可以看到HotSpot的内存使用情况，比如说Java的堆内存(YoungGen, OldGen) & PermGen 空间。这个信息对分析由于频繁GC而引起的问题时，是很有用的。你可以使用已知的线程数据或模式做一个快速的定位。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+Heap
+PSYoungGen   total 466944K, used 178734K [0xffffffff45c00000, 0xffffffff70800000, 0xffffffff70800000)
+eden space 233472K, 76% used [0xffffffff45c00000,0xffffffff50ab7c50,0xffffffff54000000)
+from space 233472K, 0% used [0xffffffff62400000,0xffffffff62400000,0xffffffff70800000)
+to  space 233472K, 0% used [0xffffffff54000000,0xffffffff54000000,0xffffffff62400000)
+PSOldGen    total 1400832K, used 1400831K [0xfffffffef0400000, 0xffffffff45c00000, 0xffffffff45c00000)
+object space 1400832K, 99% used [0xfffffffef0400000,0xffffffff45bfffb8,0xffffffff45c00000)
+PSPermGen    total 262144K, used 248475K [0xfffffffed0400000, 0xfffffffee0400000, 0xfffffffef0400000)
+object space 262144K, 94% used [0xfffffffed0400000,0xfffffffedf6a6f08,0xfffffffee0400000)
+</pre>
+</div>
+<p>线程堆栈信息大拆解</p>
+<p>为了让大家更好的理解，给大家提供了下面的这张图，在这张图中将HotSpot VM上的线程堆栈信息和线程池做了详细的拆解，如下图所示： <br />
+</p>
+<p></p>
+<p>上图中可以看出线程堆栈是由多个不同部分组成的。这些信息对问题分析都很重要，但对不同的问题模式的分析会使用不同的部分（问题模式会在后面的文章中做模拟和演示。）</p>
+<p><br />
+现在通过这个分析样例，给大家详细解释一下HoteSpot上线程堆栈信息中的各个组成部分：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+# Full thread dump标示符
+
+</pre>
+</div>
+<p>“Full thread dump”是一个全局唯一的关键字，你可以在中间件和单机版本Java的线程堆栈信息的输出日志中找到它（比如说在UNIX下使用：kill -3 &lt;PID&gt; ）。这是线程堆栈快照的开始部分。<br />
+&nbsp;<br />
+Full thread dump Java HotSpot(TM) 64-Bit Server VM (20.0-b11 mixed mode):</p>
+<p><strong># Java EE 中间件,第三方以及自定义应用软件中的线程</strong></p>
+<p>这个部分是整个线程堆栈的核心部分，也是通常需要花费最多分析时间的部分。堆栈中线程的个数取决你使用的中间件，第三方库（可能会有独立线程）以及你的应用程序（如果创建自定义线程，这通常不是一个很好的实践）。</p>
+<p><br />
+在我们的示例线程堆栈中，WebLogic是我们所使用的中间件。从Weblogic 9.2开始, 会使用一个用“'weblogic.kernel.Default (self-tuning)”唯一标识的能自行管理的线程池<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+"[STANDBY] ExecuteThread: '414' for queue: 'weblogic.kernel.Default (self-tuning)'" daemon prio=3 tid=0x000000010916a800 nid=0x2613 in Object.wait() [0xfffffffe9edff000]
+  java.lang.Thread.State: WAITING (on object monitor)
+    at java.lang.Object.wait(Native Method)
+    - waiting on &lt;0xffffffff27d44de0&gt; (a weblogic.work.ExecuteThread)
+    at java.lang.Object.wait(Object.java:485)
+    at weblogic.work.ExecuteThread.waitForRequest(ExecuteThread.java:160)
+    - locked &lt;0xffffffff27d44de0&gt; (a weblogic.work.ExecuteThread)
+    at weblogic.work.ExecuteThread.run(ExecuteThread.java:181)
+</pre>
+</div>
+<p><strong># HotSpot VM 线程<br />
+</strong>这是一个有Hotspot VM管理的内部线程，用于执行内部的原生操作。一般你不用对此操太多心，除非你(通过相关的线程堆栈以及 prstat或者原生线程Id)发现很高的CPU占用率.<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+"VM Periodic Task Thread" prio=3 tid=0x0000000101238800 nid=0x19 waiting on condition
+</pre>
+</div>
+<p><strong># HotSpot GC 线程<br />
+</strong>当使用 HotSpot 进行并行 GC (如今在使用多个物理核心的环境下很常见), 默认创建的HotSpot VM 或者每个JVM管理一个有特定标识的GC线程时. 这些GC线程可以让VM以并行的方式执行其周期性的GC清理, 这会导致GC时间的总体减少；与此同时的代价是CPU的使用时间会增加.<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+"GC task thread#0 (ParallelGC)" prio=3 tid=0x0000000100120000 nid=0x3 runnable
+"GC task thread#1 (ParallelGC)" prio=3 tid=0x0000000100131000 nid=0x4 runnable
+………………………………………………………………………………………………………………………………………………………………
+</pre>
+</div>
+<p><br />
+这事非常关键的数据，因为当你遇到跟GC有关的问题，诸如过度GC、内存泄露等问题是，你将可以利用这些线程的原生Id值关联的操作系统或者Java线程，进而发现任何对CPI时间的高占用. 未来的文章你将会了解到如何识别并诊断这样的问题.</p>
+<p><strong># JNI 全局引用计数<br />
+</strong>JNI (Java 本地接口)的全局引用就是从本地代码到由Java垃圾收集器管理的Java对象的基本的对象引用. 它的角色就是阻止对仍然在被本地代码使用，但是技术上已经不是Java代码中的“活动的”引用了的对象的垃圾收集.</p>
+<p>同时为了侦测JNI相关的泄露而留意JNI引用也很重要. 如果你的程序直接使用了JNI，或者像监听器这样的第三方工具，就容易造成本地的内存泄露.<br />
+&nbsp;<br />
+JNI global references: 1925</p>
+<p><strong># Java 堆栈使用视图</strong></p>
+<p><br />
+这些数据被添加回了 JDK 1 .6 ，向你提供有关Hotspot堆栈的一个简短而快速的视图. 我发现它在当我处理带有过高CPU占用的GC相关的问题时非常有用，你可以在一个单独的快照中同时看到线程堆栈以及Java堆的信息，让你当时就可以在一个特定的Java堆内存空间中解析（或者排除）出任何的关键点. 你如在我们的示例线程堆栈中所见，Java 的堆 OldGen 超出了最大值!<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+Heap
+ PSYoungGen   total 466944K, used 178734K [0xffffffff45c00000, 0xffffffff70800000, 0xffffffff70800000)
+ eden space 233472K, 76% used [0xffffffff45c00000,0xffffffff50ab7c50,0xffffffff54000000)
+ from space 233472K, 0% used [0xffffffff62400000,0xffffffff62400000,0xffffffff70800000)
+ to  space 233472K, 0% used [0xffffffff54000000,0xffffffff54000000,0xffffffff62400000)
+ PSOldGen    total 1400832K, used 1400831K [0xfffffffef0400000, 0xffffffff45c00000, 0xffffffff45c00000)
+ object space 1400832K, 99% used [0xfffffffef0400000,0xffffffff45bfffb8,0xffffffff45c00000)
+ PSPermGen    total 262144K, used 248475K [0xfffffffed0400000, 0xfffffffee0400000, 0xfffffffef0400000)
+ object space 262144K, 94% used [0xfffffffed0400000,0xfffffffedf6a6f08,0xfffffffee040000
+</pre>
+</div>
+<p></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/104906.html'>win7下fedora23硬盘怎么安装 fedora23硬盘安装详细图文教程</a><a>下一篇</a><a href='/php/biji/104908.html'>详解MySQL中的NULL值</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

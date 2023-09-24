@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>公司仓库数据库服务器死锁过程及解决示例_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了公司仓库数据库服务器死锁过程及解决示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+
+死锁的四个必要" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">公司仓库数据库服务器死锁过程及解决示例</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:38:39                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了公司仓库数据库服务器死锁过程及解决示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+
+死锁的四个必要</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了公司仓库数据库服务器死锁过程及解决示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p></p>
+<h3>死锁的四个必要条件：</h3>
+<p></p>
+<p>互斥条件(Mutual exclusion)：资源不能被共享，只能由一个进程使用。</p>
+<p>请求与保持条件(Hold and wait)：已经得到资源的进程可以再次申请新的资源。</p>
+<p>非剥夺条件(No pre-emption)：已经分配的资源不能从相应的进程中被强制地剥夺。</p>
+<p>循环等待条件(Circular wait)：系统中若干进程组成环路，该环路中每个进程都在等待相邻进程正占用的资源。</p>
+<p>仓库拣货卡死，排查了数据库的很多地方，都没有头绪，最后到SQL Server 错误日志里查看，终于发现了蛛丝马迹</p>
+<p>代码如下：</p>
+<pre>
+<code>
+EXEC xp_readerrorlog 0,1,NULL,NULL,'2015-09-21','2015-10-10','DESC'
+   waiter id=process5c30e08 mode=U requestType=wait
+  waiter-list
+   owner id=process5c26988 mode=X
+  owner-list
+  keylock hobtid=72057597785604096 dbid=33 objectname=stoxxx.dbo.Orderxxx indexname=IX_PricingExpressProductCode_State id=lock17fa96980 mode=X associatedObjectId=72057597785604096
+   waiter id=process5c26988 mode=U requestType=wait
+  waiter-list
+   owner id=process5c30e08 mode=X
+  owner-list
+  keylock hobtid=72057597785604096 dbid=33 objectname=stoxxx.dbo.Orderxxx indexname=IX_PricingExpressProductCode_State id=lock87d69e780 mode=X associatedObjectId=72057597785604096
+ resource-list
+(@OperateState money,@HandledByNewWms bit,@State int,@OrderOut int)
+UPDATE [Orderxx] SET [OperateState] = @OperateState,[HandledByNewWms] = @HandledByNewWms WHERE (([Orderxxx].[State] = @State) And ([Orderxxx].[OrderOut] = @OrderOut) And ([Orderxxx].[PricingExpressProductCode] IN ('UKNIR')))  
+  inputbuf
+unknown   
+   frame procname=unknown line=1 sqlhandle=0x000000000000000000000000000000000000000000000000
+UPDATE [Orderxxx] SET [OperateState] = @OperateState,[HandledByNewWms] = @HandledByNewWms WHERE (([Orderxxx].[State] = @State) And ([Orderxxx].[OrderOut] = @OrderOut) And ([Orderxxx].[PricingExpressProductCode] IN ('UKNIR')))   
+   frame procname=adhoc line=1 stmtstart=134 sqlhandle=0x020000009d376d18a17e7ea51289d8caa2fb4de65c976389
+  executionStack
+  process id=process5c30e08 taskpriority=0 logused=10320 waitresource=KEY: 33:72057597785604096 (112399c2054a) waittime=4813 ownerId=31578743038 transactionname=user_transaction lasttranstarted=2015-09-24T10:22:58.410 XDES=0x372e95950 lockMode=U schedulerid=17 kpid=8496 status=suspended spid=153 sbid=0 ecid=0 priority=0 trancount=2 lastbatchstarted=2015-09-24T10:22:58.540 lastbatchcompleted=2015-09-24T10:22:58.540 clientapp=.Net SqlClient Data Provider hostname=CK1-WIN-WEB02 hostpid=37992 loginname=ck1.biz isolationlevel=read committed (2) xactid=31578743038 currentdb=33 lockTimeout=4294967295 clientoption1=671088672 clientoption2=128056
+(@OperateState money,@HandledByNewWms bit,@State int,@OrderOut int)UPDATE [Orderxxx] SET [OperateState] = @OperateState,[HandledByNewWms] = @HandledByNewWms WHERE (([Orderxxx].[State] = @State) And ([Orderxxx].[OrderOut] = @OrderOut) And ([Orderxxx].[PricingExpressProductCode] IN ('UKNIR')))  
+  inputbuf
+unknown   
+   frame procname=unknown line=1 sqlhandle=0x000000000000000000000000000000000000000000000000
+UPDATE [Orderxxx] SET [OperateState] = @OperateState,[HandledByNewWms] = @HandledByNewWms WHERE (([Orderxxx].[State] = @State) And ([Orderxxx].[OrderOut] = @OrderOut) And ([Orderxxx].[PricingExpressProductCode] IN ('UKNIR')))   
+   frame procname=adhoc line=1 stmtstart=134 sqlhandle=0x020000009d376d18a17e7ea51289d8caa2fb4de65c976389
+  executionStack
+  process id=process5c26988 taskpriority=0 logused=9892 waitresource=KEY: 33:72057597785604096 (70f5b089bb2b) waittime=4813 ownerId=31579268946 transactionname=user_transaction lasttranstarted=2015-09-24T10:27:01.357 XDES=0x98312f950 lockMode=U schedulerid=16 kpid=9184 status=suspended spid=454 sbid=0 ecid=0 priority=0 trancount=2 lastbatchstarted=2015-09-24T10:27:01.490 lastbatchcompleted=2015-09-24T10:27:01.487 clientapp=.Net SqlClient Data Provider hostname=CK1-WIN-WEB02 hostpid=37992 loginname=ck1.biz isolationlevel=read committed (2) xactid=31579268946 currentdb=33 lockTimeout=4294967295 clientoption1=671088672 clientoption2=128056
+ process-list
+ deadlock victim=process5c26988
+deadlock-list</code></pre>
+<p>咋一看上面的错误信息，可以发现两条相同的语句造成的死锁，但是这么短的语句不可能持有排他锁太久</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>再仔细分析一下错误日志，发现都死锁在同一个非聚集索引上，再问了一下开发，开发那边说，这条语句是在一个大事务里面，这个事务会做7、8件事</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>索引属性</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>还有索引里面的数据，发现很多重复值</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>SQL语句是这样的</p>
+<p>代码如下：</p>
+<pre>
+<code>
+(@OperateState money,@HandledByNewWms bit,@State int,@OrderOut int)
+@HandledByNewWms=(1) @OperateState=($1.0000) @OrderOut=(4055484) @State=(3) 
+UPDATE [Orderxxx] SET [OperateState] = $1.0000,[HandledByNewWms] = 1
+WHERE (([Orderxxx].[State] = 3) And ([Orderxxx].[OrderOut] = 4055484) And ([Orderxxx].[PricingExpressProductCode] IN ('UKRRM','UKRLE')))</code></pre>
+<p>下图为语句生成的执行计划</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>当时的情况是大量SQL语句被阻塞，而阻塞的语句正是下面这条语句</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>代码如下：</p>
+<pre>
+<code>
+UPDATE [Orderxxx] SET [OperateState] = $1.0000,[HandledByNewWms] = 1
+WHERE (([Orderxxx].[State] = 3) And ([Orderxxx].[OrderOut] = 4055484) And ([Orderxxx].[PricingExpressProductCode] IN ('UKRRM','UKRLE')))</code></pre>
+<p>解决方法</p>
+<p>上面得出几个症状</p>
+<p>1、update语句是在一个大事务里面，事务太大导致其他session等待排他锁的时间变长</p>
+<p>2、大家都在使用同一个非聚集索引，并扫描PricingExpressProductCode字段</p>
+<p>3、索引里的重复值很多</p>
+<p>从上面的症状基本可以判断，这个非聚集索引无啥用，可以禁用之</p>
+<p>代码如下：</p>
+<pre>
+<code>
+ALTER INDEX [IX_PricingExpressProductCode_State] ON [dbo].[Orderxxx] DISABLE</code></pre>
+<p></p>
+<p>禁用之后，死锁消失，问题解决，仓库的怨气也随之消失</p>
+<p>这一次排查过程时间有点长，但是很好定位，SQL Server错误日志给出了足够的信息定位死锁问题，所以遇到问题的时候一定要分析清楚日志</p>
+
+<p>注：关于公司仓库数据库服务器死锁过程及解决示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2582.html'>SQL Server2016模糊匹配的三种方式及效率用法</a><a>下一篇</a><a href='/mysql/biji/2584.html'>SQL Server SQL查询字段被包含语句的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

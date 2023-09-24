@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>浅谈Java的虚拟机结构以及虚拟机内存的优化_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="工作以来，代码越写越多，程序也越来越臃肿，效率越来越低，对于我这样一个追求完美的程序员来说，这是绝对不被允许的，于是除了不断优化程序结构外，内存优化和性能调优就成了我惯用的“" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">浅谈Java的虚拟机结构以及虚拟机内存的优化</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>工作以来，代码越写越多，程序也越来越臃肿，效率越来越低，对于我这样一个追求完美的程序员来说，这是绝对不被允许的，于是除了不断优化程序结构外，内存优化和性能调优就成了我惯用的“</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>工作以来，代码越写越多，程序也越来越臃肿，效率越来越低，对于我这样一个追求完美的程序员来说，这是绝对不被允许的，于是除了不断优化程序结构外，内存优化和性能调优就成了我惯用的“伎俩”。</p>
+<p>要对Java程序进行内存优化和性能调优，不了解虚拟机的内部原理(或者叫规范更严谨一点)是肯定不行的，这里推荐一本好书《深入Java虚拟机(第二版)》(Bill Venners著，曹晓刚 蒋靖 译，实际上本文正是作者阅读本书之后，对Java虚拟机的个人理解阐述)。当然了，了解Java虚拟机的好处并不仅限于上述两点好处。从更深一点的技术层面上看，了解Java虚拟机的规范和实现，将更加有助于我们编写高效、稳定的Java代码。比如，假如了解Java虚拟机的内存模型，了解虚拟机的内存回收机制，那么我们就不会过分依赖它，而会在需要的时候显式的”释放内存”(Java代码不能显式释放内存，但是可以通过释放对象引用告知垃圾回收器回收该对象需要被回收)，以降低不必要的内存消耗；假如我们了解Java栈的工作原理，那么我们就可以通过减少递归层数，减少循环次数来降低堆栈溢出的风险。可能对于应用开发人员来说，可能不会直接去涉及这些Java虚拟机底层实现的工作，但是了解这些背景知识，或多或少，都会对我们写的程序产生潜移默化的好的影响。</p>
+<p>本篇文章，将简明扼要的说明Java虚拟机的体系结构和内存模型，如有用词不妥或解释不准确之处，请不吝指正，深感荣幸!</p>
+<p><strong>Java 虚拟机体系结构<br />
+</strong></p>
+<p></p>
+<p><strong>类装载子系统</strong></p>
+<p>Java虚拟机有两种类装载器，分别是启动类装载器和用户自定义装载器。</p>
+<p>通类装载子系统通过类的全限定名（包名和类名，网络装载还包括 URL）将 Class 装载进运行时数据区。对于每一个被装载的类型，Java虚拟机都会创建一个java.lang.Class类的实例来代表该类型，该实例被放在内存中的堆区，而装载的类型信息则位于方法区，这一点和所有其他对象都是一样的。</p>
+<p>类装载子系统在装载一个类型前，除了要定位和导入对应的二进制class文件外，还要验证导入类的正确性，为类变量分配并初始化内存，以及解析符号引用为直接引用，这些动作严格按照以下顺序进行：</p>
+<p>1）装载——查找并装载类型的二进制数据；</p>
+<p>2）连接——执行验证，准备以及解析(可选)</p>
+<p>3）验证 确保被导入类型的正确性</p>
+<p>4）准备 为类变量分配内存，并将其初始化为默认值</p>
+<p>5）解析 把类型中的符号引用转换为直接应用</p>
+<p><strong>方法区</strong></p>
+<p>对于每一个被类装载子系统装载的类型，虚拟机都会保存下列数据到方法区：</p>
+<p>1.类型的全限定名<br />
+</p>
+<p>2.类型超类的全限定名(java.lang.Object没有超类)</p>
+<p>3.类型是类类型还是接口类型</p>
+<p>4.类型的访问修饰符</p>
+<p>5.任何直接超接口的全限定名有序列表</p>
+<p>除了上述基本类型信息，还将保存如下信息：</p>
+<p>6.类型的常量池<br />
+7.字段信息(包括字段名、字段类型、字段修饰符)<br />
+8.方法信息(包括方法名、返回类型、参数的数量和类型、方法修饰符，如果方法不是抽象和本地的，还将保存方法的字节码、操作数栈和该方法栈帧中的局部变量区的大小和异常表)<br />
+9.常量以外的所有类变量(其实就是类的静态变量，因为静态变量是所有实例共享的，且与类型直接相关，所以他们是类一级的变量，作为类的成员被保存在方法区)<br />
+10.一个到类ClassLoader的引用</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+//返回的就是刚才保存的ClassLoader引用 
+String.class.getClassLoader();
+一个到Class类的引用
+
+//将返回刚才保存的Class类的引用 
+String.class;
+
+</pre>
+</div>
+<p>注意，方法区也是可以被垃圾回收器回收的。</p>
+<p><strong>堆</strong></p>
+<p>Java程序在运行时创建的所有类实例或数组都放在同一个堆中，而每一个Java虚拟机也是有一个堆空间，所有线程共享一个堆(这就是一个多线程的Java程序会产生对象访问的同步问题的原因了)。</p>
+<p>由于每一种Java虚拟机都有对虚拟机规范的不同实现，所以我们可能不知道每一种Java虚拟机在堆中是以何种形式表示对象实例的，不过我们可以通过下面这可能的实现来一窥端倪：<br />
+</p>
+<p></p>
+<p><strong>程序计数器</strong></p>
+<p>对于运行中的Java程序而言，每一个线程都有自己的PC（程序计数器）寄存器，它是在该线程启动时创建的，大小为一个字长，用来保存需要被执行的下一行代码的位置。</p>
+<p><strong>Java栈</strong></p>
+<p>每一个线程都有一个Java栈，以栈帧为单位保存线程的运行状态。虚拟机对Java栈的操作有两种：压栈和出栈，二者都已帧为单位。栈帧保存了传入参数、局部变量、中间运算结果等数据，在方法完成时被弹出，然后释放。</p>
+<p>看一下两个局部变量相加时栈帧的内存快照<br />
+</p>
+<p><strong></strong></p>
+<p><strong>本地方法栈</strong></p>
+<p>这是 Java 调用操作系统本地库的地方，用来实现 JNI（Java Native Interface，Java 本地接口）</p>
+<p><strong>执行引擎</strong></p>
+<p>Java虚拟机的核心，控制装入 Java 字节码并解析；对于运行中的Java程序而言，每一个线程都是一个独立的虚拟机执行引擎的实例，从线程生命周期的开始到结束，他要么在执行字节码，要么在执行本地方法。</p>
+<p><strong>本地接口</strong></p>
+<p>连接了本地方法栈和操作系统库。</p>
+<p>注:文中所有提到”Java虚拟机”的地方都是指”JavaEE和JavaSE平台的Java虚拟机规范”。</p>
+<p><strong>虚拟机内存优化实践</strong></p>
+<p>既然提到内存，就不得不说到内存泄露。众所周知，Java是从C++的基础上发展而来的，而C++程序的很大的一个问题就是内存泄露难以解决，尽管Java的JVM有一套自己的垃圾回收机制来回收内存，在许多情况下并不需要java程序开发人员操太多的心，但也是存在泄露问题的，只是比C++小一点。比如说，程序中存在被引用但无用的对象：程序引用了该对象，但后续不会或者不能再使用它，那么它占用的内存空间就浪费了。</p>
+<p>我们先来看看GC是如何工作的:监控每一个对象的运行状态，包括对象的申请、引用、被引用、赋值等，当该对象不再被引用时，释放对象(GC本文的重点，不做过多阐述)。很多Java程序员过分依赖GC，但问题的关键是无论JVM的垃圾回收机制做得多好，内存总归是有限的资源，因此就算GC会为我们完成了大部分的垃圾回收，但适当地注意编码过程中的内存优化还是很必要的。这样可以有效的减少GC次数，同时提升内存利用率，最大限度地提高程序的效率。</p>
+<p>总体而言，Java虚拟机的内存优化应从两方面着手：Java虚拟机和Java应用程序。前者指根据应用程序的设计通过虚拟机参数控制虚拟机逻辑内存分区的大小以使虚拟机的内存与程序对内存的需求相得益彰；后者指优化程序算法，降低GC负担，提高GC回收成功率。</p>
+<p>通过参数优化虚拟机内存的参数如下所示：</p>
+<p>Xms</p>
+<p>初始Heap大小</p>
+<p>Xmx</p>
+<p>java heap最大值</p>
+<p>Xmn</p>
+<p>young generation的heap大小</p>
+<p>Xss</p>
+<p>每个线程的Stack大小</p>
+<p>上面是三个比较常用的参数，还有一些：</p>
+<p>XX:MinHeapFreeRatio=40</p>
+<p>Minimum percentage of heap free after GC to avoid expansion.</p>
+<p>XX:MaxHeapFreeRatio=70</p>
+<p>Maximum percentage of heap free after GC to avoid shrinking.</p>
+<p>XX:NewRatio=2</p>
+<p>Ratio of new/old generation sizes. [Sparc -client:8; x86 -server:8; x86 -client:12.]-client:8 (1.3.1+), x86:12]</p>
+<p>XX:NewSize=2.125m</p>
+<p>Default size of new generation (in bytes) [5.0 and newer: 64 bit VMs are scaled 30% larger; x86:1m; x86, 5.0 and older: 640k]</p>
+<p>XX:MaxNewSize=</p>
+<p>Maximum size of new generation (in bytes). Since 1.4, MaxNewSize is computed as a function of NewRatio.</p>
+<p>XX:SurvivorRatio=25</p>
+<p>Ratio of eden/survivor space size [Solaris amd64: 6; Sparc in 1.3.1: 25; other Solaris platforms in 5.0 and earlier: 32]</p>
+<p>XX:PermSize=</p>
+<p>Initial size of permanent generation</p>
+<p>XX:MaxPermSize=64m</p>
+<p>Size of the Permanent Generation. [5.0 and newer: 64 bit VMs are scaled 30% larger; 1.4 amd64: 96m; 1.3.1 -client: 32m.]</p>
+<p>下面所说通过优化程序算法来提高内存利用率，并降低内存风险，完全是经验之谈，仅供参考，如有不妥，请指正，谢谢！</p>
+<p>1.尽早释放无用对象的引用(XX = null;)</p>
+<p>看一段代码：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public List&lt;PageData&gt; parse(HtmlPage page) { 
+  List&lt;PageData&gt; list = null;   
+  try { 
+   List valueList = page.getByXPath(config.getContentXpath()); 
+   if (valueList == null || valueList.isEmpty()) { 
+    return list; 
+   } 
+   //需要时才创建对象,节省内存，提高效率 
+   list = new ArrayList&lt;PageData&gt;(); 
+   PageData pageData = new PageData(); 
+   StringBuilder value = new StringBuilder(); 
+   for (int i = 0; i &lt; valueList.size(); i++) { 
+    HtmlElement content = (HtmlElement) valueList.get(i); 
+    DomNodeList&lt;HtmlElement&gt; imgs = content.getElementsByTagName("img"); 
+    if (imgs != null && !imgs.isEmpty()) { 
+     for (HtmlElement img : imgs) { 
+      try { 
+       HtmlImage image = (HtmlImage) img; 
+       String path = image.getSrcAttribute(); 
+       String format = path.substring(path.lastIndexOf("."), path.length()); 
+       String localPath = "D:/images/" + MD5Helper.md5(path).replace("\\", ",").replace("/", ",") + format; 
+       File localFile = new File(localPath); 
+       if (!localFile.exists()) { 
+        localFile.createNewFile(); 
+        image.saveAs(localFile); 
+       } 
+       image.setAttribute("src", "file:///" + localPath); 
+       localFile = null; 
+       image = null; 
+       img = null; 
+      } catch (Exception e) { 
+      } 
+     } 
+     //这个对象以后不会在使用了，清除对其的引用，等同于提前告知GC，该对象可以回收了 
+     imgs = null; 
+    } 
+    String text = content.asXml(); 
+    value.append(text).append("&lt;br/&gt;"); 
+    valueList=null; 
+    content = null; 
+    text = null; 
+   } 
+   pageData.setContent(value.toString()); 
+   pageData.setCharset(page.getPageEncoding());    
+   list.add(pageData); 
+   //这里 pageData=null; 是没用的，因为list仍然持有该对象的引用，GC不会回收它 
+   value=null; 
+   //这里可不能 list=null; 因为list是方法的返回值，否则你从该方法中得到的返回值永远为空，而且这种错误不易被发现、排除 
+  } catch (Exception e) {    
+  }   
+  return list; 
+}
+</pre>
+</div>
+<p>2.谨慎使用集合数据类型，如数组，树，图，链表等数据结构，这些数据结构对GC来说回收更复杂。</p>
+<p>3.避免显式申请数组空间，不得不显式申请时，尽量准确估计其合理值。</p>
+<p>4.尽量避免在类的默认构造器中创建、初始化大量的对象，防止在调用其自类的构造器时造成不必要的内存资源浪费</p>
+<p>5.尽量避免强制系统做垃圾内存的回收，增长系统做垃圾回收的最终时间</p>
+<p>6.尽量做远程方法调用类应用开发时使用瞬间值变量，除非远程调用端需要获取该瞬间值变量的值。</p>
+<p>7.尽量在合适的场景下使用对象池技术以提高系统性能</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/100981.html'>jquery获取radio值(单选组radio)</a><a>下一篇</a><a href='/php/biji/100983.html'>Javascript 修改String 对象 增加去除空格功能(示例代码)</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

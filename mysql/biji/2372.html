@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server当master down掉后，pt-heartbeat不断重试会导致内存缓慢增长解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server当master down掉后，pt-heartbeat不断重试会导致内存缓慢增长解决办法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看i" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server当master down掉后，pt-heartbeat不断重试会导致内存缓慢增长解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:36:36                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server当master down掉后，pt-heartbeat不断重试会导致内存缓慢增长解决办法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看i</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server当master down掉后，pt-heartbeat不断重试会导致内存缓慢增长解决办法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>最近同事反映，在使用pt-heartbeat监控主从复制延迟的过程中，如果master down掉了，则pt-heartbeat则会连接失败，但会不断重试。</p>
+<p>重试本无可厚非，毕竟从使用者的角度来说，希望pt-heartbeat能不断重试，直到重新连接上数据库。但是，他们发现，不断的重试会带来内存的缓慢增长。</p>
+<p></p>
+<h3>重现</h3>
+<p></p>
+<p>环境：</p>
+<p>pt-heartbeat v2.2.19，MySQL社区版 v5.6.31，Perl v5.10.1，RHEL 6.7，内存500M</p>
+<p>为了避免数据库启停对pt-heartbeat内存使用率的影响，故MySQL和pt-heartbeat分别运行在不同的主机上。</p>
+<p>运行pt-heartbeat</p>
+<p># pt-heartbeat --update -h 192.168.244.10 -u monitor -p monitor123 -D test --create-table</p>
+<p>监控pt-heartbeat的内存使用率</p>
+<p></p>
+<h3>获取pid</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+# ps -ef |grep pt-heartbeat
+root 1505 1471 0 19:13 pts/0 00:00:08 perl /usr/local/bin/pt-heartbeat --update -h 192.168.244.10 -u monitor -p monitor123 -D test --create-table
+root 1563 1545 2 19:50 pts/3 00:00:00 grep pt-heartbeat</code></pre>
+<p>查看该进程的内存使用率</p>
+<p># top -p 1505</p>
+<p>运行了0:15.00（TIME+列），MEM一直稳定在3.3%</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>现关闭数据库</p>
+<p># service mysqld stop</p>
+<p>刚才的pt-heartbeat命令不断输出以下信息</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>同样CPU时间后，MEM增长到4.4%， 增长了1%，考虑到内存500M，该进程的内存占用增加了5M，虽然不是很多，但考虑到进程的内存增加并没有停止的意思，这个现象还是要引起注意的。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>同时，通过pmap命令，发现，0000000001331000地址的RSS和Dirry也会增长，增长的速率是4k/s</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>后来研究pt-heartbeat的源码，才发现代码有点bug</p>
+<p>代码如下：</p>
+<pre>
+<code>
+my $tries = 2;
+while ( !$dbh &amp;&amp; $tries-- ) {
+PTDEBUG &amp;&amp; _d($cxn_string, ' ', $user, ' ', $pass,
+join(', ', map { "$_=&gt;$defaults-&gt;{$_}" } keys %$defaults ));
+$dbh = eval { DBI-&gt;connect($cxn_string, $user, $pass, $defaults) };
+if ( !$dbh &amp;&amp; $EVAL_ERROR ) {
+if ( $EVAL_ERROR =~ m/locate DBD\/mysql/i ) {
+die "Cannot connect to MySQL because the Perl DBD::mysql module is "
+. "not installed or not found. Run 'perl -MDBD::mysql' to see "
+. "the directories that Perl searches for DBD::mysql. If "
+. "DBD::mysql is not installed, try:\n"
+. " Debian/Ubuntu apt-get install libdbd-mysql-perl\n"
+. " RHEL/CentOS yum install perl-DBD-MySQL\n"
+. " OpenSolaris pgk install pkg:/SUNWapu13dbd-mysql\n";
+}
+elsif ( $EVAL_ERROR =~ m/not a compiled character set|character set utf8/ ) {
+PTDEBUG &amp;&amp; _d('Going to try again without utf8 support');
+delete $defaults-&gt;{mysql_enable_utf8};
+}
+if ( !$tries ) {
+die $EVAL_ERROR;
+}
+}
+}</code></pre>
+<p>以上代码摘自get_dbh函数，用于获取数据库的连接，如果获取失败，则重试1次，然后通过die函数抛异常退出。</p>
+<p>但是，通过设置如下断点，发现当$tries为0时，if函数里面的PTDEBUG &amp;&amp; _d(&quot;$EVAL_ERROR&quot;)语句能执行，但die函数就是没有抛出异常，并退出脚本</p>
+<p>代码如下：</p>
+<pre>
+<code>
+PTDEBUG &amp;&amp; _d($tries);
+if ( !$tries ) {
+PTDEBUG &amp;&amp; _d("$EVAL_ERROR"); 
+die $EVAL_ERROR; }</code></pre>
+<p>后来，将上述代码的最后一个if函数修改如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+if ( !$tries ) {
+die "test:$EVAL_ERROR";
+}</code></pre>
+<p>再次测试</p>
+<p>启动数据库</p>
+<p># service mysqld start</p>
+<p>执行pt-heartbeat命令</p>
+<p># pt-heartbeat --update -h 192.168.244.10 -u monitor -p monitor123 -D test --create-table</p>
+<p>停止数据库</p>
+<p># service mysqld stop</p>
+<p>刚才执行的pt-heartbeat命令异常退出</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>&ldquo;test:&rdquo;就是加入的测试字符。</p>
+<p></p>
+<h3>结论</h3>
+<p></p>
+<p>很奇怪，只是单纯的die $EVAL_ERROR不会抛出异常，并退出脚本，但修改后的die &quot;test:$EVAL_ERROR&quot;却会退出脚本。</p>
+<p>很显然，这确实是个bug，不知道是不是与perl的版本有关。</p>
+<p>很好奇，失败的连接如何导致内存的不断增长？</p>
+<p>最后，给percona官方提了个bug</p>
+<p>https://bugs.launchpad.net/percona-toolkit/+bug/1629164</p>
+<p>以上所述是小编给大家介绍的当master down掉后，pt-heartbeat不断重试会导致内存缓慢增长的原因及解决办法，希望对大家有所帮助，如果大家有任何疑问欢迎给我留言，小编会及时回复大家的！</p>
+
+<p>注：关于SQL Server当master down掉后，pt-heartbeat不断重试会导致内存缓慢增长解决办法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2371.html'>深入了解MySQL的4种常用、重要的数据类型</a><a>下一篇</a><a href='/mysql/biji/2373.html'>MySQL事务回滚的2个问题分析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

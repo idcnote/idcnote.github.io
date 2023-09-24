@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>PHP-FPM之Chroot执行环境详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="在PHP-FPM中设立chroot，有很好的隔离作用，提高系统安全性，但是要想建立一个合理的PHP-FPM Chroot环境难度有点大，比用debootstrap等工具建立还要麻烦，下面通过参考相关资料，把PHP-" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">PHP-FPM之Chroot执行环境详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>在PHP-FPM中设立chroot，有很好的隔离作用，提高系统安全性，但是要想建立一个合理的PHP-FPM Chroot环境难度有点大，比用debootstrap等工具建立还要麻烦，下面通过参考相关资料，把PHP-</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>在PHP-FPM中设立chroot，有很好的隔离作用，提高系统安全性，但是要想建立一个合理的PHP-FPM Chroot环境难度有点大，比用debootstrap等工具建立还要麻烦，下面通过参考相关资料，把PHP-FPM之Chroot执行环境整理出来，分享给大家。</p>
+<p>本文以Ubuntu 14.04.2为例，php-fpm使用的是 ppa:ondrej/php5-5.6 提供的PHP5.6版本，跟系统自带以及Debian系统的php-fpm和系统目录结构应该是一致的。CentOS请自行调整。</p>
+<p>php-fpm的chroot环境配置和所使用的服务器前端没有关联，也不强求Apache/Nginx进行chroot。当然那样更安全——也更复杂。</p>
+<p><strong>1.建立目录结构</strong></p>
+<p>chroot的目录选择为 /var/www/chroot ，其中页面文件放置在 /var/www/chroot/public 。</p>
+<p>执行下面的命令建立基本的目录结构：</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+bash
+mkdir -p /var/www/chroot/
+cd /var/www/chroot
+mkdir -p public bin dev tmp usr/sbin/ usr/share/zoneinfo/ var/run/nscd/ var/lib/php5/sessions var/www
+cp -a /dev/zero /dev/urandom /dev/null dev/ #注3
+chmod --reference=/tmp tmp/
+chmod --reference=/var/lib/php5/sessions var/lib/php5/sessions #注4
+chown -R root:root .     #注2
+chown -R www-data:www-data public/ #注2
+cd var/www
+ln -s ../.. chroot     #注1
+</pre>
+</div>
+<p>下面是此时目录结构，之后还会添加一些新的东西：</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+/var/www/chroot/
+├── bin
+├── dev
+│ ├── null
+│ ├── urandom
+│ └── zero
+├── public
+├── tmp
+├── usr
+│ ├── sbin
+│ └── share
+│ └── zoneinfo
+└── var
+ ├── lib
+ │ └── php5
+ │ └── sessions
+ ├── run
+ │ └── nscd
+ └── www
+ └── chroot -&gt; ../.. #注1
+
+</pre>
+</div>
+<p>注1：这个软连接用于解决Apache/nginx传给php-fpm的 SCRIPT_FILENAME 在进入chroot后找不到文件（访问php页面返回"File not found"）的问题。</p>
+<p>以nginx为例，通常设置 SCRIPT_FILENAME 为 $document_root$fastcgi_script_name ，传给php-fpm的脚本路径就是 /var/www/chroot/public/index.php 。而由于php-fpm处在chroot环境下，所以它实际试图去访问的路径就变成了 /var/www/chroot + /var/www/chroot/public/index.php 当然是不存在的。</p>
+<p>所以使用一个软连接把chroot环境下的 /var/www/chroot 链接到根目录，就能够正常访问脚本了。</p>
+<p>当然也可以将 SCRIPT_FILENAME 设置成 /public$fastcgi_script_name 。但是这样硬编码不利于配置的迁移，仅能用于chroot的环境，切换回非chroot环境的话还需要修改配置。所以不建议这么做。（顺便说一句，有很多老教程里也不使用 $document_root ，直接硬编码根目录，当然也是不可取的）</p>
+<p>注2：chroot环境并不是100%安全的。由于php-fpm在chroot环境中的执行权限是www-data，仍然建议把非必要的目录的拥有者设置为root来减少不必要的访问权限。chroot不等于安全，参考 chroot最佳实践 中列出的一些原则。从更安全的角度上讲之后最好也将bin、lib、sbin等目录的读写权限去掉，只留可执行权限，不过也没大差别了……</p>
+<p>注3：cp -a除了拷贝文件内容外也会复制文件的权限、模式等信息，可以很方便的直接拿来拷贝zero、urandom和null这三个关键的设备文件。mknod似乎是更为稳妥的方式，不过cp -a我使用起来似乎也没问题。</p>
+<p>注4：chmod --reference=XXX会参考XXX的权限设置后面的权限。tmp就不提了，关键是后面的 var/lib/php5/sessions 是php存放session文件的目录，需要让www-data有读写的权限。建议设置完之后再看一眼。当然后面会有测试。</p>
+<p><strong>2.PHP-FPM的配置</strong></p>
+<p>建立一个新的php-fpm的执行pool来搭建chroot环境。并不建议直接修改php-fpm.conf，因为这样是全局生效的，如果有多个php站点的话会共用一套chroot环境。</p>
+<p>其实很多php-fpm的教程都忽略了php-fpm的pool的配置，导致很多人一台服务器上所有站点都共用一套配置，尤其是共用一套php.ini的配置，实际上是不合理的。应当根据站点的需求单独建立pool并在其中调整参数。</p>
+<p>在 /etc/php5/fpm/pool.d/ 下新建 chroot.conf （注意必须以.conf结尾，才能被php-fpm.conf调用）:</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+[chroot]
+user = www-data
+group = www-data
+listen = /var/run/php-chroot.sock
+listen.owner = www-data
+listen.group = www-data
+
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 1
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+
+chroot = /var/www/chroot
+chdir = /public
+;security.limit_extensions = .php
+php_flag[display_errors] = on
+php_value[date.timezone] = Asia/Hong_Kong
+;php_admin_value[session.gc_probability] = 1
+;php_admin_value[open_basedir] = "/tmp/:/public/:/var/www/chroot/public/"
+
+</pre>
+</div>
+<p>前面的参数都比较熟悉了。只需要简单的设置chroot为配置好的环境根目录就可以开启chroot了。通过执行 php5-fpm -t 测试一下之后，用 service php5-fpm reload 即可启用新的pool。当然Apache/nginx对应的配置中要设置好后端。</p>
+<p>提一下最后几行。倒数第四行打开了 display_errors ，以便之后对chroot下的php的功能进行测试，测试完了记得注释掉。</p>
+<p>设置 session.gc_probability 允许php进程自行对session进行删除回收。正常情况下session是由php添加的cron任务清理的，但是似乎php不会自动清理chroot环境下的session。当然也可以自己在cron.d下添加自动执行的脚本来清理，就不用开启这个选项了。</p>
+<p><strong>3.修复Chroot环境下PHP的各项功能</strong></p>
+<p>在/var/www/chroot/public下新建一个test.php，写入以下内容：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="89583" class="copybut" id="copybut89583" onclick="doCopy('code89583')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code89583"><br />
+php<br />
+&lt;&#63;php<br />
+session_start();<br />
+header( "Content-Type: text/plain" );<br />
+echo( gethostbyname( "localhost" )."\n" );<br />
+print_r( getdate() );<br />
+mail( "your@address", "subject", "message" );<br />
+</div></p>
+<p><strong>这里主要测试的功能是：session、DNS解析、时间和日期、邮件mail()函数。</strong></p>
+<p>访问上面的测试页面，提示No such directory or file或者Permission denied说明session配置不正确。 gethostbyname 返回的不是127.0.0.1或者::1，则说明DNS解析没有生效。提示 timezone database is corrupt 之类的，说明时间和日期有错误。mail()也会有各种错误提示。</p>
+<p>session就不提了，设置好目录权限就没有问题。主要处理一下后面三个问题，也是php的chroot环境主要需要处理的内容。</p>
+<p>3.1 域名解析/时区等问题</p>
+<p>mail()的解决方法大同小异，放后面谈。前面的域名解析等问题这里我介绍两种解决方法。方法1是参考Kienzl的简便方法，方法2是大部分教程采用的方法。</p>
+<p>方法1：使用nscd</p>
+<p>nscd是(e)glibc的“Name Service Caching Daemon”。除了处理gethostbyname()这样的函数外，也处理getpwnam()等需要访问/etc/passwd的函数。(e)glibc访问nscd的unix socket， /var/run/nscd/socket 来通过nscd获取这些内容，如果不能连接到nscd则转而自行进行解析。</p>
+<p>也就是说，只要装好nscd，并且让chroot环境里的程序能够访问到socket连接上nscd，就可以把chroot环境内的解析请求转由chroot外顺利进行了。由于/var/run一般是tmpfs，硬链接无法跨文件系统使用，所以可以使用 mount -bind 来把/var/run/nscd目录mount到chroot环境中同样的位置去即可。</p>
+<p>同样的道理，用 mount -bind 把/usr/share/zoneinfo目录mount到chroot环境里，配合在php-fpm的pool里设置date.timezone就可以非常直接而暴力的解决时区问题。</p>
+<p>先执行 apt-get install nscd 安装nscd，然后为了能够让 mount -bind 自动执行，把下面的脚本存为 /etc/init.d/php-chroot</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+bash
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:  php5-fpm-chroot-setup
+# Required-Start: nscd
+# Required-Stop:
+# Default-Start:  2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Bind-mounts needed sockets and data into a php-fpm-chroot
+### END INIT INFO
+CHROOT=/var/www/chroot
+DIRS="/var/run/nscd /usr/share/zoneinfo"
+case "$1" in
+ start)
+ $0 stop 2&gt;/dev/null
+ for d in $DIRS; do
+  mkdir -p "${CHROOT}${d}"
+  mount --bind -o ro "${d}" "${CHROOT}${d}"
+ done
+ ;; 
+ stop) 
+ for d in $DIRS; do
+  umount "${CHROOT}${d}"
+ done
+ ;; 
+ *)
+ echo "Usage: $N {start|stop}" &gt;&2
+ exit 1
+ ;;
+esac
+exit 0
+
+</pre>
+</div>
+<p>执行 update-rc.d php-chroot defaults 来让脚本在启动时执行。如果有多个chroot环境以及多个目录需要bind-mount，可以自行添加一个循环改写。</p>
+<p>这个方法的好处是简单易行，不需要拷贝大量etc下的配置文件和库文件到chroot环境中。使用nscd在解决域名访问的问题过程中也顺道解决了/etc/passwd和/etc/group。但是bind-mount和nscd的安全性尚没有确切的说法，只能说so far so good。另外 mount -bind 会消耗一定的系统资源，有评论称大约一个mount 大概会消耗500k内存，所以对于大量的chroot环境（几百个）不见得适合。</p>
+<p><strong>方法2：拷贝/etc配置文件和库文件</strong></p>
+<p>这是最传统而常用的方法，也相对比较复杂。到底拷贝哪些配置、哪些库文件因发行版和软件版本而异，很难有定论也不好调试。而且一旦系统升级，对应的库文件也需要进行更新，工作量很大。我没有采用这个方法，但是简要的介绍一些比较靠谱的方法分享一下。</p>
+<p>域名解析。需要拷贝/etc/resolv.conf，/etc/hosts，/etc/nsswitch.conf到chroot环境下的etc目录下。还需要拷贝一系列的库文件，主要是libnss_*.so，libresolv.so，libsoftokn3.so。具体libnss_*.so拷贝哪些，可以打开nsswitch.conf看列出了哪些。</p>
+<p>时区配置。拷贝/etc/localtime，/usr/share/zoneinfo/zone.tab，和/usr/share/zoneinfo目录下所使用时区的文件。</p>
+<p>其它常用配置。/etc/passwd和/etc/group有时也是需要的，但是内容 似乎可以伪造 ，至少可以选择性的填写不用完全拷贝主系统里的。</p>
+<p>如果使用的时候仍然出现问题，可以使用strace来查看php进行了哪些调用使用了哪些库文件。先执行：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="81298" class="copybut" id="copybut81298" onclick="doCopy('code81298')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code81298"><br />
+bash<br />
+ps aux | grep php | grep 'chroot' #chroot是php的pool名<br />
+</div><br />
+查看pool的进程pid（可以在pool设置里先把子进程数目限制到1个方便调试）。然后执行：</p>
+<p><strong>bash</strong><br />
+strace -p 进程pid -o chroot1.txt&&nbsp; #有多个子进程就修改pid执行多次，输出改为chroot2/3.txt存到不同文件里<br />
+此时在页面里执行各种函数，然后查看输出文件里记录了哪些库文件，对应拷贝到chroot环境里即可。</p>
+<p>这个方法很麻烦，尤其是第一次安装设置和后续系统更新时。当然身为运维人员写写shell脚本简化工作肯定是基本功了。这种方法没有额外的内存消耗，可以部署大量chroot环境，当然硬盘消耗会高一点，而且安全性也经历了长久的考验</p>
+<p><strong>3.2 修复mail()</strong></p>
+<p>如果是使用WordPress，也可以利用MailChimp等插件不使用系统自身的邮件服务。事实上因为垃圾邮件的标准日益严格，和VPS主机商的限制，我现在更倾向于干脆不在系统里部署邮件服务了，所以php的mail()函数算是被废掉了……当然如果需要的话也可以很简单的设置好的。</p>
+<p>php的mail()函数是使用system()调用sendmail进行邮件发送操作，所以需要chroot环境里有能够调用的sendmail程序即可。常见的替代品是mini_sendmail，这里多介绍ssmtp，msmtp也类似。</p>
+<p><strong>前提：处理/bin/sh</strong></p>
+<p>system()调用产生的命令行是 /bin/sh -c command 。在chroot环境中调用外部程序必须存在/bin/sh，一个基本的shell。通常选择拷贝dash：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="59271" class="copybut" id="copybut59271" onclick="doCopy('code59271')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code59271"><br />
+bash<br />
+#cp /bin/dash /var/www/chroot/bin/sh<br />
+</div></p>
+<p>注意运行 ldd /bin/dash 观察需要拷贝哪些库文件。我这里的回显是：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="98792" class="copybut" id="copybut98792" onclick="doCopy('code98792')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code98792"><br />
+bash<br />
+ldd /bin/dash<br />
+&nbsp;&nbsp;&nbsp; linux-vdso.so.1 =&gt;&nbsp; (0x00007fff779fe000)<br />
+&nbsp;&nbsp;&nbsp; libc.so.6 =&gt; /lib/x86_64-linux-gnu/libc.so.6 (0x00007f165620f000)<br />
+&nbsp;&nbsp;&nbsp; /lib64/ld-linux-x86-64.so.2 (0x00007f16567fc000)<br />
+</div><br />
+第一条那个只列了个文件名，=&gt;后面也没有文件的基本上都是不用管的。剩下的库文件基本的原则是如果列出的是/lib64，就拷贝到chroot环境下的/lib64，如果列出的是/lib，虽然有很多发行版，大部分库文件包括libc.so是在/lib/x86_64-linux-gnu/目录下的，也直接拷贝到chroot环境的/lib目录下即可，是可以正常找到的。</p>
+<p>但是！</p>
+<p>前面那句 “必须存在/bin/sh，一个基本的shell” 其实并不是真的，对于mail()只要有一个能接受-c参数调用后面的命令的程序就可以了。所以Kienzl写了这样一个程序：</p>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+c
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#define MAXARG 64
+int main( int argc, char* const argv[] ) {
+ char* args[ MAXARG ] = {};
+ if( argc &lt; 3 || strcmp( argv[1], "-c" ) != 0 ) {
+ fprintf( stderr, "Usage: %s -c &lt;cmd&gt;\n", argv[0] ); 
+ return 1;
+ }
+ {
+ char* token;
+ int i = 0; 
+ char* argStr = strdup( argv[2] );
+ while( ( token = strsep( &argStr, " " ) ) != NULL ) {
+  if( token && strlen( token ) )
+  args[ i++ ] = token;
+  if( i &gt;= MAXARG )
+  return 2;
+ }
+ } 
+ return execvp( args[0], args );
+}
+
+</pre>
+</div>
+<p>保存成sh.c执行： gcc sh.c -o sh -static 然后把sh拷贝到chroot环境的/bin目录下即可。</p>
+<p>这样一个不完全的shell从一定程度上也算是增强了chroot环境的安全性了。</p>
+<p><strong>方法1：使用mini_sendmail</strong></p>
+<p>mini_sendmail似乎专为chroot环境而生。调用mini_sendmail后，它会转而访问本机的25端口，通过本机的邮件服务来发送邮件。所以如果主环境有安装postfix/exim4等邮件服务的话可以使用mini_sendmail来在chroot环境中发送邮件，这是最简单的方法。</p>
+<p>mini_sendmail的安装很简单：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="80229" class="copybut" id="copybut80229" onclick="doCopy('code80229')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code80229"><br />
+bash<br />
+wget http://www.acme.com/software/mini_sendmail/mini_sendmail-1.3.8.tar.gz<br />
+tar zxf mini_sendmail-1.3.8.tar.gz<br />
+cd mini_sendmail-1.3.8<br />
+make<br />
+cp mini_sendmail /var/www/chroot/usr/sbin/sendmail<br />
+</div></p>
+<p>最后一行自行修改chroot环境的目录。切记要拷贝到chroot环境的/usr/sbin目录下并且命名为sendmail。否则的话要在pool里自行设置ini参数的sendmail_path来指导php找到sendmail程序。</p>
+<p>由于mini_sendmail默认就是静态链接，所以也无需拷贝其它的库文件了。</p>
+<p><strong>方法2：使用ssmtp/msmtp</strong></p>
+<p>对于本机没有安装邮件服务的情况，就不能使用mini_sendmail了。ssmtp和msmtp都支持把接收到的邮件发送请求转而通过其它SMTP服务器来发送。需要注意的是由于ssl支持需要更多更复杂的库文件和配置，所以不建议为两者编译ssl支持……下面以ssmtp为例介绍一下。</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+bash
+wget ftp://ftp.debian.org/debian/pool/main/s/ssmtp/ssmtp_2.64.orig.tar.bz2
+tar jxf ssmtp_2.64.orig.tar.bz2
+cd ssmtp_2.64
+./configure --prefix=/ #别忘了prefix
+make     #千万别手抖make install
+cp ssmtp /var/www/chroot/usr/sbin
+mkdir -p /var/www/chroot/etc/ssmtp
+cp ssmtp.conf revaliases /var/www/chroot/etc/ssmtp #配置文件
+cd /var/www/chroot/usr/sbin
+ln -s ssmtp sendmail
+</pre>
+</div>
+<p>同样记得ldd然后把对应的库文件拷贝过去。另外ssmtp需要/etc/passwd和/etc/group，如果上面没有使用nscd需要拷贝/伪造这两个文件。</p>
+<p>ssmtp需要配置。ssmtp.conf文件配置如下：</p>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+bash
+root=admin@example.com  #其实这行好像可以乱写
+
+mailhub=smtp.example.com  #smtp服务器地址
+hostname=myexample.com  #此处的hostname似乎会用于产生默认的“root@myexample.com”形式的发件人地址
+AuthUser=admin@example.com #此处使用真实的登录用户名
+AuthPass=password   #密码
+FromLineOverride=YES   #允许改写发件人
+
+</pre>
+</div>
+<p>revaliases里配置每个用户在使用ssmtp时使用的“发件人”地址和smtp服务器地址。可以不配置，但是文件要有。具体格式是：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="62476" class="copybut" id="copybut62476" onclick="doCopy('code62476')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code62476"><br />
+bash<br />
+# 本地用户名:发件人地址:smtp服务器[:端口（默认25）]<br />
+root:admin@example.com:smtp.example.com<br />
+www-data:noreply@example.com:smtp.example.com<br />
+</div></p>
+<p>可以使用chroot（指真正的chroot命令）做个测试：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="89179" class="copybut" id="copybut89179" onclick="doCopy('code89179')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code89179"><br />
+bash<br />
+chroot /var/www/chroot /bin/sh&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #此时/bin/sh一定要是真正的shell<br />
+echo "Subject: test"|sendmail -v username@server.com&nbsp; #替换邮件地址为自己的<br />
+</div></p>
+<p>此时php的mail()函数应该就可用了。</p>
+<p><strong>4.其它问题</strong></p>
+<p>配置完chroot环境后记得将php的pool设置里display_error关闭。<br />
+MySQL的连接可能会遇到问题 ，因为如果填写localhost的话php会试图寻找MySQL的unix socket来访问mysqld。填写127.0.0.1通过TCP连接就没有问题了<br />
+完成后的目录结构，以我为例给大家参考一下：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+/var/www/chroot/
+├── bin
+│ └── sh
+├── dev
+│ ├── null
+│ ├── urandom
+│ └── zero
+├── etc
+│ └── ssmtp
+│ ├── revaliases
+│ └── ssmtp.conf
+├── lib
+│ └── libc.so.6
+├── lib64
+│ └── ld-linux-x86-64.so.2
+├── public
+├── tmp
+├── usr
+│ ├── sbin
+│ │ ├── sendmail -&gt; ssmtp
+| │ └── ssmtp
+│ └── share
+│ └── zoneinfo
+│  ├── 大量时区的目录结构
+│  └── zone.tab
+└── var
+ ├── lib
+ │ └── php5
+ │ └── sessions
+ ├── run
+ │ └── nscd
+ │ ├── nscd.pid
+ │ └── socket
+ └── www
+ └── chroot -&gt; ../..
+</pre>
+</div>
+<p></p>
+<p>以上就是本文的全部内容，希望大家喜欢。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/83262.html'>CSS常用代码小集</a><a>下一篇</a><a href='/php/biji/83264.html'>C#文件分割的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

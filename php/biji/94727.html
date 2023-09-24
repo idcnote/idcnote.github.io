@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>mysql性能优化之索引优化_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="　　作为免费又高效的数据库，mysql基本是首选。良好的安全连接，自带查询解析、sql语句优化，使用读写锁（细化到行）、事物隔离和多版本并发控制提高并发，完备的事务日志记录，强大的存" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">mysql性能优化之索引优化</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>　　作为免费又高效的数据库，mysql基本是首选。良好的安全连接，自带查询解析、sql语句优化，使用读写锁（细化到行）、事物隔离和多版本并发控制提高并发，完备的事务日志记录，强大的存</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>　　作为免费又高效的数据库，mysql基本是首选。良好的安全连接，自带查询解析、sql语句优化，使用读写锁（细化到行）、事物隔离和多版本并发控制提高并发，完备的事务日志记录，强大的存储引擎提供高效查询（表记录可达百万级），如果是InnoDB，还可在崩溃后进行完整的恢复，优点非常多。即使有这么多优点，仍依赖人去做点优化，看书后写个总结巩固下，有错请指正。</p>
+<p>　　完整的mysql优化需要很深的功底，大公司甚至有专门写mysql内核的，sql优化攻城狮，mysql服务器的优化，各种参数常量设定，查询语句优化，主从复制，软硬件升级，容灾备份，sql编程，需要的不是一星半点的知识与时间来掌握，作为一名像俺这样的菜鸟开发，强吃这么多消化不了也没意义：没地儿用啊，况且还有运维和dba，还不如把手头的业务写好，也就是写好点的sql，而且很多sql语句优化跟索引还是有很大关系的。</p>
+<p>　　首先，mysql的查询流程大致是：mysql客户端通过协议与mysql服务器建立连接，发送查询语句，先检查查询缓存，如果命中，直接返回结果，否则进行语句解析，有一系列预处理，比如检查语句是否写正确了，然后是查询优化（比如是否使用索引扫描，如果是一个不可能的条件，则提前终止），生成查询计划，然后查询引擎启动，开始执行查询，从底层存储引擎调用API获取数据，最后返回给客户端。怎么存数据、怎么取数据，都与存储引擎有关。然后，mysql默认使用的BTREE索引，并且一个大方向是，无论怎么折腾sql，至少在目前来说，mysql最多只用到表中的一个索引。</p>
+<p>　　mysql通过存储引擎取数据，自然跟存储引擎有很大关系，不同的存储引擎索引也不一样，如MyISAM的全文索引，即便索引叫一个名字内部组织方式也不尽相同，最常用的当然就是InnoDB了（还有完全兼容mysql的MariaDB，它的默引擎是XtraDB，跟InnoDB很像），这里写的是InnoDB引擎。而索引的实现也跟存储引擎，按照实现方式分，InnoDB的索引目前只有两种：BTREE索引和HASH索引。通常我们说的索引不出意外指的就是B树索引，InnoDB的BTREE索引，实际是用B+树实现的，因为在查看表索引时，mysql一律打印BTREE，所以简称为B树索引。至于B树与B+树的区别，原谅的俺数据结构没好好学，也是需要补的地方。</p>
+<p>　　使用了BTREE索引，意味着所有的索引是按顺序排列存储的（升序），mysql就是这么干的，mysl中的BTREE索引抽象结构如下图（参考高性能mysql）。</p>
+<p></p>
+<p>　　结构中，每一层节点均从左往右从小到大排列，key1 &lt; key2 &lt; ... &lt; keyN，对于小于key1或在[key1，key2)或其他的值的节点，在进入叶子节点查找，是一个范围分布，同时，同一层节点之间可直接访问，因为他们之间有指针指向联系（MyISAM的BTREE索引没有）。每次搜索是一个区间搜索，有的话就找到了，没有的话就是空。索引能加快访问速度，因为有了它无需全表扫描数据（不总是这样），根据查找的值，跟节点中的值比较，通常使用二分查找，对于排好序的数值来说，平均速度几乎是最快的。</p>
+<p>　　val指向了哪里，对于InnoDB，它指向的就是表数据，因为InnoDB的表数据本身就是索引文件，这是与MyISAM索引的显著区别，MyISAM的索引指向的是表数据的地址（val指向的是类似于0x7DFF..之类）。比如对于InnoDB一个主键索引来说，可能是这样</p>
+<p>　　　　　　　　</p>
+<p>　　InnoDB的索引节点val值直接指向表数据，即它的叶子节点就是表数据，它们连在一起，表记录行没有再单独放在其他地方，叶子节点（数据）之间可访问。</p>
+<p>　　前面在BTREE的抽象结构中，索引值的节点是放在页中的，这里有两个需注意的问题：</p>
+<p>　　1. 叶子页、页中的值（上上图），即所谓的页是啥，俺加了个节点注释，即这里的页最小可近似当做是单个节点。我们知道计算机的存储空间是一块一块的，通常一块用完了再用另一块，如果上一块只剩余5kb，但这里刚好要申请8kb的空间，就得在一个新的块上申请这个空间，然后以后的申请又接在这个8kb后面，只要这个块的空间足够，那么上一块的5kb通常就成了所谓的“碎片”，电脑用多了会有很多这样零散的碎片空间，因此有碎片整理。在mysql中，这里的页可理解为块存储空间，即索引的树节点是存放在页中的，每一页（称为逻辑页）有固定大小，InnoDB目前是16kb，一页用完了，当继续插入表生成新的索引节点时，就去新的页中存储这个节点，再有新的节点就继续放在这个新的页的节点后面。</p>
+<p>　　2. 页分裂问题，一页总要被存满，然后新开一页继续，这种行为被称作页分裂。何时开辟新的页，mysql规定了一个分裂因子，达到页存储空间的15/16则存到下一页。页分裂的存在可能极大影响性能维护索引的性能。通常提倡的是，设定一个无意义的整数自增索引，有利于索引存储</p>
+<p>　　　　</p>
+<p>　　如果非自增或不是整数索引，如非自增整数、类似MD5的字符串，以他们作为索引值时，因为待插入的下一条数据的值不一定比上一条大，甚至比当前页所有值都小，需要跑到前几页去比较而找到合适位置，InnoDB无法简单的把新行插入到上一行后面，而找到并插入索引后，可能导致该页达到分裂因子阀值，需要页分裂，进一步导致后面所有的索引页的分裂和排序，数据量小也许没什么问题，数据量大的话可能会浪费大量时间，产生许多碎片。</p>
+<p>　　　　</p>
+<p>　　主键总是唯一且非空，InnoDB自动对它建立了索引（primary key），对于非主键字段上建立的索引，又称辅助索引，索引排列也是顺序排列，只是它还附带一个本条记录的主键值的数据域，不是指向本数据行的指针，在使用辅助索引查找时，先找到对应这一列的索引值，再根据索引节点上的另一个数据域---主键值，来查找该行记录，即每次查找实际经过查找了两次。额外的数据域存储主键值的好处是，当页分裂发生时，无需修改数据域的值，因为即使页分裂，该行的主键值是不变的，而地址就变了。比如name字段的索引简示如下　</p>
+<p>　　　　　　</p>
+<p>　　 包含一列的索引称为单列索引，多列的称为复合索引，因为BTREE索引是顺序排列的，所以比较适合范围查询，但是在复合索引中，还应注意列数目、列的顺序以及前面范围查询的列对后边列的影响。</p>
+<p>　　比如有这样一张表</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+create table staffs(
+    id int primary key auto_increment,
+    name varchar(24) not null default '' comment '姓名',
+    age int not null default 0 comment '年龄',
+    pos varchar(20) not null default '' comment '职位',
+    add_time timestamp not null default current_timestamp comment '入职时间'
+  ) charset utf8 comment '员工记录表';</pre>
+</div>
+<p>　　添加三列的复合索引</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+alter table staffs add index idx_nap(name, age, pos);</pre>
+</div>
+<p>　　在BTREE索引的使用上，以下几种情况可以用到该索引或索引的一部分（使用explain简单查看使用情况）：</p>
+<p>　　<strong>1. 全值匹配</strong></p>
+<p>　　如<span style="color: #0000ff">select * from staffs where name = 'July' and age = '23' and pos = 'dev' </span>，key字段显示使用了idx_nap索引</p>
+<p></p>
+<p>　　<strong>2. 匹配最左列</strong>，对于复合索引来说，不总是匹配所有字段列，但是可以匹配索引中靠左的列</p>
+<p>　　如<span style="color: #0000ff">select * from staffs where name = 'July' and age = '23'</span>，key字段显示用到了索引，注意，key_len字段（表示本次语句使用的索引长度）数值比上一条小了，意思是它并未使用全部索引列（通常这个长度可估摸着用了哪些索引列，埋个坑），事实上只用到了name和age列</p>
+<p></p>
+<p>　　再试试<span style="color: #0000ff">select * from staffs where name = 'July'</span>，它也用了索引，key_len值更小，实际只用到了索引中的name列</p>
+<p></p>
+<p>　　<strong>3. 匹配列前缀</strong>，即一个索引中列的前一部分，主要用在模糊匹配，如select * fromstaffs where name like 'J%'，explain信息的key字段表示使用了索引，但是mysql的B树索引不能非列前缀的模糊匹配，如select * from staffs where name like '%y' 或者 like '%u%'，据说是由于底层存储引擎的API限制</p>
+<p></p>
+<p>　　<strong>4. 匹配范围</strong>，如<span style="color: #0000ff">select * from staffs where name &gt; 'Mary'</span>，但俺在测试时发现&gt;可以，&gt;=却不行，至少在字符串列上不行（测试mysql版本5.5.12），然而在时间类型（timestamp）上却可以，不测试下还真不能确定说就用到了索引==</p>
+<p></p>
+<p>　　出于好奇测了下整型字段的索引（idx_cn(count, name)，count为整型），发现整型受限制少很多，下面的都能用到索引，连前模糊匹配的都行</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+select * from indexTest1 where count &gt; '10'
+  select * from indexTest1 where count &gt;= '10'
+  select * from indexTest1 where count &gt; '10%'
+  select * from indexTest1 where count &gt;= '10%'
+  select * from indexTest1 where count &gt; '%10%'
+  select * from indexTest1 where count &gt;= '%10%'</pre>
+</div>
+<p>　　<strong>5. 精确匹配一列并范围匹配右侧相邻列</strong>，即前一列是固定值，后一列是范围值，它用了name与age两个列的索引（key_len推测）</p>
+<p>　　如select * from staffs where name = 'July' and age &gt; 25</p>
+<p></p>
+<p>　　<strong>6. 只访问索引的查询</strong>，比如staffs表的情况，索引建立在(name,age,pos)上面，前面一直是读取的全部列，如果我们用到了哪些列的索引，查询时也只查这些列的数据，就是只访问索引的查询，如</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+select name,age,pos from staffs where name = 'July' and age = 25 and pos = 'dev'
+  select name,age from staffs where name = July and age &gt; 25</pre>
+</div>
+<p>　　第一句用到了全部索引列，第二句只用了索引前两列，select的字段就最多只能是这两列，这种查询情况的索引，mysql称为覆盖索引，就是索引包含（覆盖）了查询的全部字段。是不是用到了索引查询，在explain中需要看最后一个Extra列的信息，Using index表明使用了覆盖索引，同时Using where表明也使用了where过滤</p>
+<p></p>
+<p>　　<strong>7. 前缀索引</strong></p>
+<p>　　区别于列前缀（类似like 'J%'形式的模糊匹配）和最左列索引（顺序取索引中靠左的列的查询），它只取某列的一部分作为索引。通常在说InnoDB跟MyISAM的区别时，一个明显的区别是：MyISAM支持全文索引，而InnoDB不行，甚至对于text、blob这种超长的字符串或二进制数据时，MyISAM会取前多少个字符作为索引，InnoDb的前缀索引跟这个类似，某些列，一般是字符串类型，很长，全部作为索引大大增加存储空间，索引也需要维护，对于长字符串，又想作为索引列，一个可取的办法就是取前一部分（前缀），代表一整列作为索引串，问题是：如何确保这个前缀能代表或大致代表这一列？所以mysql中有个概念是索引的选择性，是指索引中不重复的值的数目（也称基数）与整个表该列记录总数（#T）的比值，比如一个列表（1,2,2,3），总数是4，不重复值数目为3，选择性为3/4，因此选择性范围是[1/#T, 1]，这个值越大，表示列中不重复值越多，越适合作为前缀索引，唯一索引（UNIQUE KEY）的选择性是1。</p>
+<p>　　比如有一列a varchar(255)，以它作前缀索引，比如以7个测试，逐个增加看看选择性值增长到那个数基本不变，就表示可以代表整列了，再结合这个长度的索引列是否存储数据太多，做个权衡，基本就行了。但如果这个选择性本来就小的可怜还是算了</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+select count(distinct left(a, 7))/count(*) as non_repeat from tab;</pre>
+</div>
+<p>　　定好一个前缀数目，如9，添加索引时可以这样</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+alter table tab add index idx_pn(name(9)) --单独前缀索引
+  alter table tab add index idx_cpn(count, name(9)) --复合前缀索引</pre>
+</div>
+<p>　　以上为常见的使用索引的方式，有这么些情况不能用或不能全用，有的就是上面情况的反例，以key(a, b, c)为例</p>
+<p>　　1. 跳过列，where a = 1 and c = 3，最多用到索引列a；where b = 2 and c = 3，一个也用不到，必须从最左列开始</p>
+<p>　　2. 前面是范围查询，where a = 1 and b &gt; 2 and c = 3，最多用到 a, b两个索引列；</p>
+<p>　　3. 顺序颠倒，where c = 3 and b = 2 and a = 1，一个也用不到；</p>
+<p>　　4. 索引列上使用了表达式，如where substr(a, 1, 3) = 'hhh'，where a = a + 1，表达式是一大忌讳，再简单mysql也不认。有时数据量不是大到严重影响速度时，一般可以先查出来，比如先查所有有订单记录的数据，再在程序中去筛选以'cp1001'开头的订单，而不是写sql过滤它；</p>
+<p>　　5. 模糊匹配时，尽量写 where a like 'J%'，字符串放在左边，这样才可能用得到a列索引，甚至可能还用不到，当然这得看数据类型，最好测试一下。</p>
+<p>　　<strong>排序对索引的影响</strong></p>
+<p>　　order by是经常用的语句，排序也遵循最左前缀列的原则，比如key(a, b)，下面语句可以用到（测试为妙）</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+select * from tab where a &gt; 1 order by b
+  select * from tab where a &gt; 1 and b &gt; '2015-12-01 00:00：00' order by b
+  select * from tab order by a, b</pre>
+</div>
+<p>　　以下情况用不到</p>
+<p>　　1. 非最左列，select * from tab order by b;</p>
+<p>　　2. 不按索引列顺序来的，select * from tab where b &gt; '2015-12-01 00:00:00' order by a;</p>
+<p>　　3. 多列排序，但列的顺序方向不一致，select * from tab a asc, b desc。</p>
+<p>　　<strong>聚簇索引与覆盖索引</strong></p>
+<p>　　前面说到，mysql索引从结构上只有两类，BTREE与HASH，覆盖索引只是在查询时，要查询的列刚好与使用的索引列完全一致，mysql直接扫描索引，然后就可返回数据，大大提高效率，因为不需再去原表查询、过滤，这种形式下的索引称作覆盖索引，比如key(a,b)，查询时select a,b from tab where a = 1 and b &gt; 2，本质原因：BTREE索引存储了原表数据。</p>
+<p>　　聚簇索引也不是单独的索引，前面简要写到，BTREE索引会把数据放在索引中，即索引的叶子页中，包括主键，主键是跟表数据紧挨着放在一起的，因为表数据只有一份，一列键值要跟每一行数据都紧挨在一起，所以一张表只有一个聚簇索引，对于mysql来说，就是主键列，它是默认的。</p>
+<p>　　聚簇索引将表数据组织到了一起（参考前面主键索引简略图），插入时严重依赖主键顺序，最好是连续自增，否则面临频繁页分裂问题，移动许多数据。</p>
+<p>　　<strong>哈希索引</strong></p>
+<p>　　简要说下，类似于数据结构中简单实现的HASH表（散列表）一样，当我们在mysql中用哈希索引时，也是对索引列计算一个散列值（类似md5、sha1、crc32），然后对这个散列值以顺序（默认升序）排列，同时记录该散列值对应数据表中某行的指针，当然这只是简略模拟图</p>
+<p>　　　　　　</p>
+<p>　　比如对姓名列建立hash索引，生成hash值按顺序排列，但是顺序排列的hash值并不对应表中记录，从地址指针可反应出来，而且，hash索引可能建立在两列或者更多列上，取得是多列数据后的hash值，它不存储表中数据。它先计算列数据的hash值，与索引中的hash值比较，找到了然后比对列数据是否相等，可能涉及其他列条件，然后返回数据。hash当然会有冲突，即碰撞，除非有很多冲突，一般hash索引效率很高，否则hash维护成本较高，因此哈希索引通常用在选择性较高的列上面。哈希索引的结构决定了它的特点：</p>
+<p>　　1. hash索引只是hash值顺序排列，跟表数据没有关系，无法应用于order by；</p>
+<p>　　2. hash索引是对它的所有列计算哈希值，因此在查询时，必须带上所有列，比如有(a, b)哈希索引，查询时必须 where a = 1 and b = 2，少任何一个不行；</p>
+<p>　　3. hash索引只能用于比较查询 = 或 IN，其他范围查询无效，本质还是因不存储表数据；</p>
+<p>　　4. 一旦出现碰撞，hash索引必须遍历所有的hash值，将地址所指向数据一一比较，直到找到所有符合条件的行。</p>
+<p>　　填坑</p>
+<p>　　前面提到通过explain的key_len字段，可大致估计出用了哪些列，索引列的长度跟索引列的数据类型直接相关，一般，我们说int是4字节，bigint8字节，char是1字节，考虑到建表时要指定字符集，比如utf8，还跟选的字符集有关（==!），在utf8下边，一个char是3字节，但是知道这些仍不能说key_len就是将用到的索引列的数据类型代表字节数一加不就完啦？事实总有点区别，测试方法比较机械（以下基于mysql 5.5.2）</p>
+<p>　　建表，加索引，int型</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+--测试表
+  create table keyLenTest1(
+    id int primary key auto_increment,
+    typeKey int default 0 ,
+    add_time timestamp not null default current_timestamp
+  ) charset utf8
+  --添加索引
+  alter table keyLenTest1 add index idx_k(typeKey);</pre>
+</div>
+<p>　　可知int型索引默认长度为5，在4字节基础上+1</p>
+<p></p>
+<p>　　char型</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+ --改为char型，1个字符
+  alter table keyLenTest1 modify typeKey char(1);</pre>
+</div>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+--改为char型，2个字符
+  alter table keyLenTest1 modify typeKey char(2);</pre>
+</div>
+<p></p>
+<p>　　可知，char型初始是4字节（3+1 bytes），后续按照3字节递增</p>
+<p>　　varchar型</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+--改为varchar型，1个字符
+  alter table keyLenTest1 modify typeKey varchar(1);</pre>
+</div>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+--改为varchar型，2个字符
+  alter table keyLenTest1 modify typeKey varchar(2);</pre>
+</div>
+<p></p>
+<p>　　可知，varchar型，1个字符时，key_len为6，以后以3字节递增</p>
+<p>　　所以，如果一个语句用到了int、char、varchar，key_len如何计算以及用了哪些索引列应该很清楚了。</p>
+<p>　　如果想了解的更详细点，explain各字段意义，索引的更多细节，除了explain，还有show profiles、慢查询日志等（没细看），推荐看高性能mysql，毕竟俺写的太肤浅。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/94726.html'>Win8.1系统如何从电脑上任何位置快速返回到桌面</a><a>下一篇</a><a href='/php/biji/94728.html'>Nodejs学习笔记之Global Objects全局对象</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

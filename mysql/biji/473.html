@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL百万级数据量分页查询方法及其优化的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL百万级数据量分页查询方法及其优化的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL百万级数据量分页查询方法及其优化的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:16:35                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL百万级数据量分页查询方法及其优化的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL百万级数据量分页查询方法及其优化的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<blockquote>
+<p>数据库SQL优化是老生常谈的问题，在面对百万级数据量的分页查询，又有什么好的优化建议呢？下面将列举了一些常用的方法，供大家参考学习！</p></blockquote>
+<p>方法1: 直接使用数据库提供的SQL语句</p>
+<ul>
+	<li>语句样式: MySQL中,可用如下方法: SELECT * FROM 表名称 LIMIT M,N</li>
+	<li>适应场景: 适用于数据量较少的情况(元组百/千级)</li>
+	<li>原因/缺点: 全表扫描,速度会很慢 且 有的数据库结果集返回不稳定(如某次返回1,2,3,另外的一次返回2,1,3). Limit限制的是从结果集的M位置处取出N条输出,其余抛弃.</li>
+</ul>
+<p>方法2: 建立主键或唯一索引, 利用索引(假设每页10条)</p>
+<ul>
+	<li>语句样式: MySQL中,可用如下方法: SELECT * FROM 表名称 WHERE id_pk &gt; (pageNum*10) LIMIT M</li>
+	<li>适应场景: 适用于数据量多的情况(元组数上万)</li>
+	<li>原因: 索引扫描,速度会很快. 有朋友提出: 因为数据查询出来并不是按照pk_id排序的，所以会有漏掉数据的情况，只能方法3</li>
+</ul>
+<p>方法3: 基于索引再排序</p>
+<ul>
+	<li>语句样式: MySQL中,可用如下方法: SELECT * FROM 表名称 WHERE id_pk &gt; (pageNum*10) ORDER BY id_pk ASC LIMIT M</li>
+	<li>适应场景: 适用于数据量多的情况(元组数上万). 最好ORDER BY后的列对象是主键或唯一所以,使得ORDERBY操作能利用索引被消除但结果集是稳定的(稳定的含义,参见方法1)</li>
+	<li>原因: 索引扫描,速度会很快. 但MySQL的排序操作,只有ASC没有DESC(DESC是假的,未来会做真正的DESC,期待...).</li>
+</ul>
+<p>方法4: 基于索引使用prepare</p>
+<p>第一个问号表示pageNum，第二个？表示每页元组数</p>
+<ul>
+	<li>语句样式: MySQL中,可用如下方法: PREPARE stmt_name FROM SELECT * FROM 表名称 WHERE id_pk &gt; (？* ？) ORDER BY id_pk ASC LIMIT M</li>
+	<li>适应场景: 大数据量</li>
+	<li>原因: 索引扫描,速度会很快. prepare语句又比一般的查询语句快一点。</li>
+</ul>
+<p>方法5: 利用MySQL支持ORDER操作可以利用索引快速定位部分元组,避免全表扫描</p>
+<p>比如: 读第1000到1019行元组(pk是主键/唯一键).</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT * FROM your_table WHERE pk&gt;=1000 ORDER BY pk ASC LIMIT 0,20</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>方法6: 利用子查询/连接+索引快速定位元组的位置,然后再读取元组.</p>
+<p>比如(id是主键/唯一键,蓝色字体时变量)</p>
+<p>利用子查询示例:</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT * FROM your_table WHERE id &lt;=
+(SELECT id FROM your_table ORDER BY id desc LIMIT ($page-1)*$pagesize ORDER BY id desc
+LIMIT $pagesize</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>利用连接示例:</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT * FROM your_table AS t1
+JOIN (SELECT id FROM your_table ORDER BY id desc LIMIT ($page-1)*$pagesize AS t2
+WHERE t1.id &lt;= t2.id ORDER BY t1.id desc LIMIT $pagesize;</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>mysql大数据量使用limit分页，随着页码的增大，查询效率越低下。</p>
+<p>测试实验</p>
+<p>1. 直接用limit start, count分页语句， 也是我程序中用的方法：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select * from product limit start, count</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>当起始页较小时，查询没有性能问题，我们分别看下从10， 100， 1000， 10000开始分页的执行时间（每页取20条）。</p>
+<p>如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select * from product limit 10, 20 0.016秒
+select * from product limit 100, 20 0.016秒
+select * from product limit 1000, 20 0.047秒
+select * from product limit 10000, 20 0.094秒</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>我们已经看出随着起始记录的增加，时间也随着增大， 这说明分页语句limit跟起始页码是有很大关系的，那么我们把起始记录改为40w看下（也就是记录的一般左右）</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select * from product limit 400000, 20 3.229秒</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>再看我们取最后一页记录的时间</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select * from product limit 866613, 20 37.44秒</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>像这种分页最大的页码页显然这种时间是无法忍受的。</p>
+<p>从中我们也能总结出两件事情：</p>
+<ol>
+	<li>limit语句的查询时间与起始记录的位置成正比</li>
+	<li>mysql的limit语句是很方便，但是对记录很多的表并不适合直接使用。</li>
+</ol>
+<p>2. 对limit分页问题的性能优化方法</p>
+<p>利用表的覆盖索引来加速分页查询</p>
+<p>我们都知道，利用了索引查询的语句中如果只包含了那个索引列（覆盖索引），那么这种情况会查询很快。</p>
+<p>因为利用索引查找有优化算法，且数据就在查询索引上面，不用再去找相关的数据地址了，这样节省了很多时间。另外Mysql中也有相关的索引缓存，在并发高的时候利用缓存就效果更好了。</p>
+<p>在我们的例子中，我们知道id字段是主键，自然就包含了默认的主键索引。现在让我们看看利用覆盖索引的查询效果如何。</p>
+<p>这次我们之间查询最后一页的数据（利用覆盖索引，只包含id列），如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id from product limit 866613, 20 0.2秒</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>相对于查询了所有列的37.44秒，提升了大概100多倍的速度</p>
+<p>那么如果我们也要查询所有列，有两种方法，一种是id&gt;=的形式，另一种就是利用join，看下实际情况：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT * FROM product WHERE ID &gt; =(select id from product limit 866613, 1) limit 20</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>查询时间为0.2秒！</p>
+<p>另一种写法</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT * FROM product a JOIN (select id from product limit 866613, 20) b ON a.ID = b.id</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>查询时间也很短！</p>
+<p>3. 复合索引优化方法</p>
+<p>MySql 性能到底能有多高？MySql 这个数据库绝对是适合dba级的高手去玩的，一般做一点1万篇新闻的小型系统怎么写都可以，用xx框架可以实现快速开发。可是数据量到了10万，百万至千万，他的性能还能那么高吗？一点小小的失误，可能造成整个系统的改写，甚至更本系统无法正常运行！好了，不那么多废话了。</p>
+<p>用事实说话，看例子：</p>
+<p>数据表 collect ( id, title ,info ,vtype) 就这4个字段，其中 title 用定长，info 用text, id 是逐渐，vtype是tinyint，vtype是索引。这是一个基本的新闻系统的简单模型。现在往里面填充数据，填充10万篇新闻。最后collect 为 10万条记录，数据库表占用硬1.6G。</p>
+<p>OK ,看下面这条sql语句：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id,title from collect limit 1000,10;</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>很快；基本上0.01秒就OK，再看下面的</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id,title from collect limit 90000,10;</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>从9万条开始分页，结果？</p>
+<p>8-9秒完成，my god 哪出问题了？其实要优化这条数据，网上找得到答案。看下面一条语句:</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id from collect order by id limit 90000,10;</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>很快，0.04秒就OK。为什么？因为用了id主键做索引当然快。网上的改法是：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id,title from collect where id&gt;=(select id from collect order by id limit 90000,1) limit 10;</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>这就是用了id做索引的结果。可是问题复杂那么一点点，就完了。看下面的语句</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id from collect where vtype=1 order by id limit 90000,10; </code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>很慢，用了8-9秒！</p>
+<p>到了这里我相信很多人会和我一样，有崩溃感觉！vtype 做了索引了啊？怎么会慢呢？vtype做了索引是不错，你直接</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id from collect where vtype=1 limit 1000,10;</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>是很快的，基本上0.05秒，可是提高90倍，从9万开始，那就是0.05*90=4.5秒的速度了。和测试结果8-9秒到了一个数量级。</p>
+<p>从这里开始有人提出了分表的思路，这个和dis #cuz 论坛是一样的思路。思路如下：</p>
+<p>建一个索引表：t (id,title,vtype) 并设置成定长，然后做分页，分页出结果再到 collect 里面去找info 。是否可行呢？实验下就知道了。</p>
+<p>10万条记录到 t(id,title,vtype) 里，数据表大小20M左右。用</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id from collect where vtype=1 limit 1000,10;</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>很快了。基本上0.1-0.2秒可以跑完。为什么会这样呢？我猜想是因为collect 数据太多，所以分页要跑很长的路。limit 完全和数据表的大小有关的。其实这样做还是全表扫描，只是因为数据量小，只有10万才快。OK， 来个疯狂的实验，加到100万条，测试性能。加了10倍的数据，马上t表就到了200多M，而且是定长。还是刚才的查询语句，时间是0.1-0.2秒完成！分表性能没问题？</p>
+<p>错！因为我们的limit还是9万，所以快。给个大的，90万开始</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id from t where vtype=1 order by id limit 900000,10;</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>看看结果，时间是1-2秒！why ?</p>
+<p>分表了时间还是这么长，非常之郁闷！有人说定长会提高limit的性能，开始我也以为，因为一条记录的长度是固定的，mysql 应该可以算出90万的位置才对啊？可是我们高估了mysql 的智能，他不是商务数据库，事实证明定长和非定长对limit影响不大？怪不得有人说discuz到了100万条记录就会很慢，我相信这是真的，这个和数据库设计有关！</p>
+<p>难道MySQL 无法突破100万的限制吗？？？到了100万的分页就真的到了极限？</p>
+<p>答案是：NO 为什么突破不了100万是因为不会设计mysql造成的。下面介绍非分表法，来个疯狂的测试！一张表搞定100万记录，并且10G 数据库，如何快速分页！</p>
+<p>好了，我们的测试又回到 collect表，开始测试结论是：</p>
+<p>30万数据，用分表法可行，超过30万他的速度会慢道你无法忍受！当然如果用分表+我这种方法，那是绝对完美的。但是用了我这种方法后，不用分表也可以完美解决！</p>
+<p>答案就是：复合索引！有一次设计mysql索引的时候，无意中发现索引名字可以任取，可以选择几个字段进来，这有什么用呢？</p>
+<p>开始的</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id from collect order by id limit 90000,10;</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>这么快就是因为走了索引，可是如果加了where 就不走索引了。抱着试试看的想法加了 search(vtype,id) 这样的索引。</p>
+<p>然后测试</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id from collect where vtype=1 limit 90000,10;</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>非常快！0.04秒完成！</p>
+<p>再测试:</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id ,title from collect where vtype=1 limit 90000,10;</code></pre>
+<p>MySQL百万级数据量分页查询方法及其优化建议</p>
+<p>非常遗憾，8-9秒，没走search索引！</p>
+<p>再测试：search(id,vtype)，还是select id 这个语句，也非常遗憾，0.5秒。</p>
+<p>综上：如果对于有where 条件，又想走索引用limit的，必须设计一个索引，将where 放第一位，limit用到的主键放第2位，而且只能select 主键！</p>
+<p>完美解决了分页问题了。可以快速返回id就有希望优化limit ， 按这样的逻辑，百万级的limit 应该在0.0x秒就可以分完。看来mysql 语句的优化和索引时非常重要的！</p>
+<p>以上就是MySQL百万级数据量分页查询方法及其优化建议的详细内容，更多关于MySQL分页查询及其优化的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL百万级数据量分页查询方法及其优化的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/472.html'>MySQL数据库导入导出数据之报错的解决办法</a><a>下一篇</a><a href='/mysql/biji/474.html'>MySQL千万级数据量根据索引优化查询速度的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

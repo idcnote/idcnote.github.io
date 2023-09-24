@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>详解C++中StringBuilder类的实现及其性能优化_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="介绍<br />
+<br />
+经常出现客户端打电话抱怨说：你们的程序慢如蜗牛。你开始检查可能的疑点：文件IO，数据库访问速度，甚至查看web服务。 但是这些可能的疑点都很正常，一点问题都没有。<br />
+<br />
+你使用" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">详解C++中StringBuilder类的实现及其性能优化</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>介绍<br />
+<br />
+经常出现客户端打电话抱怨说：你们的程序慢如蜗牛。你开始检查可能的疑点：文件IO，数据库访问速度，甚至查看web服务。 但是这些可能的疑点都很正常，一点问题都没有。<br />
+<br />
+你使用</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>介绍<br />
+</strong>经常出现客户端打电话抱怨说：你们的程序慢如蜗牛。你开始检查可能的疑点：文件IO，数据库访问速度，甚至查看web服务。 但是这些可能的疑点都很正常，一点问题都没有。<br />
+你使用最顺手的性能分析工具分析，发现瓶颈在于一个小函数，这个函数的作用是将一个长的字符串链表写到一文件中。<br />
+你对这个函数做了如下优化：将所有的小字符串连接成一个长的字符串，执行一次文件写入操作，避免成千上万次的小字符串写文件操作。<br />
+这个优化只做对了一半。<br />
+你先测试大字符串写文件的速度，发现快如闪电。然后你再测试所有字符串拼接的速度。<br />
+好几年。<br />
+怎么回事？你会怎么克服这个问题呢？<br />
+你或许知道.net程序员可以使用StringBuilder来解决此问题。这也是本文的起点。</p>
+<p><strong>背景</strong></p>
+<p>如果google一下“C++ StringBuilder”，你会得到不少答案。有些会建议（你）使用std::accumulate，这可以完成几乎所有你要实现的：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+#include &lt;iostream&gt;// for std::cout, std::endl
+#include &lt;string&gt; // for std::string
+#include &lt;vector&gt; // for std::vector
+#include &lt;numeric&gt; // for std::accumulate
+int main()
+{
+  using namespace std;
+  vector&lt;string&gt; vec = { "hello", " ", "world" };
+  string s = accumulate(vec.begin(), vec.end(), s);
+  cout &lt;&lt; s &lt;&lt; endl; // prints 'hello world' to standard output.
+  return 0;
+}
+</pre>
+</div>
+<p>目前为止一切都好：当你有超过几个字符串连接时，问题就出现了，并且内存再分配也开始积累。<br />
+std::string在函数reserver()中为解决方案提供基础。这也正是我们的意图所在：一次分配，随意连接。<br />
+字符串连接可能会因为繁重、迟钝的工具而严重影响性能。由于上次存在的隐患，这个特殊的怪胎给我制造麻烦，我便放弃了Indigo（我想尝试一些C++11里的令人耳目一新的特性），并写了一个StringBuilder类的部分实现：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+// Subset of http://msdn.microsoft.com/en-us/library/system.text.stringbuilder.aspx
+template &lt;typename chr&gt;
+class StringBuilder {
+  typedef std::basic_string&lt;chr&gt; string_t;
+  typedef std::list&lt;string_t&gt; container_t; // Reasons not to use vector below.
+  typedef typename string_t::size_type size_type; // Reuse the size type in the string.
+  container_t m_Data;
+  size_type m_totalSize;
+  void append(const string_t &src) {
+    m_Data.push_back(src);
+    m_totalSize += src.size();
+  }
+  // No copy constructor, no assignement.
+  StringBuilder(const StringBuilder &);
+  StringBuilder & operator = (const StringBuilder &);
+public:
+  StringBuilder(const string_t &src) {
+    if (!src.empty()) {
+      m_Data.push_back(src);
+    }
+    m_totalSize = src.size();
+  }
+  StringBuilder() {
+    m_totalSize = 0;
+  }
+  // TODO: Constructor that takes an array of strings.
+ 
+ 
+  StringBuilder & Append(const string_t &src) {
+    append(src);
+    return *this; // allow chaining.
+  }
+    // This one lets you add any STL container to the string builder.
+  template&lt;class inputIterator&gt;
+  StringBuilder & Add(const inputIterator &first, const inputIterator &afterLast) {
+    // std::for_each and a lambda look like overkill here.
+        // &lt;b&gt;Not&lt;/b&gt; using std::copy, since we want to update m_totalSize too.
+    for (inputIterator f = first; f != afterLast; ++f) {
+      append(*f);
+    }
+    return *this; // allow chaining.
+  }
+  StringBuilder & AppendLine(const string_t &src) {
+    static chr lineFeed[] { 10, 0 }; // C++ 11. Feel the love!
+    m_Data.push_back(src + lineFeed);
+    m_totalSize += 1 + src.size();
+    return *this; // allow chaining.
+  }
+  StringBuilder & AppendLine() {
+    static chr lineFeed[] { 10, 0 };
+    m_Data.push_back(lineFeed);
+    ++m_totalSize;
+    return *this; // allow chaining.
+  }
+ 
+  // TODO: AppendFormat implementation. Not relevant for the article.
+ 
+  // Like C# StringBuilder.ToString()
+  // Note the use of reserve() to avoid reallocations.
+  string_t ToString() const {
+    string_t result;
+    // The whole point of the exercise!
+    // If the container has a lot of strings, reallocation (each time the result grows) will take a serious toll,
+    // both in performance and chances of failure.
+    // I measured (in code I cannot publish) fractions of a second using 'reserve', and almost two minutes using +=.
+    result.reserve(m_totalSize + 1);
+  // result = std::accumulate(m_Data.begin(), m_Data.end(), result); // This would lose the advantage of 'reserve'
+    for (auto iter = m_Data.begin(); iter != m_Data.end(); ++iter) {
+      result += *iter;
+    }
+    return result;
+  }
+ 
+  // like javascript Array.join()
+  string_t Join(const string_t &delim) const {
+    if (delim.empty()) {
+      return ToString();
+    }
+    string_t result;
+    if (m_Data.empty()) {
+      return result;
+    }
+    // Hope we don't overflow the size type.
+    size_type st = (delim.size() * (m_Data.size() - 1)) + m_totalSize + 1;
+    result.reserve(st);
+        // If you need reasons to love C++11, here is one.
+    struct adder {
+      string_t m_Joiner;
+      adder(const string_t &s): m_Joiner(s) {
+        // This constructor is NOT empty.
+      }
+            // This functor runs under accumulate() without reallocations, if 'l' has reserved enough memory.
+      string_t operator()(string_t &l, const string_t &r) {
+        l += m_Joiner;
+        l += r;
+        return l;
+      }
+    } adr(delim);
+    auto iter = m_Data.begin();
+        // Skip the delimiter before the first element in the container.
+    result += *iter;
+    return std::accumulate(++iter, m_Data.end(), result, adr);
+  }
+ 
+}; // class StringBuilder
+
+</pre>
+</div>
+<p><br />
+函数ToString()使用std::string::reserve()来实现最小化再分配。下面你可以看到一个性能测试的结果。<br />
+函数join()使用std::accumulate()，和一个已经为首个操作数预留内存的自定义函数。<br />
+你可能会问，为什么StringBuilder::m_Data用std::list而不是std::vector？除非你有一个用其他容器的好理由，通常都是使用std::vector。<br />
+好吧，我（这样做）有两个原因：<br />
+1. 字符串总是会附加到一个容器的末尾。std::list允许在不需要内存再分配的情况下这样做；因为vector是使用一个连续的内存块实现的，每用一个就可能导致内存再分配。<br />
+2. std::list对顺序存取相当有利，而且在m_Data上所做的唯一存取操作也是顺序的。<br />
+你可以建议同时测试这两种实现的性能和内存占用情况，然后选择其中一个。</p>
+<p><strong>性能评估</strong></p>
+<p>为了测试性能，我从Wikipedia获取一个网页，并将其中一部分内容写死到一个string的vector中。<br />
+随后，我编写两个测试函数，第一个在两个循环中使用标准函数clock()并调用std::accumulate()和StringBuilder::ToString()，然后打印结果。</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+void TestPerformance(const StringBuilder&lt;wchar_t&gt; &tested, const std::vector&lt;std::wstring&gt; &tested2) {
+  const int loops = 500;
+  clock_t start = clock(); // Give up some accuracy in exchange for platform independence.
+  for (int i = 0; i &lt; loops; ++i) {
+    std::wstring accumulator;
+    std::accumulate(tested2.begin(), tested2.end(), accumulator);
+  }
+  double secsAccumulate = (double) (clock() - start) / CLOCKS_PER_SEC;
+ 
+  start = clock();
+  for (int i = 0; i &lt; loops; ++i) {
+    std::wstring result2 = tested.ToString();
+  }
+  double secsBuilder = (double) (clock() - start) / CLOCKS_PER_SEC;
+  using std::cout;
+  using std::endl;
+  cout &lt;&lt; "Accumulate took " &lt;&lt; secsAccumulate &lt;&lt; " seconds, and ToString() took " &lt;&lt; secsBuilder &lt;&lt; " seconds."
+      &lt;&lt; " The relative speed improvement was " &lt;&lt; ((secsAccumulate / secsBuilder) - 1) * 100 &lt;&lt; "%"
+      &lt;&lt; endl;
+}
+</pre>
+</div>
+<p>第二个则使用更精确的Posix函数clock_gettime()，并测试StringBuilder::Join()。</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+#ifdef __USE_POSIX199309
+ 
+// Thanks to &lt;a href="http://www.guyrutenberg.com/2007/09/22/profiling-code-using-clock_gettime/"&gt;Guy Rutenberg&lt;/a&gt;.
+timespec diff(timespec start, timespec end)
+{
+  timespec temp;
+  if ((end.tv_nsec-start.tv_nsec)&lt;0) {
+    temp.tv_sec = end.tv_sec-start.tv_sec-1;
+    temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+  } else {
+    temp.tv_sec = end.tv_sec-start.tv_sec;
+    temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+  }
+  return temp;
+}
+ 
+void AccurateTestPerformance(const StringBuilder&lt;wchar_t&gt; &tested, const std::vector&lt;std::wstring&gt; &tested2) {
+  const int loops = 500;
+  timespec time1, time2;
+  // Don't forget to add -lrt to the g++ linker command line.
+  ////////////////
+  // Test std::accumulate()
+  ////////////////
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time1);
+  for (int i = 0; i &lt; loops; ++i) {
+    std::wstring accumulator;
+    std::accumulate(tested2.begin(), tested2.end(), accumulator);
+  }
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time2);
+  using std::cout;
+  using std::endl;
+  timespec tsAccumulate =diff(time1,time2);
+  cout &lt;&lt; tsAccumulate.tv_sec &lt;&lt; ":" &lt;&lt; tsAccumulate.tv_nsec &lt;&lt; endl;
+  ////////////////
+  // Test ToString()
+  ////////////////
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time1);
+  for (int i = 0; i &lt; loops; ++i) {
+    std::wstring result2 = tested.ToString();
+  }
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time2);
+  timespec tsToString =diff(time1,time2);
+  cout &lt;&lt; tsToString.tv_sec &lt;&lt; ":" &lt;&lt; tsToString.tv_nsec &lt;&lt; endl;
+  ////////////////
+  // Test join()
+  ////////////////
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time1);
+  for (int i = 0; i &lt; loops; ++i) {
+    std::wstring result3 = tested.Join(L",");
+  }
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time2);
+  timespec tsJoin =diff(time1,time2);
+  cout &lt;&lt; tsJoin.tv_sec &lt;&lt; ":" &lt;&lt; tsJoin.tv_nsec &lt;&lt; endl;
+ 
+  ////////////////
+  // Show results
+  ////////////////
+  double secsAccumulate = tsAccumulate.tv_sec + tsAccumulate.tv_nsec / 1000000000.0;
+  double secsBuilder = tsToString.tv_sec + tsToString.tv_nsec / 1000000000.0;
+    double secsJoin = tsJoin.tv_sec + tsJoin.tv_nsec / 1000000000.0;
+  cout &lt;&lt; "Accurate performance test:" &lt;&lt; endl &lt;&lt; "  Accumulate took " &lt;&lt; secsAccumulate &lt;&lt; " seconds, and ToString() took " &lt;&lt; secsBuilder &lt;&lt; " seconds." &lt;&lt; endl
+      &lt;&lt; "  The relative speed improvement was " &lt;&lt; ((secsAccumulate / secsBuilder) - 1) * 100 &lt;&lt; "%" &lt;&lt; endl &lt;&lt;
+       "   Join took " &lt;&lt; secsJoin &lt;&lt; " seconds."
+      &lt;&lt; endl;
+}
+#endif // def __USE_POSIX199309
+</pre>
+</div>
+<p>最后，通过一个main函数调用以上实现的两个函数，将结果显示在控制台，然后执行性能测试：一个用于调试配置。 <br />
+</p>
+<p></p>
+<p>另一个用于发行版本：<br />
+</p>
+<p></p>
+<p>看到这百分比没？垃圾邮件的发送量都不能达到这个级别!</p>
+<p><strong>代码使用</strong></p>
+<p>在使用这段代码前， 考虑使用ostring流。正如你在下面看到Jeff先生评论的一样，它比这篇文章中的代码更快些。<br />
+你可能想使用这段代码，如果：<br />
+你正在编写由具有C#经验的程序员维护的代码，并且你想提供一个他们所熟悉接口的代码。<br />
+你正在编写将来会转换成.net的、你想指出一个可能路径的代码。<br />
+由于某些原因，你不想包含&lt;sstream&gt;。几年之后，一些流的IO实现变得很繁琐，而且现在的代码仍然不能完全摆脱他们的干扰。<br />
+要使用这段代码，只有按照main函数实现的那样就可以了：创建一个StringBuilder的实例，用Append()、AppendLine()和Add()给它赋值，然后调用ToString函数检索结果。<br />
+就像下面这样：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+int main() {
+  ////////////////////////////////////
+  // 8-bit characters (ANSI)
+  ////////////////////////////////////
+  StringBuilder&lt;char&gt; ansi;
+  ansi.Append("Hello").Append(" ").AppendLine("World");
+  std::cout &lt;&lt; ansi.ToString();
+ 
+  ////////////////////////////////////
+  // Wide characters (Unicode)
+  ////////////////////////////////////
+  // http://en.wikipedia.org/wiki/Cargo_cult
+  std::vector&lt;std::wstring&gt; cargoCult
+  {
+    L"A", L" cargo", L" cult", L" is", L" a", L" kind", L" of", L" Melanesian", L" millenarian", L" movement",
+// many more lines here...
+L" applied", L" retroactively", L" to", L" movements", L" in", L" a", L" much", L" earlier", L" era.\n"
+  };
+  StringBuilder&lt;wchar_t&gt; wide;
+  wide.Add(cargoCult.begin(), cargoCult.end()).AppendLine();
+    // use ToString(), just like .net
+  std::wcout &lt;&lt; wide.ToString() &lt;&lt; std::endl;
+  // javascript-like join.
+  std::wcout &lt;&lt; wide.Join(L" _\n") &lt;&lt; std::endl;
+ 
+  ////////////////////////////////////
+  // Performance tests
+  ////////////////////////////////////
+  TestPerformance(wide, cargoCult);
+#ifdef __USE_POSIX199309
+  AccurateTestPerformance(wide, cargoCult);
+#endif // def __USE_POSIX199309
+  return 0;
+}
+</pre>
+</div>
+<p>任何情况下，当连接超过几个字符串时，当心std::accumulate函数。</p>
+<p><strong>现在稍等一下！</strong></p>
+<p>你可能会问：你是在试着说服我们提前优化吗？<br />
+不是的。我赞同提前优化是糟糕的。这种优化并不是提前的：是及时的。这是基于经验的优化：我发现自己过去一直在和这种特殊的怪胎搏斗。基于经验的优化（不在同一个地方摔倒两次）并不是提前优化。<br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/96666.html'>Linux如何使用awk文本处理工具进行数组排序</a><a>下一篇</a><a href='/php/biji/96668.html'>SSH框架网上商城项目第19战之订单信息级联入库以及页面缓存问题</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

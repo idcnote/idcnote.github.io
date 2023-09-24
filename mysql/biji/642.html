@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL幻读及消除的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL幻读及消除的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	事务隔离级别" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL幻读及消除的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:18:04                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL幻读及消除的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	事务隔离级别</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL幻读及消除的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<div id="navCategory">
+<h5 class="catalogue">目录</h5>
+<ul class="first_class_ul">
+	<li>事务隔离级别</li>
+	<li>什么是幻读</li>
+	<li>如何消除幻读</li>
+	<li>总结</li>
+</ul>
+<p>这是一篇数据库隔离级别的科普文章，旨在了解数据库中著名的幻读现象，为了专注，对脏读、不可重复读不作讨论。</p>
+<p class="maodian"></p>
+<h2>事务隔离级别</h2>
+<p>MySQL有四级事务隔离级别:</p>
+<blockquote>
+<p>读未提交 READ-UNCOMMITTED： 存在脏读，不可重复读，幻读的问题读已提交 READ-COMMITTED：不存在脏读，但存在不可重复读，幻读问题可重复读 REPEATABLE-READ：不存在脏读，不可重复读问题，但存在幻读问题序列化SERIALIZABLE：解决脏读，不可重复读，幻读问题，但完全串行执行，性能最低</p></blockquote>
+<p class="maodian"></p>
+<h2>什么是幻读</h2>
+<p>幻读错误的理解：说幻读是事务A 执行两次 select 操作得到不同的数据集，即 select 1 得到10条记录，select 2 得到11条记录。这其实并不是幻读，这是不可重复读的一种，只会在 R-U R-C 级别下出现，而在 mysql 默认的 RR 隔离级别是不会出现的。</p>
+<p>这里给出我对幻读的理解：</p>
+<p>幻读，并不是说事务中多次读取获取的结果集不同，幻读更重要的是某次的 select 操作得到的结果集所表征的数据状态无法支撑后续的业务操作。更为具体一些：select 记录不存在，准备插入此记录，但执行 insert 时发现此记录已存在，无法插入，如同产生了幻觉</p>
+<p>举个例子可能会简化理解：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show create table user\G
+*************************** 1. row ***************************
+ Table: user
+Create Table: CREATE TABLE `user` (
+ `id` int(11) NOT NULL,
+ `name` varchar(32) DEFAULT NULL,
+ PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8</code></pre>
+<p>分析MySQL幻读及如何消除</p>
+<p>分别开启两个事务T1 &amp; T2，并设置其隔离级别为Reaptable-Read：</p>
+<p>T1：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; set global transaction isolation level repeatable read;      
+​
+mysql&gt; begin;
+mysql&gt; select * from user;
+mysql&gt; insert into user values (1, 'jeff');
+ERROR 1062 (23000): Duplicate entry '1' for key 'PRIMARY'
+​
+mysql&gt; select * from user;</code></pre>
+<p>分析MySQL幻读及如何消除</p>
+<p>T2:</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; set global transaction isolation level repeatable read;      
+​
+mysql&gt; begin;
+mysql&gt; insert into user values (1, 'jeff');
+mysql&gt; commit;</code></pre>
+<p>分析MySQL幻读及如何消除</p>
+<p>T1 事务检测表中是否有 id 为 1 的记录，没有则插入</p>
+<p>T2 插入干扰记录，造成T1出现幻读。</p>
+<p>上例中需要确保T1事务执行begin后才开始执行事务T2。</p>
+<p>上例中T1就发生了幻读，因为 T1读取的数据状态与后面的动作发生了语义上的冲突：查询的时候明明提示记录不存在，插入的时候去提示主键重复，类似于出现幻影，因而称之为幻读。</p>
+<p class="maodian"></p>
+<h2>如何消除幻读</h2>
+<p>MySQL当前有两种方式可以消除幻读：</p>
+<p>1. 通过对select操作手动加行X锁(SELECT ... FOR UPDATE )。原因是InnoDB中行锁锁定的是索引，纵然当前记录不存在，当前事务也会获得一把记录锁（记录存在就加行X锁，不存在就加next-key lock间隙X锁），这样其他事务则无法插入此索引的记录，杜绝幻读。2. 进一步提升隔离级别为SERIALIZABLE测试一下效果</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; begin;
+​
+mysql&gt; select * from user where id = 2 for update;
+mysql&gt; insert into user values (2, 'tony');
+
+mysql&gt; commit;</code></pre>
+<p>分析MySQL幻读及如何消除</p>
+<p>T2:</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; begin;
+​
+mysql&gt; insert into user values (2, 'jimmy');
+ERROR 1062 (23000): Duplicate entry '2' for key 'PRIMARY'</code></pre>
+<p>分析MySQL幻读及如何消除</p>
+<p>现在T1查询时携带了for update，在Innodb内会对该索引加锁（即使当前不存在），于是事务T2的insert会被阻塞直到T1显示提交，这样T1成功了，对于T1来说，幻读确实被消除了，但T2的插入会报主键重复，这也符合预期。</p>
+<p>至于另外一种提升隔离级别消除幻读的方式感兴趣的可以自己尝试，这里不再重复，其本质是类似的，只是让系统代替了手工加锁。</p>
+<p class="maodian"></p>
+<h2>总结</h2>
+<p>RR作为 mysql 事务默认隔离级别，是事务安全与性能的折中，正确认识幻读后，开发者便可以根据需求自行决定是否需要防止幻读。</p>
+<p>SERIALIZABLE则是悲观的认为幻读时刻都会发生，故会自动的隐式的对事务所需资源加排它锁，其他事务访问此资源会被阻塞等待，故事务是安全的，但需要认真考虑性能。</p>
+<p>InnoDB的锁是针对索引，这点需要引起注意。对行记录加锁，如果存在，加X锁，否则会加 next-key lock / gap 锁 / 间隙锁，故InnoDB可以实现事务对某记录的预先占用，只要本事务还在，其他事务就别想占有它。关于锁，后面还会再有专门的文章讨论。</p>
+<p>以上就是详解MySQL 幻读及如何消除的详细内容，更多关于MySQL 幻读及消除的资料请关注512笔记其它相关文章！</p></div>
+
+<p>注：关于MySQL幻读及消除的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/641.html'>MySQL 常用命令用法总结脚本之家整理版</a><a>下一篇</a><a href='/mysql/biji/643.html'>sql分割函数的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

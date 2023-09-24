@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>用C语言来实现一个简单的虚拟机_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content=" 必要的准备工作及注意事项：<br />
+在开始之前需要做以下工作：<br />
+<br />
+    一个C编译器——我使用了 clang 3.4，也可以用其它支持 c99/c11 的编译器；<br />
+    文本编辑器——我建议使用基于IDE的" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">用C语言来实现一个简单的虚拟机</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span> 必要的准备工作及注意事项：<br />
+在开始之前需要做以下工作：<br />
+<br />
+    一个C编译器——我使用了 clang 3.4，也可以用其它支持 c99/c11 的编译器；<br />
+    文本编辑器——我建议使用基于IDE的</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>&nbsp;必要的准备工作及注意事项：</p>
+<p>在开始之前需要做以下工作：</p>
+<ul>
+<li>&nbsp;&nbsp;&nbsp; 一个C编译器——我使用了 clang 3.4，也可以用其它支持 c99/c11 的编译器；</li>
+<li>&nbsp;&nbsp;&nbsp; 文本编辑器——我建议使用基于IDE的文本编辑器，我使用 Emacs;</li>
+<li>&nbsp;&nbsp;&nbsp; 基础编程知识——最基本的变量，流程控制，函数，数据结构等；</li>
+<li>&nbsp;&nbsp;&nbsp; Make 脚本——能使程序更快一点。</li>
+</ul>
+<p>为什么要写个虚拟机？</p>
+<p>有以下原因：</p>
+<ul>
+<li>&nbsp;&nbsp;&nbsp; 想深入了解计算机工作原理。本文将帮助你了解计算机底层如何工作，虚拟机提供简洁的抽象层，这不就是一个最好的学习它们原理的方法吗？</li>
+<li>&nbsp;&nbsp;&nbsp; 更深入了解一些编程语言是如何工作。例如，当下多种经常使用那些语言的虚拟机。包括JVM，Lua VM，FaceBook 的 Hip—Hop VM（PHP/Hack） 等。</li>
+<li>&nbsp;&nbsp;&nbsp; 只是因为有兴趣学习虚拟机。</li>
+</ul>
+<p><strong>指令集</strong></p>
+<p>我们将要实现一种非常简单的自定义的指令集。我不会讲一些高级的如位移寄存器等，希望在读过这篇文章后掌握这些。</p>
+<p>我们的虚拟机具有一组寄存器，A,B,C,D,E, 和F。这些是通用寄存器，也就是说，它们可以用于存储任何东西。一个程序将会是一个只读指令序列。这个虚拟机是一个基于堆栈的虚拟机，也就是说它有一个可以让我们压入和弹出值的堆栈，同时还有少量可用的寄存器。这要比实现一个基于寄存器的虚拟机简单的多。</p>
+<p>言归正传，下面是我们将要实现的指令集：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+PSH 5    ; pushes 5 to the stack
+PSH 10   ; pushes 10 to the stack
+ADD     ; pops two values on top of the stack, adds them pushes to stack
+POP     ; pops the value on the stack, will also print it for debugging
+SET A 0   ; sets register A to 0
+HLT     ; stop the program
+</pre>
+</div>
+<p>这就是我们的指令集，注意，POP 指令将会打印我们弹出的指令，这样我们就能够看到 ADD 指令工作了。我还加入了一个 SET 指令，主要是让你理解寄存器是可以访问和写入的。你也可以自己实现像MOV A B（将A的值移动到B）这样的指令。HTL 指令是为了告诉我们程序已经运行结束。</p>
+<p><strong>虚拟机是如何工作的呢？</strong></p>
+<p>现在我们已经到了本文最关键的部分，虚拟机比你想象的简单，它们遵循一个简单的模式：读取；解码；执行。首先，我们从指令集合或代码中读取下一条指令，然后将指令解码并执行解码后的指令。为简单起见，我们忽略了虚拟机的编码部分，典型的虚拟机将会把一个指令（操作码和它的操作数）打包成一个数字，然后再解码这个指令。<br />
+<strong>项目结构</strong></p>
+<p>开始编程之前，我们需要设置好我们的项目。第一，你需要一个C编译器（我使用 clang 3.4）。还需要一个文件夹来放置我们的项目，我喜欢将我的项目放置于~/Dev：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+$cd ~/Dev/
+mkdir mac
+cd mac
+mkdir src
+</pre>
+</div>
+<p>如上，我们先 cd 进入~/Dev 目录，或者任何你想放置的位置，然后新建一个目录（我称这个虚拟机为"mac"）。然后再 cd 进这个目录并新建我们 src 目录，这个目录用于放置代码。</p>
+<p><strong>Makefile</strong></p>
+<p>makefile 相对直接，我们不需要将什么东西分成多个文件，也不用包含任何东西，所以我们只需要用一些标志来编译文件：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+SRC_FILES = main.c
+CC_FLAGS = -Wall -Wextra -g -std=c11
+CC = clang
+ 
+all:
+  ${CC} ${SRC_FILES} ${CC_FLAGS} -o mac
+</pre>
+</div>
+<p>这对目前来说已经足够了，你以后还可以改进它，但是只要它能完成这个工作，我们应该满足了。<br />
+<strong>指令编程（代码）</strong></p>
+<p>现在开始写虚拟机的代码了。第一，我们需要定义程序的指令。为此，我们可以使用一个枚举类型enum，因为我们的指令基本上是从0到X的数字。事实上，可以说你是在组装一个汇编文件，它会使用像 mov 这样的词，然后翻译成声明的指令。<br />
+我们可以只写一个指令文件，例如 PSH, 5 是0, 5，但是这样并不易读，所以我们使用枚举器！<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+typedef enum {
+  PSH,
+  ADD,
+  POP,
+  SET,
+  HLT
+} InstructionSet;
+</pre>
+</div>
+<p>现在我们可以将一个测试程序存储为一个数组。我们写一个简单的程序用于测试：将5和6相加，然后将他们打印出来（用POP指令）。如果你愿意，你可以定义一个指令将栈顶的值打印出来。</p>
+<p>指令应该存储成一个数组，我将在文档的顶部定义它；但你或许会将它放在一个头文件中，下面是我们的测试程序：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+const int program[] = {
+  PSH, 5,
+  PSH, 6,
+  ADD,
+  POP,
+  HLT
+};
+</pre>
+</div>
+<p>上面的程序将会把5和6压入栈，调用 ADD 指令，这将会把栈顶的两个值弹出，相加后将结果压回栈中，接下来我们弹出结果，因为 POP 指令将会打印这个值，但是你不必自己再做了，我已经做好并测试过了。最后，HLT 指令结束程序。</p>
+<p>很好，这样我们有了自己的程序。现在我们实现了虚拟机的读取，解码，求值的模式。但是要记住，我们没有解码任何东西，因为我们给出的是原始指令。也就是说我们只需要关注读取和求值！我们可以将它们简化成两个函数 fetch 和 evaluate。</p>
+<p><strong>取得当前指令</strong></p>
+<p>因为我们已经将我们的程序存成了一个数组，所以很简单的就可以取得当前指令。一个虚拟机有一个计数器，一般来说叫做程序计数器，指令指针等等，这些名字是一个意思取决于你的个人喜好。在虚拟机的代码库里，IP 或 PC 这样的简写形式也随处可见。</p>
+<p>如果你之前有记得，我说过我们要把程序计数器以寄存器的形式存储...我们将那么做——在以后。现在，我们只是在我们代码的最顶端创建一个叫 ip 的变量，并且设置为 0。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+int ip = 0;
+</pre>
+</div>
+<p>ip 变量代表指令指针。因为我们已经将程序存成了一个数组，所以使用 ip 变量去指明程序数组中当前索引。例如，如果创建了一个被赋值了程序 ip 索引的变量 x，它将存储我们程序的第一条指令。</p>
+<p>[假设ip为0]<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+int ip = 0;
+ 
+int main() {
+  int instr = program[ip];
+  return 0;
+</pre>
+</div>
+<p>如果我们打印变量 instr，本来应是 PSH 的它将显示为0，因为在他是我们枚举里的第一个值。我们也可以写一个取回函数像这样：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+int fetch() {
+  return program[ip];
+}
+</pre>
+</div>
+<p>这个函数将会返回当前被调用指令。太棒了，那么如果我们想要下一条指令呢？很容易，我们只要增加指令指针就好了：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+int main() {
+  int x = fetch(); // PSH
+  ip++; // increment instruction pointer
+  int y = fetch(); // 5
+}
+</pre>
+</div>
+<p>那么怎样让它自己动起来呢？我们知道一个程序直到它执行 HLT 指令才会停止。因此我们使用一个无限的循环持续直到当前指令为HLT。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+// INCLUDE &lt;stdbool.h&gt;!
+bool running = true;
+ 
+int main() {
+  while (running) {
+    int x = fetch();
+    if (x == HLT) running = false;
+    ip++;
+  }
+}
+</pre>
+</div>
+<p>这工作的很好，但是有点凌乱。我们正在循环每一条指令，检查是否 HLT，如果是就停止循环，否则“吃掉”指令接着循环。</p>
+<p><strong>判断一条指令</strong></p>
+<p>因此这就是我们虚拟机的主体，然而我们想要确实的评判每一条指令，并且使它更简洁一些。好的，这个简单的虚拟机，你可以写一个“巨大”的 switch 声明。让 switch 中的每一个 case 对应一条我们定义在枚举中的指令。这个 eval 函数将使用一个简单的指令的参数来判断。我们在函数中不会使用任何指令指针递增除非我们想操作数浪费操作数。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+void eval(int instr) {
+  switch (instr) {
+    case HLT:
+      running = false;
+      break;
+  }
+}
+</pre>
+</div>
+<p>因此如果我们在回到主函数，就可以像这样使用我们的 eval 函数工作：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+bool running = true;
+int ip = 0;
+ 
+// instruction enum here
+ 
+// eval function here
+ 
+// fetch function here
+ 
+int main() {
+  while (running) {
+    eval(fetch());
+    ip++; // increment the ip every iteration
+  }
+}
+</pre>
+</div>
+<p><strong>栈！</strong></p>
+<p>很好，那会很完美的完成这个工作。现在，在我们加入其他指令之前，我们需要一个栈。幸运的是，栈是很容易实现的，我们仅仅需要使用一个数组而已。数组会被设置为合适的大小，这样它就能包含256个值了。我们也需要一个栈指针（常被缩写为sp）。这个指针会指向栈数组。</p>
+<p>为了让我们对它有一个更加形象化的印象，让我们来看看这个用数组实现的栈吧：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+[] // empty
+ 
+PSH 5 // put 5 on **top** of the stack
+[5]
+ 
+PSH 6
+[5, 6]
+ 
+POP
+[5]
+ 
+POP
+[] // empty
+ 
+PSH 6
+[6]
+ 
+PSH 5
+[6, 5]
+</pre>
+</div>
+<p>那么，在我们的程序里发生了什么呢？<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+PSH, 5,
+PSH, 6,
+ADD,
+POP,
+HLT
+</pre>
+</div>
+<p>我们首先把5压入了栈<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+ [5]
+</pre>
+</div>
+<p></p>
+<p>然后压入6：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+[5, 6]
+</pre>
+</div>
+<p>接着添加指令，取出这些值，把它们加在一起并把结果压入栈中：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+[5, 6]
+ 
+// pop the top value, store it in a variable called a
+a = pop; // a contains 6
+[5] // stack contents
+ 
+// pop the top value, store it in a variable called b
+b = pop; // b contains 5
+[] // stack contents
+ 
+// now we add b and a. Note we do it backwards, in addition
+// this doesn't matter, but in other potential instructions
+// for instance divide 5 / 6 is not the same as 6 / 5
+result = b + a;
+push result // push the result to the stack
+[11] // stack contents
+</pre>
+</div>
+<p>那么我们的栈指针在哪起作用呢？栈指针（或者说sp）一般是被设置为-1，这意味着这个指针是空的。请记住一个数组是从0开始的，如果没有初始化sp的值，那么他会被设置为C编译器放在那的一个随机值。</p>
+<p>如果我们将3个值压栈，那么sp将变成2。所以这个数组保存了三个值：<br />
+&nbsp;<br />
+sp指向这里（sp = 2）<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; V<br />
+[1, 5, 9]<br />
+&nbsp;0&nbsp; 1&nbsp; 2 &lt;- 数组下标</p>
+<p>现在我们从栈上出栈一次，我们仅需要减小栈顶指针。比如我们接下来把9出栈，那么栈顶将变为5：<br />
+&nbsp;<br />
+sp指向这里（sp = 1）<br />
+&nbsp;&nbsp;&nbsp; |<br />
+&nbsp;&nbsp;&nbsp; V<br />
+[1, 5]<br />
+&nbsp;0&nbsp; 1 &lt;- 数组下标</p>
+<p>所以，当我们想知道栈顶内容的时候，只需要查看sp的当前值。OK，你可能想知道栈是如何工作的，现在我们用C语言实现它。很简单，和ip一样，我们也应该定义一个sp变量，记得把它赋为-1！再定义一个名为stack的数组，代码如下：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+int ip = 0;
+int sp = -1;
+int stack[256]; // 用数组或适合此处的其它结构
+ 
+// 其它C代码
+</pre>
+</div>
+<p>现在如果我们想入栈一个值，我们先增加栈顶指针，接着设置当前sp处的值（我们刚刚增加的）。注意：这两步的顺序很重要！<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+// 压栈5
+ 
+// sp = -1
+sp++; // sp = 0
+stack[sp] = 5; // 栈顶现在变为5</pre>
+</div>
+<p>所以，在我们的执行函数eval()里，可以像这样实现push出栈指令：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+void eval(int instr) {
+  switch (instr) {
+    case HLT: {
+      running = false;
+      break;
+    }
+    case PSH: {
+      sp++;
+      stack[sp] = program[++ip];
+      break;
+    }
+  }
+}
+</pre>
+</div>
+<p>现在你看到，它和我们之前实现的eval()函数有一些不同。首先，我们把每个case语句块放到大括号里。你可能不太了解这种用法，它可以让你在每条case的作用域里定义变量。虽然现在不需要定义变量，但将来会用到。并且它可以很容易得让所有的case语句块保持一致的风格。<br />
+</p>
+<p>其次是神奇的表达式program[++ip]。它做了什么？呃，我们的程序存储在一个数组里，PSH指令需要获得一个操作数。操作数本质是一个参数，就像当你调用一个函数时，你可以给它传递一个参数。这种情况我们称作压栈数值5。我们可以通过增加指令指针（译者注：一般也叫做程序计数器）ip来获取操作数。当ip为0时，这意味着执行到了PSH指令，接下来我们希望取得下一条指令——即压栈的数值。这可以通过ip自增的方法实现（注意：增加ip的位置十分重要，我们希望在取得指令前自增，否则我们只是拿到了PSH指令），接下来需要跳到下一条指令否则会引发奇怪的错误。当然我们也可以把sp++简化到stack[++sp]里。</p>
+<p>对于POP指令，实现非常简单。只需要减小栈顶指针，但是我一般希望能够在出栈的时候打印出栈值。</p>
+<p><br />
+我省略了实现其它指令的代码和swtich语句，仅列出POP指令的实现：</p>
+<p>&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+// 记得#include &lt;stdio.h&gt;!
+ 
+case POP: {
+  int val_popped = stack[sp--];
+  printf("popped %d\n", val_popped);
+  break;
+}
+</pre>
+</div>
+<p>现在，POP指令能够工作了！我们刚刚做的只是把栈顶放到变量val_popped里，接着栈顶指针减一。如果我们首先栈顶减一，那么将得到一些无效值，因为sp可能取值为0，那么我们可能把stack[-1]赋给val_popped，通常这不是一个好主意。</p>
+<p>最后是ADD指令。这条指令可能要花费你一些脑细胞，同时这也是我们需要用大括号{}实现case语句内作用域的原因。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+case ADD: {
+  // 首先我们出栈，把数值存入变量a
+  int a = stack[sp--];
+ 
+  // 接着我们出栈，把数值存入变量b
+ 
+  // 接着两个变量相加，再把结果入栈
+  int result = a + b;
+  sp++; // 栈顶加1 **放在赋值之前**
+  stack[sp] = result; // 设置栈顶值
+ 
+  // 完成！
+  break;
+}
+</pre>
+</div>
+<p><strong><br />
+寄存器</strong></p>
+<p>寄存器是虚拟机中的选配件，很容易实现。之前提到过我们可能需要六个寄存器：A，B，C，D，E和F。和实现指令集一样，我们也用一个枚举来实现它们。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+typedef enum {
+  A, B, C, D, E, F,
+  NUM_OF_REGISTERS
+} Registers;
+</pre>
+</div>
+<p>小技巧：枚举的最后放置了一个数 NUM_OF_REGISTERS。通过这个数可以获取寄存器的个数，即便你又添加了其它的寄存器。现在我们需要一个数组为寄存器存放数值：</p>
+<p>&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+int registers[NUM_OF_REGISTERS];</pre>
+</div>
+<p>接下来你可以读取寄存器内的值：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+printf("%d\n", registers[A]); // 打印寄存器A的值
+</pre>
+</div>
+<p><strong>修订</strong></p>
+<p>我没有在寄存器花太多心思，但你应该能够写出一些操作寄存器的指令。比如，如果你想实现任何分支跳转，可以通过把指令指针（译者注：或叫程序计数器）和/或栈顶指针存到寄存器里，或者通过实现分支指令。</p>
+<p>前者实现起来相对快捷、简单。我们可以这样做，增加代表IP和SP的寄存器：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+typedef enum {
+  A, B, C, D, E, F, PC, SP,
+  NUM_OF_REGISTERS
+} Registers;
+</pre>
+</div>
+<p>现在我们需要实现代码来使用指令指针和栈顶指针。一个简单的办法——删掉上面定义的sp和ip变量，用宏定义实现它们：</p>
+<p>&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+#define sp (registers[SP])
+#define ip (registers[IP])  </pre>
+</div>
+<p>译者注：此处应同Registers枚举中保持一致，IP应改为PC</p>
+<p>这个修改恰到好处，你不需要重写很多代码，同时它工作的很好。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/81945.html'>查找Linux系统中的大文件和大目录方法</a><a>下一篇</a><a href='/php/biji/81947.html'>C#生成Word文档代码示例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

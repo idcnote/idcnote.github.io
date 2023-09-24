@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>从Android源码剖析Intent查询匹配的实现_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="前言<br />
+<br />
+    这篇文章主要是介绍一下Android Intent，并且从Android源码的角度对Intent查询匹配过程进行分析。<br />
+Intent介绍<br />
+<br />
+    Intent的中文是“意图”的意思，而意图是一个非常" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">从Android源码剖析Intent查询匹配的实现</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>前言<br />
+<br />
+    这篇文章主要是介绍一下Android Intent，并且从Android源码的角度对Intent查询匹配过程进行分析。<br />
+Intent介绍<br />
+<br />
+    Intent的中文是“意图”的意思，而意图是一个非常</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>前言<br />
+</strong>&nbsp;&nbsp;&nbsp; 这篇文章主要是介绍一下Android Intent，并且从Android源码的角度对Intent查询匹配过程进行分析。</p>
+<p><strong>Intent介绍<br />
+</strong>&nbsp;&nbsp;&nbsp; Intent的中文是“意图”的意思，而意图是一个非常抽象的概念，那么在Android的编码设计中，如何实例化意图呢？因此Android系统明确指定一个Intent可由两方面属性来衡量。</p>
+<p>&nbsp;&nbsp;&nbsp; 主要属性：包括Action和Data。其中Action用于表示该Intent所表达的动作意图，Data用于表示该Action所操作的数据。<br />
+&nbsp;&nbsp;&nbsp; 次要属性：包括Category、Type、Component和Extras。其中Category表示类别，Type表示数据的MIME类型，Component可用于指定特定的Intent的响应者（例如指定intent为某个包下的某个class类），Extras用于承载其他的信息。</p>
+<p>&nbsp;&nbsp;&nbsp; Android系统中主要有两种类型的Intent，显示Intent（Explicit Intent）和隐式Intent（Implicit Intent）。</p>
+<p>&nbsp;&nbsp;&nbsp; Explicit Intent：这类Intent明确指明了要找哪个Component。在代码中可以通过setClassName或者setComponent来锁定目标对象。<br />
+&nbsp;&nbsp;&nbsp; Implicit Intent：这类Intent不明确指明要启动哪个Component，而是设置Action、Data、Category让系统来筛选出合适的Component。</p>
+<p>&nbsp;&nbsp;&nbsp; 接下来，写两个代码示例，来介绍一下Explicit Intent和Implict Inent。首先是Explicit Intent：</p>
+<p>&nbsp;&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ private void startExplicitIntentWithComponent() { 
+    Intent intent = new Intent(); 
+    ComponentName component = new ComponentName("com.example.photocrop", "com.example.photocrop.MainActivity"); 
+    intent.setComponent(component); 
+    startActivity(intent); 
+  } 
+   
+  private void startExplicitIntentWithClassName() { 
+    Intent intent = new Intent(); 
+    intent.setClassName("com.example.photocrop", "com.example.photocrop.MainActivity"); 
+    startActivity(intent); 
+  } 
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 但是，从源码里面去看，发现setClassName也是借助了ComponentName实现了Explicit Intent。源码如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+  public Intent setClassName(String packageName, String className) { 
+    mComponent = new ComponentName(packageName, className); 
+    return this; 
+  } 
+
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 然后，在给出一个Implict Intent的代码示例。我这里用一个Activity标注一些Intent Filter为例，然后在写一个Intent用于启动它。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+  &lt;activity  
+    android:name=".SendIntentType"&gt; 
+    &lt;intent-filter &gt; 
+      &lt;action android:name="justtest"/&gt; 
+      &lt;category android:name="justcategory"/&gt; 
+    &lt;/intent-filter&gt; 
+  &lt;/activity&gt; 
+
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 在当前应用的AndroidManifest.xml中，给SendIntentType类增加了intent-filter，action的名字为“justtest”，category的名字为“justcategory”。启动该Activity的代码如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+  private void startImplictIntent() { 
+    Intent intent = new Intent(); 
+    intent.setAction("justaction"); 
+    intent.addCategory("justcategory"); 
+    startActivity(intent); 
+  } 
+
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 系统在匹配Implict Intent的过程中，将以Intent Filter列出的3项内容为参考标准，具体步骤如下：</p>
+<ul>
+<li>&nbsp;&nbsp;&nbsp; 首先匹配IntentFilter的Action，如果Intent设置的action不满足IntentFilter的Action，则匹配失败。如果IntentFilter未设定Action或者设定的Action相同，则匹配成功。</li>
+<li>&nbsp;&nbsp;&nbsp; 然后检查IntentFilter的Category，匹配方法同Action的匹配相同，唯一例外的是当Category为CATEGORY_DEFAULT的情况。</li>
+<li>&nbsp;&nbsp;&nbsp; 最后检查Data。</li>
+</ul>
+<p><br />
+<strong>Activityi信息的管理<br />
+</strong>&nbsp;&nbsp;&nbsp; 从上面的分析可以看出，系统的匹配Intent的过程中，首先需要管理当前系统中所有Activity信息。Activity的信息是PackageManagerService在扫描APK的时候进行收集和管理的。相关源码如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+  // 处理该package的activity信息 
+  N = pkg.activities.size(); 
+  r = null; 
+  for (i = 0; i &lt; N; i++) { 
+    PackageParser.Activity a = pkg.activities.get(i); 
+    a.info.processName = fixProcessName(pkg.applicationInfo.processName, a.info.processName, 
+        pkg.applicationInfo.uid); 
+    mActivities.addActivity(a, "activity"); 
+  } 
+
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 上面代码中，有两个比较重要的数据结构，如下图所示。<br />
+</p>
+<p></p>
+<p>结合代码和上图的数据结构，可知：</p>
+<p>&nbsp;&nbsp;&nbsp; mAcitivitys为ActivityIntentResolver类型，是PKMS的成员变量，用于保存系统中所有与Activity相关的信息。此数据结构内部也有一个mActivities变量，它以ComponentName为key，保存PackageParser.Activity对象。<br />
+&nbsp;&nbsp;&nbsp; 从APK中解析得到的所有和Acitivity相关的信息（包括XML中声明的IntentFilter标签）都由PackageParser.Activity来保存。</p>
+<p>&nbsp;&nbsp;&nbsp; 前面代码中调用addActivity函数完成了私有信息的公有化。addActivity函数的代码如下：</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public final void addActivity(PackageParser.Activity a, String type) { 
+    final boolean systemApp = isSystemApp(a.info.applicationInfo); 
+    mActivities.put(a.getComponentName(), a); 
+    final int NI = a.intents.size(); 
+    for (int j = 0; j &lt; NI; j++) { 
+      PackageParser.ActivityIntentInfo intent = a.intents.get(j); 
+      if (!systemApp && intent.getPriority() &gt; 0 && "activity".equals(type)) { 
+        // 非系统APK的priority必须为0 
+        intent.setPriority(0); 
+      } 
+      addFilter(intent); 
+    } 
+  } 
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 接下来看一下addFilter函数。函数源码如下：</p>
+<p>&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ public void addFilter(F f) { 
+    // mFilters保存所有IntentFilter信息 
+    mFilters.add(f); 
+    int numS = register_intent_filter(f, f.schemesIterator(), 
+        mSchemeToFilter, "   Scheme: "); 
+    int numT = register_mime_types(f, "   Type: "); 
+    if (numS == 0 && numT == 0) { 
+      register_intent_filter(f, f.actionsIterator(), 
+          mActionToFilter, "   Action: "); 
+    } 
+    if (numT != 0) { 
+      register_intent_filter(f, f.actionsIterator(), 
+          mTypedActionToFilter, "   TypedAction: "); 
+    } 
+  } 
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 这里又出现了几种数据结构，它们的类似都是ArrayMap&lt;String, F[ ]&gt;，其中F为模板参数。</p>
+<ul>
+<li>&nbsp;&nbsp;&nbsp; mSchemeToFilter：用于保存uri中与scheme相关的IntentFilter信息。</li>
+<li>&nbsp;&nbsp;&nbsp; mActionToFilter：用于保存仅设置Action条件的IntentFilter信息。</li>
+<li>&nbsp;&nbsp;&nbsp; mTypedActionToFilter：用于保存既设置了Action又设置了Data的MIME类型的IntentFilter信息。</li>
+</ul>
+<p>&nbsp;&nbsp;&nbsp; 了解了大概的数据结构之后，我们来看一下register_intent_filter的函数实现：</p>
+<p>&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ private final int register_intent_filter(F filter, Iterator&lt;String&gt; i, 
+      ArrayMap&lt;String, F[]&gt; dest, String prefix) { 
+    if (i == null) { 
+      return 0; 
+    } 
+   
+    int num = 0; 
+    while (i.hasNext()) { 
+      String name = i.next(); 
+      num++; 
+      addFilter(dest, name, filter); 
+    } 
+    return num; 
+  } 
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 然后又是一个addFilter函数，明显是一个函数重载，我们来看一下这个addFilter的实现：</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+private final void addFilter(ArrayMap&lt;String, F[]&gt; map, String name, F filter) { 
+    F[] array = map.get(name); 
+    if (array == null) { 
+      array = newArray(2); 
+      map.put(name, array); 
+      array[0] = filter; 
+    } else { 
+      final int N = array.length; 
+      int i = N; 
+      while (i &gt; 0 && array[i-1] == null) { 
+        i--; 
+      } 
+      if (i &lt; N) { 
+        array[i] = filter; 
+      } else { 
+        F[] newa = newArray((N*3)/2); 
+        System.arraycopy(array, 0, newa, 0, N); 
+        newa[N] = filter; 
+        map.put(name, newa); 
+      } 
+    } 
+  } 
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 其实代码还是很简单的，如果F数组存在，则判断容量，不够则扩容，够的话就找到位置插入。如果F数组不存在，则创建一个容量为2的数组，将0号元素赋值为该filter。</p>
+<p><strong>Intent匹配查询分析<br />
+</strong>&nbsp;&nbsp;&nbsp; 客户端通过ApplicationPackageManager输出的queryIntentActivities函数向PackageManagerService发起一次查询请求，代码如下：</p>
+<p>&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ @Override 
+  public List&lt;ResolveInfo&gt; queryIntentActivities(Intent intent, 
+                          int flags) { 
+    return queryIntentActivitiesAsUser(intent, flags, mContext.getUserId()); 
+  } 
+   
+  /** @hide Same as above but for a specific user */ 
+  @Override 
+  public List&lt;ResolveInfo&gt; queryIntentActivitiesAsUser(Intent intent, 
+                          int flags, int userId) { 
+    try { 
+      return mPM.queryIntentActivities( 
+        intent, 
+        intent.resolveTypeIfNeeded(mContext.getContentResolver()), 
+        flags, 
+        userId); 
+    } catch (RemoteException e) { 
+      throw new RuntimeException("Package manager has died", e); 
+    } 
+  } 
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 可以看到，queryIntentActivities的真正实现是在PackageManagerService.java中，函数代码如下：</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public List&lt;ResolveInfo&gt; queryIntentActivities(Intent intent, String resolvedType, int flags, int userId) { 
+    if (!sUserManager.exists(userId)) 
+      return Collections.emptyList(); 
+    enforceCrossUserPermission(Binder.getCallingUid(), userId, false, "query intent activities"); 
+    ComponentName comp = intent.getComponent(); 
+    if (comp == null) { 
+      if (intent.getSelector() != null) { 
+        intent = intent.getSelector(); 
+        comp = intent.getComponent(); 
+      } 
+    } 
+   
+    if (comp != null) { 
+      // Explicit的Intent，直接根据component得到对应的ActivityInfo 
+      final List&lt;ResolveInfo&gt; list = new ArrayList&lt;ResolveInfo&gt;(1); 
+      final ActivityInfo ai = getActivityInfo(comp, flags, userId); 
+      if (ai != null) { 
+        final ResolveInfo ri = new ResolveInfo(); 
+        ri.activityInfo = ai; 
+        list.add(ri); 
+      } 
+      return list; 
+    } 
+   
+    // reader 
+    synchronized (mPackages) { 
+      final String pkgName = intent.getPackage(); 
+      if (pkgName == null) { 
+        // Implicit Intent 
+        return mActivities.queryIntent(intent, resolvedType, flags, userId); 
+      } 
+      final PackageParser.Package pkg = mPackages.get(pkgName); 
+      if (pkg != null) { 
+        // 指定了包名的Intent 
+        return mActivities.queryIntentForPackage(intent, resolvedType, flags, pkg.activities, userId); 
+      } 
+      return new ArrayList&lt;ResolveInfo&gt;(); 
+    } 
+  } 
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 可以看到，Explicit Intent的实现较为简单，我们重点来看一下Implict Intent实现。Implicit Intent调用了queryIntent方法，我们来看一下queryIntent的实现代码：</p>
+<p>&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ public List&lt;ResolveInfo&gt; queryIntent(Intent intent, String resolvedType, int flags, int userId) { 
+    if (!sUserManager.exists(userId)) 
+      return null; 
+    mFlags = flags; 
+    return super.queryIntent(intent, resolvedType, (flags & PackageManager.MATCH_DEFAULT_ONLY) != 0, userId); 
+  } </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 继续跟踪到IntentResolver.java的queryIntent方法，源码如下：</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public List&lt;R&gt; queryIntent(Intent intent, String resolvedType, boolean defaultOnly, 
+      int userId) { 
+    String scheme = intent.getScheme(); 
+   
+    ArrayList&lt;R&gt; finalList = new ArrayList&lt;R&gt;(); 
+   
+    // 最多有4轮匹配操作 
+    F[] firstTypeCut = null; 
+    F[] secondTypeCut = null; 
+    F[] thirdTypeCut = null; 
+    F[] schemeCut = null; 
+   
+    // If the intent includes a MIME type, then we want to collect all of 
+    // the filters that match that MIME type. 
+    if (resolvedType != null) { 
+      int slashpos = resolvedType.indexOf('/'); 
+      if (slashpos &gt; 0) { 
+        final String baseType = resolvedType.substring(0, slashpos); 
+        if (!baseType.equals("*")) { 
+          if (resolvedType.length() != slashpos+2 
+              || resolvedType.charAt(slashpos+1) != '*') { 
+            // Not a wild card, so we can just look for all filters that 
+            // completely match or wildcards whose base type matches. 
+            firstTypeCut = mTypeToFilter.get(resolvedType); 
+            secondTypeCut = mWildTypeToFilter.get(baseType); 
+          } else { 
+            // We can match anything with our base type. 
+            firstTypeCut = mBaseTypeToFilter.get(baseType); 
+            secondTypeCut = mWildTypeToFilter.get(baseType); 
+          } 
+          // Any */* types always apply, but we only need to do this 
+          // if the intent type was not already */*. 
+          thirdTypeCut = mWildTypeToFilter.get("*"); 
+        } else if (intent.getAction() != null) { 
+          // The intent specified any type ({@literal *}/*). This 
+          // can be a whole heck of a lot of things, so as a first 
+          // cut let's use the action instead. 
+          firstTypeCut = mTypedActionToFilter.get(intent.getAction()); 
+        } 
+      } 
+    } 
+   
+    // If the intent includes a data URI, then we want to collect all of 
+    // the filters that match its scheme (we will further refine matches 
+    // on the authority and path by directly matching each resulting filter). 
+    if (scheme != null) { 
+      schemeCut = mSchemeToFilter.get(scheme); 
+    } 
+   
+    // If the intent does not specify any data -- either a MIME type or 
+    // a URI -- then we will only be looking for matches against empty 
+    // data. 
+    if (resolvedType == null && scheme == null && intent.getAction() != null) { 
+      firstTypeCut = mActionToFilter.get(intent.getAction()); 
+    } 
+   
+    FastImmutableArraySet&lt;String&gt; categories = getFastIntentCategories(intent); 
+    if (firstTypeCut != null) { 
+      buildResolveList(intent, categories, debug, defaultOnly, 
+          resolvedType, scheme, firstTypeCut, finalList, userId); 
+    } 
+    if (secondTypeCut != null) { 
+      buildResolveList(intent, categories, debug, defaultOnly, 
+          resolvedType, scheme, secondTypeCut, finalList, userId); 
+    } 
+    if (thirdTypeCut != null) { 
+      buildResolveList(intent, categories, debug, defaultOnly, 
+          resolvedType, scheme, thirdTypeCut, finalList, userId); 
+    } 
+    if (schemeCut != null) { 
+      buildResolveList(intent, categories, debug, defaultOnly, 
+          resolvedType, scheme, schemeCut, finalList, userId); 
+    } 
+    sortResults(finalList); 
+   
+    return finalList; 
+  } 
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 具体的查询匹配过程是由buildResolveList函数完成了。查询的匹配实现我就不贴代码了，大家自己去查询看就好了。</p>
+<p>&nbsp;&nbsp;&nbsp; <br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/93821.html'>Repeater怎么实现多行间隔显示分隔符</a><a>下一篇</a><a href='/php/biji/93823.html'>jQuery下拉美化搜索表单效果代码分享</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

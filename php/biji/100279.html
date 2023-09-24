@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>linux系统下实现mysql热备份详细步骤(mysql主从复制)_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="主从的作用：<br />
+1.可以当做一种备份方式<br />
+2.用来实现读写分离，缓解一个数据库的压力<br />
+ MySQL主从备份原理：<br />
+Mysql的主从复制至少是需要两个Mysql的服务，当然Mysql的服务是可以分布在" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">linux系统下实现mysql热备份详细步骤(mysql主从复制)</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>主从的作用：<br />
+1.可以当做一种备份方式<br />
+2.用来实现读写分离，缓解一个数据库的压力<br />
+ MySQL主从备份原理：<br />
+Mysql的主从复制至少是需要两个Mysql的服务，当然Mysql的服务是可以分布在</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><P>主从的作用：</P>
+<P>1.可以当做一种备份方式</P>
+<P>2.用来实现读写分离，缓解一个数据库的压力</P>
+<P>&nbsp;MySQL主从备份原理：</P>
+<P>Mysql的主从复制至少是需要两个Mysql的服务，当然Mysql的服务是可以分布在不同的服务器上，也可以在一台服务器上启动多个服务。</P>
+<P>如果想配置成为同一台上的话，注意安装的时候，选择两个不同的prefix=路径，同时开启服务器的时候，端口不能相同。</P>
+<P>(1)首先确保主从服务器上的Mysql版本相同（做主从服务器的原则是，MYSQL版本要相同，如果不能满足，最起码从服务器的MYSQL的版本必须高于主服务器的MYSQL版本 ）</P>
+<P>(2)在主服务器上,设置一个从数据库的账户,使用REPLICATION SLAVE赋予权限,如:<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="19388" class="copybut" id="copybut19388" onclick="doCopy('code19388')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code19388"><BR>&nbsp;mysql&gt; GRANT REPLICATION SLAVE ON *.* TO 'slave001'@'192.168.0.99' IDENTIFIED BY</P>
+<P>'123456';</P>
+<P>Query OK, 0 rows affected (0.13 sec)<BR></div></P>
+<P>[原理]master 上提供binlog ,</P>
+<P>slave 通过 I/O线程从 master拿取 binlog,并复制到slave的中继日志中</P>
+<P>slave 通过 SQL线程从 slave的中继日志中读取binlog ,然后解析到slave中</P>
+<P>&nbsp;主从复制大前提</P>
+<P>需要master与slave同步，因为笔者的数据库数据量不大，所以无需考虑太多，直接把</P>
+<P>master上的data复制到了slave上，但是如果是大的数据量，比如像taobao这个的系统</P>
+<P>实验环境准备：</P>
+<P>OS： CentOS5.4</P>
+<P>Mysql:Mysql-5.0.41.tar.gz<BR>辅助工具:SSH Secure Shell Client</P>
+<P>两台测试IP&服务器：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="11103" class="copybut" id="copybut11103" onclick="doCopy('code11103')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code11103"><BR>Master Server: 192.168.1.2/Linux CentOS5.4/MYSQL 5.0<BR>Slave Server: 192.168.1.3/Linux CentOS5.4/MYSQL 5.0<BR></div><BR>&nbsp;安装配置步骤：</P>
+<P>&nbsp;1、首先在Linux环境下分配好磁盘分区以便留足MySQL数据库的备份空间<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="89076" class="copybut" id="copybut89076" onclick="doCopy('code89076')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code89076"><BR>[root@vps mysql]# df -h<BR>Filesystem Size Used Avail Use% Mounted on<BR>/dev/simfs 30G 2.0G 29G 7% /<BR></div></P>
+<P><BR>&nbsp;2、MySQL数据库的安装：</P>
+<P>1&gt;将Mysql-5.0.41.tar.gz通过SSH 工具 上传到Linux系统的home目录下</P>
+<P>2&gt;建立MySQL使用者和群组:<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="28597" class="copybut" id="copybut28597" onclick="doCopy('code28597')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code28597"><BR>#groupadd mysql<BR>#useradd -g mysql mysql<BR></div></P>
+<P>3&gt;解压缩Mysql-5.0.41.tar.gz源码包</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="10034" class="copybut" id="copybut10034" onclick="doCopy('code10034')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code10034"><BR>#cd /usr/local/sofrware<BR>#tar zxvf Mysql-5.0.41.tar.gz<BR></div></P>
+<P>4&gt;进入源码目录编译安装<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="92281" class="copybut" id="copybut92281" onclick="doCopy('code92281')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code92281"><BR>#cd /home/Mysql-5.0.41<BR>#./configure --prefix=/usr/local/mysql --with-charset=gbk |注:配置Mysql安装路径并且支持中文<BR>#make |注:编译<BR>#make install |注:编译安装<BR></div></P>
+<P>5&gt;替换/etc/my.cnf文件,进入源码包,执行命令<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="18984" class="copybut" id="copybut18984" onclick="doCopy('code18984')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code18984"><BR>#cd /home/Mysql-5.0.41<BR>#cp support-files/my-medium.cnf /etc/my.cnf<BR></div><BR>6&gt;完成以上操作以后进行初始化数据库,进入已经安装好的mysql目录<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="38874" class="copybut" id="copybut38874" onclick="doCopy('code38874')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code38874"><BR>#cd /usr/local/mysql<BR>#bin/mysql_install_db --user=mysql |注:--user=mysql 初始化表并且规定用mysql用户<BR></div></P>
+<P>7&gt;设置给mysql和root用户设定访问权限 我们先进入mysql目录<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="5762" class="copybut" id="copybut5762" onclick="doCopy('code5762')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code5762"><BR>#cd /usr/local/mysql<BR>#chown -R root /usr/local/mysql 　　　　　注:设定root能访问/usr/local/mysq<BR>#chown -R mysql /usr/local/mysql/var 　　注:设定mysql用户能访问/usr/local/mysql/var<BR>#chgrp -R mysql /usr/local/mysql 　　　　注:设定mysql组能够访问/usr/local/mysq<BR></div></P>
+<P>8&gt;启动mysql,进入已经安装好的目录<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="5098" class="copybut" id="copybut5098" onclick="doCopy('code5098')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code5098"><BR>#cd /usr/local/mysql<BR>#bin/mysqld_safe --user=mysql &<BR></div></P>
+<P>9&gt;<BR>修改mysql数据库超级用户root的缺省密码:<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="80531" class="copybut" id="copybut80531" onclick="doCopy('code80531')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code80531"><BR>/usr/local/mysql/bin/mysqladmin -u root password 'mysql'<BR></div></P>
+<P>关闭mysql服务器<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="54232" class="copybut" id="copybut54232" onclick="doCopy('code54232')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code54232"><BR>cd /usr/local/mysql/bin<BR>./mysqladmin -u root -p shutdown<BR></div></P>
+<P>10&gt;设定开机就启动mysql,进入源码目录下<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="6571" class="copybut" id="copybut6571" onclick="doCopy('code6571')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code6571"><BR># cd /home/Mysql-5.0.41<BR># cp support-files/mysql.server /etc/init.d/mysql</P>
+<P># chmod +x /etc/init.d/mysql<BR># chkconfig --level 345 mysql on<BR># service mysql restart<BR>Shutting down MySQL. [ 确定 ]<BR>Starting MySQL [ 确定 ]<BR>[root@localhost mysql]#<BR></div></P>
+<P>到这里MySQL就装好了。<BR>&nbsp;</P>
+<P>3、配置MySQL5.0的复制（Replication）功能</P>
+<P>&nbsp;一.将master设置为只读。</P>
+<P>mysql&gt; flush tables with read lock;</P>
+<P>二.用master中的data文件夹替换slave中的data文件夹</P>
+<P>比如 用 tar zcvf mysql_data.gz /media/raid10/mysql/3306/data</P>
+<P>然后 mv mysql_data.gz /media/raid10/htdocs/blog/wordpress/</P>
+<P>因为我的 /media/raid10/htdocs/blog/wordpress/ 是 Nginx 的主目录</P>
+<P>所以可以在 slave上，用wget下载这个文件，然后 解压，并覆盖slave上的data文件</P>
+<P>注意：覆盖之前最好备份源文件</P>
+<P>三.配置master的my.cnf,添加以下内容</P>
+<P>在[mysqld]配置段添加如下字段</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="49555" class="copybut" id="copybut49555" onclick="doCopy('code49555')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code49555"><BR>server-id=1</P>
+<P>log-bin=/media/raid10/mysql/3306/binlog/binlog //这里写你的binlog绝对路径名</P>
+<P>binlog-do-db=blog //需要同步的数据库，如果没有本行，即表示同步所有的数据库</P>
+<P>binlog-ignore-db=mysql //被忽略的数据库<BR></div><BR>&nbsp;</P>
+<P>这里给出我的my.cnf配置文件</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="73718" class="copybut" id="copybut73718" onclick="doCopy('code73718')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code73718"><BR>[client]</P>
+<P>character-set-server = utf8</P>
+<P>port = 3306</P>
+<P>socket = /tmp/mysql.sock</P>
+<P>[mysqld]</P>
+<P>character-set-server = utf8</P>
+<P>replicate-ignore-db = mysql</P>
+<P>replicate-ignore-db = test</P>
+<P>replicate-ignore-db = information_schema</P>
+<P>user = mysql</P>
+<P>port = 3306</P>
+<P>socket = /tmp/mysql.sock</P>
+<P>basedir = /usr/local/webserver/mysql</P>
+<P>datadir = /media/raid10/mysql/3306/data</P>
+<P>log-error = /media/raid10/mysql/3306/mysql_error.log</P>
+<P>pid-file = /media/raid10/mysql/3306/mysql.pid</P>
+<P>open_files_limit = 10240</P>
+<P>back_log = 600</P>
+<P>max_connections = 5000</P>
+<P>max_connect_errors = 6000</P>
+<P>table_cache = 614</P>
+<P>external-locking = FALSE</P>
+<P>max_allowed_packet = 16M</P>
+<P>sort_buffer_size = 1M</P>
+<P>join_buffer_size = 1M</P>
+<P>thread_cache_size = 300</P>
+<P>#thread_concurrency = 8</P>
+<P>query_cache_size = 20M</P>
+<P>query_cache_limit = 2M</P>
+<P>query_cache_min_res_unit = 2k</P>
+<P>default-storage-engine = MyISAM</P>
+<P>thread_stack = 192K</P>
+<P>transaction_isolation = READ-COMMITTED</P>
+<P>tmp_table_size = 20M</P>
+<P>max_heap_table_size = 20M</P>
+<P>long_query_time = 3</P>
+<P>log-slave-updates</P>
+<P>log-bin = /media/raid10/mysql/3306/binlog/binlog</P>
+<P>binlog-do-db=blog</P>
+<P>binlog-ignore-db=mysql</P>
+<P>&nbsp;binlog_cache_size = 4M</P>
+<P>binlog_format = MIXED</P>
+<P>max_binlog_cache_size = 8M</P>
+<P>max_binlog_size = 20M</P>
+<P>relay-log-index = /media/raid10/mysql/3306/relaylog/relaylog</P>
+<P>relay-log-info-file = /media/raid10/mysql/3306/relaylog/relaylog</P>
+<P>relay-log = /media/raid10/mysql/3306/relaylog/relaylog</P>
+<P>expire_logs_days = 30</P>
+<P>key_buffer_size = 10M</P>
+<P>read_buffer_size = 1M</P>
+<P>read_rnd_buffer_size = 6M</P>
+<P>bulk_insert_buffer_size = 4M</P>
+<P>myisam_sort_buffer_size = 8M</P>
+<P>myisam_max_sort_file_size = 20M</P>
+<P>myisam_repair_threads = 1</P>
+<P>myisam_recover</P>
+<P>&nbsp;interactive_timeout = 120</P>
+<P>wait_timeout = 120</P>
+<P>&nbsp;skip-name-resolve</P>
+<P>#master-connect-retry = 10</P>
+<P>slave-skip-errors = 1032,1062,126,1114,1146,1048,1396</P>
+<P>#master-host = 192.168.1.2</P>
+<P>#master-user = username</P>
+<P>#master-password = password</P>
+<P>#master-port = 3306</P>
+<P>&nbsp;server-id = 1</P>
+<P>innodb_additional_mem_pool_size = 16M</P>
+<P>innodb_buffer_pool_size = 20M</P>
+<P>innodb_data_file_path = ibdata1:56M:autoextend</P>
+<P>innodb_file_io_threads = 4</P>
+<P>innodb_thread_concurrency = 8</P>
+<P>innodb_flush_log_at_trx_commit = 2</P>
+<P>innodb_log_buffer_size = 16M</P>
+<P>innodb_log_file_size = 20M</P>
+<P>innodb_log_files_in_group = 3</P>
+<P>innodb_max_dirty_pages_pct = 90</P>
+<P>innodb_lock_wait_timeout = 120</P>
+<P>innodb_file_per_table = 0</P>
+<P>&nbsp;#log-slow-queries = /media/raid10/mysql/3306/slow.log</P>
+<P>#long_query_time = 10</P>
+<P>&nbsp;[mysqldump]</P>
+<P>quick</P>
+<P>max_allowed_packet = 32M<BR></div><BR>&nbsp;</P>
+<P>四.在master机上为slave机添加一同步帐号</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="1230" class="copybut" id="copybut1230" onclick="doCopy('code1230')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code1230"><BR>mysql&gt; grant replication slave on *.* to 'admin'@'172.29.141.115' identified by '12345678';</P>
+<P>mysql&gt; flush privileges ;<BR></div><BR>&nbsp;</P>
+<P>五.配置slave的my.cnf,添加以下内容</P>
+<P>注意:</P>
+<P>1.如果mysql是5.5.3-m3 的版本，只需</P>
+<P>在[mysqld]字段下添加如下内容</P>
+<P>server-id=2</P>
+<P>&nbsp;2.如果是5.0x的版本，需要</P>
+<P>在[mysqld]字段下添加如下内容</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="65577" class="copybut" id="copybut65577" onclick="doCopy('code65577')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code65577"><BR>server-id=2</P>
+<P>log-bin=mysql-bin //这是同步的binlog，具体以你的binlog为准</P>
+<P>master-host=172.29.141.112</P>
+<P>master-user=admin</P>
+<P>master-password=12345678</P>
+<P>master-port=3306</P>
+<P>master-connect-retry=60 //如果发现主服务器断线，重新连接的时间差；</P>
+<P>replicate-do-db=blog //同步的数据库，不写本行 表示 同步所有数据库</P>
+<P>replicate-ignore-db=mysql //不需要备份的数据库</P>
+<P>log-slave-update</P>
+<P>slave-skip-errors<BR></div></P>
+<P>&nbsp;我的mysql是5.5.3，这里给出我的slave my.cnf配置文件</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="99094" class="copybut" id="copybut99094" onclick="doCopy('code99094')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code99094"><BR>[client]</P>
+<P>character-set-server = utf8</P>
+<P>port = 3306</P>
+<P>socket = /tmp/mysql.sock</P>
+<P>&nbsp;</P>
+<P>[mysqld]</P>
+<P>character-set-server = utf8</P>
+<P>replicate-ignore-db = mysql</P>
+<P>replicate-ignore-db = test</P>
+<P>replicate-do-db = blog</P>
+<P>replicate-ignore-db = information_schema</P>
+<P>user = mysql</P>
+<P>port = 3306</P>
+<P>socket = /tmp/mysql.sock</P>
+<P>basedir = /usr/local/webserver/mysql</P>
+<P>datadir = /media/raid10/mysql/3306/data</P>
+<P>log-error = /media/raid10/mysql/3306/mysql_error.log</P>
+<P>pid-file = /media/raid10/mysql/3306/mysql.pid</P>
+<P>open_files_limit = 10240</P>
+<P>back_log = 600</P>
+<P>max_connections = 5000</P>
+<P>max_connect_errors = 6000</P>
+<P>table_cache = 614</P>
+<P>external-locking = FALSE</P>
+<P>max_allowed_packet = 16M</P>
+<P>sort_buffer_size = 1M</P>
+<P>join_buffer_size = 1M</P>
+<P>thread_cache_size = 300</P>
+<P>#thread_concurrency = 8</P>
+<P>query_cache_size = 20M</P>
+<P>query_cache_limit = 2M</P>
+<P>query_cache_min_res_unit = 2k</P>
+<P>default-storage-engine = MyISAM</P>
+<P>thread_stack = 192K</P>
+<P>transaction_isolation = READ-COMMITTED</P>
+<P>tmp_table_size = 20M</P>
+<P>max_heap_table_size = 20M</P>
+<P>long_query_time = 3</P>
+<P>log-slave-updates</P>
+<P>log-bin = /media/raid10/mysql/3306/binlog/binlog</P>
+<P>binlog_cache_size = 4M</P>
+<P>binlog_format = MIXED</P>
+<P>max_binlog_cache_size = 8M</P>
+<P>max_binlog_size = 20M</P>
+<P>relay-log-index = /media/raid10/mysql/3306/relaylog/relaylog</P>
+<P>relay-log-info-file = /media/raid10/mysql/3306/relaylog/relaylog</P>
+<P>relay-log = /media/raid10/mysql/3306/relaylog/relaylog</P>
+<P>expire_logs_days = 30</P>
+<P>key_buffer_size = 10M</P>
+<P>read_buffer_size = 1M</P>
+<P>read_rnd_buffer_size = 6M</P>
+<P>bulk_insert_buffer_size = 4M</P>
+<P>myisam_sort_buffer_size = 8M</P>
+<P>myisam_max_sort_file_size = 20M</P>
+<P>myisam_repair_threads = 1</P>
+<P>myisam_recover</P>
+<P>interactive_timeout = 120</P>
+<P>wait_timeout = 120</P>
+<P>&nbsp;skip-name-resolve</P>
+<P>#master-connect-retry = 60</P>
+<P>slave-skip-errors = 1032,1062,126,1114,1146,1048,1396</P>
+<P>&nbsp;#master-host=172.29.141.112</P>
+<P>#master-user = admin</P>
+<P>#master-password = 12345678</P>
+<P>#master-port = 3306</P>
+<P>server-id = 2</P>
+<P>innodb_additional_mem_pool_size = 16M</P>
+<P>innodb_buffer_pool_size = 20M</P>
+<P>innodb_data_file_path = ibdata1:56M:autoextend</P>
+<P>innodb_file_io_threads = 4</P>
+<P>innodb_thread_concurrency = 8</P>
+<P>innodb_flush_log_at_trx_commit = 2</P>
+<P>innodb_log_buffer_size = 16M</P>
+<P>innodb_log_file_size = 20M</P>
+<P>innodb_log_files_in_group = 3</P>
+<P>innodb_max_dirty_pages_pct = 90</P>
+<P>innodb_lock_wait_timeout = 120</P>
+<P>innodb_file_per_table = 0</P>
+<P>#log-slow-queries = /media/raid10/mysql/3306/slow.log</P>
+<P>#long_query_time = 10</P>
+<P>[mysqldump]</P>
+<P>quick</P>
+<P>max_allowed_packet = 32M<BR></div></P>
+<P>&nbsp;六.通过查看master的状态(在master上查看)，为配置slave做准备</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="71986" class="copybut" id="copybut71986" onclick="doCopy('code71986')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code71986"><BR>mysql&gt; show master status/G;</P>
+<P>ERROR 2006 (HY000): MySQL server has gone away</P>
+<P>No connection. Trying to reconnect...</P>
+<P>Connection id: 13</P>
+<P>Current database: blog</P>
+<P>*************************** 1. row ***************************</P>
+<P>File: binlog.000005</P>
+<P>Position: 592</P>
+<P>Binlog_Do_DB: blog</P>
+<P>Binlog_Ignore_DB: mysql</P>
+<P>1 row in set (0.01 sec)</P>
+<P>ERROR:</P>
+<P>No query specified<BR></div></P>
+<P>&nbsp;从上面的信息，可以看出，master现在使用的binlog是binlog.000005，position是592,那么下面的slave配置必须与这个对应。</P>
+<P>&nbsp;其实binlog.000005是当前master使用的binlog日志文件</P>
+<P>position是当前master使用的binlog.000005日志文件的位置</P>
+<P>简单理解为master正在使用哪个binlog的哪个数据行(位置)。</P>
+<P><BR>七.如果是5.5.3-m3版本mysql,需要启动slave后，配置与master相关对应的信息(在slave上配置)</P>
+<P>注意，这个与第六步相对应</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="79868" class="copybut" id="copybut79868" onclick="doCopy('code79868')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code79868"><BR>mysql&gt; stop slave ;</P>
+<P>mysql&gt; change master to master_host='172.29.141.112', master_user='admin', master_password='12345678', master_log_file='binlog.000005', master_log_pos=488;<BR>mysql&gt; CHANGE MASTER TO MASTER_CONNECT_RETRY=60;<BR></div></P>
+<P>&nbsp;这个与5.0的配置my.cnf作用是一样的，配置成与master相对应的内容</P>
+<P>主要是配置slave，让slave知道从master的哪个binlog上的哪个位置复制数据。所以需要知道master的ip,user_name,user_passwd,binlog,binlog_position以及多长时间连接一次master</P>
+<P>&nbsp;八.开启slave</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="29665" class="copybut" id="copybut29665" onclick="doCopy('code29665')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code29665"><BR>mysql&gt; start slave;<BR></div></P>
+<P>&nbsp;九.解除master只读限制,并做测试<div class="codetitle"><span><a style="CURSOR: pointer" data="6830" class="copybut" id="copybut6830" onclick="doCopy('code6830')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code6830"><BR>mysql&gt; unlock tables;</P>
+<P>mysql&gt; use blog;</P>
+<P>mysql&gt; create longxibendi ( a int, b int );<BR></div><br><br>十.从slave上查看</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="1894" class="copybut" id="copybut1894" onclick="doCopy('code1894')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code1894"><BR>mysql&gt; use blog;</P>
+<P>mysql&gt; show tables;</P>
+<P>+-----------------------+</P>
+<P>| Tables_in_blog |</P>
+<P>+-----------------------+</P>
+<P>| longxibendi |</P>
+<P>| wp_commentmeta |</P>
+<P>| wp_comments |</P>
+<P>| wp_links |</P>
+<P>| wp_options |</P>
+<P>| wp_postmeta |</P>
+<P>| wp_posts |</P>
+<P>| wp_term_relationships |</P>
+<P>| wp_term_taxonomy |</P>
+<P>| wp_terms |</P>
+<P>| wp_usermeta |</P>
+<P>| wp_users |</P>
+<P>+-----------------------+</P>
+<P>12 rows in set (0.00 sec)<BR></div><br><br>可以看到成功了！！</P>
+<P>&nbsp;十一.配置过程中，可以用 show slave status/G; 在 slave上</P>
+<P>查看 slave的复制情况</P>
+<P>十二.如果出现什么问题，可能是防火墙的问题</P>
+<P>/etc/init.d/iptables stop 关闭 master 上的防火墙，或者进行相应的配置</P>
+<P>常遇到的错误与解决：</P>
+<P>1.[mysql]ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/lib/mysql/mysql.sock' (2)</P>
+<P>这个错误，网上有很多说法，其实直接的原因是mysql服务器没有启动</P>
+<P>之前我按照5.0x配置master-slave，然后启动slave，在连接slave,就会报这个错误</P>
+<P>后来发现原因是，mysql slave没有启动起来，然后去查错误日志，发现以下的字段</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="90144" class="copybut" id="copybut90144" onclick="doCopy('code90144')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code90144"><BR>110505 01:55:20 mysqld_safe mysqld from pid file /media/raid10/mysql/3306/mysql.pid ended</P>
+<P>110505 02:04:41 mysqld_safe Starting mysqld daemon with databases from /media/raid10/mysql/3306/data</P>
+<P>InnoDB: The InnoDB memory heap is disabled</P>
+<P>InnoDB: Mutexes and rw_locks use InnoDB's own implementation</P>
+<P>110505 2:04:41 InnoDB: highest supported file format is Barracuda.</P>
+<P>110505 2:04:41 InnoDB Plugin 1.0.6 started; log sequence number 44338</P>
+<P>110505 2:04:41 [ERROR] /usr/local/webserver/mysql/libexec/mysqld: unknown variable 'master-connect-retry=60'</P>
+<P>110505 2:04:41 [ERROR] Aborting</P>
+<P>110505 2:04:41 InnoDB: Starting shutdown...</P>
+<P>110505 2:04:43 InnoDB: Shutdown completed; log sequence number 44348</P>
+<P>110505 2:04:43 [Note] /usr/local/webserver/mysql/libexec/mysqld: Shutdown complete</P>
+<P>&nbsp;110505 02:04:43 mysqld_safe mysqld from pid file /media/raid10/mysql/3306/mysql.pid ended</P>
+<P>110505 02:07:44 mysqld_safe Starting mysqld daemon with databases from /media/raid10/mysql/3306/data</P>
+<P>InnoDB: The InnoDB memory heap is disabled</P>
+<P>InnoDB: Mutexes and rw_locks use InnoDB's own implementation</P>
+<P>110505 2:07:44 InnoDB: highest supported file format is Barracuda.</P>
+<P>110505 2:07:45 InnoDB Plugin 1.0.6 started; log sequence number 44348</P>
+<P>110505 2:07:45 [ERROR] /usr/local/webserver/mysql/libexec/mysqld: unknown variable 'master-host=172.29.141.112'</P>
+<P>110505 2:07:45 [ERROR] Aborting<BR></div></P>
+<P><BR>从上面的ERROR，知道 master-connect-retry=60这个my.cnf中的参数有问题，后来从网上搜资料，发现，mysql5.5.3-m3版本不支持这个参数，</P>
+<P>然后我把这个参数注释掉，又发现不支持这个参数master-host，从上面的ERROR字段可以看出来。后来，就知道，5.5.3-m3不能按5.0.x那样配置</P>
+<P>原来不需要从my.cnf中配置master相关信息，当然server-id是必须的。其他信息，通过 在命令行中 ，登陆 mysql服务器配置。</P>
+<P>其实server-id的作用是</P>
+<P>第一，标识，区分不同的slave,第二，防止环备份的发生</P>
+<P>&nbsp;</P>
+<P>2.Last_Error: Last_SQL_Error：等错误</P>
+<P>这个是从 slave上，运行 show slave status/G; 得到的。出现这个问题，最根本的原因是，slave 没有与当前的master的binlog 和binlog的position对应上</P>
+<P>也就是说，slave传输的master binlog 不与当前master正使用的binlog以及binlog的行数对应。</P>
+<P>&nbsp;</P>
+<P>3.[ERROR] Slave I/O: error connecting to master 'admin@172.29.141.112:3306' - retry-time: 60 retries: 86400, Error_code: 2003</P>
+<P>这个就是因为防火墙的问题，所以用 /etc/init.d/iptables stop 关闭防火墙就OK了。</P>
+<P>&nbsp;</P>
+<P>4.遇到ERROR 2013 (HY000): Lost connection to MySQL server during query错误。<BR>在/ect/my.cnf的[mysqld]中添加skip-name-resolve</P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/100278.html'>详解C++设计模式编程中责任链模式的应用</a><a>下一篇</a><a href='/php/biji/100281.html'>css网站布局实录学习笔记第三部分网页布局与定位</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL脏页flush及收缩表空间原理的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL脏页flush及收缩表空间原理的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+mysql" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL脏页flush及收缩表空间原理的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:13:25                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL脏页flush及收缩表空间原理的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+mysql</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL脏页flush及收缩表空间原理的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p></p>
+<h3>mysql脏页</h3>
+<p></p>
+<p>由于WAL机制，InnoDB在更新语句的时候，制作了写日志这一个磁盘操作，就是redo log，在内存写完redo log后，就返回给客户端， 即更新成功。</p>
+<p>把内存里的数据写入磁盘的过程，术语就是flush，在flush之前，实际数据和数据库中的数据是不一致的，因为在redo log基础上更新了还未写入，数据库是老的，当内存数据页跟磁盘数据页内容不一致的时候，称这个内存页为脏页，内存写入后就一致了，称为干净页，</p>
+<p>如果mysql偶尔运行速度很慢，很可能是在刷脏页。引发数据库flush的过程</p>
+<ul>
+	<li>redo log满了，系统停止所有更新操作，将checkpoint向前推进，腾出空间继续写。</li>
+	<li>系统内存不足，需要新的内存页不够用，就会淘汰一些数据页，留给别的数据页使用，如果淘汰的是脏页，就会先写到磁盘。</li>
+	<li>mysql空闲的时候。</li>
+	<li>正常关闭mysql的时候</li>
+	<li>在第一种情况下，redo log满了，这种情况是innodb要避免的，因为整个系统都不能再更新了，这是不能接受的</li>
+	<li>第二种情况，内存满了，要先写到磁盘，innodb用缓冲池管理内存，有三种状态</li>
+	<li>还没有用的内存页</li>
+	<li>用了并且是干净页</li>
+	<li>用了并且是脏页（淘汰的时候需要写入到磁盘）</li>
+</ul>
+<p>所以我们有时使用数据库会发现数据库性能突然下降，可能就是在处理脏页。</p>
+<p>刷脏页控制策略</p>
+<ul>
+	<li>Innodb_io_capacity参数，这个参数会告诉innodb你的磁盘io能力。（有公式计算）</li>
+	<li>innodb刷盘主要两个因素：脏页比例和redo log的写盘速度</li>
+	<li>innodb_max_derty_pages_pct是脏页比例上限，默认是75%，调整好Innodb_io_capacity参数值，使脏页比例不要超过75%收缩表空间</li>
+</ul>
+<p>场景例子：数据库占用空间太大，把最大的表删掉了一半数据，表的大小还是没有变化。</p>
+<p>数据删除流程</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: left">加入要删掉R4，InnoDB引擎只会把R4这个记录标记为删除，如果之后再掺入一个ID在300-600之间的记录时，会复用这个位置，但是磁盘文件的大小并不会缩小。</p>
+<p style="text-align: left">如果删掉了一个数据页上的所有记录，这个数据页就可以被复用。</p>
+<p style="text-align: left">注意：数据页的复用跟记录的复用是不同的。</p>
+<ul>
+	<li>比如R4这条记录被删除，如果插入一个ID是400的行，直接复用这个空间，但是如果插入ID是800的行，就不能复用这个位置了。</li>
+	<li>但是整个数据页Page A上的所有记录删除之后，pageA标记为可复用，如果插入一条ID=50的记录需要用新的数据页的时候，PageA是可以背负用的。</li>
+	<li>如果我们用delete命令把整个表数据删除，结果是所有的数据页都会标记为可复用，但是在磁盘上，文件不会变小。</li>
+</ul>
+<p>插入数据流程</p>
+<p>如果数据按照索引顺序插入的，索引是紧凑的，但是如果是随机插入的，就会造成索引的数据页分页。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>如果pageA已经满了，在插入一行数据会怎样？由于A满了，在插入一个id是550的数据时，就会申请一个新的页面pageB来保存数据，分裂完成后pageA的末尾就留下了空洞。</p>
+<p>更新索引上的值也是删除一个旧的值，再插入一个新值，也会造成空洞。</p>
+<p></p>
+<h3>收缩空间</h3>
+<p></p>
+<p>新建一个与表A相同结构的表B，按照主键ID递增的顺序，把数据一行一行的从A里读出来再插入到表B中，表B中无空洞，数据页的利用率也更高，如果我们把表B作为临时表，数据从表A导入到B中的操作完成后，用B替换A，从效果上也起到了收缩A的作用。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>在整个DDL过程中，表A不能有更新，所以这个DDL不是online的，在5.6之后的版本中，流程做了更改：</p>
+<p>建立一个临时文件，扫描A中的所有数据页，</p>
+<p>用数据页中A的记录生成B+树，存储在临时文件中</p>
+<p>将所有对A的操作记录在一个日志文件中</p>
+<p>临时文件生成后，将日志文件的操作应用到临时文件，得到一个逻辑数据上与表A相同的数据文件</p>
+<p>用临时文件替换表A的数据文件</p>
+<p>图示</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>可以看到，与图3过程的不同之处在于，由于日志文件记录和重放操作这个功能的存在，这个方案在重建表的过程中，允许对表A做增删改操作。</p>
+<p>使用alter table A engine=InnoDB命令来重建表。在MySQL 5.5版本之前，这个命令的执行流程跟我们前面描述的差不多，区别只是这个临时表B不需要你自己创建，MySQL会自动完成转存数据、交换表名、删除旧表的操作。</p>
+<p>以上就是本文的全部内容，希望对大家的学习有所帮助，也希望大家多多支持512笔记。</p>
+
+<p>注：关于MySQL脏页flush及收缩表空间原理的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/126.html'>MySQL和Python交互的解决办法</a><a>下一篇</a><a href='/mysql/biji/128.html'>MySQL Aborted connection告警日志的深入分析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

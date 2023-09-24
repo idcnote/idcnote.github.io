@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>php-redis中的sort排序函数总结_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="很多人把redis当成一种数据库，其实是利用redis来构造数据库的模型，有那种数据库的味道。但是在怎么构建还是key和value的关系，与真正的关系型数据库还是不一样的。<br />
+效率高，不方" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">php-redis中的sort排序函数总结</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>很多人把redis当成一种数据库，其实是利用redis来构造数据库的模型，有那种数据库的味道。但是在怎么构建还是key和value的关系，与真正的关系型数据库还是不一样的。<br />
+效率高，不方</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>很多人把redis当成一种数据库，其实是利用redis来构造数据库的模型，有那种数据库的味道。但是在怎么构建还是key和value的关系，与真正的关系型数据库还是不一样的。</p>
+<p>效率高，不方便；方便的，效率不高；又方便，效率又高的要花钱。</p>
+<p>php-redis里面的sort函数，在做web的时候取数据还是比较方便，有点关系型数据库的味道。在说sort前，先说一下前面漏的几个比较常用的函数。</p>
+<p><strong>&nbsp;1） keys</strong></p>
+<p>描述：查找符合给定模式的key<br />
+参数：匹配模式<br />
+返回值：符合给定模式的key列表</p>
+<p><strong>2） mset</strong></p>
+<p>描述：同时设置一个或多个key-value对。当发现同名的key存在时，MSET会用新值覆盖旧值，如果你不希望覆盖同名key，请使用MSETNX命令。MSET是一个原子性(atomic)操作，所有给定key都在同一时间内被设置，某些给定key被更新而另一些给定key没有改变的情况，不可能发生。<br />
+参数：数组<br />
+返回值：总是返回OK(因为MSET不可能失败)</p>
+<p><strong>3） mget</strong></p>
+<p>描述：返回所有(一个或多个)给定key的值。如果某个指定key不存在，那么返回特殊值nil。因此，该命令永不失败。<br />
+参数：key的数组<br />
+返回值：一个包含所有给定key的值的列表</p>
+<p><strong>示例：</strong><br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="18636" class="copybut" id="copybut18636" onclick="doCopy('code18636')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code18636"><br />
+&lt;&#63;php&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis = new redis();&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;connect('192.168.1.108', 6379);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;flushall();&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $array=array('tank'=&gt;'1',&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'zhang'=&gt;'2',&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'ying'=&gt;'3',&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'test'=&gt;'4');&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;mset($array);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;keys('*s*'));&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 结果：Array ( [0] =&gt; test )&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;keys('y&#63;&#63;&#63;'));&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 结果：Array ( [0] =&gt; ying )&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;keys('t[e]*'));&nbsp; // 结果：Array ( [0] =&gt; test )&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;keys('*'));&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 结果：Array ( [0] =&gt; ying [1] =&gt; test [2] =&gt; zhang [3] =&gt; tank )&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;mget(array("tank","ying")));&nbsp;&nbsp;&nbsp;&nbsp; // 结果：Array ( [0] =&gt; 1 [1] =&gt; 3 )&nbsp; <br />
+&#63;&gt;<br />
+</div></p>
+<p><strong>4） sort</strong></p>
+<p>描述：按条件取得数据<br />
+参数：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="10350" class="copybut" id="copybut10350" onclick="doCopy('code10350')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code10350"><br />
+array(<br />
+&nbsp;&nbsp;&nbsp; 'by' =&gt; 'pattern', //匹配模式<br />
+&nbsp;&nbsp;&nbsp; 'limit' =&gt; array(0, 1),<br />
+&nbsp;&nbsp;&nbsp; 'get' =&gt; 'pattern'<br />
+&nbsp;&nbsp;&nbsp; 'sort' =&gt; 'asc' or 'desc',<br />
+&nbsp;&nbsp;&nbsp; 'alpha' =&gt; TRUE,<br />
+&nbsp;&nbsp;&nbsp; 'store' =&gt; 'external-key'<br />
+)<br />
+</div><br />
+返回或保存给定列表、集合、有序集合key中经过排序的元素。</p>
+<p>一般排序<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="88324" class="copybut" id="copybut88324" onclick="doCopy('code88324')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code88324"><br />
+&lt;&#63;php&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis = new redis();&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;connect('192.168.1.108', 6379);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;flushall();&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('test', 1);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('test', 10);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('test', 8);&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;sort('test')); //结果：Array ( [0] =&gt; 1 [1] =&gt; 8 [2] =&gt; 10 )&nbsp; <br />
+&#63;&gt;<br />
+</div></p>
+<p><strong>字母排序</strong></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="27845" class="copybut" id="copybut27845" onclick="doCopy('code27845')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code27845"><br />
+&lt;&#63;php&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis = new redis();&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;connect('192.168.1.108', 6379);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;flushall();&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('test', 'a');&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('test', 'd');&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('test', 'b');&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;sort('test')); //结果：Array ( [0] =&gt; b [1] =&gt; d [2] =&gt; a )&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;sort('test',array('ALPHA'=&gt;TRUE))); //结果：Array ( [0] =&gt; a [1] =&gt; b [2] =&gt; d )&nbsp; <br />
+&#63;&gt;<br />
+&nbsp;</div></p>
+<p><strong>排序取部分数据</strong></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="9282" class="copybut" id="copybut9282" onclick="doCopy('code9282')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code9282"><br />
+&lt;&#63;php&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis = new redis();&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;connect('192.168.1.108', 6379);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;flushall();&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('test', 31);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('test', 5);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('test', 2);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('test', 23);&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $array = array('LIMIT'=&gt;array(0,3),"SORT"=&gt;'DESC');&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;sort('test',$array));&nbsp; //结果：Array ( [0] =&gt; 31 [1] =&gt; 23 [2] =&gt; 5 )&nbsp; <br />
+&#63;&gt;<br />
+</div></p>
+<p><strong>使用外部key进行排序</strong></p>
+<p>有时候你会希望使用外部的key作为权重来比较元素，代替默认的对比方法。</p>
+<p>假设现在有用户(user)表数据如下：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="91528" class="copybut" id="copybut91528" onclick="doCopy('code91528')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code91528"><br />
+id　　　&nbsp; name　　　　score&nbsp; <br />
+-------------------------------&nbsp; <br />
+1　　　　 tank　　　&nbsp;&nbsp; 89&nbsp; <br />
+2　　　　 zhang　　　&nbsp; 40&nbsp; <br />
+4 　&nbsp;&nbsp;&nbsp;&nbsp; ying 　　　&nbsp; 70&nbsp; <br />
+3 　　&nbsp;&nbsp; fXXK 　　&nbsp;&nbsp;&nbsp; 90<br />
+</div></p>
+<p>id数据保存在key名为id的列表中。<br />
+name数据保存在key名为name_{id}的列表中<br />
+score数据保存在score_{id}的key中。</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="18232" class="copybut" id="copybut18232" onclick="doCopy('code18232')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code18232"><br />
+&lt;&#63;php&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis = new redis();&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;connect('192.168.1.108', 6379);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;flushall();&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('id', 1);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;set('name_1', 'tank');&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;set('score_1',89);&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('id', 2);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;set('name_2', 'zhang');&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;set('score_2', 40);&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('id', 4);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;set('name_4','ying');&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;set('score_4', 70);&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;lpush('id', 3);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;set('name_3', 'fXXK');&nbsp; <br />
+&nbsp;&nbsp;&nbsp; $redis-&gt;set('score_3', 90);&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; /** <br />
+&nbsp;&nbsp;&nbsp;&nbsp; * 按score从大到小排序,取得id <br />
+&nbsp;&nbsp;&nbsp;&nbsp; */ <br />
+&nbsp;&nbsp;&nbsp; $sort=array('BY'=&gt;'score_*',&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'SORT'=&gt;'DESC' <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;sort('id',$sort)); //结果:Array ( [0] =&gt; 3 [1] =&gt; 1 [2] =&gt; 4 [3] =&gt; 2 )&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; /** <br />
+&nbsp;&nbsp;&nbsp;&nbsp; * 按score从大到小排序,取得name <br />
+&nbsp;&nbsp;&nbsp;&nbsp; */ <br />
+&nbsp;&nbsp;&nbsp; $sort=array('BY'=&gt;'score_*',&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'SORT'=&gt;'DESC',&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'GET'=&gt;'name_*' <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;sort('id',$sort)); //结果:Array ( [0] =&gt; fXXK [1] =&gt; tank [2] =&gt; ying [3] =&gt; zhang )&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; /** <br />
+&nbsp;&nbsp;&nbsp;&nbsp; * 按score从小到大排序,取得name，score <br />
+&nbsp;&nbsp;&nbsp;&nbsp; */ <br />
+&nbsp;&nbsp;&nbsp; $sort=array('BY'=&gt;'score_*',&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'SORT'=&gt;'DESC',&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'GET'=&gt;array('name_*','score_*')&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;sort('id',$sort));&nbsp; <br />
+&nbsp;&nbsp;&nbsp; /** <br />
+&nbsp;&nbsp;&nbsp;&nbsp; *结果:Array <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ( <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [0] =&gt; fXXK <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [1] =&gt; 90 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [2] =&gt; tank <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [3] =&gt; 89 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [4] =&gt; ying <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [5] =&gt; 70 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [6] =&gt; zhang <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [7] =&gt; 40 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )) <br />
+&nbsp;&nbsp;&nbsp;&nbsp; */ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; /** <br />
+&nbsp;&nbsp;&nbsp;&nbsp; * 按score从小到大排序,取得id，name，score <br />
+&nbsp;&nbsp;&nbsp;&nbsp; */ <br />
+&nbsp;&nbsp;&nbsp; $sort=array('BY'=&gt;'score_*',&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'SORT'=&gt;'DESC',&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'GET'=&gt;array('#','name_*','score_*')&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );&nbsp; <br />
+&nbsp;&nbsp;&nbsp; print_r($redis-&gt;sort('id',$sort));&nbsp; <br />
+&nbsp;&nbsp;&nbsp; /** <br />
+&nbsp;&nbsp;&nbsp;&nbsp; * 结果:Array <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ( <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [0] =&gt; 3 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [1] =&gt; fXXK <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [2] =&gt; 90 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [3] =&gt; 1 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [4] =&gt; tank <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [5] =&gt; 89 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [6] =&gt; 4 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [7] =&gt; ying <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [8] =&gt; 70 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [9] =&gt; 2 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [10] =&gt; zhang <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [11] =&gt; 40 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ) <br />
+&nbsp;&nbsp;&nbsp;&nbsp; */ <br />
+&#63;&gt;<br />
+</div></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/107562.html'>ASP.NET配置文件Web.config用法详解</a><a>下一篇</a><a href='/php/biji/107564.html'>jQuery的attr与prop使用介绍</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

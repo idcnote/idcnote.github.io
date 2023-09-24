@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Java的Hibernate框架数据库操作中锁的使用和查询类型_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content=" Hibernate与数据库锁<br />
+<br />
+一、为什么要使用锁？<br />
+要想弄清楚锁机制存在的原因，首先要了解事务的概念。<br />
+<br />
+事务是对数据库一系列相关的操作，它必须具备ACID特征：<br />
+<br />
+A（原子性）：要么全部成功" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Java的Hibernate框架数据库操作中锁的使用和查询类型</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span> Hibernate与数据库锁<br />
+<br />
+一、为什么要使用锁？<br />
+要想弄清楚锁机制存在的原因，首先要了解事务的概念。<br />
+<br />
+事务是对数据库一系列相关的操作，它必须具备ACID特征：<br />
+<br />
+A（原子性）：要么全部成功</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>&nbsp;Hibernate与数据库锁<br />
+一、为什么要使用锁？</strong></p>
+<p>要想弄清楚锁机制存在的原因，首先要了解事务的概念。<br />
+事务是对数据库一系列相关的操作，它必须具备ACID特征：</p>
+<ul>
+<li>A（原子性）：要么全部成功，要么全部撤销。</li>
+<li>C（一致性）：要保持数据库的一致性。</li>
+<li>I（隔离性）：不同事务操作相同数据时，要有各自的数据空间。</li>
+<li>D（持久性）：一旦事务成功结束，它对数据库所做的更新必须永久保持。</li>
+</ul>
+<p>我们常用的关系型数据库RDBMS实现了事务的这些特性。其中，原子性、<br />
+一致性和持久性都是采用日志来保证的。而隔离性就是由今天我们关注的<br />
+锁机制来实现的，这就是为什么我们需要锁机制。</p>
+<p>如果没有锁，对隔离性不加控制，可能会造成哪些后果呢？</p>
+<ol>
+<li>更新丢失：事务1提交的数据被事务2覆盖。</li>
+<li>脏读：事务2查询到了事务1未提交的数据。</li>
+<li>虚读：事务2查询到了事务1提交的新建数据。</li>
+<li>不可重复读：事务2查询到了事务1提交的更新数据。</li>
+</ol>
+<p>下面来看Hibernate的例子，两个线程分别开启两个事务操作tb_account表中<br />
+的同一行数据col_id=1。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.cdai.orm.hibernate.annotation; 
+ 
+import java.io.Serializable; 
+ 
+import javax.persistence.Column; 
+import javax.persistence.Entity; 
+import javax.persistence.Id; 
+import javax.persistence.Table; 
+ 
+@Entity 
+@Table(name = "tb_account") 
+public class Account implements Serializable { 
+ 
+  private static final long serialVersionUID = 5018821760412231859L; 
+ 
+  @Id 
+  @Column(name = "col_id") 
+  private long id; 
+   
+  @Column(name = "col_balance") 
+  private long balance; 
+ 
+  public Account() { 
+  } 
+   
+  public Account(long id, long balance) { 
+    this.id = id; 
+    this.balance = balance; 
+  } 
+ 
+  public long getId() { 
+    return id; 
+  } 
+ 
+  public void setId(long id) { 
+    this.id = id; 
+  } 
+ 
+  public long getBalance() { 
+    return balance; 
+  } 
+ 
+  public void setBalance(long balance) { 
+    this.balance = balance; 
+  } 
+ 
+  @Override 
+  public String toString() { 
+    return "Account [id=" + id + ", balance=" + balance + "]"; 
+  } 
+   
+} 
+</pre>
+</div>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.cdai.orm.hibernate.transaction; 
+ 
+import org.hibernate.Session; 
+import org.hibernate.SessionFactory; 
+import org.hibernate.Transaction; 
+import org.hibernate.cfg.AnnotationConfiguration; 
+ 
+import com.cdai.orm.hibernate.annotation.Account; 
+ 
+public class DirtyRead { 
+ 
+  public static void main(String[] args) { 
+ 
+    final SessionFactory sessionFactory = new AnnotationConfiguration(). 
+        addFile("hibernate/hibernate.cfg.xml").        
+        configure(). 
+        addPackage("com.cdai.orm.hibernate.annotation"). 
+        addAnnotatedClass(Account.class). 
+        buildSessionFactory(); 
+     
+    Thread t1 = new Thread() { 
+       
+      @Override 
+      public void run() { 
+        Session session1 = sessionFactory.openSession(); 
+        Transaction tx1 = null; 
+        try { 
+          tx1 = session1.beginTransaction(); 
+          System.out.println("T1 - Begin trasaction"); 
+          Thread.sleep(500); 
+           
+          Account account = (Account)  
+              session1.get(Account.class, new Long(1)); 
+          System.out.println("T1 - balance=" + account.getBalance()); 
+          Thread.sleep(500); 
+           
+          account.setBalance(account.getBalance() + 100); 
+          System.out.println("T1 - Change balance:" + account.getBalance()); 
+           
+          tx1.commit(); 
+          System.out.println("T1 - Commit transaction"); 
+          Thread.sleep(500); 
+        } 
+        catch (Exception e) { 
+          e.printStackTrace(); 
+          if (tx1 != null) 
+            tx1.rollback(); 
+        }  
+        finally { 
+          session1.close(); 
+        } 
+      } 
+       
+    }; 
+     
+    // 3.Run transaction 2 
+    Thread t2 = new Thread() { 
+       
+      @Override 
+      public void run() { 
+        Session session2 = sessionFactory.openSession(); 
+        Transaction tx2 = null; 
+        try { 
+          tx2 = session2.beginTransaction(); 
+          System.out.println("T2 - Begin trasaction"); 
+          Thread.sleep(500); 
+           
+          Account account = (Account)  
+              session2.get(Account.class, new Long(1)); 
+          System.out.println("T2 - balance=" + account.getBalance()); 
+          Thread.sleep(500); 
+           
+          account.setBalance(account.getBalance() - 100); 
+          System.out.println("T2 - Change balance:" + account.getBalance()); 
+           
+          tx2.commit(); 
+          System.out.println("T2 - Commit transaction"); 
+          Thread.sleep(500); 
+        } 
+        catch (Exception e) { 
+          e.printStackTrace(); 
+          if (tx2 != null) 
+            tx2.rollback(); 
+        }  
+        finally { 
+          session2.close(); 
+        } 
+      } 
+       
+    }; 
+     
+    t1.start(); 
+    t2.start(); 
+     
+    while (t1.isAlive() || t2.isAlive()) { 
+      try { 
+        Thread.sleep(2000L); 
+      } catch (InterruptedException e) { 
+      } 
+    } 
+     
+    System.out.println("Both T1 and T2 are dead."); 
+    sessionFactory.close(); 
+     
+  } 
+ 
+} 
+</pre>
+</div>
+<p>事务1将col_balance减小100，而事务2将其减少100，最终结果可能是0，也<br />
+可能是200，事务1或2的更新可能会丢失。log输出也印证了这一点，事务1和2<br />
+的log交叉打印。</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+T1 - Begin trasaction
+T2 - Begin trasaction
+Hibernate: select account0_.col_id as col1_0_0_, account0_.col_balance as col2_0_0_ from tb_account account0_ where account0_.col_id=&#63;
+Hibernate: select account0_.col_id as col1_0_0_, account0_.col_balance as col2_0_0_ from tb_account account0_ where account0_.col_id=&#63;
+T1 - balance=100
+T2 - balance=100
+T2 - Change balance:0
+T1 - Change balance:200
+Hibernate: update tb_account set col_balance=&#63; where col_id=&#63;
+Hibernate: update tb_account set col_balance=&#63; where col_id=&#63;
+T1 - Commit transaction
+T2 - Commit transaction
+Both T1 and T2 are dead.
+
+</pre>
+</div>
+<p>由此可见，隔离性是一个需要慎重考虑的问题，理解锁很有必要。</p>
+<p><br />
+<strong>二、有多少种锁？</strong></p>
+<p>常见的有共享锁、更新锁和独占锁。</p>
+<p>1.共享锁：用于读数据操作，允许其他事务同时读取。当事务执行select语句时，<br />
+数据库自动为事务分配一把共享锁来锁定读取的数据。<br />
+2.独占锁：用于修改数据，其他事务不能读取也不能修改。当事务执行insert、<br />
+update和delete时，数据库会自动分配。<br />
+3.更新锁：用于避免更新操作时共享锁造成的死锁，比如事务1和2同时持有<br />
+共享锁并等待获得独占锁。当执行update时，事务先获得更新锁，然后将<br />
+更新锁升级成独占锁，这样就避免了死锁。</p>
+<p>此外，这些锁都可以施加到数据库中不同的对象上，即这些锁可以有不同的粒度。<br />
+如数据库级锁、表级锁、页面级锁、键级锁和行级锁。</p>
+<p>所以锁是有很多种的，这么多锁要想完全掌握灵活使用太难了，我们又不是DBA。<br />
+怎么办？还好，锁机制对于我们一般用户来说是透明的，数据库会自动添加合适的<br />
+锁，并在适当的时机自动升级、降级各种锁，真是太周到了！我们只需要做的就是<br />
+学会根据不同的业务需求，设置好隔离级别就可以了。</p>
+<p><br />
+<strong>三、怎样设置隔离级别？</strong></p>
+<p>一般来说，数据库系统会提供四种事务隔离级别供用户选择：</p>
+<p>1.Serializable（串行化）：当两个事务同时操纵相同数据时，事务2只能停下来等。</p>
+<p>2.Repeatable Read（可重复读）：事务1能看到事务2新插入的数据，不能看到对<br />
+已有数据的更新。</p>
+<p>3.Read Commited（读已提交数据）：事务1能看到事务2新插入和更新的数据。</p>
+<p>4.Read Uncommited（读未提交数据）：事务1能看到事务2没有提交的插入和更新<br />
+数据。</p>
+<p><br />
+<strong>四、应用程序中的锁</strong></p>
+<p>当数据库采用Read Commited隔离级别时，可以在应用程序中采用悲观锁或乐观锁。</p>
+<p>1.悲观锁：假定当前事务操作的数据肯定还会有其他事务访问，因此悲观地在应用<br />
+程序中显式指定采用独占锁来锁定数据资源。在MySQL、Oracle中支持以下形式：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+   select ... for update
+
+</pre>
+</div>
+<p>显式地让select采用独占锁锁定查询的记录，其他事务要查询、更新或删除这些被<br />
+锁定的数据，都要等到该事务结束后才行。</p>
+<p>在Hibernate中，可以在load时传入LockMode.UPGRADE来采用悲观锁。修改前面的例子，<br />
+在事务1和2的get方法调用处，多传入一个LockMode参数。从log中可以看出，事务1和2<br />
+不再是交叉运行，事务2等待事务1结束后才可以读取数据，所以最终col_balance值是正确<br />
+的100。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.cdai.orm.hibernate.transaction; 
+ 
+import org.hibernate.LockMode; 
+import org.hibernate.Session; 
+import org.hibernate.SessionFactory; 
+import org.hibernate.Transaction; 
+ 
+import com.cdai.orm.hibernate.annotation.Account; 
+import com.cdai.orm.hibernate.annotation.AnnotationHibernate; 
+ 
+public class UpgradeLock { 
+ 
+  @SuppressWarnings("deprecation") 
+  public static void main(String[] args) { 
+ 
+    final SessionFactory sessionFactory = AnnotationHibernate.createSessionFactory();  
+ 
+    // Run transaction 1 
+    Thread t1 = new Thread() { 
+       
+      @Override 
+      public void run() { 
+        Session session1 = sessionFactory.openSession(); 
+        Transaction tx1 = null; 
+        try { 
+          tx1 = session1.beginTransaction(); 
+          System.out.println("T1 - Begin trasaction"); 
+          Thread.sleep(500); 
+           
+          Account account = (Account)  
+              session1.get(Account.class, new Long(1), LockMode.UPGRADE); 
+          System.out.println("T1 - balance=" + account.getBalance()); 
+          Thread.sleep(500); 
+           
+          account.setBalance(account.getBalance() + 100); 
+          System.out.println("T1 - Change balance:" + account.getBalance()); 
+           
+          tx1.commit(); 
+          System.out.println("T1 - Commit transaction"); 
+          Thread.sleep(500); 
+        } 
+        catch (Exception e) { 
+          e.printStackTrace(); 
+          if (tx1 != null) 
+            tx1.rollback(); 
+        }  
+        finally { 
+          session1.close(); 
+        } 
+      } 
+       
+    }; 
+     
+    // Run transaction 2 
+    Thread t2 = new Thread() { 
+       
+      @Override 
+      public void run() { 
+        Session session2 = sessionFactory.openSession(); 
+        Transaction tx2 = null; 
+        try { 
+          tx2 = session2.beginTransaction(); 
+          System.out.println("T2 - Begin trasaction"); 
+          Thread.sleep(500); 
+           
+          Account account = (Account)  
+              session2.get(Account.class, new Long(1), LockMode.UPGRADE); 
+          System.out.println("T2 - balance=" + account.getBalance()); 
+          Thread.sleep(500); 
+           
+          account.setBalance(account.getBalance() - 100); 
+          System.out.println("T2 - Change balance:" + account.getBalance()); 
+           
+          tx2.commit(); 
+          System.out.println("T2 - Commit transaction"); 
+          Thread.sleep(500); 
+        } 
+        catch (Exception e) { 
+          e.printStackTrace(); 
+          if (tx2 != null) 
+            tx2.rollback(); 
+        }  
+        finally { 
+          session2.close(); 
+        } 
+      } 
+       
+    }; 
+     
+    t1.start(); 
+    t2.start(); 
+     
+    while (t1.isAlive() || t2.isAlive()) { 
+      try { 
+        Thread.sleep(2000L); 
+      } catch (InterruptedException e) { 
+      } 
+    } 
+     
+    System.out.println("Both T1 and T2 are dead."); 
+    sessionFactory.close(); 
+ 
+  } 
+ 
+} 
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+T1 - Begin trasaction
+T2 - Begin trasaction
+Hibernate: select account0_.col_id as col1_0_0_, account0_.col_balance as col2_0_0_ from tb_account account0_ with (updlock, rowlock) where account0_.col_id=&#63;
+Hibernate: select account0_.col_id as col1_0_0_, account0_.col_balance as col2_0_0_ from tb_account account0_ with (updlock, rowlock) where account0_.col_id=&#63;
+T2 - balance=100
+T2 - Change balance:0
+Hibernate: update tb_account set col_balance=&#63; where col_id=&#63;
+T2 - Commit transaction
+T1 - balance=0
+T1 - Change balance:100
+Hibernate: update tb_account set col_balance=&#63; where col_id=&#63;
+T1 - Commit transaction
+Both T1 and T2 are dead.
+
+</pre>
+</div>
+<p>Hibernate对于SQLServer 2005会执行SQL：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="46305" class="copybut" id="copybut46305" onclick="doCopy('code46305')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code46305"><br />
+select account0_.col_id as col1_0_0_, account0_.col_balance as col2_0_0_ from tb_account account0_ with (updlock, rowlock) where account0_.col_id=&#63;<br />
+</div></p>
+<p><br />
+</p>
+<div class="phpstudycode">为选定的col_id为1的数据行加上行锁和更新锁。</div>
+<p>2.乐观锁：假定当前事务操作的数据不会有其他事务同时访问，因此完全依靠数据库<br />
+的隔离级别来自动管理锁的工作。在应用程序中采用版本控制来避免可能低概率出现<br />
+的并发问题。</p>
+<p>在Hibernate中，使用Version注解来定义版本号字段。<br />
+</p>
+<p></p>
+<p>将DirtyLock中的Account对象替换成AccountVersion，其他代码不变，执行出现异常。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.cdai.orm.hibernate.transaction; 
+ 
+import javax.persistence.Column; 
+import javax.persistence.Entity; 
+import javax.persistence.Id; 
+import javax.persistence.Table; 
+import javax.persistence.Version; 
+ 
+@Entity 
+@Table(name = "tb_account_version") 
+public class AccountVersion { 
+ 
+  @Id 
+  @Column(name = "col_id") 
+  private long id; 
+   
+  @Column(name = "col_balance") 
+  private long balance; 
+   
+  @Version 
+  @Column(name = "col_version") 
+  private int version; 
+ 
+  public AccountVersion() { 
+  } 
+ 
+  public AccountVersion(long id, long balance) { 
+    this.id = id; 
+    this.balance = balance; 
+  } 
+ 
+  public long getId() { 
+    return id; 
+  } 
+ 
+  public void setId(long id) { 
+    this.id = id; 
+  } 
+ 
+  public long getBalance() { 
+    return balance; 
+  } 
+ 
+  public void setBalance(long balance) { 
+    this.balance = balance; 
+  } 
+ 
+  public int getVersion() { 
+    return version; 
+  } 
+ 
+  public void setVersion(int version) { 
+    this.version = version; 
+  } 
+   
+} 
+</pre>
+</div>
+<p>log如下：</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+T1 - Begin trasaction
+T2 - Begin trasaction
+Hibernate: select accountver0_.col_id as col1_0_0_, accountver0_.col_balance as col2_0_0_, accountver0_.col_version as col3_0_0_ from tb_account_version accountver0_ where accountver0_.col_id=&#63;
+Hibernate: select accountver0_.col_id as col1_0_0_, accountver0_.col_balance as col2_0_0_, accountver0_.col_version as col3_0_0_ from tb_account_version accountver0_ where accountver0_.col_id=&#63;
+T1 - balance=1000
+T2 - balance=1000
+T1 - Change balance:900
+T2 - Change balance:1100
+Hibernate: update tb_account_version set col_balance=&#63;, col_version=&#63; where col_id=&#63; and col_version=&#63;
+Hibernate: update tb_account_version set col_balance=&#63;, col_version=&#63; where col_id=&#63; and col_version=&#63;
+T1 - Commit transaction
+2264 [Thread-2] ERROR org.hibernate.event.def.AbstractFlushingEventListener - Could not synchronize database state with session
+org.hibernate.StaleObjectStateException: Row was updated or deleted by another transaction (or unsaved-value mapping was incorrect): [com.cdai.orm.hibernate.transaction.AccountVersion#1]
+   at org.hibernate.persister.entity.AbstractEntityPersister.check(AbstractEntityPersister.java:1934)
+   at org.hibernate.persister.entity.AbstractEntityPersister.update(AbstractEntityPersister.java:2578)
+   at org.hibernate.persister.entity.AbstractEntityPersister.updateOrInsert(AbstractEntityPersister.java:2478)
+   at org.hibernate.persister.entity.AbstractEntityPersister.update(AbstractEntityPersister.java:2805)
+   at org.hibernate.action.EntityUpdateAction.execute(EntityUpdateAction.java:114)
+   at org.hibernate.engine.ActionQueue.execute(ActionQueue.java:268)
+   at org.hibernate.engine.ActionQueue.executeActions(ActionQueue.java:260)
+   at org.hibernate.engine.ActionQueue.executeActions(ActionQueue.java:180)
+   at org.hibernate.event.def.AbstractFlushingEventListener.performExecutions(AbstractFlushingEventListener.java:321)
+   at org.hibernate.event.def.DefaultFlushEventListener.onFlush(DefaultFlushEventListener.java:51)
+   at org.hibernate.impl.SessionImpl.flush(SessionImpl.java:1206)
+   at org.hibernate.impl.SessionImpl.managedFlush(SessionImpl.java:375)
+   at org.hibernate.transaction.JDBCTransaction.commit(JDBCTransaction.java:137)
+   at com.cdai.orm.hibernate.transaction.VersionLock$2.run(VersionLock.java:93)
+Both T1 and T2 are dead.
+
+</pre>
+</div>
+<p>由于乐观锁完全将事务隔离交给数据库来控制，所以事务1和2交叉运行了，事务1提交<br />
+成功并将col_version改为1，然而事务2提交时已经找不到col_version为0的数据了，所以<br />
+抛出了异常。<br />
+</p>
+<p></p>
+<p></p>
+<p><strong>Hibernate查询方法比较<br />
+</strong>Hibernate主要有三种查询方法：</p>
+<p><strong>1.HQL (Hibernate Query Language)</strong></p>
+<p>和SQL很类似，支持分页、连接、分组、聚集函数和子查询等特性，<br />
+但HQL是面向对象的，而不是面向关系数据库中的表。正因查询语句<br />
+是面向Domain对象的，所以使用HQL可以获得跨平台的好处，Hibernate<br />
+会自动帮我们根据不同的数据库翻译成不同的SQL语句。这在需要支持<br />
+多种数据库或者数据库迁移的应用中是十分方便的。</p>
+<p>但得到方便的同时，由于SQL语句是由Hibernate自动生成的，所以这不<br />
+利于SQL语句的效率优化和调试，当数据量很大时可能会有效率问题，<br />
+出了问题也不便于排查解决。</p>
+<p><strong>2.QBC/QBE (Query by Criteria/Example)</strong></p>
+<p>QBC/QBE是通过组装查询条件或者模板对象来执行查询的。这在需要<br />
+灵活地支持许多查询条件自由组合的应用中是比较方便的。同样的问题<br />
+是由于查询语句是自由组装的，创建一条语句的代码可能很长，并且<br />
+包含许多分支条件，很不便于优化和调试。</p>
+<p><strong>3.SQL</strong></p>
+<p>Hibernate也支持直接执行SQL的查询方式。这种方式牺牲了Hibernate跨<br />
+数据库的优点，手工地编写底层SQL语句，从而获得最好的执行效率，<br />
+相对前两种方法，优化和调试方便了一些。</p>
+<p>下面来看一组简单的例子。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.cdai.orm.hibernate.query; 
+ 
+import java.util.Arrays; 
+import java.util.List; 
+ 
+import org.hibernate.Criteria; 
+import org.hibernate.Query; 
+import org.hibernate.Session; 
+import org.hibernate.SessionFactory; 
+import org.hibernate.cfg.AnnotationConfiguration; 
+import org.hibernate.criterion.Criterion; 
+import org.hibernate.criterion.Example; 
+import org.hibernate.criterion.Expression; 
+ 
+import com.cdai.orm.hibernate.annotation.Account; 
+ 
+public class BasicQuery { 
+ 
+  public static void main(String[] args) { 
+ 
+    SessionFactory sessionFactory = new AnnotationConfiguration(). 
+                      addFile("hibernate/hibernate.cfg.xml").        
+                      configure(). 
+                      addPackage("com.cdai.orm.hibernate.annotation"). 
+                      addAnnotatedClass(Account.class). 
+                      buildSessionFactory(); 
+ 
+    Session session = sessionFactory.openSession(); 
+ 
+    // 1.HQL 
+    Query query = session.createQuery("from Account as a where a.id=:id"); 
+    query.setLong("id", 1); 
+    List result = query.list(); 
+    for (Object row : result) { 
+      System.out.println(row); 
+    } 
+ 
+    // 2.QBC 
+    Criteria criteria = session.createCriteria(Account.class); 
+    criteria.add(Expression.eq("id", new Long(2))); 
+    result = criteria.list(); 
+    for (Object row : result) { 
+      System.out.println(row); 
+    } 
+     
+    // 3.QBE 
+    Account example= new Account(); 
+    example.setBalance(100); 
+    result = session.createCriteria(Account.class). 
+            add(Example.create(example)). 
+            list(); 
+    for (Object row : result) { 
+      System.out.println(row); 
+    } 
+     
+    // 4.SQL 
+    query = session.createSQLQuery( 
+        " select top 10 * from tb_account order by col_id desc "); 
+    result = query.list(); 
+    for (Object row : result) { 
+      System.out.println(Arrays.toString((Object[]) row)); 
+  } 
+     
+    session.close(); 
+  } 
+ 
+} 
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+Hibernate: select account0_.col_id as col1_0_, account0_.col_balance as col2_0_ from tb_account account0_ where account0_.col_id=&#63;
+Account [id=1, balance=100]
+Hibernate: select this_.col_id as col1_0_0_, this_.col_balance as col2_0_0_ from tb_account this_ where this_.col_id=&#63;
+Account [id=2, balance=100]
+Hibernate: select this_.col_id as col1_0_0_, this_.col_balance as col2_0_0_ from tb_account this_ where (this_.col_balance=&#63;)
+Account [id=1, balance=100]
+Account [id=2, balance=100]
+Hibernate: select top 10 * from tb_account order by col_id desc
+[2, 100]
+[1, 100]
+
+</pre>
+</div>
+<p>从log中可以清楚的看到Hibernate对于生成的SQL语句的控制，具体选择<br />
+哪种查询方式就要看具体应用了。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/86599.html'>jQuery简单实现隐藏以及显示特效</a><a>下一篇</a><a href='/php/biji/86601.html'>Win10安装软件后总是提示是否安装的解决方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

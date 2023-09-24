@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>深入解析Linux下的磁盘缓存机制与SSD的写入放大问题_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="前段时间在开发一个使用SSD做缓存的系统，在高速写入数据时会出现大量的磁盘缓存。太多的磁盘缓存如果没有及时的写入磁盘中，在机器出现问题时是非常危险的，这样会导致很多的数" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">深入解析Linux下的磁盘缓存机制与SSD的写入放大问题</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>前段时间在开发一个使用SSD做缓存的系统，在高速写入数据时会出现大量的磁盘缓存。太多的磁盘缓存如果没有及时的写入磁盘中，在机器出现问题时是非常危险的，这样会导致很多的数</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>前段时间在开发一个使用SSD做缓存的系统，在高速写入数据时会出现大量的磁盘缓存。太多的磁盘缓存如果没有及时的写入磁盘中，在机器出现问题时是非常危险的，这样会导致很多的数据丢失，但是如果实时的将数据刷入磁盘中，这样写入效率有太低了。为了弄明白Linux系统的这种磁盘写入特性，最近深入的学习了一下。<br />&nbsp;&nbsp;&nbsp; VFS（Virtual File System）的存在使得Linux可以兼容不同的文件系统，例如ext3、ext4、xfs、ntfs等等，其不仅具有为所有的文件系统实现一个通用的外接口的作用，还具有另一个与系统性能相关的重要作用&mdash;&mdash;缓存。VFS中引入了高速磁盘缓存的机制，这属于一种软件机制，允许内核将原本存在磁盘上的某些信息保存在RAM中，以便对这些数据的进一步访问能快速进行，而不必慢速访问磁盘本身。高速磁盘缓存可大致分为以下三种：<br />目录项高速缓存&mdash;&mdash;主要存放的是描述文件系统路径名的目录项对象<br />索引节点高速缓存&mdash;&mdash;主要存放的是描述磁盘索引节点的索引节点对象<br />页高速缓存&mdash;&mdash;主要存放的是完整的数据页对象，每个页所包含的数据一定属于某个文件，同时，所有的文件读写操作都依赖于页高速缓存。其是Linux内核所使用的主要磁盘高速缓存。<br />正是由于缓存的引入，所以VFS文件系统采用了文件数据延迟写的技术，因此，如果在调用系统接口写入数据时没有使用同步写模式，那么大多数据将会先保存在缓存中，待等到满足某些条件时才将数据刷入磁盘里。</p>
+<p>内核是如何将数据刷入磁盘的呢？在看完以下两点后就能得到答案。</p>
+<p>1. 把脏页写入磁盘<br />&nbsp;&nbsp;&nbsp; 正如我们所了解的，内核不断用包含块设备数据的页填充页高速缓存。只要进程修改了数据，相应的页就被标记为脏页，即把它的PG_dirty标志位置。<br />&nbsp;&nbsp;&nbsp; Unix系统允许把脏缓冲区写入块设备的操作延迟执行，因为这种策略可以显著地提高系统的性能。对高速缓存中的页的几次写操作可能只需对相应的磁盘块进行一次缓慢的物理更新就可以满足。此外，写操作没有读操作那么紧迫，因为进程通常是不会因为延迟写而挂起，而大部分情况都因为延迟读而挂起。正是由于延迟写，使得任一物理块设备平均为读请求提供服务将多于写请求。<br />一个脏页可能直到最后一刻（即直到系统关闭时）都一直逗留在主存中。然而，从延迟写策略的局限性来看，它有两个主要的缺点：<br />&nbsp; 一、如果发生了硬件错误或者电源掉电的情况，那么就无法再获得RAM的内容，因此，从系统启动以来对文件进行的很多修改就丢失了。<br />&nbsp; 二、页高速缓存的大小（由此存放它所需的RAM的大小）就可要很大&mdash;&mdash;至少要与所访问块设备的大小不同。<br />因此，在下列条件下把脏页刷新（写入）到磁盘：<br />页高速缓存变得太满，但还需要更多的页，或者脏页的数量已经太多。<br />自从页变成脏页以来已过去太长时间。<br />进程请求对块设备或者特定文件任何待定的变化都进行刷新。通过调用sync()、fsync()或者fdatasync()系统调用来实现。<br />缓冲区页的引入是问题更加复杂。与每个缓冲区页相关的缓冲区首部使内核能够了解每个独立块缓冲区的状态。如果至少有一个缓冲区首部的PG_Dirty标志被置位，就应该设置相应缓冲区页的PG_dirty标志。当内核选择要刷新的缓冲区时，它扫描相应的缓冲区首部，并只把脏块的内容有效的写到磁盘。一旦内核把缓冲区的所有脏页刷新到磁盘，就把页的PG_dirty标志清0。</p>
+<p>2. pdflush内核线程<br />&nbsp;&nbsp;&nbsp; 早期版本的Linux使用bdfllush内核线程系统地扫描页高速缓存以搜索要刷新的脏页，并且使用另一个内核线程kupdate来保证所有的页不会&ldquo;脏&rdquo;太长时间。Linux 2.6用一组通用内核线程pdflush替代上述两个线程。<br />这些内核线程结构灵活，它们作用于两个参数：一个指向线程要执行的函数的指针和一个函数要用的参数。系统中pdflush内核线程的数量是要动态调整的：pdflush线程太少时就创建，太多时就杀死。因为这些内核线程所执行的函数可以阻塞，所以创建多个而不是一个pdflush内核线程可以改善系统性能。<br />根据下面的原则控制pdflush线程的产生和消亡：<br />必须有至少两个，最多八个pdflush内核线程<br />如果到最近的1s期间没有空闲pdflush，就应该创建新的pdflush线程<br />如果最近一次pdflush变为空闲的时间超过了1s，就应该删除一个pdflush线程<br />所有的pdflush内核线程都有pdflush_work描述符，其数据结构如下：</p>
+<p></p>
+<p>当系统没有要刷新的脏页时，pdflush线程会自动处于睡眠状态，最后由pdflush_operation()函数来唤醒。那么在这个过程中pdflush内核线程主要完成了哪些工作呢？其中一些工作与脏数据的刷新有关。尤其是pdflush通常执行下面的回调函数之一：<br />&nbsp;&nbsp;&nbsp; 1. background_writeout(): 系统地扫描页高速缓存以搜索要刷新的脏页。<br />为了得到需要刷新的脏页，就要彻底的搜索与在磁盘上有映像的索引节点相应的所有address_space对象（是一棵搜索树）。由于页高速缓存可能有大量的页，如果用一个单独的执行流来扫描整个高速缓存，会令CPU和磁盘长时间繁忙，因此，Linux使用一种复杂的机制把对页高速缓存的扫描划分为几个执行流。当内存不足或者用户显式的（用户态进程发出sync()系统调用等）调用请求刷新操作时会执行wakeup_bdflush()函数。wakeup_bdflush()函数会调用pdflush_operation()唤醒pdflush内核线程，并委托它执行回调函数background_writeout()。background_writeout()函数有效的从页高速缓存中获得指定数量的脏页，并把它写回磁盘。此外，执行background_writeout()函数的pdflush内核线程只有在满足以下两个条件下才能被唤醒：一是对页高速缓存中的页内容进行了修改，二是引起脏页部分增加到超过某个脏背景阈值。背景阈值通常设置为系统中所有页的10%，不过可以通过修改文件/proc/sys/vm/dirty_background_ratio来调整该值。<br />&nbsp;&nbsp;&nbsp; 2. wb_kupdate():检查页高速缓存中是否有&ldquo;脏&rdquo;了很久时间的页，避免当一些页很久没有被刷新时发生饥饿危险。<br />&nbsp;内核在初始化期间会建立wb_timer动态定时器，其的定时间距为dirty_writeback_centisecs文件中所规定的几百分之一秒（通常是500分之一秒，不过可以通过修改/proc/sys/vm/dirty_writeback_centisecs文件调整该值）。定时器函数会调用pdflush_operation()函数，然后将wb_kupdate()函数的地址传入。wb_kupdate()函数遍历页高速缓存搜索陈旧的脏索引节点，把已保持脏状态时间超过30秒的页都写到磁盘，之后重置定时器。</p>
+<p><strong>PS:关于SSD的写入放大问题</strong></p>
+<p><strong><br /></strong>&nbsp;&nbsp;&nbsp; 现在固态硬盘正在越来越多地被作为服务器磁盘使用。之前在SSD(Solid State Drive)上设计并实现缓存系统用于存储数据块时遇到了一些问题，比如在磁盘写满后，如果老化掉一些最久未使用的数据块后，继续大量写入新的数据，随着时间的推移，写入速度变得比刚开始时慢了许多。为了弄清楚为什么会出现这样的情况，于是在网上搜索了一些关于SSD的资料，原来这种情况是由于SSD硬件设计本身决定的，最终映射到应用程序上该中现象称为写入放大现象(WA: Write amplification)，WA是闪存及SSD相关的一个极为重要的属性，这个术语在2008年被Intel公司和SiliconSystems公司（于2009 年被西部数据收购）第一次提出并在公开稿件里使用。下面简单讲解一下为什么会出现这种情况以及是怎样一个过程。<br />&nbsp;&nbsp;&nbsp; SSD的设计完全不同于传统的机械磁盘，其是一个完整的电子设备，没有传统机械盘的读写磁头。因此，在读写数据的时候由于少了磁头在磁道之间的寻道过程所以SSD能提供较高的IOPS性能。也正因为其少了磁头的调度，所以SSD还能减少电量的使用，在数据中心中使用对企业来说是非常有益的。<br />&nbsp;&nbsp;&nbsp; SSD与传统磁盘相比其有了很大的性能优势，以及较多的优点，但是事物总是有两面性的，其也自身也存在一些问题，写入在SSD中的数据是不可以直接更新的，只能通过扇区覆盖重写，在覆盖重写之前需要先擦除，而且擦除操作又是不能在扇区上做的，只能在磁盘的块上来完成，擦除块之前需要将原有的还有效的数据先读出，然后在与新来的数据一起写入，这些重复的操作不单会增加写入的数据量 ，还会减少闪存的寿命，更吃光闪存的可用带宽而间接影响随机写入性能。<br /></p>
+<p>写入放大的解决办法<br />&nbsp;&nbsp;&nbsp; 在实际操作中我们很难完全解决掉SSD写入放大的问题，只能通过某些方法来更有效的减少放大的倍数。一个很简单的办法就是将一块大的SSD硬盘只使用其的一部分容量，比如128GB你只是用64GB，那么最坏的情况就是写入放大能减少约3倍。当然这种方法有点过于浪费资源了。另外还可以在写数据时采用顺序写入，当SSD被顺序写入时，其写入放大一般为1，但某些因素会影响到该值。<br />&nbsp;&nbsp;&nbsp; 除了上面的方法外，现阶段公认的比较好的方法是TRIM。TRIM位于操作系统层。操作系统使用TRIM命令来通知SSD某个page的数据不需要了，则可以回收。 支持TRIM的操作系统和以往的主要区别是删除一个Page的操作不同。在磁盘时期，删除一个page之后在文件系统的记录信息里将该page的标志位设置为可用，但是并没有将数据删除。使用SSD且支持TRIM的操作系统，在删除一个page时，会同时通知SSD这个page的数据不需要了，SSD内部有一个空闲时刻的垃圾收集进程，在空闲时刻SSD会将一些空闲的数据集中到一起，然后一起Erase。这样每次写操作，就在已经Erase好了的Page上写入新的数据。</p>
+<p>&nbsp;&nbsp;&nbsp; 虽然其存在写入放大的问题，但是这并没有让我们拒绝使用它。用其来做缓存加速已在很多项目中得到使用，尤其是在数据库缓存项目中，在这些项目中SSD高效的读性能得到了充分的利用。随着Facebook的开源项目Flash Cache的发布，以及Facebook内部的大量使用，Flash Cache已经成为了一个比较成熟的技术方案，这使得更多的公司选择了SSD来做存储或者缓存。</p>
+<p></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/81124.html'>对MAC的多屏幕(外接屏幕)如何进行管理设置</a><a>下一篇</a><a href='/php/biji/81126.html'>微软语出惊人 Windows 10没有正式版和RTM版</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

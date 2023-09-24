@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL中使用innobackupex、xtrabackup进行大数据的备份和还原教程_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="大数据量备份与还原，始终是个难点。当MYSQL超10G，用mysqldump来导出就比较慢了。在这里推荐xtrabackup,这个工具比mysqldump要快很多。<br />
+一、Xtrabackup介绍<br />
+1、Xtrabackup是什" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL中使用innobackupex、xtrabackup进行大数据的备份和还原教程</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>大数据量备份与还原，始终是个难点。当MYSQL超10G，用mysqldump来导出就比较慢了。在这里推荐xtrabackup,这个工具比mysqldump要快很多。<br />
+一、Xtrabackup介绍<br />
+1、Xtrabackup是什</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>大数据量备份与还原，始终是个难点。当MYSQL超10G，用mysqldump来导出就比较慢了。在这里推荐xtrabackup,这个工具比mysqldump要快很多。</p>
+<p><strong>一、Xtrabackup介绍</strong></p>
+<p><strong>1、Xtrabackup是什么</strong></p>
+<p>Xtrabackup是一个对InnoDB做数据备份的工具，支持在线热备份(备份时不影响数据读写)，是商业备份工具InnoDB Hotbackup的一个很好的替代品。</p>
+<p>Xtrabackup有两个主要的工具：xtrabackup、innobackupex</p>
+<p>1、xtrabackup只能备份InnoDB和XtraDB两种数据表，而不能备份MyISAM数据表<br />
+2、 innobackupex是参考了InnoDB Hotbackup的innoback脚本修改而来的.innobackupex是一个perl脚本封装，封装了xtrabackup。主要是为了方便的 同时备份InnoDB和MyISAM引擎的表，但在处理myisam时需要加一个读锁。并且加入了一些使用的选项。如slave-info可以记录备份恢 复后，作为slave需要的一些信息，根据这些信息，可以很方便的利用备份来重做slave。</p>
+<p><strong>2、Xtrabackup可以做什么 :</strong></p>
+<p>在线(热)备份整个库的InnoDB、 XtraDB表</p>
+<p>在xtrabackup的上一次整库备份基础上做增量备份(innodb only)<br />
+以流的形式产生备份，可以直接保存到远程机器上(本机硬盘空间不足时很有用)</p>
+<p>MySQL数据库本身提供的工具并不支持真正的增量备份，二进制日志恢复是point-in-time(时间点)的恢复而不是增量备份。<br />
+Xtrabackup工具支持对InnoDB存储引擎的增量备份，工作原理如下：</p>
+<p>(1)首先完成一个完全备份，并记录下此时检查点的LSN(Log Sequence Number)。<br />
+(2)在进程增量备份时，比较表空间中每个页的LSN是否大于上次备份时的LSN，如果是，则备份该页，同时记录当前检查点的LSN。<br />
+首 先，在logfile中找到并记录最后一个checkpoint(“last checkpoint LSN”)，然后开始从LSN的位置开始拷贝InnoDB的logfile到xtrabackup_logfile；接着，开始拷贝全部的数据文 件.ibd；在拷贝全部数据文件结束之后，才停止拷贝logfile。</p>
+<p>因为logfile里面记录全部的数据修改情况，所以，即时在备份过程中数据文件被修改过了，恢复时仍然能够通过解析xtrabackup_logfile保持数据的一致。</p>
+<p>因为innobackupex支持innodb,myisam,所以本文说一下，怎么使用innobackupex。</p>
+<p><strong>二，安装xtrabackup</strong></p>
+<p><strong>1、下载地址</strong></p>
+<p>http://www.percona.com/downloads/XtraBackup/</p>
+<p><strong>2、安装</strong></p>
+<p>根据需求，选择不同的版本，我选择的是rpm安装包，如果报以下错误<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="51055" class="copybut" id="copybut51055" onclick="doCopy('code51055')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code51055"><br />
+[root@localhost xtrabackup]# rpm -ivh percona-xtrabackup-2.2.4-5004.el6.x86_64.rpm <br />
+warning: percona-xtrabackup-2.2.4-5004.el6.x86_64.rpm: Header V4 DSA/SHA1 Signature, key ID cd2efd2a: NOKEY<br />
+error: Failed dependencies:<br />
+perl(Time::HiRes) is needed by percona-xtrabackup-2.2.4-5004.el6.x86_64<br />
+</div></p>
+<p><strong>解决办法：</strong></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="42769" class="copybut" id="copybut42769" onclick="doCopy('code42769')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code42769"></p>
+<p>[root@localhost xtrabackup]# yum -y install perl perl-devel libaio libaio-devel perl-Time-HiRes perl-DBD-MySQL //安装依赖包&nbsp; <br />
+[root@localhost xtrabackup]# rpm -ivh percona-xtrabackup-2.2.4-5004.el6.x86_64.rpm&nbsp;&nbsp; //重新安装&nbsp; <br />
+warning: percona-xtrabackup-2.2.4-5004.el6.x86_64.rpm: Header V4 DSA/SHA1 Signature, key ID cd2efd2a: NOKEY&nbsp; <br />
+Preparing... ########################################### [100%]&nbsp; <br />
+1:percona-xtrabackup ########################################### [100%]&nbsp; <br />
+</div></p>
+<p><strong>注意：</strong></p>
+<p>xtrabackup 2.2.4不支持mysql 5.1.73，所以如果要用新的xtrabackup,就要用高版本的mysql数据库，不然就会报以下错误：<br />
+innobackupex: Error: Unsupported server version: '5.1.73'</p>
+<p><strong>二、修改my.cnf</strong></p>
+<p>查看一下mysqld下面有没有datadir，如果没有加上<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="20743" class="copybut" id="copybut20743" onclick="doCopy('code20743')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code20743"><br />
+[mysqld]&nbsp; <br />
+datadir=/var/lib/mysql&nbsp; <br />
+</div></p>
+<p>不加的话，还原数据的时候，有可能会出现以下问题：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="60264" class="copybut" id="copybut60264" onclick="doCopy('code60264')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code60264"><br />
+xtrabackup: Error: Please set parameter 'datadir'<br />
+innobackupex: fatal error: no 'mysqld' group in MySQL options<br />
+innobackupex: fatal error: OR no 'datadir' option in group 'mysqld' in MySQL options<br />
+</div></p>
+<p><strong>三、全部数据库备份与还原</strong></p>
+<p><strong>1、全部数据库备份</strong></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="41701" class="copybut" id="copybut41701" onclick="doCopy('code41701')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code41701"><br />
+# innobackupex --defaults-file=/etc/my.cnf --user=root /home/tank/backup/&nbsp; <br />
+</div></p>
+<p>如果报以下错误：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="23947" class="copybut" id="copybut23947" onclick="doCopy('code23947')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code23947"><br />
+InnoDB: Error: log file ./ib_logfile0 is of different size 5242880 bytes<br />
+InnoDB: than specified in the .cnf file 50331648 bytes!<br />
+innobackupex: Error: The xtrabackup child process has died at /usr/bin/innobackupex line 2679.<br />
+</div></p>
+<p>解决办法：在my.cnf的mysqld中加入以下内容：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="50651" class="copybut" id="copybut50651" onclick="doCopy('code50651')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code50651"><br />
+[mysqld]&nbsp; <br />
+innodb_log_file_size = 5M&nbsp; <br />
+</div></p>
+<p><strong>2、单数据库备份</strong></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="70541" class="copybut" id="copybut70541" onclick="doCopy('code70541')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code70541"><br />
+# innobackupex --defaults-file=/etc/my.cnf --user=root --database=backup_test /home/tank/backup/&nbsp; <br />
+</div></p>
+<p><strong>3、数据库备份并压缩</strong></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="37428" class="copybut" id="copybut37428" onclick="doCopy('code37428')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code37428"><br />
+# innobackupex --defaults-file=/etc/my.cnf --user=root --stream=tar&nbsp; /home/tank/backup | gzip &gt; /home/tank/backup/`date +%F_%H-%M-%S`.tar.gz&nbsp; <br />
+</div></p>
+<p><strong>4、全数据还原</strong></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="36765" class="copybut" id="copybut36765" onclick="doCopy('code36765')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code36765"><br />
+# /etc/init.d/mysqld stop&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //停掉mysql&nbsp; <br />
+# mv /var/lib/mysql /var/lib/mysql_bak&nbsp;&nbsp; //数据目录备份&nbsp; <br />
+# mkdir -p /var/lib/mysql&nbsp; //重建数据目录&nbsp; <br />
+&nbsp; <br />
+//--apply-log选项的命令是准备在一个备份上启动mysql服务&nbsp; <br />
+# innobackupex --defaults-file=/etc/my.cnf --user=root --apply-log /home/tank/backup/2014-09-18_16-35-12&nbsp; <br />
+&nbsp; <br />
+//--copy-back 选项的命令从备份目录拷贝数据,索引,日志到my.cnf文件里规定的初始位置&nbsp; <br />
+# innobackupex --defaults-file=/etc/my.cnf --user=root --copy-back /home/tank/backup/2014-09-18_16-35-12&nbsp; <br />
+&nbsp; <br />
+# chown -R mysql.mysql /var/lib/mysql&nbsp; //改变文件所属&nbsp; <br />
+# /etc/init.d/mysqld stop&nbsp; //启动mysql&nbsp; <br />
+</div></p>
+<p><strong>四、增量备份与还原</strong></p>
+<p><strong>1、创建测试数据库和表</strong></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="12198" class="copybut" id="copybut12198" onclick="doCopy('code12198')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code12198"><br />
+create database backup_test;&nbsp; //创建库&nbsp; <br />
+&nbsp; <br />
+CREATE TABLE `backup` (&nbsp; //创建表&nbsp; <br />
+&nbsp;`id` int(11) NOT NULL AUTO_INCREMENT ,&nbsp; <br />
+&nbsp;`name` varchar(20) NOT NULL DEFAULT '' ,&nbsp; <br />
+&nbsp;`create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ,&nbsp; <br />
+&nbsp;`del` tinyint(1) NOT NULL DEFAULT '0',&nbsp; <br />
+&nbsp;PRIMARY KEY (`id`)&nbsp; <br />
+) ENGINE=myisam DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;&nbsp; <br />
+</div></p>
+<p><strong>2、增量备份<br />
+</strong></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="85899" class="copybut" id="copybut85899" onclick="doCopy('code85899')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code85899"><br />
+mysql&gt; INSERT INTO backup (name) VALUES ('tank'),('tank1');&nbsp; //插入数据&nbsp; <br />
+&nbsp; <br />
+# innobackupex --defaults-file=/etc/my.cnf --user=root --incremental-basedir=/home/tank/backup/2014-09-18_16-35-12 --incremental /home/tank/backup/&nbsp; <br />
+</div></p>
+<p><strong>3、在增量的基础上在进行增量备份</strong></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="38237" class="copybut" id="copybut38237" onclick="doCopy('code38237')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code38237"><br />
+mysql&gt; INSERT INTO backup (name) VALUES ('tank2'),('tank3'),('tank4'),('tank5'),('tank6');&nbsp; //在插入数据&nbsp; <br />
+&nbsp; <br />
+//2014-09-18_18-05-20这个目录，上次增量备份产生的目录&nbsp; <br />
+# innobackupex --defaults-file=/etc/my.cnf --user=root --incremental-basedir=/home/tank/backup/2014-09-18_18-05-20 --incremental /home/tank/backup/&nbsp; <br />
+</div></p>
+<p>查看增量备份记录文件：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="81222" class="copybut" id="copybut81222" onclick="doCopy('code81222')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code81222"><br />
+[root@localhost 2014-09-18_16-35-12]# cat xtrabackup_checkpoints&nbsp;&nbsp; //全备目录下的文件&nbsp; <br />
+backup_type = full-prepared&nbsp; <br />
+from_lsn = 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //全备起始为0&nbsp; <br />
+to_lsn = 23853959&nbsp; <br />
+last_lsn = 23853959&nbsp; <br />
+compact = 0&nbsp; <br />
+&nbsp; <br />
+[root@localhost 2014-09-18_18-05-20]# cat xtrabackup_checkpoints&nbsp; //第一次增量备份目录下的文件&nbsp; <br />
+backup_type = incremental&nbsp; <br />
+from_lsn = 23853959&nbsp; <br />
+to_lsn = 23854112&nbsp; <br />
+last_lsn = 23854112&nbsp; <br />
+compact = 0&nbsp; <br />
+&nbsp; <br />
+[root@localhost 2014-09-18_18-11-43]# cat xtrabackup_checkpoints&nbsp; //第二次增量备份目录下的文件&nbsp; <br />
+backup_type = incremental&nbsp; <br />
+from_lsn = 23854112&nbsp; <br />
+to_lsn = 23854712&nbsp; <br />
+last_lsn = 23854712&nbsp; <br />
+compact = 0&nbsp; <br />
+</div></p>
+<p>增量备份做完后，把backup_test这个数据库删除掉，drop database backup_test;这样可以对比还原后。</p>
+<p><strong>4、增量还原</strong></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="5384" class="copybut" id="copybut5384" onclick="doCopy('code5384')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code5384"><br />
+# innobackupex --defaults-file=/etc/my.cnf --user=root --apply-log --redo-only /home/tank/backup/2014-09-18_16-35-12&nbsp; <br />
+&nbsp; <br />
+# innobackupex --defaults-file=/etc/my.cnf --user=root --apply-log --redo-only /home/tank/backup/2014-09-18_16-35-12 --incremental-dir=/home/tank/backup/2014-09-18_18-05-20&nbsp; <br />
+&nbsp; <br />
+# innobackupex --defaults-file=/etc/my.cnf --user=root --apply-log --redo-only /home/tank/backup/2014-09-18_16-35-12 --incremental-dir=/home/tank/backup/2014-09-18_18-11-43&nbsp; <br />
+</div></p>
+<p>在这里有三个目录：</p>
+<p>1)、/home/tank/backup/2014-09-18_16-35-12，全备份目录<br />
+2)、/home/tank/backup/2014-09-18_18-05-20，第一次增量备份产生的目录<br />
+3)、/home/tank/backup/2014-09-18_18-11-43，第二次增量备份产生的目录</p>
+<p>到这里增量还原，还没有结束，还有最重要一步，就是要进行一次全量还原。停止数据库，删除/var/lib/mysql，在还原。</p>
+<p>增量备份的原理就是，把增量目录下的数据，整合到全变量目录下，然后在进行，全数据量的还原。</p>
+<p>总体来说，innobackupex速度快，支持innodb,myisam,用起来是还不是很方便，单库还原，还是增量备份还原，都要进行全部数据库还原，这个不合理。</p>
+<p><strong>五、innobackup 常用参数说明</strong></p>
+<p><strong>--defaults-file<br />
+</strong>同xtrabackup的--defaults-file参数</p>
+<p><strong>--apply-log<br />
+</strong>对xtrabackup的--prepare参数的封装</p>
+<p><strong>--copy-back<br />
+</strong>做数据恢复时将备份数据文件拷贝到MySQL服务器的datadir ；</p>
+<p><strong>--remote-host=HOSTNAME<br />
+</strong>通过ssh将备份数据存储到进程服务器上；</p>
+<p><strong>--stream=[tar]<br />
+</strong>备 份文件输出格式, tar时使用tar4ibd , 该文件可在XtarBackup binary文件中获得.如果备份时有指定--stream=tar, 则tar4ibd文件所处目录一定要在$PATH中(因为使用的是tar4ibd去压缩, 在XtraBackup的binary包中可获得该文件)。<br />
+在 使用参数stream=tar备份的时候，你的xtrabackup_logfile可能会临时放在/tmp目录下，如果你备份的时候并发写入较大的话 xtrabackup_logfile可能会很大(5G+)，很可能会撑满你的/tmp目录，可以通过参数--tmpdir指定目录来解决这个问题。</p>
+<p><strong>--tmpdir=DIRECTORY<br />
+</strong>当有指定--remote-host or --stream时, 事务日志临时存储的目录, 默认采用MySQL配置文件中所指定的临时目录tmpdir</p>
+<p><strong>--redo-only --apply-log组,<br />
+</strong>强制备份日志时只redo ,跳过rollback。这在做增量备份时非常必要。</p>
+<p><strong>--use-memory=#<br />
+</strong>该参数在prepare的时候使用，控制prepare时innodb实例使用的内存量</p>
+<p><strong>--throttle=IOS<br />
+</strong>同xtrabackup的--throttle参数<br />
+--sleep=是给ibbackup使用的，指定每备份1M数据，过程停止拷贝多少毫秒，也是为了在备份时尽量减小对正常业务的影响，具体可以查看ibbackup的手册 ；</p>
+<p><strong>--compress[=LEVEL]<br />
+</strong>对备份数据迚行压缩，仅支持ibbackup，xtrabackup还没有实现；</p>
+<p><strong>--include=REGEXP<br />
+</strong>对 xtrabackup参数--tables的封装，也支持ibbackup。备份包含的库表，例如：--include="test.*"，意思是要备份 test库中所有的表。如果需要全备份，则省略这个参数；如果需要备份test库下的2个表：test1和test2,则写 成：--include="test.test1|test.test2"。也可以使用通配符，如：--include="test.test*"。</p>
+<p><strong>--databases=LIST<br />
+</strong>列出需要备份的databases，如果没有指定该参数，所有包含MyISAM和InnoDB表的database都会被备份；</p>
+<p><strong>--uncompress<br />
+</strong>解压备份的数据文件，支持ibbackup，xtrabackup还没有实现该功能；</p>
+<p><strong>--slave-info,<br />
+</strong>备 份从库, 加上--slave-info备份目录下会多生成一个xtrabackup_slave_info 文件, 这里会保存主日志文件以及偏移, 文件内容类似于:CHANGE MASTER TO MASTER_LOG_FILE='', MASTER_LOG_POS=0</p>
+<p><strong>--socket=SOCKET<br />
+</strong>指定mysql.sock所在位置，以便备份进程登录mysql.</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/88596.html'>10个必备的CSS技巧总结</a><a>下一篇</a><a href='/php/biji/88598.html'>IOS实现点击滑动抽屉效果</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

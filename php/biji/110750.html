@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL分区性能的解决办法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL分区性能的简单示例，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+感兴趣的小伙伴，下面一起跟随php教程的小玲来看看吧！<br />
+一， 分区概念<br />
+分区允许根" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/122.html"></a></li><li><a href="/php/phpbiji/123.html"></a></li><li><a href="/php/phpbiji/124.html"></a></li><li><a href="/php/phpbiji/125.html"></a></li><li><a href="/php/phpbiji/126.html"></a></li><li><a href="/php/phpbiji/127.html"></a></li><li><a href="/php/phpbiji/128.html"></a></li><li><a href="/php/phpbiji/129.html"></a></li><li><a href="/php/phpbiji/130.html"></a></li><li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL分区性能的解决办法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL分区性能的简单示例，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+感兴趣的小伙伴，下面一起跟随php教程的小玲来看看吧！<br />
+一， 分区概念<br />
+分区允许根</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL分区性能的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随php教程的小玲来看看吧！</p>
+<p><strong>一， </strong><strong>分区概念</strong><strong></strong></p>
+<p><em>分区</em>允许根据指定的规则，跨文件系统分配单个表的多个部分。表的不同部分在不同的位置被存储为单独的表。MySQL从5.1.3开始支持Partition。</p>
+<p>分区和手动分表对比</p>
+<table border="1" cellpadding="0" cellspacing="0" sizcache="2" sizset="20">
+	<tbody sizcache="2" sizset="20">
+		<tr class="alt" jquery1281319431406="157">
+			<td valign="top" width="151"><strong>手动分表</strong><strong></strong></td>
+			<td valign="top" width="198"><strong>分区</strong></td>
+		</tr>
+		<tr jquery1281319431406="158">
+			<td valign="top" width="151">多张数据表</td>
+			<td valign="top" width="198">一张数据表</td>
+		</tr>
+		<tr class="alt" jquery1281319431406="159">
+			<td valign="top" width="151">重复数据的风险</td>
+			<td valign="top" width="198">没有数据重复的风险</td>
+		</tr>
+		<tr jquery1281319431406="160">
+			<td valign="top" width="151">写入多张表</td>
+			<td valign="top" width="198">写入一张表</td>
+		</tr>
+		<tr class="alt" jquery1281319431406="161">
+			<td valign="top" width="151">没有统一的约束限制</td>
+			<td valign="top" width="198">强制的约束限制</td>
+		</tr>
+	</tbody>
+</table>
+<p></p>
+<p>MySQL支持RANGE，LIST，HASH，KEY分区类型，其中以RANGE最为常用：</p>
+<ul sizcache="1" sizset="30">
+	<li jquery1281319431406="32">Range（范围）&ndash;这种模式允许将数据划分不同范围。例如可以将一个表通过年份划分成若干个分区。</li>
+	<li jquery1281319431406="33">Hash（哈希）&ndash;这中模式允许通过对表的一个或多个列的Hash Key进行计算，最后通过这个Hash码不同数值对应的数据区域进行分区。例如可以建立一个对表主键进行分区的表。</li>
+	<li jquery1281319431406="34">Key（键值）-上面Hash模式的一种延伸，这里的Hash Key是MySQL系统产生的。</li>
+	<li jquery1281319431406="35">List（预定义列表）&ndash;这种模式允许系统通过预定义的列表的值来对数据进行分割。</li>
+	<li jquery1281319431406="36">Composite（复合模式） &ndash;以上模式的组合使用　</li>
+</ul>
+<p></p>
+<p><strong>二，分区能做什么</strong></p>
+<ul sizcache="1" sizset="35">
+	<li jquery1281319431406="37">逻辑数据分割</li>
+	<li jquery1281319431406="38">提高单一的写和读应用速度</li>
+	<li jquery1281319431406="39">提高分区范围读查询的速度</li>
+	<li jquery1281319431406="40">分割数据能够有多个不同的物理文件路径</li>
+	<li jquery1281319431406="41">高效的保存历史数据</li>
+	<li jquery1281319431406="42">一个表上的约束检查</li>
+	<li jquery1281319431406="43">不同的主从服务器分区策略，例如master按Hash分区，slave按range分区</li>
+</ul>
+<p></p>
+<p><strong>三，分区的限制</strong><strong>(</strong><strong>截止</strong><strong>5.1.44</strong><strong>版</strong><strong>)</strong></p>
+<p>&bull; 只能对数据表的整型列进行分区，或者数据列可以通过分区函数转化成整型列</p>
+<p>&bull; 最大分区数目不能超过1024</p>
+<p>&bull; 如果含有唯一索引或者主键，则分区列必须包含在所有的唯一索引或者主键在内</p>
+<p>&bull; 不支持外键</p>
+<p>&bull; 不支持全文索引（fulltext）</p>
+<ul sizcache="1" sizset="42">
+	<li jquery1281319431406="44">按日期进行分区很非常适合，因为很多日期函数可以用。但是对于字符串来说合适的分区函数不太多</li>
+</ul>
+<p><strong>四，什么时候使用分区</strong></p>
+<p>&bull; 海量数据表</p>
+<p>&bull; 历史表快速的查询，可以采用ARCHIVE+PARTITION的方式。</p>
+<p>&bull; 数据表索引大于服务器有效内存</p>
+<p>&bull; 对于大表，特别是索引远远大于服务器有效内存时，可以不用索引，此时分区效率会更有效。</p>
+<p><strong>五，分区实验</strong></p>
+<p><strong>实验一：</strong></p>
+<p>使用 US Bureau of Transportation Statistics发布的数据(CSV格式).目前, 包括 1.13 亿条记录，7.5 GB数据5.2 GB索引。时间从1987到2007。</p>
+<p>服务器使用4GB内存，这样数据和索引的大小都超过了内存大小。设置为4GB原因是数据仓库大小远远超过可能内存的大小，可能达几TB。对普通OLTP数据库来说，索引缓存在内存中，可以快速检索。如果数据超出内存大小，需要使用不同的方式。</p>
+<p>创建有主键的表，因为通常表都会有主键。表的主键太大导致索引无法读入内存，这样一般来说不是高效的，意味着要经常访问磁盘，访问速度完全取决于你的磁盘和处理器。目前在设计很大的数据仓库里，有一种普遍的做法是不使用索引。所以也会比较有和没有主键的性能。</p>
+<p><strong>测试方法：</strong></p>
+<p>使用三种数据引擘MyISAM, InnoDB, Archive.对于每一种引擘, 创建一个带主键的未分区表 (除了archive) 和两个分区表，一个按月一个按年。分区表分区方式如下：</p>
+<p>CREATE TABLE by_year (</p>
+<p> d DATE</p>
+<p>)</p>
+<p>PARTITION BY RANGE (YEAR(d))</p>
+<p>(</p>
+<p>PARTITION P1 VALUES LESS THAN (2001),</p>
+<p>PARTITION P2 VALUES LESS THAN (2002),</p>
+<p>PARTITION P3 VALUES LESS THAN (2003),</p>
+<p>PARTITION P4 VALUES LESS THAN (MAXVALUE)</p>
+<p>)</p>
+<p>CREATE TABLE by_month (</p>
+<p> d DATE</p>
+<p>)</p>
+<p>PARTITION BY RANGE (TO_DAYS(d))</p>
+<p>(</p>
+<p>PARTITION P1 VALUES LESS THAN (to_days(&lsquo;2001-02-01&prime;)), &mdash; January</p>
+<p>PARTITION P2 VALUES LESS THAN (to_days(&lsquo;2001-03-01&prime;)), &mdash; February</p>
+<p>PARTITION P3 VALUES LESS THAN (to_days(&lsquo;2001-04-01&prime;)), &mdash; March</p>
+<p>PARTITION P4 VALUES LESS THAN (MAXVALUE)</p>
+<p>)</p>
+<p>每一个都在 mysql服务器上的单独的实例上测试, 每实例只有一个库一个表。每种引擘, 都会启动服务, 运行查询并记录结果, 然后关闭服务。服务实例通过MySQL Sandbox创建。</p>
+<p>加载数据的情况如下：</p>
+<table border="1" cellpadding="0" sizcache="2" sizset="25">
+	<tbody sizcache="2" sizset="25">
+		<tr jquery1281319431406="162">
+			<td><strong>ID</strong></td>
+			<td><strong>引擘</strong></td>
+			<td><strong>是否分区</strong></td>
+			<td><strong>数据</strong></td>
+			<td><strong>大小</strong></td>
+			<td><strong>备注</strong></td>
+			<td><strong>加载时间 (*)</strong></td>
+		</tr>
+		<tr class="alt" jquery1281319431406="163">
+			<td>1</td>
+			<td>MyISAM</td>
+			<td>none</td>
+			<td>1.13亿</td>
+			<td>13 GB</td>
+			<td>with PK</td>
+			<td>37 min</td>
+		</tr>
+		<tr jquery1281319431406="164">
+			<td>2</td>
+			<td>MyISAM</td>
+			<td>by month</td>
+			<td valign="top">1.13亿</td>
+			<td>8 GB</td>
+			<td>without PK</td>
+			<td>19 min</td>
+		</tr>
+		<tr class="alt" jquery1281319431406="165">
+			<td>3</td>
+			<td>MyISAM</td>
+			<td>by year</td>
+			<td valign="top">1.13亿</td>
+			<td>8 GB</td>
+			<td>without PK</td>
+			<td>18 min</td>
+		</tr>
+		<tr jquery1281319431406="166">
+			<td>4</td>
+			<td>InnoDB</td>
+			<td>none</td>
+			<td valign="top">1.13亿</td>
+			<td>16 GB</td>
+			<td>with PK</td>
+			<td>63 min</td>
+		</tr>
+		<tr class="alt" jquery1281319431406="167">
+			<td>5</td>
+			<td>InnoDB</td>
+			<td>by month</td>
+			<td valign="top">1.13亿</td>
+			<td>10 GB</td>
+			<td>without PK</td>
+			<td>59 min</td>
+		</tr>
+		<tr jquery1281319431406="168">
+			<td>6</td>
+			<td>InnoDB</td>
+			<td>by year</td>
+			<td valign="top">1.13亿</td>
+			<td>10 GB</td>
+			<td>without PK</td>
+			<td>57 min</td>
+		</tr>
+		<tr class="alt" jquery1281319431406="169">
+			<td>7</td>
+			<td>Archive</td>
+			<td>none</td>
+			<td valign="top">1.13亿</td>
+			<td>1.8 GB</td>
+			<td>no keys</td>
+			<td>20 min</td>
+		</tr>
+		<tr jquery1281319431406="170">
+			<td>8</td>
+			<td>Archive</td>
+			<td>by month</td>
+			<td valign="top">1.13亿</td>
+			<td>1.8 GB</td>
+			<td>no keys</td>
+			<td>21 min</td>
+		</tr>
+		<tr class="alt" jquery1281319431406="171">
+			<td>9</td>
+			<td>Archive</td>
+			<td>by year</td>
+			<td valign="top">1.13亿</td>
+			<td>1.8 GB</td>
+			<td>no keys</td>
+			<td>20min</td>
+		</tr>
+	</tbody>
+</table>
+<p>*在dual-Xeon服务器上</p>
+<p>为了对比分区在大的和小的数据集上的效果，创建了另外9个实例，每一个包含略小于2GB的数据。</p>
+<p>查询语句有两种</p>
+<ul sizcache="1" sizset="43">
+	<li jquery1281319431406="45">聚集查询</li>
+</ul>
+<p>SELECT COUNT(*)</p>
+<p>FROM table_name</p>
+<p>WHERE date_column BETWEEN start_date and end_date</p>
+<ul sizcache="1" sizset="44">
+	<li jquery1281319431406="46">指定记录查询</li>
+</ul>
+<p>SELECT column_list</p>
+<p>FROM table_name</p>
+<p>WHERE column1 = x and column2 = y and column3 = z</p>
+<p>对于第一种查询，创建不同的日期范围的语句。对于每一个范围，创建一组额外的相同范围日期的查询。每个日期范围的第一个查询是冷查询，意味着是第一次命中，随后的在同样范围内的查询是暖查询，意味着至少部分被缓存。查询语句在the Forge上。</p>
+<p><strong>结果：</strong></p>
+<p><strong>1</strong><strong>带主键的分区表</strong></p>
+<p>第一个测试使用复合主键，就像原始数据表使用的一样。主键索引文件达到5.5 GB. 可以看出，分区不仅没有提高性能，主键还减缓了操作。因为如果使用主键索引查询，而索引又不能读入内存，则表现很差。提示我们分区很有用，但是必须使用得当。</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+</p>
+<p>| 状态 | myisam 不分区 | myisam 月分区 | myisam 年分区 |</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+</p>
+<p>| cold | 2.6574570285714 | 2.9169642 | 3.0373419714286 |</p>
+<p>| warm | 2.5720722571429 | 3.1249698285714 | 3.1294000571429 |</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+</p>
+<p>ARCHIVE引擘</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+</p>
+<p>| 状态 | archive不分区 | archive月分区| archive年分区 |</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+</p>
+<p>| cold | 249.849563 | 1.2436211111111 | 12.632532527778 |</p>
+<p>| warm | 235.814442 | 1.0889786388889 | 12.600520777778 |</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+</p>
+<p>注意ARCHIVE引擘月分区的响应时间比使用MyISAM好。</p>
+<p><strong>2</strong><strong>不带主键的分区表</strong></p>
+<p>因为如果主键的大小超出了可用的key buffer，甚至全部内存，所有使用主键的查询都会使用磁盘。新的方式只使用分区，不要主键。性能有显著的提高。</p>
+<p>按月分区表得到了70%-90%的性能提高。</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+</p>
+<p>| 状态 | myisam 不分区 | myisam 月分区 | myisam 年分区 |</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+</p>
+<p>| cold | 2.6864490285714 | 0.64206445714286 | 2.6343286285714 |</p>
+<p>| warm | 2.8157905714286 | 0.18774977142857 | 2.2084743714286 |</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+</p>
+<p>为了使区别更明显, 我使用了两个大规模查询，可以利用分区的分区消除功能。</p>
+<p># query 1 &ndash; 按年统计</p>
+<p>SELECT year(FlightDate) as y, count(*)</p>
+<p>FROM flightstats</p>
+<p>WHERE FlightDate BETWEEN &ldquo;2001-01-01&Prime; and &ldquo;2003-12-31&Prime;</p>
+<p>GROUP BY y</p>
+<p># query 2 &ndash; 按月统计</p>
+<p>SELECT date_format(FlightDate,&rdquo;%Y-%m&rdquo;) as m, count(*)</p>
+<p>FROM flightstats</p>
+<p>WHERE FlightDate BETWEEN &ldquo;2001-01-01&Prime; and &ldquo;2003-12-31&Prime;</p>
+<p>GROUP BY m</p>
+<p>结果显示按月分区表有30%-60%，按年分区表有15%-30%性能提升。</p>
+<p>+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&ndash;+</p>
+<p>| query_id | 不分 | 月分 | 年分 |</p>
+<p>+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&ndash;+</p>
+<p>| 1 | 97.779958 | 36.296519 | 82.327554 |</p>
+<p>| 2 | 69.61055 | 47.644986 | 47.60223 |</p>
+<p>+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&ndash;+</p>
+<p><strong>处理器因素</strong></p>
+<p>当以上测试在家用机(Intel Dual Core 2.3 MHz CPU)上测试的时候。对于原来的对于dual Xeon 2.66 MHz来说，发现新服务器更快！。</p>
+<p>重复上面的测试，令人吃惊:</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+</p>
+<p>|状态 | myisam 不分区 |myisam 月分区| myisam 年分区 |</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+</p>
+<p>| cold | 0.051063428571429 | 0.6577062 | 1.6663527428571 |</p>
+<p>| warm | 0.063645485714286 | 0.1093724 | 1.2369152285714 |</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+</p>
+<p>myisam 不分区带主键的表比分区表更快. 分区表的表现和原来一样，但未分区表性能提高了，使得分区显得不必要。既然这台服务器似乎充分利用了索引的好处，我在分区表的分区列上加入了索引。</p>
+<p># 原始表</p>
+<p>create table flightstats (</p>
+<p>AirlineID int not null,</p>
+<p>UniqueCarrier char(3) not null,</p>
+<p>Carrier char(3) not null,</p>
+<p>FlightDate date not null,</p>
+<p>FlightNum char(5) not null,</p>
+<p>TailNum char(8) not null,</p>
+<p>ArrDelay double not null,</p>
+<p>ArrTime datetime not null,</p>
+<p>DepDelay double not null,</p>
+<p>DepTime datetime not null,</p>
+<p>Origin char(3) not null,</p>
+<p>Dest char(3) not null,</p>
+<p>Distance int not null,</p>
+<p>Cancelled char(1) default &lsquo;n&#39;,</p>
+<p>primary key (FlightDate, AirlineID, Carrier, UniqueCarrier, FlightNum, Origin, DepTime, Dest)</p>
+<p>)</p>
+<p># 分区表</p>
+<p>create table flightstats (</p>
+<p>AirlineID int not null,</p>
+<p>UniqueCarrier char(3) not null,</p>
+<p>Carrier char(3) not null,</p>
+<p>FlightDate date not null,</p>
+<p>FlightNum char(5) not null,</p>
+<p>TailNum char(8) not null,</p>
+<p>ArrDelay double not null,</p>
+<p>ArrTime datetime not null,</p>
+<p>DepDelay double not null,</p>
+<p>DepTime datetime not null,</p>
+<p>Origin char(3) not null,</p>
+<p>Dest char(3) not null,</p>
+<p>Distance int not null,</p>
+<p>Cancelled char(1) default &lsquo;n&#39;,</p>
+<p>KEY (FlightDate)</p>
+<p>)</p>
+<p>PARTITION BY RANGE &hellip;</p>
+<p>结果是让人满意的,得到35% 性能提高。</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+</p>
+<p>|状态 | myisam 不分区 |myisam 月分区 | myisam 年分区 |</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+</p>
+<p>| cold | 0.075289714285714 | 0.025491685714286 | 0.072398542857143 |</p>
+<p>| warm | 0.064401257142857 | 0.031563085714286 | 0.056638085714286 |</p>
+<p>+&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;-+</p>
+<p><strong>结论：</strong></p>
+<p><strong>1. </strong><strong>使用表分区并不是性能提高的保证。它依赖于以下因素：</strong></p>
+<ul sizcache="1" sizset="45">
+	<li jquery1281319431406="47">分区使用的列the column used for partitioning;</li>
+	<li jquery1281319431406="48">分区函数，如果原始字段不是int型;</li>
+	<li jquery1281319431406="49">服务器速度;</li>
+	<li jquery1281319431406="50">内存数量.</li>
+</ul>
+<p><strong>2. </strong><strong>在应用到生产系统前运行基准测试和性能测试</strong></p>
+<p>依赖于你的数据库的用途，你可能得到巨大的性能提高也可能一无所获。如果不小心，甚至有可能会降低性能。</p>
+<p>比如：一个使用月分区的表，在总是进行日期范围查询时可以得到极优的速度。但如果没有日期查询，那么会进行全表扫描。</p>
+<p>分区对于海量数据性能提高是一个关键的工具。什么才是海量的数据取决于部署的硬件。盲目使用分区不能保证提高性能，但是在前期基准测试和性能测试的帮助下，可以成为完美的解决方案。</p>
+<p><strong>3. </strong><strong>Archive </strong><strong>表可以成为一个很好的折衷方案</strong></p>
+<p>Archive 表分区后可以得到巨大的性能提高。当然也依赖于你的用途，没有分区时任何查询都是全表扫描。如果你有不需要变更的历史数据，还要进行按时间的分析统计，使用Archive引擘是极佳的选择。它会使用10-20％的原空间，对于聚集查询有比MyISAM /InnoDB表更好的性能。</p>
+<p>虽然一个很好的优化的分区MyISAM 表性能可能好于对应的Archive表, 但是需要10倍的空间。</p>
+<p></p>
+<p></p>
+<p><strong>实验二：</strong></p>
+<p>1.建两个表，一个按时间字段分区，一个不分区。</p>
+<p>CREATE TABLE part_tab</p>
+<p>(</p>
+<p>c1 int default NULL,</p>
+<p>c2 varchar(30) default NULL,</p>
+<p>c3 date default NULL</p>
+<p>) engine=myisam</p>
+<p>PARTITION BY RANGE (year(c3)) (PARTITION p0 VALUES LESS THAN (1995),</p>
+<p>PARTITION p1 VALUES LESS THAN (1996) , PARTITION p2 VALUES LESS THAN (1997) ,</p>
+<p>PARTITION p3 VALUES LESS THAN (1998) , PARTITION p4 VALUES LESS THAN (1999) ,</p>
+<p>PARTITION p5 VALUES LESS THAN (2000) , PARTITION p6 VALUES LESS THAN (2001) ,</p>
+<p>PARTITION p7 VALUES LESS THAN (2002) , PARTITION p8 VALUES LESS THAN (2003) ,</p>
+<p>PARTITION p9 VALUES LESS THAN (2004) , PARTITION p10 VALUES LESS THAN (2010),</p>
+<p>PARTITION p11 VALUES LESS THAN MAXVALUE );</p>
+<p>create table no_part_tab</p>
+<p>(c1 int(11) default NULL,</p>
+<p>c2 varchar(30) default NULL,</p>
+<p>c3 date default NULL) engine=myisam;</p>
+<p>2.建一个存储过程, 利用该过程向两个表插入各8百万条不同数据。</p>
+<p>delimiter //</p>
+<p>CREATE PROCEDURE load_part_tab()</p>
+<p>begin</p>
+<p> declare v int default 0;</p>
+<p> while v &lt; 8000000</p>
+<p> do</p>
+<p> insert into part_tab</p>
+<p>values (v,&#39;testing partitions&#39;,adddate(&lsquo;1995-01-01&prime;,(rand(v)*36520) mod 3652));</p>
+<p> set v = v + 1;</p>
+<p> end while;</p>
+<p>end</p>
+<p>//</p>
+<p>然后执行</p>
+<p>mysql&gt; delimiter ;</p>
+<p>mysql&gt; call load_part_tab();</p>
+<p>Query OK, 1 row affected (8 min 17.75 sec)</p>
+<p>mysql&gt; insert into no_part_tab select * from part_tab;</p>
+<p>Query OK, 8000000 rows affected (51.59 sec)</p>
+<p>Records: 8000000 Duplicates: 0 Warnings: 0</p>
+<p>3.开始对这两表中的数据进行简单的范围查询吧。并显示执行过程解析：</p>
+<p>mysql&gt; select count(*) from no_part_tab where c3 &gt; date &lsquo;1995-01-01&prime; and c3 &lt; date &lsquo;1995-12-31&prime;;</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| count(*) |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| 795181 |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>1 row in set (38.30 sec)</p>
+<p>mysql&gt; select count(*) from part_tab where c3 &gt; date &lsquo;1995-01-01&prime; and c3 &lt; date &lsquo;1995-12-31&prime;;</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| count(*) |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| 795181 |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>1 row in set (3.88 sec)</p>
+<p>mysql&gt; explain select count(*) from no_part_tab where c3 &gt; date &lsquo;1995-01-01&prime; and c3 &lt; date &lsquo;1995-12-31&prime;\G</p>
+<p>*************************** 1. row ***************************</p>
+<p>id: 1</p>
+<p>select_type: SIMPLE</p>
+<p>table: no_part_tab</p>
+<p> type: ALL</p>
+<p>possible_keys: NULL</p>
+<p> key: NULL</p>
+<p> key_len: NULL</p>
+<p> ref: NULL</p>
+<p> rows: 8000000</p>
+<p> Extra: Using where</p>
+<p>1 row in set (0.00 sec)</p>
+<p>mysql&gt; explain partitions select count(*) from part_tab where</p>
+<p> -&gt; c3 &gt; date &lsquo;1995-01-01&prime; and c3 &lt; date &lsquo;1995-12-31&prime;\G</p>
+<p>*************************** 1. row ***************************</p>
+<p> id: 1</p>
+<p> select_type: SIMPLE</p>
+<p> table: part_tab</p>
+<p> partitions: p1</p>
+<p> type: ALL</p>
+<p>possible_keys: NULL</p>
+<p> key: NULL</p>
+<p> key_len: NULL</p>
+<p> ref: NULL</p>
+<p> rows: 798458</p>
+<p> Extra: Using where</p>
+<p>1 row in set (0.00 sec)</p>
+<p>从上面结果可以看出，使用表分区比非分区的减少90％的响应时间。命令解析Explain程序可以看出在对已分区的表的查询过程中仅对第一个分区进行了扫描，其余跳过。进一步测试：</p>
+<p>&ndash; 增加日期范围</p>
+<p>mysql&gt; select count(*) from no_part_tab where c3 &gt; date &lsquo;-01-01&prime;and c3 &lt; date &lsquo;1997-12-31&prime;;</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| count(*) |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| 2396524 |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>1 row in set (5.42 sec)</p>
+<p>mysql&gt; select count(*) from part_tab where c3 &gt; date &lsquo;-01-01&prime;and c3 &lt; date &lsquo;1997-12-31&prime;;</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| count(*) |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| 2396524 |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>1 row in set (2.63 sec)</p>
+<p>&ndash; 增加未索引字段查询</p>
+<p>mysql&gt; select count(*) from part_tab where c3 &gt; date &lsquo;-01-01&prime;and c3 &lt; date</p>
+<p>&lsquo;1996-12-31&prime; and c2=&#39;hello&#39;;</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| count(*) |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| 0 |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>1 row in set (0.75 sec)</p>
+<p>mysql&gt; select count(*) from no_part_tab where c3 &gt; date &lsquo;-01-01&prime;and c3 &lt; da</p>
+<p>te &lsquo;1996-12-31&prime; and c2=&#39;hello&#39;;</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| count(*) |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>| 0 |</p>
+<p>+&mdash;&mdash;&mdash;-+</p>
+<p>1 row in set (11.52 sec)</p>
+<p>&emsp;</p>
+<p><strong>结论</strong>：</p>
+<ul sizcache="1" sizset="49">
+	<li jquery1281319431406="51">分区和未分区占用文件空间大致相同 （数据和索引文件）</li>
+	<li jquery1281319431406="52">如果查询语句中有未建立索引字段，分区时间远远优于未分区时间</li>
+	<li jquery1281319431406="53">如果查询语句中字段建立了索引，分区和未分区的差别缩小，分区略优于未分区。</li>
+	<li jquery1281319431406="54">对于大数据量，建议使用分区功能。</li>
+	<li jquery1281319431406="55">去除不必要的字段</li>
+	<li jquery1281319431406="56">根据手册，增加myisam_max_sort_file_size 会增加分区性能</li>
+</ul>
+
+<p>注：关于MySQL分区性能的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/110735.html'>IIS安装Apache伪静态插件的解决办法</a><a>下一篇</a><a href='/php/biji/110751.html'>PHP读取csv文件内容的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

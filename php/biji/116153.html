@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>PHP5垃圾回收算法(Garbage Collection)解析_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了PHP5垃圾回收算法(Garbage Collection)解析，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+对此感兴趣的朋友，看看idc笔记做的技术笔记！<br />
+前言<br />
+PHP是一门" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">PHP5垃圾回收算法(Garbage Collection)解析</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了PHP5垃圾回收算法(Garbage Collection)解析，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+对此感兴趣的朋友，看看idc笔记做的技术笔记！<br />
+前言<br />
+PHP是一门</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了PHP5垃圾回收算法(Garbage Collection)解析，具有一定的参考价值，可以用来参考一下。</p>
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+<h4>前言</h4>
+<p>PHP是一门托管型语言，在PHP编程中程序员不需要手工处理内存资源的分配与释放（使用C编写PHP或Zend扩展除外），这就意味着PHP本身实现了垃圾回收机制（Garbage Collection）。现在如果去PHP官方网站（php.net）可以看到，目前PHP5的两个分支版本PHP5.2和PHP5.3是分别更新的，这是因为许多项目仍然使用5.2版本的PHP，而5.3版本对5.2并不是完全兼容。PHP5.3在PHP5.2的基础上做了诸多改进，其中垃圾回收算法就属于一个比较大的改变。本文将分别讨论PHP5.2和PHP5.3的垃圾回收机制，并讨论这种演化和改进对于程序员编写PHP的影响以及要注意的问题。</p>
+<h4>PHP变量及关联内存对象的内部表示</h4>
+<p>垃圾回收说到底是对变量及其所关联内存对象的操作，所以在讨论PHP的垃圾回收机制之前，先简要介绍PHP中变量及其内存对象的内部表示（其C源代码中的表示）。</p>
+<p>PHP官方文档中将PHP中的变量划分为两类：标量类型和复杂类型。标量类型包括布尔型、整型、浮点型和字符串；复杂类型包括数组、对象和资源；还有一个NULL比较特殊，它不划分为任何类型，而是单独成为一类。</p>
+<p>所有这些类型，在PHP内部统一用一个叫做zval的结构表示，在PHP源代码中这个结构名称为&ldquo;_zval_struct&rdquo;。zval的具体定义在PHP源代码的&ldquo;Zend/zend.h&rdquo;文件中，下面是相关代码的摘录。</p>
+<pre><code class="cpp">
+typedef union _zvalue_value {
+    long lval;                  /* long value */
+    double dval;                /* double value */
+    struct {
+        char *val;
+        int len;
+    } str;
+    HashTable *ht;              /* hash table value */
+    zend_object_value obj;
+} zvalue_value;
+ 
+struct _zval_struct {
+    /* Variable information */
+    zvalue_value value;     /* value */
+    zend_uint refcount__gc;
+    zend_uchar type;    /* active type */
+    zend_uchar is_ref__gc;
+};
+
+# End www_512pic_com
+</code></pre>
+<p>其中联合体&ldquo;_zvalue_value&rdquo;用于表示PHP中所有变量的值，这里之所以使用union，是因为一个zval在一个时刻只能表示一种类型的变量。可以看到_zvalue_value中只有5个字段，但是PHP中算上NULL有8种数据类型，那么PHP内部是如何用5个字段表示8种类型呢？这算是PHP设计比较巧妙的一个地方，它通过复用字段达到了减少字段的目的。例如，在PHP内部布尔型、整型及资源（只要存储资源的标识符即可）都是通过lval字段存储的；dval用于存储浮点型；str存储字符串；ht存储数组（注意PHP中的数组其实是哈希表）；而obj存储对象类型；如果所有字段全部置为0或NULL则表示PHP中的NULL，这样就达到了用5个字段存储8种类型的值。</p>
+<p>而当前zval中的value（value的类型即是_zvalue_value）到底表示那种类型，则由&ldquo;_zval_struct&rdquo;中的type确定。_zval_struct即是zval在C语言中的具体实现，每个zval表示一个变量的内存对象。除了value和type，可以看到_zval_struct中还有两个字段refcount__gc和is_ref__gc，从其后缀就可以断定这两个家伙与垃圾回收有关。没错，PHP的垃圾回收全靠这俩字段了。其中refcount__gc表示当前有几个变量引用此zval，而is_ref__gc表示当前zval是否被按引用引用，这话听起来很拗口，这和PHP中zval的&ldquo;Write-On-Copy&rdquo;机制有关，由于这个话题不是本文重点，因此这里不再详述，读者只需记住refcount__gc这个字段的作用即可。</p>
+<h4>PHP5.2中的垃圾回收算法&mdash;&mdash;Reference Counting</h4>
+<p>PHP5.2中使用的内存回收算法是大名鼎鼎的Reference Counting，这个算法中文翻译叫做&ldquo;引用计数&rdquo;，其思想非常直观和简洁：为每个内存对象分配一个计数器，当一个内存对象建立时计数器初始化为1（因此此时总是有一个变量引用此对象），以后每有一个新变量引用此内存对象，则计数器加1，而每当减少一个引用此内存对象的变量则计数器减1，当垃圾回收机制运作的时候，将所有计数器为0的内存对象销毁并回收其占用的内存。而PHP中内存对象就是zval，而计数器就是refcount__gc。</p>
+<p>例如下面一段PHP代码演示了PHP5.2计数器的工作原理（计数器值通过xdebug得到）：</p>
+<pre><code class="php">
+&lt;?php
+ 
+$val1 = 100; //zval(val1).refcount_gc = 1;
+$val2 = $val1; //zval(val1).refcount_gc = 2,zval(val2).refcount_gc = 2(因为是Write on copy，当前val2与val1共同引用一个zval)
+$val2 = 200; //zval(val1).refcount_gc = 1,zval(val2).refcount_gc = 1(此处val2新建了一个zval)
+unset($val1); //zval(val1).refcount_gc = 0($val1引用的zval再也不可用，会被GC回收)
+ 
+?&gt;
+Reference Counting简单直观，实现方便，但却存在一个致命的缺陷，就是容易造成内存泄露。很多朋友可能已经意识到了，如果存在循环引用，那么Reference Counting就可能导致内存泄露。例如下面的代码：
+&lt;?php
+$a = array();
+$a[] = &amp; $a;
+unset($a);
+ 
+?&gt;
+
+# End www_512pic_com
+</code></pre>
+<p>这段代码首先建立了数组a，然后让a的第一个元素按引用指向a，这时a的zval的refcount就变为2，然后我们销毁变量a，此时a最初指向的zval的refcount为1，但是我们再也没有办法对其进行操作，因为其形成了一个循环自引用，如下图所示：</p>
+<p><img alt="image" src="https://www.idcnote.com/d/file/20181008/b8c71e361f58769a3072b1e98587cf1c.png" style="width: 357px; height: 300px;" /></p>
+<p>其中灰色部分表示已经不复存在。由于a之前指向的zval的refcount为1（被其HashTable的第一个元素引用），这个zval就不会被GC销毁，这部分内存就泄露了。</p>
+<p>这里特别要指出的是，PHP是通过符号表（Symbol Table）存储变量符号的，全局有一个符号表，而每个复杂类型如数组或对象有自己的符号表，因此上面代码中，a和a[0]是两个符号，但是a储存在全局符号表中，而a[0]储存在数组本身的符号表中，且这里a和a[0]引用同一个zval（当然符号a后来被销毁了）。希望读者朋友注意分清符号（Symbol）的zval的关系。</p>
+<p>在PHP只用于做动态页面脚本时，这种泄露也许不是很要紧，因为动态页面脚本的生命周期很短，PHP会保证当脚本执行完毕后，释放其所有资源。但是PHP发展到目前已经不仅仅用作动态页面脚本这么简单，如果将PHP用在生命周期较长的场景中，例如自动化测试脚本或deamon进程，那么经过多次循环后积累下来的内存泄露可能就会很严重。这并不是我在耸人听闻，我曾经实习过的一个公司就通过PHP写的deamon进程来与数据存储服务器交互。</p>
+<p>由于Reference Counting的这个缺陷，PHP5.3改进了垃圾回收算法。</p>
+<p></p>
+<h4>PHP5.3中的垃圾回收算法&mdash;&mdash;Concurrent Cycle Collection in Reference Counted Systems</h4>
+<p>PHP5.3的垃圾回收算法仍然以引用计数为基础，但是不再是使用简单计数作为回收准则，而是使用了一种同步回收算法，这个算法由IBM的工程师在论文Concurrent Cycle Collection in Reference Counted Systems中提出。</p>
+<p>这个算法可谓相当复杂，从论文29页的数量我想大家也能看出来，所以我不打算（也没有能力）完整论述此算法，有兴趣的朋友可以阅读上面的提到的论文（强烈推荐，这篇论文非常精彩）。</p>
+<p>我在这里，只能大体描述一下此算法的基本思想。</p>
+<p>首先PHP会分配一个固定大小的&ldquo;根缓冲区&rdquo;，这个缓冲区用于存放固定数量的zval，这个数量默认是10,000，如果需要修改则需要修改源代码Zend/zend_gc.c中的常量GC_ROOT_BUFFER_MAX_ENTRIES然后重新编译。</p>
+<p>由上文我们可以知道，一个zval如果有引用，要么被全局符号表中的符号引用，要么被其它表示复杂类型的zval中的符号引用。因此在zval中存在一些可能根（root）。这里我们暂且不讨论PHP是如何发现这些可能根的，这是个很复杂的问题，总之PHP有办法发现这些可能根zval并将它们投入根缓冲区。</p>
+<p>当根缓冲区满额时，PHP就会执行垃圾回收，此回收算法如下：</p>
+<p>1、对每个根缓冲区中的根zval按照深度优先遍历算法遍历所有能遍历到的zval，并将每个zval的refcount减1，同时为了避免对同一zval多次减1（因为可能不同的根能遍历到同一个zval），每次对某个zval减1后就对其标记为&ldquo;已减&rdquo;。</p>
+<p>2、再次对每个缓冲区中的根zval深度优先遍历，如果某个zval的refcount不为0，则对其加1，否则保持其为0。</p>
+<p>3、清空根缓冲区中的所有根（注意是把这些zval从缓冲区中清除而不是销毁它们），然后销毁所有refcount为0的zval，并收回其内存。</p>
+<p>如果不能完全理解也没有关系，只需记住PHP5.3的垃圾回收算法有以下几点特性：</p>
+<p>1、并不是每次refcount减少时都进入回收周期，只有根缓冲区满额后在开始垃圾回收。</p>
+<p>2、可以解决循环引用问题。</p>
+<p>3、可以总将内存泄露保持在一个阈值以下。</p>
+<p></p>
+<h4>PHP5.2与PHP5.3垃圾回收算法的性能比较</h4>
+<p>由于我目前条件所限，我就不重新设计试验了，而是直接引用PHP Manual中的实验，关于两者的性能比较请参考PHP Manual中的相关章节：http://www.php.net/manual/en/features.gc.performance-considerations.php。</p>
+<p>首先是内存泄露试验，下面直接引用PHP Manual中的实验代码和试验结果图：</p>
+<pre><code class="php">
+&lt;?php
+class Foo
+{
+    public $var = &#39;3.1415962654&#39;;
+}
+ 
+$baseMemory = memory_get_usage();
+ 
+for ( $i = 0; $i &lt;= 100000; $i++ )
+{
+    $a = new Foo;
+    $a-&gt;self = $a;
+    if ( $i % 500 === 0 )
+    {
+        echo sprintf( &#39;%8d: &#39;, $i ), memory_get_usage() - $baseMemory, &quot;\n&quot;;
+    }
+}
+?&gt;
+
+# End www_512pic_com
+</code></pre>
+<h4><img alt="PHP内存泄露试验" src="https://www.idcnote.com/d/file/20181008/6902c39d12fd0db272047697d235521f.png" style="width: 850px; height: 480px; border-width: 0px; border-style: solid; margin: 0px;" title="" /></h4>
+<h4>PHP内存泄露试验</h4>
+<p>可以看到在可能引发累积性内存泄露的场景下，PHP5.2发生持续累积性内存泄露，而PHP5.3则总能将内存泄露控制在一个阈值以下（与根缓冲区大小有关）。</p>
+<p>另外是关于性能方面的对比：</p>
+<pre><code class="php">
+&lt;?php
+class Foo
+{
+    public $var = &#39;3.1415962654&#39;;
+}
+ 
+for ( $i = 0; $i &lt;= 1000000; $i++ )
+{
+    $a = new Foo;
+    $a-&gt;self = $a;
+}
+ 
+echo memory_get_peak_usage(), &quot;\n&quot;;
+?&gt;
+
+# End www_512pic_com
+</code></pre>
+<p>这个脚本执行1000000次循环，使得延迟时间足够进行对比。</p>
+<p>然后使用CLI方式分别在打开内存回收和关闭内存回收的的情况下运行此脚本：</p>
+<pre><code class="bash">
+time php -dzend.enable_gc=0 -dmemory_limit=-1 -n example2.php
+# and
+time php -dzend.enable_gc=1 -dmemory_limit=-1 -n example2.php
+
+# End www_512pic_com
+</code></pre>
+<p>在我的机器环境下，运行时间分别为6.4s和7.2s，可以看到PHP5.3的垃圾回收机制会慢一些，但是影响并不大。</p>
+<h4>与垃圾回收算法相关的PHP配置</h4>
+<p>可以通过修改php.ini中的zend.enable_gc来打开或关闭PHP的垃圾回收机制，也可以通过调用gc_enable()或gc_disable()打开或关闭PHP的垃圾回收机制。在PHP5.3中即使关闭了垃圾回收机制，PHP仍然会记录可能根到根缓冲区，只是当根缓冲区满额时，PHP不会自动运行垃圾回收，当然，任何时候您都可以通过手工调用gc_collect_cycles()函数强制执行内存回收。</p>
+
+<p>注：关于PHP5垃圾回收算法(Garbage Collection)解析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/116152.html'>Memcached::cas 详解</a><a>下一篇</a><a href='/php/biji/116154.html'>jQuery CSS()方法改变CSS样式的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL的WriteSet并行复制的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL的WriteSet并行复制的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+【历史背景】" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL的WriteSet并行复制的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:13:06                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL的WriteSet并行复制的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+【历史背景】</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL的WriteSet并行复制的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p></p>
+<h3>【历史背景】</h3>
+<p></p>
+<p>　　岁月更迭中我已经从事MySQL-DBA这个工作三个年头，见证MySQL从&ldquo;基本可用&rdquo;，&ldquo;边缘系统可以用MySQL&rdquo;，&ldquo;哦操！你怎么不用MySQL&rdquo;;</p>
+<p>　　正所谓！&ldquo;一个数据库的境遇既取决于历史的进程，取决于它的自我奋斗！&rdquo;，关于&ldquo;历史的进程&rdquo;在此不表，关于&ldquo;自我奋斗&rdquo;这里也只想谈一下并行复制的几个关键时间结点</p>
+<p>　　总的来说MySQL关于并行复制到目前为止经历过三个比较关键的时间结点&ldquo;库间并发&rdquo;，&ldquo;组提交&rdquo;，&ldquo;写集合&rdquo;；真可谓是江山代有人才出，前浪死在沙滩上；总的来说就后面的比前面的不知道高到哪里去了！</p>
+<p></p>
+<h3>【库间并发】</h3>
+<p></p>
+<p>　　库间并发的理论依据是这样的 ---- 一个实例内可能会有多个库(schema)，不同的库之间没有什么依赖关系，所以在slave那边为每一个库(schema)单独起一个SQL线程，这样就能通过多线程并行复制的方式来提高主从复制的效率。</p>
+<p>　　这个理论听起来没问题，但是事实上一个实例也就一个业务库，所以这种库间并发就没什么作用了；也就是说这个方式的适用场景比较少，针对这个不足直到&ldquo;组提交&rdquo;才解决！</p>
+<p></p>
+<h3>【组提交】</h3>
+<p></p>
+<p>　　组提交的理论依据是这样的 --- 如果多个事务他们能在同一时间内提交，这个就间接说明了这个几个事务锁上是没有冲突的，也是就说他们各自持有不同的锁，互不影响；逻辑上我们几个事务看一个组，在slave以&ldquo;组&rdquo;为单位分配给SQL线程执行，这样多个SQL线程就可以并行跑了；而且不在以库为并行的粒度，效果上要比&ldquo;库间并发&rdquo;要好一些。</p>
+<p>　　这个事实上也有一些问题，因为它要求库上要有一定的并发度，不然就有可能变成每个组里面只有一个事务，这样就有串行没什么区别了，为了解决这个问题MySQL提供了两个参数就是希望在提交时先等一等，尽可能的让组内多一些事务，以提高并行复制的效率。</p>
+<p>　　&ldquo;<code>binlog_group_commit_sync_no_delay_count</code>&rdquo; 设置一个下水位，也就是说一个组要凑足多少个事务再提交；为子防止永远也凑不足</p>
+<p>　　那么多个事务MySQL还以时间为维度给出了另一个参数&ldquo;<code>binlog_group_commit_sync_delay</code>&rdquo;这个参数就是最多等多久，超过这个时间长度后就算没有凑足也提交。　</p>
+<p>　　亲身经历呀！ 这两个参数特别难找到合的值，就算今天合适，过几天业务上有点变化后，又可能变的不合适了；如果MySQL能自己达到一个自适应的效果就好了；这个自适用要到WriteSet才完成(WriteSet并不是通过自动调整这两个参数来完成，它采用了完全不同的解决思路)。</p>
+<p></p>
+<h3>【WriteSet】</h3>
+<p></p>
+<p>　　WriteSet解决了什么问题？当然是解决了&ldquo;组提交&rdquo;的问题啦！ 说了和没说一个样，好下面我们来举个例子(比较学院派)；假设你第一天更新了id == 1 的那一行，第二天你更新了id == 2 的那一行，第三天有个slave过来同步你的数据啦！ 以&ldquo;组提交&rdquo;的尿性，这两个更新会被打包到不同的&ldquo;组&rdquo;，也就是说会有两个组；由于每个组内只有一个事务，所以逻辑上就串行了，起来！</p>
+<p>　　身为DBA的你一可以看出来这两个事实上是可以打包到同一个组里来的，因为他们互不冲突，就算打包到同一个组也不引起数据的不一致。 于是你有两个办法</p>
+<p>　　办法1): 妹妹你大胆的把&ldquo;binlog_group_commit_sync_no_delay_count&rdquo;设置成 2,也就是说一个组至少要包含两个事务，并且把&ldquo;<code>binlog_group_commit_sync_delay</code>&rdquo;设置成24小时以上！如果你真的做了，你就可以回家了，你的数据库太慢了(第一条update等了一天)，才完成！</p>
+<p>　　办法2): 叫MySQL用一本小本子记下它最近改了什么，如果现在要改的数据和之前的数据不冲突，那么他们就可以把包到同一个组；还是我们刚才的例子，由于第二天改的值的id==2所以它和第一天的不冲突，那么它完全可以把第二天的更新和第一天的更新打包到同一个组。这样组里面就有两个事务了，在slave第三天回放时就会有一种并行的效果。</p>
+<p>　　这本小本子这么牛逼可以做大一点吗？当然！<code>binlog_transaction_dependency_history_size </code>这个参数就小本子的容量了；那我的MySQL有这本小本子吗？ 如果你的mysql比mysql-5.7.22新的话，小本子就是它生来就有的。</p>
+<p>　　也就是说&ldquo;WriteSet&rdquo;是站在&ldquo;组提交&rdquo;这个巨人的基础之间建立起来的，而且是在master上做的自&ldquo;适应&rdquo;打包分组，所以你只要在master上新增两个参数</p>
+<p>代码如下：</p>
+<pre>
+<code>
+binlog_transaction_dependency_tracking = WRITESET     # COMMIT_ORDER   
+transaction_write_set_extraction  = XXHASH64</code></pre>
+<p>浅析MySQL的WriteSet并行复制</p>
+<p>理论说完了，下面我们看一下实践。</p>
+<p></p>
+<h3>【WriteSet实践】</h3>
+<p></p>
+<p>　　基于WriteSet的并行复制环境怎么搭建我这里就不说了，也就是比正常的&ldquo;组提交&rdquo;在master上多加两个参数，不讲了；我这里想直接给出两种并行复制方式下的行为变化。</p>
+<p>　　1): 我们要执行的目标SQL如下</p>
+<p>代码如下：</p>
+<pre>
+<code>
+create database tempdb;
+use tempdb;
+create table person(id int not null auto_increment primary key,name int);
+
+insert into person(name) values(1);
+insert into person(name) values(2);
+insert into person(name) values(3);
+insert into person(name) values(5);</code></pre>
+<p>浅析MySQL的WriteSet并行复制</p>
+<p>　　2): 看一下组提交对上面SQL的分组情况</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>　　3): 看write_set的对&ldquo;组提交&rdquo;优化后的情况</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>　　可以看到各个insert是可以并行执行的，所以它们被分到了同个组(last_committed相同）；last_committed，sequence_number，这两个值在binlog里面记着就有，我在解析binlog的时候习惯使用如下选项</p>
+<blockquote>
+<p>mysqlbinlog -vvv --base64-output=&#39;decode-rows&#39; mysql-bin.000002　　</p></blockquote>
+<p></p>
+<h3>【总结】</h3>
+<p></p>
+<p>　　WriteSet是在&ldquo;组提交&rdquo;方式上建立起来的，一种新的并行复制实现；相比&ldquo;组提交&rdquo;来说更加灵活；当然，由于并发度上去了，相比&ldquo;组提交&rdquo;WriteSet在性能上会更加好一些，在一些WriteSet没有办法是否冲突时，能平滑过度到&ldquo;组提交&rdquo;模式。</p>
+<p>以上就是浅析MySQL的WriteSet并行复制的详细内容，更多关于MySQL WriteSet并行复制的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL的WriteSet并行复制的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/94.html'>MySQL 8.0.22 winx64安装配置的解决办法</a><a>下一篇</a><a href='/mysql/biji/96.html'>MySQL中Binlog3种格式的深入分析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

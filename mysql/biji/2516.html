@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server事务与锁的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server事务与锁的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+
+一 概述
+
+在数据库方面，对于" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server事务与锁的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:38:00                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server事务与锁的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+
+一 概述
+
+在数据库方面，对于</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server事务与锁的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p></p>
+<h3>一 概述</h3>
+<p></p>
+<p>在数据库方面，对于非DBA的程序员来说，事务与锁是一大难点，针对该难点，本篇文章试图采用图文的方式来与大家一起探讨。</p>
+<p>&ldquo;浅谈SQL Server 事务与锁&rdquo;这个专题共分两篇，上篇主讲事务及事务一致性问题，并简略的提及一下锁的种类和锁的控制级别。</p>
+<p>下篇主讲SQL Server中的锁机制，锁控制级别和死锁的若干问题。</p>
+<p></p>
+<h3>二 事务</h3>
+<p></p>
+<p></p>
+<h3>1 何为事务</h3>
+<p></p>
+<p>预览众多书籍，对于事务的定义，不同文献不同作者对其虽有细微差别却大致统一，我们将其抽象概括为：</p>
+<p>事务：指封装且执行单个或多个操作的单个工作单元，在SqlServer中，其定义表现为显示定义和隐式定义两种方式。基于如上的定义，我们可以将事务解剖拆分为如下几个点：</p>
+<p>(1)事务是单个工作单元，这一定义，才使事务具有ACID属性</p>
+<p>(2)事务是封装操作的，如封装基本的CRUD操作</p>
+<p>代码如下：</p>
+<pre>
+<code>
+ --事务
+ Begin Tran
+ SELECT * FROM UserInfo
+ INSERT INTO UserInfo VALUES('Alan_beijing',35)
+ UPDATE UserInfo SET Age=31 WHERE UserName='Alan_beijing'
+ DELETE UserInfo WHERE UserName='Alan_beijing'
+ Commit Tran</code></pre>
+<p>(3)事务在封装操作时，可以封装单个操作，也可以封装多个操作(封装多个操作时，应注意与批处理的区别)</p>
+<p>(4)在SqlServer中，事务的定义分为显示定义和隐式定义两种方式</p>
+<p>显示定义：以Begin Tran作为开始，其中提交事务为Commit Tran，回滚事务为RollBack Tran，如我们在一个事务中插入两条操作语句</p>
+<p>代码如下：</p>
+<pre>
+<code>
+--显示定义事务
+Begin Tran
+INSERT INTO UserInfo VALUES('Alan_shanghai',30)
+INSERT INTO UserInfo VALUES('Alan_beijing',35) Commit Tran</code></pre>
+<p>隐式定义：如果不显示定义事务，SQL Server 默认把每个语句当作一个事务来处理(执行完每个语句之后就自动提交事务)</p>
+<p>2 事务的ACID属性</p>
+<p>事务作为单个工作单元，该定义使其具有ACID属性，ACID属性指原子性(Atomicity)、一致性(Consisitency)、隔离性(Isolation)和持久性(Durability)。</p>
+<p>(1)原子性(Atomicity)</p>
+<p>原子性指事务必须是原子工作单元，即对于事务的封装操作，要么全部执行，要么全都不执行。如下情况均会导致事务的撤销或回滚。。。</p>
+<p>a.事务提交之前，系统发生故障或重新启动，SQL Server将会撤销在事务中进行的所有操作；</p>
+<p>b.事务处理中遇到错误，SQL Server通常会自动回滚事务，但也有少数例外；</p>
+<p>c.一些不太严重的错误不会引发事务的自动回滚，如主键冲突，锁超时等；</p>
+<p>d.可以使用错误处理代码来捕获一些错误，并采取相应的操作，如把错误记录在日志中，再回滚事务等；</p>
+<p>(2)一致性(Consisitency)</p>
+<p>一致性主要指数据一致性，即主要对象是数据。从宏观上来说，指某一段时间区间，数据要保持一致性状态，从微观上来说，某个时间点数据要保持一致性状态，我们举个例子，</p>
+<p>假若有两个事务A和B对同一张表进行操作，A向表中写数据，B向数据表中读取数据，可以猜测，B读取的数据大致有三种粗粒度可能：</p>
+<p>第一种可能：A还没向数据表中写入数据的状态;</p>
+<p>第二种可能：A已向数据表中写入部分数据，但还未写完的状态；</p>
+<p>第三种可能：A已向数据表中写完数据；</p>
+<p>如此，造成了事务的不一致性。</p>
+<p>关于事务一致性，可能会发生 丢失更新，脏读，不可重复读和幻读等问题，下文会详细论述这些事务一致性问题。</p>
+<p>(3)隔离性(Isolation)</p>
+<p>隔离性指当两个及其以上事务对同一边界资源进行操作时，要控制好每个事务的边界，控制好数据访问机制，确保事务只能访问处于期望的一致性级别下的数据。</p>
+<p>在SQL Server中，一般采用锁机制来控制，下文中，我们会详细论述。</p>
+<p>(4)持久性(Durability)</p>
+<p>我们对数据表进行操作时，一般会按照先后顺序执行如下两步：</p>
+<p>第一步：将对数据表操作写入到磁盘上数据库的事务日志中(持久还到磁盘事务日志中)；</p>
+<p>第二步：完成第一步后，再将对数据表操作写入到磁盘上数据库的数据分区中(持久化到磁盘上数据库分区中)；</p>
+<p>关于如上两步，我们来想想可能发生的问题：</p>
+<p>问题1：完成如上第一步之前，系统发生故障(如系统异常，系统重启)，数据库引擎会怎么做？</p>
+<p>由于未完成第一步，提交指令还未记录到磁盘的事务日志中，此时事务并未持久化，系统发生故障后，SQL Server</p>
+<p>会检查每个数据库的事务日志，进行恢复处理(恢复处理一般分为重做阶段和撤销阶段)，此时的恢复处理为重做阶段，即提交指令还未记录到磁盘的事务日志中，</p>
+<p>数据库引擎会撤销这些事务所做的所有修改，这个过程也成为回滚。</p>
+<p>问题2：完成如上第一步但还未完成第二步，系统发生故障(如系统异常，系统重启)，数据库引擎会怎么做？</p>
+<p>完成第一步后，提交指令已记录到磁盘的事务日志中，无论数据操作是否被写入到磁盘的数据分区，此时事务已持久化，系统发生故障后，SQL Server</p>
+<p>会检查每个数据库的事务日志，进行恢复处理(恢复处理一般分为重做阶段和撤销阶段)，此时的恢复处理为重做阶段，即由于数据修改还没有运用到数据分区的事务，</p>
+<p>数据库引擎会重做这些事务所做的所有修改，这个过程也成为前滚。</p>
+<p></p>
+<h3>三 事务的隔离级别和隔离级别产生的一致性问题</h3>
+<p></p>
+<p>1 未提交读(READ UNCOMMITTED)</p>
+<p>未提交读(READ UNCOMMITTED)指读取未提交的数据，此时产生的数据不一致性，我们称为数据脏读。</p>
+<p>1.1 未提交读为什么会产生数据脏读</p>
+<p>未提交读是最低级的隔离级别，在这个隔离级别运行的事务，读操作是不需要请求共享锁的，如果读操作不需要共享锁，就不会产生与持有排它锁的事务操作发生冲突，</p>
+<p>那么也就是说，在这个事务隔离级别，读操作可以与写操作同时进行，互不排斥，读操作可以读取写操作未提交的修改，从而造成数据的不一致性，这种情况，我们称</p>
+<p>数据脏读。</p>
+<p>1.2 图解数据脏读</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>1.3 SQL演示数据脏读</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>2 已提交读(READ COMMITTED)</p>
+<p>已提交读(READ COMMITTED)指只能读取已提交事务的数据，是防止数据脏读的最低隔离级别，也是SQL Server默认的隔离级别，它要求读操作必须获得共享锁后</p>
+<p>才能进行操作，防止读取未提交的修改，虽然已提交读能防止产生数据脏读，但却不可避免不可重复读数据一致性问题。</p>
+<p>2.1 为什么已提交读能够防止数据脏读</p>
+<p>已提交读只允许读取事务已提交的数据，它要求读操作必须获得共享锁才能尽心操作，而读操作的共享锁与写操作的排他锁是互斥的，两者互斥会发生冲突，所以读操作</p>
+<p>在读取数据时，必须等待写操作完成后，才能获取共享锁，然后才能读取数据，此时读取的数据是已经提交结束的数据，因此就防止了数据脏读的问题。</p>
+<p>2.2 SQL演示已提交读</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>2.3 为什么已提交读会产生不可重复读问题</p>
+<p>我们知道，虽然已提交读能获得共享锁，然而，读操作一完成，就会立即释放资源上的共享锁(该操作不会在事务持续期间一致保留共享锁)，如此就会产生一个问题，</p>
+<p>即在一个事务处理内部对相同数据资源读操作之间，没有共享锁会锁定该资源，导致其他事务可以在两个读操作之间更改数据资源，读操作因而可能每次得到不同的</p>
+<p>取值，这种现象称为数据的不可重复读。</p>
+<p>2.4 图解不可重复读</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>3 可重复读(REPEATABLE READ)</p>
+<p>为了防止不可重复读现象，SQL Sever中采用隔离级别升级的方式，即将已提交读升级为可重复读。在可重复读隔离级别下，事务中的读操作不仅能获得共享锁，</p>
+<p>而且获得的共享锁一直保持到事务完成为止， 在该事务完成之前，其他事务不可能获得排他锁来修改这一数据，如此，便实现了可重复读，防止了不可重复读造</p>
+<p>成的数据不一致性。可重复读不仅能解决不可重复读数据不一致性问题，还能解决丢失更新问题。然而，可重复读也存在问题，那就是死锁和幻读等问题。</p>
+<p>3.1 SQL演示可重复读</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>3.2 何为丢失更新？</p>
+<p>在比可重复读低的隔离级别中，两个事务在读取数据之后就不再持有该资源的任何锁，此时，两个事务都能更新这个值，</p>
+<p>从而发生最后事务更新的值覆盖前面事务更新的值，从而造成数据的丢失，这称为丢失更新。</p>
+<p>3.3 图解丢失更新</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>4 可序列化(SERIALIZABLE)</p>
+<p>4.1 何为幻读？</p>
+<p>我们知道，在可重复读隔离级别下，读事务持有的共享锁一直保持到该事务完成为止，但是事务只锁定查询第一次运行时找到的那些数据资源(如，行)，</p>
+<p>而不会锁定查询结果范围以外的其他行(其实，控制事务时，有数据库架构级别，表，页和行等)。因此，在同一事务中进行第二次读取之前，若其他事</p>
+<p>务插入新行，并且新行能满足读操作的查询过滤条件，那么这些新行也会出现在第二次读操作返回的结果中，这些新行称为幻影子，也叫做幻读。</p>
+<p>4.2 图解幻读</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>4.3 如何解决幻读？</p>
+<p>SQL SERVER中，更高级别的可序列化(SERIALIZABLE)能够解决该问题。</p>
+<p>4.4 何为可序列化(SERIALIZABLE)？</p>
+<p>大多数时候，可序列化(SERIALIZABLE)隔离级别的处理方式和可重复都得处理方式是类似的，只不过，可序列化(SERIALIZABLE)隔离级别</p>
+<p>增加了一个新的内容&mdash;&mdash;逻辑上，这个隔离级别会让读操作锁定满足查询搜索条件的键的整范围，这就意味着读操作不仅锁定了满足查询搜索</p>
+<p>条件的现有的那些行，还锁定了未来可能满足查询搜索条件的行。</p>
+<p>5 SNAPSHOT</p>
+<p>略。</p>
+<p></p>
+<h3>四 事务的隔离级别总结</h3>
+<p></p>
+<p>下表总结了每种隔离级别与逻辑一致性问题，检测冲突和行版本控制之间关系</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>五 锁定</h3>
+<p></p>
+<p>1 两种并发控制模型</p>
+<p>关于并发控制模型，主要有两种，即悲观控制模型和乐观控制模型。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>(1)悲观控制模型： 该模型假设总是存在多个事务对同一资源操作(读/写)，即假定冲突总是会发生。在SQL Server中，采用事务</p>
+<p>隔离级别来控制(也可叫做采用锁来控制)。一般在事务发生冲突前进行控制，也叫事前控制；</p>
+<p>(2)乐观控制模型：该模型与悲观控制模型是对立的，即该模型总是假设系统中并不存在或较少存在多个事务对同一资源操作(读/写)</p>
+<p>，即假定冲突是不会发生的或很少发生的。在SQL Server中，采用行版本控制来处理。一般在事务发生冲突后进行控制，也叫事后</p>
+<p>控制；</p>
+<p>2 何为锁定及锁定的种类</p>
+<p>2.1 何为锁定</p>
+<p>锁定，指在并发操作时，确保数据的一致性所采用的一种手段。在SQL Server中，采用锁机制与事务隔离级别来控制数据的一致性，</p>
+<p>2.2 锁定的种类</p>
+<p>常用的四大类锁包括：共享锁，意向锁，更新锁和排他锁。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>(1)共享锁：在SQL SERVER中，当事务要读取数据时，需要获取共享锁。</p>
+<p>(2)意向锁：在SQL SERVER中，准确来说，意向锁并不是一种独立的锁，其主要作用在于获取锁的控制粒度(如，页，表，行等)。</p>
+<p>(3)更新锁：在SQL SERVER中，准确来说，更新锁并不是一种独立的锁，而是由共享锁和排它锁组成的混合锁，其隔离级别高于共享锁，</p>
+<p>低于排他锁，更新锁能够预防锁升级而产生的死锁。</p>
+<p>(4)排它锁：在SQL SERVER中，当事务要写数据、更细数据和删除数据时，需要获取排他锁。</p>
+<p>3 锁的控制粒度</p>
+<p>在SQL SERVER中，锁可以控制表，页和行等资源。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>总结</h3>
+<p></p>
+<p>以上所述是小编给大家介绍的SQL Server中的事务与锁问题，希望对大家有所帮助，如果大家有任何疑问请给我留言，小编会及时回复大家的。在此也非常感谢大家对512笔记网站的支持！</p>
+
+<p>注：关于SQL Server事务与锁的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2515.html'>SQL Server实时同步更新远程数据库遇到问题的解决办法</a><a>下一篇</a><a href='/mysql/biji/2517.html'>SQL Server行转列之PIVOT与用法的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

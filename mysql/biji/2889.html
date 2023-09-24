@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Transactional replication（事务复制）跳过一个事务的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了Transactional replication（事务复制）跳过一个事务的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Transactional replication（事务复制）跳过一个事务的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:41:27                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了Transactional replication（事务复制）跳过一个事务的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了Transactional replication（事务复制）跳过一个事务的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>在transactional replication, 经常会遇到数据同步延迟的情况。有时候这些延迟是由于在publication中执行了一个更新，例如update ta set col=? Where ?，这个更新包含巨大的数据量。在subscription端，这个更新会分解成多条命令（默认情况下每个数据行一个命令），应用到subscription上。 不得已的情况下，我们需要跳过这个大的事务，让replication继续运行下去。</p>
+<p>现在介绍一下transactional replication的一些原理和具体的方法</p>
+<p>当publication database的article发生更新时， 会产生相应的日志，Log reader会读取这些日志信息，将他们写入到Distribution 数据库的msrepl_transactions和msrepl_commands中。</p>
+<p>Msrepl_transactions中的每一条记录都有一个唯一标识xact_seqno，xact_seqno对应日志中的LSN。 所以可以通过xact_seqno推断出他们在publication database中的生成顺序，编号大的生成时间就晚，编号小的生成时间就早。</p>
+<p>Distributionagent包含两个子进程，reader和writer。 Reader负责从Distribution 数据库中读取数据，Writer负责将reader读取的数据写入到订阅数据库.</p>
+<p>reader是通过sp_MSget_repl_commands来读取Distribution数据库中（读取Msrepl_transactions表和Msrepl_Commands表）的数据</p>
+<p>下面是sp_MSget_repl_commands的参数定义</p>
+<p>代码如下：</p>
+<pre>
+<code>
+CREATE PROCEDURE sys.sp_MSget_repl_commands 
+
+( 
+
+@agent_id int, 
+
+@last_xact_seqno varbinary(16), 
+
+@get_count tinyint = 0, -- 0 = no count, 1 = cmd and tran (legacy), 2 = cmd only 
+
+@compatibility_level int = 7000000, 
+
+@subdb_version int = 0, 
+
+@read_query_size int = -1 
+
+) 
+
+</code></pre>
+<p>这个存储过程有6个参数，在Transactional replication 中，只会使用前4个（并且第三个参数和第四个参数的值是固定不变的.分别为0和10000000）。下面是一个例子：</p>
+<p>execsp_MSget_repl_commands 46,0x0010630F000002A900EA00000000,0,10000000</p>
+<p>@agent_id表示Distributionagentid，每个订阅都会有一个单独的Distributionagent来处理数据。 带入@agent_id后，就可以找到订阅对应的publication 和所有的article。</p>
+<p>@last_xact_seqno 表示上一次传递到订阅的LSN。</p>
+<p>大致逻辑是：Reader读取subscription database的MSreplication_subscriptions表的transaction_timestamp列，获得更新的上一次LSN编号，然后读取分发数据库中LSN大于这个编号的数据。 Writer将读取到的数据写入订阅，并更新MSreplication_subscriptions表的transaction_timestamp列。然后Reader会继续用新的LSN来读取后续的数据，再传递给Writer，如此往复。</p>
+<p>如果我们手工更新transaction_timestamp列,将这个值设置为当前正在执行的大事务的LSN，那么distribution agent就会不读取这个大事务，而是将其跳过了。</p>
+<p>下面以一个实例演示一下</p>
+<p>环境如下</p>
+<p>Publisher: SQL108W2K8R21</p>
+<p>Distributor: SQL108W2K8R22</p>
+<p>Subscriber: SQL108W2K8R23</p>
+<p>【图片暂缺】</p>
+<p>图中高亮的publication中包含3个aritcles，ta,tb,tc</p>
+<p>其中ta包含18,218,200万数据，然后我们进行了一下操作</p>
+<p>在11：00进行了更新语句，</p>
+<p>update ta set c=-11</p>
+<p>后续陆续对表ta,tb,tc执行一些插入操作</p>
+<p>insert tb values(0,0)</p>
+<p>insert tc values(0,0)</p>
+<p>之后我们启动replication monitor ，发现有很大的延迟，distribution agent一直在传递a）操作产生的数据</p>
+<p>【图片暂缺】</p>
+<p>【图片暂缺】</p>
+<p>在subscription database中执行下面的语句,得到当前最新记录的事务编号</p>
+<p>代码如下：</p>
+<pre>
+<code>
+declare @publisher sysname 
+
+declare @publicationDB sysname 
+
+declare @publication sysname 
+
+set @publisher='SQL108W2K8R22' 
+
+set @publicationDB='pubdb' 
+
+set @publication='pubdbtest2'
+
+select transaction_timestamp From MSreplication_subscriptions 
+
+where 
+
+publisher=@publisher and 
+
+publisher_db=@publicationDB and 
+
+publication=@publication 
+
+</code></pre>
+<p>在我的环境中，事务编号为0x0000014900004E9A0004000000000000</p>
+<p>返回到distribution database，执行下面的语句，得到紧跟在大事务后面的事务编号. 请将参数替换成您实际环境中的数据。（请注意，如果执行下列语句遇到性能问题，请将参数直接替换成值）</p>
+<p>代码如下：</p>
+<pre>
+<code>
+declare @publisher sysname 
+
+declare @publicationDB sysname 
+
+declare @publication sysname 
+
+declare @transaction_timestamp [varbinary](16) 
+
+set @publisher='SQL108W2K8R21' 
+
+set @publicationDB='publicationdb2' 
+
+set @publication='pubtest' 
+
+set @transaction_timestamp= 0x0000014900004E9A0004000000000000
+
+select top 1 xact_seqno from MSrepl_commands with (nolock) where xact_seqno&gt;@transaction_timestamp and 
+
+article_id in ( 
+
+  select article_id From MSarticles a inner join MSpublications p on a.publication_id=p.publication_id and a.publisher_id=p.publisher_id and a.publisher_db=p.publisher_db 
+
+  inner join sys.servers s on s.server_id=p.publisher_id 
+
+  where p.publication=@publication and p.publisher_db=@publicationDB and s.name=@publisher 
+
+) 
+
+and publisher_database_id =( 
+
+    select id From MSpublisher_databases pd inner join MSpublications p on pd.publisher_id=p.publisher_id 
+
+    inner join sys.servers s on pd.publisher_id=s.server_id and pd.publisher_db=p.publisher_db 
+
+    where s.name=@publisher and p.publication=@publication and pd.publisher_db=@publicationDB 
+
+) 
+
+Order by xact_seqno
+
+</code></pre>
+<p>在我的环境中，事务编号为0x0000018C000001000171</p>
+<p>在subscription database中执行下面的语句，跳过大的事务。请将参数替换成您实际环境中的数据</p>
+<p>代码如下：</p>
+<pre>
+<code>
+declare @publisher sysname
+
+declare @publicationDB sysname 
+
+declare @publication sysname 
+
+declare @transaction_timestamp [varbinary](16) 
+
+set @publisher='SQL108W2K8R22' 
+
+set @publicationDB='pubdb' 
+
+set @publication='pubdbtest2' 
+
+set @transaction_timestamp= 0x0000018C000001000171
+
+update MSreplication_subscriptions set transaction_timestamp=@transaction_timestamp 
+
+where publisher=@publisher and publisher_db=@publicationDB and publication=@publication 
+
+</code></pre>
+<p>执行完成后开启distribution agent job即可。</p>
+<p>接下来您就会发现，事务已经成功跳过，ta在订阅端不会被更新，后续的更新会逐步传递到订阅，延迟消失。</p>
+
+<p>注：关于Transactional replication（事务复制）跳过一个事务的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2888.html'>SQL Server在高频,高并发访问时键查找死锁问题</a><a>下一篇</a><a href='/mysql/biji/2890.html'>SQL Server一条SQL语句查询多个数据库的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

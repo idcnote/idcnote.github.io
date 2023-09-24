@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL 8.0 redo log的深入解析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL 8.0 redo log的深入解析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	前言
+	redo" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL 8.0 redo log的深入解析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:14:57                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL 8.0 redo log的深入解析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	前言
+	redo</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL 8.0 redo log的深入解析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<div id="navCategory">
+<h5 class="catalogue">目录</h5>
+<ul class="first_class_ul">
+	<li>前言</li>
+	<li>redolog的产生</li>
+	<li>redo log 的提交</li>
+	<li>redolog的落盘及通知</li>
+	<li>通知用户线程</li>
+	<li>总结</li>
+</ul>
+<p class="maodian"></p>
+<h2>前言</h2>
+<p>最开始了解mysql实现的时候，总听到redo log， WAL（write-ahead logging），undo log这些关键词，了解到redo log主要是用于实现事务的持久化的。为了进一步了解redo log，看了下相关代码（源码版本： mysql 8.0.12），这里简单总结下，主要介绍redo log是如何产生，如何落盘，以及最终通知用户的。</p>
+<p class="maodian"></p>
+<h2>redolog的产生</h2>
+<p>读写事务在执行的过程中，会不断的产生redo log。申请数据页、修改数据页、记录undo log等，都会产生redo log。mysql将用户事务拆分成一个个mtr(mini transaction），redo log最初产生时就是被记录到mtr中的，并伴随着mtr的提交而提交，最终落到硬盘上。</p>
+<p class="maodian"></p>
+<h2>redo log 的提交</h2>
+<p>mtr在提交时，会将mtr中的redo log写到系统变量log_sys的log buffer中。mysql8.0一个新特性就是redo log提交的无锁化。在8.0以前，各个用户线程都是通过互斥量竞争，串行的写log buffer，因此能保证lsn的顺序无间隔增长。8.0时用户线程可以并发写log buffer，如果某个用户线程写log buffer成功后，就将自己写的lsn以前的log buffer刷盘，则有可能导致其他用户线程写log buffer还没完成就被刷盘。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>为了解决这个问题，mysql 8.0引入了Link_buf这个数据结构来避免log buffer的空洞。Link_buf实际是一个定长数组，像滑动窗口一样跟踪log buffer一段区间的写入情况，随着log buffer中写入连续redo log不断向前推进。</p>
+<p>Link_buf的数据结构如图：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>当用户在log buffer的start_lsn-end_lsn间写下redo log时，会标记Link_buf相应的位置，即将m_link[start_lsn%m_capacity]赋值为为end_lsn-start_lsn。</p>
+<p>redo log记录到log buffer的过程如下：</p>
+<p>1.首先，各用户线程写redo log时，先根据redo log长度，向系统全局原子变量log_sys.sn获取本次redo log日志的start_lsn, end_lsn。原子变量sn能保证各线程获得的start_lsn-end_lsn区间连续无空洞；</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>2.用户线程申请到start_lsn-end_lsn区间后，需要先等待到Link_buf推进到自己可以使用的位置。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>如图所示，start_lsn0-end_lsn0,start_lsn2-end_lsn2, start_lsn3-end_lsn3为三个用户线程新申请的lsn区间；start_lsn1-end_lsn1对应的区间已经标记到link_buf上；start_lsn3-end_lsn3距离tail太远，需要等待link_buf推进才能使用；</p>
+<p>3.写入log buffer后，再将start_lsn-&gt;end_lsn的范围标记到link_buf（注意：因为只在start_lsn%capacity的位置标记link_buf，所以即使end_lsn超过(m_tail, m_tail+m_capacity)也不影响）；</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>4.用户线程提交事务时设置事件log_sys.writer_event，触发log_writer线程将日志从redo log buffer写到系统缓存（log_writer线程自己也会轮询link_buf判断是否写入了新的日志）；</p>
+<p>5.log_writer线程推进m_tail，并将m_tail前的log buffer落盘。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p class="maodian"></p>
+<h2>redolog的落盘及通知</h2>
+<p>前面简述了redo log是如何提交的，在redo log提交以及落盘时，涉及多个线程，他们的关系如下：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>用户线程在读写事务提交时，会产生一些redo log，并随着mtr提交而记录到redo log buffer中，随后用户线程尝试设置writer_event触发log_writer线程写日志，并监听属于自己的flush_events[i]事件；</p>
+<p>log_writer线程推进Link_buf.m_tail，将最大连续lsn前的redo log写入系统缓存，并设置flusher_event触发log_flusher线程；</p>
+<p>log_flusher线程将已写入系统缓存的日志刷盘，并设置flush_notifier_event触发log_flush_notifier线程通知用户；</p>
+<p>log_flush_notifier根据已刷盘的lsn换算出需要触发的事件，通知用户线程。</p>
+<p>具体实现时，通过log_sys中的几个成员变量，跟进redo log的写入情况。其中log_sys.recent_writtern.m_tail表示log buffer最大连续范围；log_sys.write_lsn表示写入到系统缓存的位置；log_sys.flushed_to_disk_lsn表示已落盘的位置。各标记的推进过程如下：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p class="maodian"></p>
+<h2>通知用户线程</h2>
+<p>用户提交事务时，会根据innodb_flush_log_at_trx_commit参数，调用log_wait_for_write或log_wait_for_flush，来等待redo log写入到系统缓存或刷到硬盘。用户线程的通知是通过log_sys.flush_events事件数组来实现的，为了避免一次通知的flush_events过多，flush_events会像桶一样划分给不同的用户线程：redo log是以一个个log block划分的，假设log_sys.flush_events数组长度为m，则第n个log block的刷盘，由flush_events[n%m]事件监听。当log buffer的第L1个log block到第L2个log block被刷盘时，会设置L1-L2之间的log block所属的flush_events，从而redo log在L1-L2之间的用户线程都会收到通知。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p class="maodian"></p>
+<h2>总结</h2>
+<p>mysql8.0通过redo log无锁化，解决了用户线程写redo log时竞争锁带来的性能影响。同时将redo log写文件、redo log刷盘从用户线程中剥离出来，抽成单独的线程，用户线程只负责将redo log写入到log buffer，不再关心redo log的落盘细节，只需等待log_writer线程或log_flusher线程的通知。</p>
+<p>以上就是MySQL 8.0 redo log的深入解析的详细内容，更多关于MySQL 8.0 redo log的资料请关注512笔记其它相关文章！</p></div>
+
+<p>注：关于MySQL 8.0 redo log的深入解析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/297.html'>MySQL的lru链表的深入分析</a><a>下一篇</a><a href='/mysql/biji/299.html'>MySQL中find_in_set函数的基本用法详细说明</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

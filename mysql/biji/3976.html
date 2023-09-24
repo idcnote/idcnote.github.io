@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server 执行计划及Sql查询优化初探_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server 执行计划及Sql查询优化初探，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+网上的SQL优化的文" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server 执行计划及Sql查询优化初探</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:52:06                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server 执行计划及Sql查询优化初探，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+网上的SQL优化的文</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server 执行计划及Sql查询优化初探，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">网上的SQL优化的文章实在是很多，说实在的，我也曾经到处找这样的文章，什么不要使用IN了，什么OR了，什么AND了，很多很多，还有很多人拿出仅几S甚至几MS的时间差的例子来证明着什么(有点可笑)，让许多人不知道其是对还是错。而SQL优化又是每个要与数据库打交道的程序员的必修课，所以写了此文，与朋友们共勉。&lt;?XML:NAMESPACE PREFIX = O /&gt;<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">谈到优化就必然要涉及索引，就像要讲锁必然要说事务一样，所以你需要了解一下索引，仅仅是索引，就能讲半天了，所以索引我就不说了(打很多字是很累的，况且我也知之甚少)，可以去参考相关的文章，这个网上资料比较多了。<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">今天来探索下MSSQL的执行计划，来让大家知道如何查看MSSQL的优化机制，以此来优化SQL查询。<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">--DROP TABLE T_UserInfo----------------------------------------------------<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">--建测试表<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">CREATE<font face="Courier New">TABLET_UserInfo<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">(<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="Courier New">Userid varchar(20),UserName varchar(20),<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="Courier New">RegTimedatetime,Tel varchar(20),<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">)<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">--插入测试数据<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">DECLARE@I<font size="2"><font face="Courier New">INT<o:p></o:p></font></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">DECLARE@ENDID<font size="2"><font face="Courier New">INT<o:p></o:p></font></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SELECT@I<font face="Courier New">=1<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SELECT@ENDID = 100<font face="Courier New">--</font>在此处更改要插入的数据，重新插入之前要删掉所有数据<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">WHILE@I<font face="Courier New">&lt;=@ENDID<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">BEGIN<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="Courier New">INSERTINTOT_UserInfo<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="Courier New">SELECT&#39;ABCDE&#39;+CAST(@IASVARCHAR(20))+&#39;EF&#39;,&#39;</font>李&#39;+CAST(@I<font face="Courier New">ASVARCHAR(20)),<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="Courier New">GETDATE(),&#39;876543&#39;+CAST(@IASVARCHAR(20))<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="Courier New">SELECT@I=@I+1<o:p></o:p></font></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">END<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">--相关SQL语句解释<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">---------------------------------------------------------------------------<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">--建聚集索引<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">CREATE<font face="Courier New">CLUSTEREDINDEXINDEX_UseridONT_UserInfo(Userid)<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">--建非聚集索引<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">CREATE<font face="Courier New">NONCLUSTEREDINDEXINDEX_UseridONT_UserInfo(Userid)<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">--删除索引<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">DROP<font face="Courier New">INDEXT_UserInfo.INDEX_Userid<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">---------------------------------------------------------------------------<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">---------------------------------------------------------------------------<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">--显示有关由Transact-SQL语句生成的磁盘活动量的信息<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SET<font face="Courier New">STATISTICSIOON<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">--关闭有关由Transact-SQL语句生成的磁盘活动量的信息<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SET<font face="Courier New">STATISTICSIOOFF<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">--显示[返回有关语句执行情况的详细信息，并估计语句对资源的需求]<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SETSHOWPLAN_ALL<font face="Courier New">ON<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">--关闭[返回有关语句执行情况的详细信息，并估计语句对资源的需求]<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SETSHOWPLAN_ALL<font face="Courier New">OFF<o:p></o:p></font></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">---------------------------------------------------------------------------<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">请记住：SET<font face="Courier New">STATISTICSIO</font>和<font face="Courier New">SETSHOWPLAN_ALL</font>是互斥的。<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><strong>OK</strong><strong>，现在开始：</strong><strong><o:p></o:p></strong></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><strong>首先，我们插入</strong><strong>100</strong><strong>条数据</strong><strong><o:p></o:p></strong></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">然后我写了一个查询语句：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SELECT<font face="Courier New">*FROMT_UserInfoWHEREUSERID=&#39;ABCDE6EF&#39;<o:p></o:p></font></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">选中以上语句，按Ctrl<font face="Courier New">+L</font>，如下图<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">&lt;?XML:NAMESPACE PREFIX = V /&gt;<v:shapetype coordsize="21600,21600" filled="f" id="_x0000_t75" o:preferrelative="t" o:spt="75" path="m@4@5l@4@11@9@11@9@5xe" stroked="f"><v:stroke joinstyle="miter"></v:stroke><v:formulas><v:f eqn="if lineDrawn pixelLineWidth 0"></v:f><v:f eqn="sum @0 1 0"></v:f><v:f eqn="sum 0 0 @1"></v:f><v:f eqn="prod @2 1 2"></v:f><v:f eqn="prod @3 21600 pixelWidth"></v:f><v:f eqn="prod @3 21600 pixelHeight"></v:f><v:f eqn="sum @0 0 1"></v:f><v:f eqn="prod @6 1 2"></v:f><v:f eqn="prod @7 21600 pixelWidth"></v:f><v:f eqn="sum @8 21600 0"></v:f><v:f eqn="prod @7 21600 pixelHeight"></v:f><v:f eqn="sum @10 21600 0"></v:f></v:formulas><v:path gradientshapeok="t" o:connecttype="rect" o:extrusionok="f"></v:path><o:lock aspectratio="t" v:ext="edit"></o:lock></v:shapetype><o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><o:p>【图片暂缺】</o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><strong>这就是</strong><strong>MSSQL</strong><strong>的执行计划：表扫描：扫描表中的行</strong><strong><o:p></o:p></strong></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><strong>然后我们来看该语句对</strong><strong>IO</strong><strong>的读写：</strong><strong><o:p></o:p></strong></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">执行:<font face="Courier New">SETSTATISTICSIOON<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">此时再执行该SQL<font face="Courier New">:SELECT*FROMT_UserInfoWHEREUSERID=&#39;ABCDE6EF&#39;<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">切换到消失栏显示如下：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; TEXT-INDENT: 21pt; PADDING-TOP: 0px; TEXT-ALIGN: left">表&#39;T_UserInfo&#39;。扫描计数1，逻辑读1次，物理读0次，预读0次。<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">解释下其意思：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">四个值分别为：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="Courier New"></font>执行的扫描次数;<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="Courier New"></font><strong>从数据缓存读取的页数</strong>;<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="Courier New"></font>从磁盘读取的页数;<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="Courier New"></font>为进行查询而放入缓存的页数<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><strong>重要：如果对于一个</strong><strong>SQL</strong><strong>查询有多种写法，那么这四个值中的逻辑读</strong><strong>(</strong><strong>logical reads<font face="Courier New" size="2">)</font></strong><strong>决定了哪个是最优化的。</strong><strong><o:p></o:p></strong></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><strong>接下来我们为其建一个聚集索引</strong><strong><o:p></o:p></strong></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">执行CREATE<font face="Courier New">CLUSTEREDINDEXINDEX_UseridONT_UserInfo(Userid)<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">然后再执行SELECT<font face="Courier New">*FROMT_UserInfoWHEREUSERID=&#39;ABCDE6EF&#39;<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">切换到消息栏如下显示：<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; TEXT-INDENT: 21pt; PADDING-TOP: 0px">表&#39;T_UserInfo&#39;。扫描计数1，逻辑读2次，物理读0次，预读0次。<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">此时逻辑读由原来的1变成2，<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">说明我们又加了一个索引页，现在我们查询时，逻辑读就是要读两页(1索引页+1数据页)，此时的效率还不如不建索引。<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">此时再选中查询语句，然后再Ctrl<font face="Courier New">+L</font>，如下图:<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><strong>【图片暂缺】</strong></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><strong>聚集索引查找：扫描聚集索引中特定范围的行</strong><strong><o:p></o:p></strong></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">说明，此时用了索引。<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><strong><u>OK<font face="Courier New" size="2">,</font></u></strong><strong><u>到这里你应该已经知道初步知道</u></strong><strong><u>MSSQL</u></strong><strong><u>查询计划和如何查看对</u></strong><strong><u>IO</u></strong><strong><u>的读取消耗了吧！</u></strong><strong><u><o:p></o:p></u></strong></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><strong>接下来我们继续：</strong><strong><o:p></o:p></strong></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">现在我再把测试数据改变成1000条<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">再执行SET<font face="Courier New">STATISTICSIOON,</font>再执行<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SELECT<font face="Courier New">*FROMT_UserInfoWHEREUSERID=&#39;ABCDE6EF&#39;<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">在不加聚集索引的情况下：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">表&#39;T_UserInfo&#39;。扫描计数1，逻辑读7次，物理读0次，预读0次。<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">在加聚集索引的情况下：CREATE<font face="Courier New">CLUSTEREDINDEXINDEX_UseridONT_UserInfo(Userid)</font><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">表&#39;T_UserInfo&#39;。扫描计数1，逻辑读2次，物理读0次，预读0次。<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">(其实也就是说此时是读了一个索引页，一个数据页)<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">如此，在数据量稍大时，索引的查询优势就显示出来了。<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><strong>先小总结下</strong>：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><u>当你构建</u><u>SQL</u><u>语句时，按</u><u>Ctrl<font face="Courier New">+L</font></u><u>就可以看到语句是如何执行，是用索引扫描还是表扫描？</u><u><o:p></o:p></u></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><u>通过</u><u>SET</u><u><font face="Courier New">STATISTICSIOON</font></u><u>来查看逻辑读，完成同一功能的不同</u><u>SQL</u><u>语句，逻辑读</u><u><o:p></o:p></u></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><u>越小查询速度越快</u><u>(</u><u>当然不要找那个只有几百条记录的例子来反我</u><u>)</u><u>。</u><u><o:p></o:p></u></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><strong>我们再继续深入：</strong><strong><o:p></o:p></strong></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">OK，现在我们再来看一次，我们换个SQL语句，来看下MSSQL如何来执行的此SQL呢？<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">现在去掉索引：DROP<font face="Courier New"><font face="宋体">INDEX</font>T_UserInfo<font face="宋体">.</font>INDEX_Userid<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">现在打开[显示语句执行情况的详细信息]：SETSHOWPLAN_ALL<font face="Courier New"><font face="宋体">ON</font><o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">然后再执行：SELECT<font face="Courier New"><font face="宋体">*</font><font face="宋体">FROM</font>T_UserInfo<font face="宋体">WHERE</font>USERID<font face="宋体">LIKE</font></font><font face="宋体">&#39;ABCDE8%&#39;<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">看结果栏：结果中有些具体参数，比如IO的消耗，CPU的消耗。<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">在这里我们只看StmtText<font face="Courier New">:<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SELECT<font face="Courier New"><font face="宋体">*</font><font face="宋体">FROM</font>T_UserInfo<font face="宋体">WHERE</font>USERID<font face="宋体">LIKE</font></font><font face="宋体">&#39;ABCDE8%&#39;<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="宋体">|--Table Scan(OBJECT:([student].[dbo].[T_UserInfo]), WHERE:(like([T_UserInfo].[Userid], &#39;ABCDE8%&#39;, NULL)))<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">Ctrl<font face="Courier New"><font face="宋体">+</font>L</font>看下此时的图行执行计划：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p>【图片暂缺】</o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">我再加上索引：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">先关闭：SETSHOWPLAN_ALL<font face="Courier New">OFF<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">再执行：CREATE<font face="Courier New"><font face="宋体">CLUSTERED</font><font face="宋体">INDEX</font>INDEX_Userid<font face="宋体">ON</font>T_UserInfo<font face="宋体">(</font>Userid</font><font face="宋体">)<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">再开启：SETSHOWPLAN_ALL<font face="Courier New">ON<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">再执行：SELECT<font face="Courier New"><font face="宋体">*</font><font face="宋体">FROM</font>T_UserInfo<font face="宋体">WHERE</font>USERID<font face="宋体">LIKE</font></font><font face="宋体">&#39;ABCDE8%&#39;<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">查看StmtText<font face="Courier New">:<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SELECT<font face="Courier New"><font face="宋体">*</font><font face="宋体">FROM</font>T_UserInfo<font face="宋体">WHERE</font>USERID<font face="宋体">LIKE</font></font><font face="宋体">&#39;ABCDE8%&#39;<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="宋体">|--Clustered Index Seek(OBJECT:([student].[dbo].[T_UserInfo].[INDEX_Userid]), SEEK:([T_UserInfo].[Userid] &gt;= &#39;ABCDE8&#39; AND [T_UserInfo].[Userid] &lt; &#39;ABCDE9&#39;),<font color="#008000"><font color="#000000"></font>WHERE:(like([T_UserInfo].[Userid], &#39;ABCDE8%&#39;, NULL)) ORDERED FORWARD)Ctrl+L</font>看下此时的图行执行计划：</font><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">Ctrl<font face="Courier New"><font face="宋体">+</font>L</font>看下此时的图行执行计划：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p>【图片暂缺】</o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">在有索引的情况下，我们再写一个SQL：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SETSHOWPLAN_ALL<font face="Courier New">ON<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SELECT<font face="Courier New"><font face="宋体">*</font><font face="宋体">FROM</font>T_UserInfo<font face="宋体">WHERE</font><font face="宋体">LEFT(</font>USERID<font face="宋体">,</font>4</font><font face="宋体">)=&#39;ABCDE8%&#39;<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">查看StmtText<font face="Courier New">:<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">SELECT<font face="Courier New"><font face="宋体">*</font><font face="宋体">FROM</font>T_UserInfo<font face="宋体">WHERE</font><font face="宋体">LEFT(</font>USERID<font face="宋体">,</font>4</font><font face="宋体">)=&#39;ABCDE8%&#39;<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><font face="宋体">|--Clustered Index Scan(OBJECT:([student].[dbo].[T_UserInfo].[INDEX_Userid]), WHERE:(substring([T_UserInfo].[Userid], 1, 4)=&#39;ABCDE8%&#39;))<o:p></o:p></font></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">Ctrl+L看下此时的图行执行计划：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p>【图片暂缺】</o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">我们再分别看一下三种情况下对IO的操作<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">分别如下：<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">第一种情况：表&#39;T_UserInfo&#39;。扫描计数1，逻辑读7次，物理读0次，预读0次。<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">第二种情况：表&#39;T_UserInfo&#39;。扫描计数1，逻辑读3次，物理读0次，预读0次。<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">第三种情况：表&#39;T_UserInfo&#39;。扫描计数1，逻辑读8次，物理读0次，预读0次。<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">这说明:<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><u>第一次是表扫描，扫了</u><u>7</u><u>页，也就是全表扫描</u><u><o:p></o:p></u></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><u>第二次是索引扫描，扫了</u><u>1</u><u>页索引，</u><u>2</u><u>页数据页</u><u><o:p></o:p></u></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><u>第三次是索引扫描</u><u>+</u><u>表扫描，扫了</u><u>1</u><u>页索引，</u><u>7</u><u>页数据页</u><u><o:p></o:p></u></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p>[图形界面也有对CPU和IO的消耗，也可以看出来哪个最优!]</o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left">通过比较，嘿嘿，很容易的看出：第二种第三种写法在都有索引的情况下，like有效的使用索引，而left则不能，这样一个最简单的优化的例子就出来了，哈哈。<o:p></o:p></p>
+<p align="left" class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px; TEXT-ALIGN: left"><o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><o:p><font face="Times New Roman"></font></o:p>如果以上你都明白了，那么你可能已经对<font face="Times New Roman">SQL</font>的优化有初步新的想法了，网上一堆堆的<font face="Times New Roman">SQL</font>优化的文章真的是那样吗？你自己试试就知道了，而不必盲目去记那些东西，自己试试，看看<font face="Times New Roman">MSSQL</font>到底是怎么来执行就明白了。<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">在我举的例子中，用的是聚集索引扫描，字段是字母加数字，大家可以试试看纯数字的、字母的、汉字的等等，了解下<font face="Times New Roman">MMSQL</font>会如何改变<font face="Times New Roman">SQL</font>语句来利用索引。然后再试试非聚集索引是什么情况？用不用索引和什么有关？子查询<font face="Times New Roman">MSSQL</font>是如何执行？<font face="Times New Roman">IN</font>用不用索引，<font face="Times New Roman">LIKE</font>用不用索引？函数用不用索引？<font face="Times New Roman">OR</font>、<font face="Times New Roman">AND</font>、<font face="Times New Roman">UNION</font>？子查询呢？在这里我不一一去试给大家看了，只要知道了如何去看<font face="Times New Roman">MSSQL</font>的执行计划（图形和文本<font face="Times New Roman">)</font>，很多事情就很明朗了。<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><o:p><font face="Times New Roman"></font></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><strong>大总结：</strong><strong><o:p></o:p></strong></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">实现同一查询功能的<font face="Times New Roman">SQL</font>写法可能会有多种，如果判断哪种最优化，如果仅仅是从时间上来测，会受很多外界因素的影响，而我们明白了<font face="Times New Roman">MSSQL</font>如何去执行，通过<font face="Times New Roman">IO</font>逻辑读、通过查看图示的查询计划、通过其优化后而执行的<font face="Times New Roman">SQL</font>语句，才是优化<font face="Times New Roman">SQL</font>的真正途径。<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><o:p><font face="Times New Roman"></font></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">另外提醒下：数据量的多少有时会影响<font face="Times New Roman">MSSQL</font>对同一种查询写法语句的执行计划，这一点在非聚集索引上特别明显，还有就是在多<font face="Times New Roman">CPU</font>与单<font face="Times New Roman">CPU</font>下，在多用户并发情况下，同一写法的查询语句执行计划会有所不同，这个就需要大家有机会去试验了<font face="Times New Roman">(</font>我也没有这方面的太多经验与大家分享<font face="Times New Roman">)</font>。<o:p></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px"><o:p><font face="Times New Roman"></font></o:p></p>
+<p class="MsoNormal" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; MARGIN: 0cm 0cm 0pt; PADDING-TOP: 0px">先写这些吧，由于我对<font face="Times New Roman">MSSQL</font>认识还很浅薄，如有不对的地方，还请指正。</p>
+
+<p>注：关于SQL Server 执行计划及Sql查询优化初探的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3975.html'>SQL Server每天自动备份数据库并每天自动清除log的脚本</a><a>下一篇</a><a href='/mysql/biji/3977.html'>SQL Server SQL 研究 相似的数据类型</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Jersey框架的统一异常处理机制分析_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="一、背景 <br />
+写这边文章源于有朋友问过java中的checked exception和unchecked exception有啥区别，当时我对其的回答是：我编程时仅用RuntimeException。其实，我说句话我是有前提的" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Jersey框架的统一异常处理机制分析</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>一、背景 <br />
+写这边文章源于有朋友问过java中的checked exception和unchecked exception有啥区别，当时我对其的回答是：我编程时仅用RuntimeException。其实，我说句话我是有前提的</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>一、背景 </strong></p>
+<p>写这边文章源于有朋友问过java中的checked exception和unchecked exception有啥区别，当时我对其的回答是：我编程时仅用RuntimeException。其实，我说句话我是有前提的，确切的应该这么说：在成熟的开发框架下编写业务代码，我只使用或关注RuntimeException。因为，由于框架往往将异常的处理统一封装，这样以便程序员更好的关注业务代码，而业务的一些错误通常是在系统运行期间发生的，因此业务的异常通常被设计为RuntimeException的子类。</p>
+<p>我的回答显然不能让朋友满意！因为，不管是任何一个初学java的都知道，在我们学习IO类和JDBC编程的时候，我们用了大量的try...catch...，这种反复重复的try...catch会让我们对java的异常记忆深刻！初学者往往不清楚java的异常为什么会设计成这个样子，他们通常会对异常只进行简单的处理——在catch块里面简单的把异常打印出来，用的最多的就是这个语句：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+e.printStackTrace()。 </pre>
+</div>
+<p>我们还与一些记忆，比如数组越界这类的异常：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+java.lang.ArrayIndexOutOfBoundsException: 6</pre>
+</div>
+<p>这也会使我们记忆犹新，因为在我们调试程序的时候，它经常出现！我们会发现这类异常并不需要在代码里用try...catch...去捕获它。</p>
+<p>上面两个例子，其实就是朋友问到的checked exception和unchecked exception，需要try...catch...的异常是checked exception，不需要的则是unchecked exception。如果要说他们的区别，我说他们一个要try...catch...，一个不需要，这样的回答行吗？我认为这样的回答是苍白的。有同学会进一步说，try...catch很显然，是强制要求抛出异常的方法调用者显式的处理异常，那e.printStackTrace()算不算处理了异常，我认为那只算是一种简单懒惰的处理方式吧！那什么样的处理方式算是高明的，java语言设计者其实是期望发生异常后，调用者能够在catch里将异常恢复回来，使得程序能够继续执行下去。但是，“聪明的程序员都是懒惰的”呵呵，大多数情况下我们选择异常出现后只进行记录日志和UI用户提示，后面我会结合jersey框架，说说其中的统一异常处理。读到这里，有人会说，那checked exception和unchecked exception异常的区别就是，一个需要处理，一个不需要处理。这个回答正确吗？我认为是错误的！我的观点是：无论是checked exception还是unchecked exception，我们都要进行处理！</p>
+<p>上一段，我们似乎还是没有解决checked exception和unchecked exception的区别，我认为如何给出答案并不重要，重要的是我们怎么去处理这些异常，以及我们如何在开发时使用异常。</p>
+<p><strong>我的观点是（Web系统开发）： </strong></p>
+<p>1、在框架层面封装checked exception，将其转化为unchecked exception，避免开发过程中编写繁冗的try...catch代码。 <br />
+2、业务层面的开发，根据程序代码职责定义不同的RuntimeException(它就是unchecked exception，一般定义为RuntimeException的子类) <br />
+3、通过前两个观点，系统中自定义的异常将只存在unchecked exception，系统只在于客户端交换数据的上层，设置统一异常处理机制，并将一些异常转化为用户所能理解的信息传达给用户。 <br />
+4、其他如业务层，数据持久层，等底层只负责将异常抛出即可，但要注意不要丢失掉异常堆栈（这一点是初学者容易犯的一个错误）。</p>
+<p>背景说的够长了！让我们进入正题吧，看看Jersey框架的统一异常处理器是怎样使用的！</p>
+<p><strong>二、jersey框架的统一异常处理机制 </strong></p>
+<p>有如下约定：</p>
+<p>1、示例采用jersey1.x版本 <br />
+2、spring版本为2.5 <br />
+3、为了简单起见，示例项目不采用Maven机制</p>
+<p>示例的业务场景说明：</p>
+<p>1、我们通过读取一个properties配置文件，配置文件的内容为：</p>
+<div class="phpstudycode">
+<pre class="brush:xml;">
+key1=hello 
+key2=iteye.com</pre>
+</div>
+<p>2、发起一个http://localhost:8888/a/resources/test&#63;n=11的GET请求，要求n为数字，且必须小于10，如果n错误，将产生一个unchecked exception错误。</p>
+<p>3、本示例中数据访问层将读取一个文件，读取文件错误将会产生checked exception错误。</p>
+<p><strong>示例项目结构设计 </strong></p>
+<p></p>
+<p>代码片段说明</p>
+<p>1、数据存储文件：test.properties</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+key1=hello 
+key2=iteye.com </pre>
+</div>
+<p>这就是我们要读取的文件，为了简单起见，它是一个properties文件。</p>
+<p>2、数据访问类：TestDao.java</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.iteye.redhacker.jersey.dao;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Properties;
+
+import org.springframework.stereotype.Component;
+
+import com.iteye.redhacker.jersey.exception.DaoException;
+import com.iteye.redhacker.jersey.exception.ExceptionCode;
+
+@Component
+public class TestDao {
+	public String sayHello() {
+		ClassLoader classLoader = TestDao.class.getClassLoader();
+		String iniFile = "com/iteye/redhacker/jersey/dao/test.properties";
+		URL url = classLoader.getResource(iniFile);
+		InputStream is;
+		try {
+			is = url.openStream();
+		} catch (IOException e) {
+			throw new DaoException(e, ExceptionCode.READ_FILE_FAILED);
+		}
+		Properties proper = null;
+		try {
+			if (proper == null) {
+				proper = new Properties();
+			}
+			proper.load(url.openStream());
+		} catch (IOException e) {
+			throw new DaoException(e, ExceptionCode.READ_CONFIG_FAILED);
+		} finally {
+			if (is != null) {
+				try {
+					is.close();
+					is = null;
+				} catch (IOException e) {
+					throw new DaoException(e, ExceptionCode.COLSE_FILE_FAILED);
+				}
+			}
+		}
+		return proper.getProperty("key1") + "," + proper.getProperty("key2");
+	}
+}</pre>
+</div>
+<p>在该类中，将checked exception全部转化为unchecked exception（我们自定义的exception），调用sayHello()方法时，不再需要try...catch...</p>
+<p>3、业务实现类：TestService.java</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.iteye.redhacker.jersey.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.iteye.redhacker.jersey.dao.TestDao;
+import com.iteye.redhacker.jersey.exception.ExceptionCode;
+import com.iteye.redhacker.jersey.exception.ServiceException;
+
+@Component
+
+public class TestService {
+	
+	@Autowired
+	private TestDao testDao;
+	
+	public String sayHello(int n) {
+		// 业务上规定n不能大于10 
+		if (n &gt; 10) {
+			throw new ServiceException(ExceptionCode.MUST_BE_LESS_THAN_10);
+		}
+		return testDao.sayHello();
+	}
+
+	/**
+	 * @param testDao the testDao to set
+	 */
+	public void setTestDao(TestDao testDao) {
+		this.testDao = testDao;
+	}
+}
+</pre>
+</div>
+<p>在该类中，我们抛出了一个自己的业务异常，它是一个unchecked exception。</p>
+<p>注意：我们使用@Autowired注入了TestDao类，@Autowired是Spring提供的一个注解；我们必须提供一个要注解属性的Set方法，否则注解将失败。</p>
+<p>4、请求接入类：TestResources.java</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.iteye.redhacker.jersey.delegate;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+
+import com.iteye.redhacker.jersey.service.TestService;
+import com.sun.jersey.api.spring.Autowire;
+
+@Path("/test")
+@Autowire
+public class TestResources {
+	
+	private TestService testService;
+	
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String sayHello(@QueryParam("n") int n) {
+		return testService.sayHello(n);
+	}
+
+	/**
+	 * @param testService the testService to set
+	 */
+	public void setTestService(TestService testService) {
+		this.testService = testService;
+	}
+	
+	
+}</pre>
+</div>
+<p>这里是jersey定义的一个资源，我们可以这样访问这个资源:发起GET请求，访问URI为/resources/test，可以传递一个查询参数n，例如：/resources/test&#63;n=1</p>
+<p>注意：我们使用了@Autowire并不是Spring的一个注解，它是jersey-srping集成包的一个注解；我们必须提供一个要注解属性的Set方法，否则注解将失败。</p>
+<p>5、统一异常处理器类：ExceptionMapperSupport.java</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.iteye.redhacker.jersey.jaxrs;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
+
+import org.apache.log4j.Logger;
+import org.springframework.web.context.WebApplicationContext;
+
+import com.iteye.redhacker.jersey.exception.BaseException;
+import com.iteye.redhacker.jersey.exception.ExceptionCode;
+import com.sun.jersey.api.NotFoundException;
+
+/**
+ * 统一异常处理器
+ */
+@Provider
+public class ExceptionMapperSupport implements ExceptionMapper&lt;Exception&gt; {
+	private static final Logger LOGGER = Logger
+			.getLogger(ExceptionMapperSupport.class);
+
+	private static final String CONTEXT_ATTRIBUTE = WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE;
+
+	@Context
+	private HttpServletRequest request;
+
+	@Context
+	private ServletContext servletContext;
+
+	/**
+	 * 异常处理
+	 * 
+	 * @param exception
+	 * @return 异常处理后的Response对象
+	 */
+	public Response toResponse(Exception exception) {
+		String message = ExceptionCode.INTERNAL_SERVER_ERROR;
+		Status statusCode = Status.INTERNAL_SERVER_ERROR;
+		WebApplicationContext context = (WebApplicationContext) servletContext
+				.getAttribute(CONTEXT_ATTRIBUTE);
+		// 处理unchecked exception
+		if (exception instanceof BaseException) {
+			BaseException baseException = (BaseException) exception;
+			String code = baseException.getCode();
+			Object[] args = baseException.getValues();
+			message = context.getMessage(code, args, exception.getMessage(),
+					request.getLocale());
+
+		} else if (exception instanceof NotFoundException) {
+			message = ExceptionCode.REQUEST_NOT_FOUND;
+			statusCode = Status.NOT_FOUND;
+		} 
+		// checked exception和unchecked exception均被记录在日志里
+		LOGGER.error(message, exception);
+		return Response.ok(message, MediaType.TEXT_PLAIN).status(statusCode)
+				.build();
+	}
+}
+</pre>
+</div>
+<p>在这个类里面我们处理了我们定义的unchecked exception异常，还处理了系统未知的exception(包括未知的unchecked exception和checked exception)。我们的处理方式是：a、记录异常日志；b、向客户端抛一个标准的http标准错误状态码和错误消息，由客户端对错误信息进行自行处理，值得说明的是，这种处理方式是REST所提倡的，它恰当的使用了HTTP标准状态码；</p>
+<p>在这个类中我们还使用了spring的国际化配置组件，用于对系统抛出的错误key进行国际化转换，这有利于我们的项目国际化升级。</p>
+<p>6、自定义异常基类：BaseException.java</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.iteye.redhacker.jersey.exception;
+
+/**
+ * 异常基类，各个模块的运行期异常均继承与该类
+ */
+public class BaseException extends RuntimeException {
+
+  /**
+   * the serialVersionUID
+   */
+  private static final long serialVersionUID = 1381325479896057076L;
+
+  /**
+   * message key
+   */
+  private String code;
+
+  /**
+   * message params
+   */
+  private Object[] values;
+
+  /**
+   * @return the code
+   */
+  public String getCode() {
+    return code;
+  }
+
+  /**
+   * @param code the code to set
+   */
+  public void setCode(String code) {
+    this.code = code;
+  }
+
+  /**
+   * @return the values
+   */
+  public Object[] getValues() {
+    return values;
+  }
+
+  /**
+   * @param values the values to set
+   */
+  public void setValues(Object[] values) {
+    this.values = values;
+  }
+
+  public BaseException(String message, Throwable cause, String code, Object[] values) {
+    super(message, cause);
+    this.code = code;
+    this.values = values;
+  }
+}
+</pre>
+</div>
+<p>这个类定义了项目异常类的基本模板，其他异常继承与它。值得注意的是，它巧妙的利用了国际化配置的一些特征，甚至可以抛出下面这样定义的一个错误消息，通过传递参数的方式，复用错误信息：</p>
+<p><span style="color: #ff0000">第{0}个{1}参数错误 </span></p>
+<p>7、其他异常基本差不多，只是类型不同，我们看一下DaoException.java</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.iteye.redhacker.jersey.exception;
+
+public class DaoException extends BaseException {
+
+	/**
+	 * Constructors
+	 * 
+	 * @param code
+	 *      错误代码
+	 */
+	public DaoException(String code) {
+		super(code, null, code, null);
+	}
+
+	/**
+	 * Constructors
+	 * 
+	 * @param cause
+	 *      异常接口
+	 * @param code
+	 *      错误代码
+	 */
+	public DaoException(Throwable cause, String code) {
+		super(code, cause, code, null);
+	}
+
+	/**
+	 * Constructors
+	 * 
+	 * @param code
+	 *      错误代码
+	 * @param values
+	 *      一组异常信息待定参数
+	 */
+	public DaoException(String code, Object[] values) {
+		super(code, null, code, values);
+	}
+
+	/**
+	 * Constructors
+	 * 
+	 * @param cause
+	 *      异常接口
+	 * @param code
+	 *      错误代码
+	 * @param values
+	 *      一组异常信息待定参数
+	 */
+	public DaoException(Throwable cause, String code, Object[] values) {
+		super(code, null, code, values);
+	}
+
+	private static final long serialVersionUID = -3711290613973933714L;
+
+}
+</pre>
+</div>
+<p>它继承了BaseException，当抛出这个异常时，我们就从异常名字上直接初步判断出，错误出自Dao层。</p>
+<p>8、errMsg.properties用于定义异常信息，来看一下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+read.file.failed=读取文件失败
+read.config.failed=读取配置项失败
+must.be.less.than.10=参数必须小于10
+colse.file.failed=关闭文件失败
+request.not.found=没有找到相应的服务
+internal.server.error=服务器内部错误</pre>
+</div>
+<p><strong>三、部署及测试 </strong></p>
+<p>你可以在本文附件里下载到源码。导入eclipse后，查看源码。</p>
+<p>部署很简单，只要将你的tomcat/config/server.xml里加入：</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+&lt;Host&gt;
+...
+&lt;Context path="/a" reloadable="true" docBase="D:/workspace/test/JerseyExceptionMapperTest/web" /&gt;
+
+&lt;/Host&gt;</pre>
+</div>
+<p>启动tomcat就可以了！</p>
+<p>做两个测试： <br />
+1、</p>
+<p></p>
+<p>2、 <br />
+</p>
+<p></p>
+<p>第1个测试，还可以在log中看到如下异常错误：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+[2013-08-15 00:25:55] [ERROR] 参数必须小于10
+com.iteye.redhacker.jersey.exception.ServiceException: must.be.less.than.10
+	at com.iteye.redhacker.jersey.service.TestService.sayHello(TestService.java:20)
+	at com.iteye.redhacker.jersey.delegate.TestResources.sayHello(TestResources.java:21)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at com.sun.jersey.spi.container.JavaMethodInvokerFactory$1.invoke(JavaMethodInvokerFactory.java:60)
+	at com.sun.jersey.server.impl.model.method.dispatch.AbstractResourceMethodDispatchProvider$TypeOutInvoker._dispatch(AbstractResourceMethodDispatchProvider.java:185)
+	at com.sun.jersey.server.impl.model.method.dispatch.ResourceJavaMethodDispatcher.dispatch(ResourceJavaMethodDispatcher.java:75)
+	at com.sun.jersey.server.impl.uri.rules.HttpMethodRule.accept(HttpMethodRule.java:288)
+	at com.sun.jersey.server.impl.uri.rules.ResourceClassRule.accept(ResourceClassRule.java:108)
+	at com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:147)
+	at com.sun.jersey.server.impl.uri.rules.RootResourceClassesRule.accept(RootResourceClassesRule.java:84)
+	at com.sun.jersey.server.impl.application.WebApplicationImpl._handleRequest(WebApplicationImpl.java:1483)
+	at com.sun.jersey.server.impl.application.WebApplicationImpl._handleRequest(WebApplicationImpl.java:1414)
+	at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:1363)
+	at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:1353)
+</pre>
+</div>
+<p>关于其他的一些测试，大家可以去尝试一下，比如故意把test.properties删除，当找不到要读取的文件时，checked exception是如何转化为我们自己定义个unchecked exception，并记录下了日志，返回给客户端标准的http错误状态码和错误信息。</p>
+<p><strong>四、总结 </strong></p>
+<p>1、通过jersey框架我们不难看出，在web项目开发来讲，对于checked exception和unchecked exception的处理我们尽可能在框架层面就进行了统一处理，以便我们更加关注与业务的实现。</p>
+<p>2、如果是非web项目，我想，程序架构设计者也应当尽量统一的处理异常；如果不做统一处理，当遇到checked exception，我们应当对其进行恰当的异常处理，而不是不是简单的做一个e.printStackTrace()的处理；如果我们不能恢复异常，那我们至少要将异常的错误信息完整的记录到日志文件中去，以便后续的程序出现故障时进行错误排查。</p>
+<p>全文（完）</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/107949.html'>把js文件编译成dll供页面调用的方法</a><a>下一篇</a><a href='/php/biji/107951.html'>php中引用符号(&amp;)的使用详解</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

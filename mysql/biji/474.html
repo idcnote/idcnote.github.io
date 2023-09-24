@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL千万级数据量根据索引优化查询速度的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL千万级数据量根据索引优化查询速度的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL千万级数据量根据索引优化查询速度的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:16:35                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL千万级数据量根据索引优化查询速度的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL千万级数据量根据索引优化查询速度的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h2>（一）索引的作用</h2>
+<p>索引通俗来讲就相当于书的目录，当我们根据条件查询的时候，没有索引，便需要全表扫描，数据量少还可以，一旦数据量超过百万甚至千万，一条查询sql执行往往需要几十秒甚至更多，5秒以上就已经让人难以忍受了。</p>
+<p>能在软件上解决的，就不在硬件上解决，毕竟硬件提升代码昂贵，性价比太低。代价小且行之有效的解决方法就是合理的加索引。索引使用得当，能使查询速度提升上千倍，效果惊人。</p>
+<h2>（二）mysql的索引类型：</h2>
+<p>mysql的索引有5种：主键索引、普通索引、唯一索引、全文索引、聚合索引（多列索引）。</p>
+<p>唯一索引和全文索引用的很少，我们主要关注主键索引、普通索引和聚合索引。</p>
+<p>1）主键索引：主键索引是加在主键上的索引，设置主键（primary key）的时候，mysql会自动创建主键索引；</p>
+<p>2）普通索引：创建在非主键列上的索引；</p>
+<p>3）聚合索引：创建在多列上的索引。</p>
+<h2>（三）索引的语法：</h2>
+<p>查看某张表的索引：show index from 表名；</p>
+<p>创建普通索引：alter table 表名 add index 索引名 (加索引的列)</p>
+<p>创建聚合索引：alter table 表名 add index 索引名 (加索引的列1,加索引的列2)</p>
+<p>删除某张表的索引：drop index 索引名 on 表名;</p>
+<h2>（四）性能测试</h2>
+<p>测试环境：博主工作用台式机</p>
+<p>处理器为Intel Core i5-4460 3.2GHz;</p>
+<p>内存8G;</p>
+<p>64位windows。</p>
+<h3>1：创建一张测试表</h3>
+<p>代码如下：</p>
+<pre>
+<code>
+DROP TABLE IF EXISTS `test_user`;
+CREATE TABLE `test_user` (
+ `id` bigint(20) PRIMARY key not null AUTO_INCREMENT,
+ `username` varchar(11) DEFAULT NULL,
+ `gender` varchar(2) DEFAULT NULL,
+ `password` varchar(100) DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+</code></pre>
+<p>MySQL千万级数据量根据索引优化查询速度的实现</p>
+<p>存储引擎使用MyISAM是因为此引擎没有事务，插入速度极快，方便我们快速插入千万条测试数据，等我们插完数据，再把存储类型修改为InnoDB。</p>
+<h3>2：使用存储过程插入1千万条数据</h3>
+<p>代码如下：</p>
+<pre>
+<code>
+create procedure myproc() 
+begin 
+declare num int; 
+set num=1; 
+while num &lt;= 10000000 do 
+insert into test_user(username,gender,password) values(num,'保密',PASSWORD(num)); 
+set num=num+1;
+end while;
+ end
+</code></pre>
+<p>MySQL千万级数据量根据索引优化查询速度的实现</p>
+<p>代码如下：</p>
+<pre>
+<code>
+call myproc();
+</code></pre>
+<p>MySQL千万级数据量根据索引优化查询速度的实现</p>
+<p>由于使用的MyISAM引擎，插入1千万条数据，仅耗时246秒，若是InnoDB引擎，就要花费数小时了。</p>
+<p>然后将存储引擎修改回InnDB。使用如下命令： alter table test_user engine=InnoDB;此命令执行时间大约耗时5分钟，耐心等待。</p>
+<p>tips：这里是测试，生产环境中不要随意修改存储引擎，还有alter table 操作，会锁整张表，慎用。其次：myisam引擎没有事务，且只是将数据写到内存中，然后定期将数据刷出到磁盘上，因此突然断电的情况下，会导致数据丢失。而InnDB引擎，是将数据写入日志中，然后定期刷出到磁盘上，所以不怕突然断电等情况。因此在实际生产中能用InnDB则用。</p>
+<h3>3：sql测试</h3>
+<p>代码如下：</p>
+<pre>
+<code>
+select id,username,gender,password from test_user where id=999999
+
+</code></pre>
+<p>MySQL千万级数据量根据索引优化查询速度的实现</p>
+<p>耗时：0.114s。</p>
+<p>因为我们建表的时候，将id设成了主键，所以执行此sql的时候，走了主键索引，查询速度才会如此之快。</p>
+<p>我们再执行select id,username,gender,password from test_user where username=&#39;9000000&#39;耗时：4.613s。</p>
+<p>我们给username列加上普通索引。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+ALTER TABLE `test_user` ADD INDEX index_name(username) ;
+
+</code></pre>
+<p>MySQL千万级数据量根据索引优化查询速度的实现</p>
+<p>此过程大约耗时54.028s,建索引的过程会全表扫描，逐条建索引，当然慢了。</p>
+<p>再来执行：selectid,username,gender,password from test_user where username=&#39;9000000&#39;耗时：0.043s。</p>
+<p>再用username和password来联合查询</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select id,username,gender,password from test_user where username='9000000' and `password`='*3A70E147E88D99888804E4D472410EFD9CD890AE'
+
+</code></pre>
+<p>MySQL千万级数据量根据索引优化查询速度的实现</p>
+<p>此时虽然我们队username加了索引，但是password列未加索引，索引执行password筛选的时候，还是会全表扫描，因此此时</p>
+<p>查询速度立马降了下来。</p>
+<p>耗时：4.492s。</p>
+<p>当我们的sql有多个列的筛选条件的时候，就需要对查询的多个列都加索引组成聚合索引：</p>
+<p>加上聚合索引：ALTER TABLE `test_user` ADD INDEX index_union_name_password(username,password)再来执行：</p>
+<p>耗时：0.001s。</p>
+<p>开篇也说过软件层面的优化一是合理加索引；二是优化执行慢的sql。此二者相辅相成，缺一不可，如果加了索引，还是查询很慢，这时候就要考虑是sql的问题了，优化sql。</p>
+<h3>Tips：</h3>
+<p></p>
+<h3>1：加了索引，依然全表扫描的可能情况有：</h3>
+<p></p>
+<p>索引列为字符串，而没带引号；</p>
+<p>索引列没出现在where条件后面；</p>
+<p>索引列出现的位置没在前面。</p>
+<p></p>
+<h3>2：关联查询不走索引的可能情况有：</h3>
+<p></p>
+<p>关联的多张表的字符集不一样；</p>
+<p>关联的字段的字符集不一样；</p>
+<p>存储引擎不一样；</p>
+<p>字段的长度不一样。</p>
+<p>到此这篇关于mysql千万级数据量根据索引优化查询速度的实现的文章就介绍到这了,更多相关mysql千万级索引优化查询内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL千万级数据量根据索引优化查询速度的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/473.html'>MySQL百万级数据量分页查询方法及其优化的解决办法</a><a>下一篇</a><a href='/mysql/biji/475.html'>MySQL 重做日志（redo log）与回滚日志（undo logo）的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

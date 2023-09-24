@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>详解MySQL下InnoDB引擎中的Memcached插件_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="前些年，HandlerSocket的横空出世让人们眼前一亮，当时我还写了一篇文章介绍了其用法梗概，时至今日，由于种种原因，HandlerSocket并没有真正流行起来，不过庆幸的是MySQL官方受其启发，" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">详解MySQL下InnoDB引擎中的Memcached插件</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>前些年，HandlerSocket的横空出世让人们眼前一亮，当时我还写了一篇文章介绍了其用法梗概，时至今日，由于种种原因，HandlerSocket并没有真正流行起来，不过庆幸的是MySQL官方受其启发，</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>前些年，HandlerSocket的横空出世让人们眼前一亮，当时我还写了一篇文章介绍了其用法梗概，时至今日，由于种种原因，HandlerSocket并没有真正流行起来，不过庆幸的是MySQL官方受其启发，研发了基于InnoDB的Memcached插件，总算是在MySQL中延续了NoSQL的香火，以前单独架设Memcached服务器不仅浪费了内存，而且还必须自己维护数据的不一致问题，有了Memcached插件，这些问题都不存在了，而且借助MySQL本身的复制功能，我们可以说是变相的实现了Memcached的复制，这更是意外之喜。</p>
+<p>&nbsp;<br />
+<strong>安装</strong></p>
+<p>为了让文章更具完整性，我们选择从源代码安装MySQL，需要注意的是早期的版本有内存泄漏，所以推荐安装最新的稳定版，截至本文发稿时为止，最新的稳定版是5.6.13，我们就以此为例来说明，过程很简单，只要激活了WITH_INNODB_MEMCACHED即可：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+shell&gt; groupadd mysql
+shell&gt; useradd -r -g mysql mysql
+shell&gt; tar zxvf mysql-5.6.13.tar.gz
+shell&gt; cd mysql-5.6.13
+shell&gt; cmake . -DWITH_INNODB_MEMCACHED=ON
+shell&gt; make
+shell&gt; make install
+shell&gt; cd /usr/local/mysql
+shell&gt; chown -R mysql .
+shell&gt; chgrp -R mysql .
+shell&gt; scripts/mysql_install_db --user=mysql
+shell&gt; chown -R root .
+shell&gt; chown -R mysql data
+shell&gt; bin/mysqld_safe --user=mysql &
+shell&gt; cp support-files/mysql.server /etc/init.d/mysql.server
+</pre>
+</div>
+<p>MySQL安装完毕后，在插件目录我们能看到innodb_engine.so和libmemcached.so：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; SELECT @@plugin_dir;
++------------------------------+
+| @@plugin_dir         |
++------------------------------+
+| /usr/local/mysql/lib/plugin/ |
++------------------------------+
+
+</pre>
+</div>
+<div class="phpstudycode">此外还需要导入Memcached插件所需要的表结构：<br />
+&nbsp;<br />
+</div>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; SOURCE /usr/local/mysql/share/innodb_memcached_config.sql
+
+</pre>
+</div>
+<div class="phpstudycode">一切就绪后就可以激活Memcached插件了（当然如果需要的话也可以禁止）：<br />
+&nbsp;<br />
+</div>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; INSTALL PLUGIN daemon_memcached soname "libmemcached.so";
+mysql&gt; UNINSTALL PLUGIN daemon_memcached;
+
+</pre>
+</div>
+<div class="phpstudycode">说明：如果要重启插件的话，可以先uninstall，再install。</div>
+<p>Memcached插件相关的配置信息如下，具体介绍可以参考官方文档：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; SHOW VARIABLES LIKE '%memcached%';
++----------------------------------+------------------+
+| Variable_name          | Value      |
++----------------------------------+------------------+
+| daemon_memcached_enable_binlog  | OFF       |
+| daemon_memcached_engine_lib_name | innodb_engine.so |
+| daemon_memcached_engine_lib_path |         |
+| daemon_memcached_option     |         |
+| daemon_memcached_r_batch_size  | 1        |
+| daemon_memcached_w_batch_size  | 1        |
++----------------------------------+------------------+
+
+</pre>
+</div>
+<div class="phpstudycode">注意：daemon_memcached_r_batch_size和daemon_memcached_w_batch_size，这两个选项对性能影响较大，简单点说就是控制事务提交的频率，MySQL的缺省值均为1，也就是说每次都提交，这主要是从安全性考虑的，大家可以依照自己的情况来调整。</div>
+<p>差不多了，此时Memcached端口应该准备就绪了，你可以试试看：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+shell&gt; echo "stats" | nc localhost 11211
+</pre>
+</div>
+<p>换句话说，MySQL已经兼容Memcached协议，可以直接使用Memcached命令。<br />
+<strong>配置</strong></p>
+<p>在安装步骤里，我们导入了一个名为innodb_memcached_config.sql的脚本，它创建了一库（innodb_memcache）三表（cache_policies, config_options, containers）：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; USE innodb_memcache
+mysql&gt; SHOW TABLES;
++---------------------------+
+| Tables_in_innodb_memcache |
++---------------------------+
+| cache_policies      |
+| config_options      |
+| containers        |
++---------------------------+
+</pre>
+</div>
+<p>cache_policies定义了缓存策略，包含如下选择：</p>
+<p>&nbsp;&nbsp;&nbsp; innodb_only：只使用InnoDB作为数据存储。<br />
+&nbsp;&nbsp;&nbsp; cache-only：只使用传统的Memcached引擎作为后端存储。<br />
+&nbsp;&nbsp;&nbsp; caching：二者皆使用，如果在Memcached里找不到，就查询InnoDB。</p>
+<p>config_options定义了分隔符号：</p>
+<p>&nbsp;&nbsp;&nbsp; separator：Memcached只识别单值，使用此分隔符（|）来连接多个字段的值。<br />
+&nbsp;&nbsp;&nbsp; table_map_delimiter：通过此分隔符（.）来确认表和键，如：@@table.key。</p>
+<p>如果我们想通过Memcached协议来访问一个表，需要先在containers中配置它：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; SELECT * FROM containers\G
+*************************** 1. row ***************************
+         name: aaa
+       db_schema: test
+       db_table: demo_test
+      key_columns: c1
+     value_columns: c2
+         flags: c3
+      cas_column: c4
+  expire_time_column: c5
+unique_idx_name_on_key: PRIMARY
+</pre>
+</div>
+<p>如上已经有了test数据库的demo_test表，通过c1查询c2的值，表结构如下所示：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; DESC test.demo_test;
++-------+---------------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+---------------------+------+-----+---------+-------+
+| c1  | varchar(32)     | NO  | PRI |     |    |
+| c2  | varchar(1024)    | YES |   | NULL  |    |
+| c3  | int(11)       | YES |   | NULL  |    |
+| c4  | bigint(20) unsigned | YES |   | NULL  |    |
+| c5  | int(11)       | YES |   | NULL  |    |
++-------+---------------------+------+-----+---------+-------+
+</pre>
+</div>
+<p>缺省情况下有一行数据：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; SELECT * FROM test.demo_test;
++----+--------------+------+------+------+
+| c1 | c2      | c3  | c4  | c5  |
++----+--------------+------+------+------+
+| AA | HELLO, HELLO |  8 |  0 |  0 |
++----+--------------+------+------+------+
+</pre>
+</div>
+<p>让我们用Memcached协议来访问看看：</p>
+<p>&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+shell&gt; echo "get @@aaa.AA" | nc localhost 11211
+VALUE @@aaa.AA 8 12
+HELLO, HELLO
+END
+</pre>
+</div>
+<p>我们还可以先设定缺省访问的表，然后后续的查询就只写键名就可以了：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+shell&gt; (echo "get @@aaa"; echo "get AA") | nc localhost 11211
+VALUE @@aaa 0 14
+test/demo_test
+END
+VALUE AA 8 12
+HELLO, HELLO
+END
+</pre>
+</div>
+<p>虽然我的例子都是通过命令行执行的，但是大家很容易就更改写成PHP之类的方法。<br />
+<strong>限制</strong></p>
+<p>Memcached插件用起来非常简单，不过并不是一切都很完美，比如说：当我们配置表的时候，containers表的字段，除了key_columns和value_columns以外，其它的字段，如：flags，cas_column，expire_time_column等也必须设定，可是很多时候，我们在原表中找不到贴切的字段，此时就只能对应新建三个字段，味道很恶心。</p>
+<p>此外，containers表还有如下限制：</p>
+<ul>
+<li>&nbsp;&nbsp;&nbsp; key_columns字段的类型必须是CHAR或VARCHAR，且最大长度是250个字符。</li>
+<li>&nbsp;&nbsp;&nbsp; value_columns字段的类型必须是CHAR或VARCHAR或BLOB，长度不限。</li>
+<li>&nbsp;&nbsp;&nbsp; cas_column字段的类型必须是BIGINT。</li>
+<li>&nbsp;&nbsp;&nbsp; expiration_time_column字段的类型必须是INT。</li>
+<li>&nbsp;&nbsp;&nbsp; flags字段的类型必须是INT。</li>
+</ul>
+<p>说明：随着MySQL版本的更新，这些限制可能会发生变化，请大家以实际情况为准。<br />
+<strong>实战</strong></p>
+<p>让我们以一个用户登录的例子来检验一下学习成果：</p>
+<p>首先在测试数据库创建一个用户表：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+USE `test`
+ 
+CREATE TABLE `users` (
+  `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `username` VARCHAR(15) NOT NULL,
+  `password` VARCHAR(32) NOT NULL,
+  `email` VARCHAR(50) NOT NULL,
+  `flags` INT(10) UNSIGNED DEFAULT '0',
+  `cas_column` BIGINT(20) UNSIGNED DEFAULT '0',
+  `expire_time_column` INT(10) UNSIGNED DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB;
+</pre>
+</div>
+<p>然后添加几行测试数据：<br />
+&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+INSERT INTO `users` (`username`, `password`, `email`)
+VALUES
+('foo', 'ffffffffffffffffffffffffffffffff', 'foo@domain.com'),
+('bar', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'bar@domain.com');
+</pre>
+</div>
+<p>接着在containers里配置这个表：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+INSERT INTO innodb_memcache.containers (
+  name, db_schema, db_table, key_columns, value_columns,
+  flags, cas_column, expire_time_column, unique_idx_name_on_key
+) VALUES (
+  'default', 'test', 'users', 'username', 'password|email',
+  'flags', 'cas_column', 'expire_time_column', 'username'
+);
+</pre>
+</div>
+<p>这里我们定义了多个字段（password和email）作为value_columns，并且使用竖线作为分隔符，实际上使用空格，逗号之类分隔符也可以，在innodb_config.c文件的源代码中能查到如下关于分隔符的定义，文档里并没有涵盖这些信息：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+static const char* sep = " ;,|\n";
+</pre>
+</div>
+<p>最后使用Memcached协议来访问一下，这里我们换个花样，执行一个MGET操作：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+shell&gt; echo "get foo bar" | nc localhost 11211
+VALUE foo 0 47
+ffffffffffffffffffffffffffffffff|foo@domain.com
+VALUE bar 0 47
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|bar@domain.com
+END
+</pre>
+</div>
+<p>既然我定义value_columns的时候设置了多个字段，那么返回数据的时候自然也返回多个字段的数据，并且它们依照innodb_memcache.config_options表中的separator字段来分隔，缺省情况下是一个竖线，如果你的字段内容里包含了竖线，那么就会和缺省值发生冲突，此时你可以更新separator的定义，比如改成三个竖线等等，需要提醒的是，修改后别忘了重启Memcached插件。</p>
+<p>说明：因为们在配置的时候把表命名为default，所以在请求的时候不用传递表名。如果不存在default，那么会把名字按照字母顺序正序排列，排在第一位的就是缺省。</p>
+<p>…</p>
+<p>本文在使用Memcached插件的时候，所有例子均使用的是读操作，实际上写操作也是支持的，不过在实际使用时，我更倾向于写操作都通过SQL来执行，而Memcached插件仅处理KV形式的读操作，实际压力测试的结果显示，Memcached插件比SQL的方式，性能提升了百分之一百左右，虽然仍不及独立的Memcached，但考虑到其它的优势，这个结果已经很让人欣喜了，下一站，InnoDB的Memcached插件！大家做好准备吧。<br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/87593.html'>Android下2d物理引擎Box2d用法简单实例</a><a>下一篇</a><a href='/php/biji/87595.html'>在Linux系统上升级OpenSSL的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

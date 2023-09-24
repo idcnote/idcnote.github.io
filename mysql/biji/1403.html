@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL嵌套查询和联表查询优化方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL嵌套查询和联表查询优化方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！嵌套查询糟糕的优化在上面" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL嵌套查询和联表查询优化方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:27:47                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL嵌套查询和联表查询优化方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！嵌套查询糟糕的优化在上面</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL嵌套查询和联表查询优化方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>嵌套查询糟糕的优化在上面我提到过，不考虑特殊的情况，联表查询要比嵌套查询更有效。尽管两条查询表达的是同样的意思，尽管你的计划是告诉服务器要做什么，然后让它决定怎么做，但有时候你非得告诉它改怎么做。否则优化器可能会做傻事。我最近就碰到这样的情况。这几个表是三层分级关系：category, subcategory和item。有几千条记录在category表，几百条记录在subcategory表，以及几百万条在item表。你可以忽略category表了，我只是交代一下背景，以下查询语句都不涉及到它。这是创建表的语句：[sql]
+<p>代码如下:</p>
+<pre>
+
+<code>create table subcategory ( 
+ id int not null primary key, 
+ category int not null, 
+ index(category) 
+) engine=InnoDB; 
+
+create table item( 
+ id int not null auto_increment primary key, 
+ subcategory int not null, 
+ index(subcategory) 
+) engine=InnoDB; 
+</code></pre>我又往表里面填入一些样本数据[sql]
+<p>代码如下:</p>
+<pre>
+
+<code>insert into subcategory(id, category) 
+ select i, i/100 from number 
+ where i &lt;= 300000; 
+
+insert into item(subcategory) 
+ select id 
+ from ( 
+ select id, rand() * 20 as num_rows from subcategory 
+ ) as x 
+ cross join number 
+ where i &lt;= num_rows; 
+
+create temporary table t as 
+ select subcategory from item 
+ group by subcategory 
+ having count(*) = 19 
+ limit 100; 
+
+insert into item (subcategory) 
+ select subcategory 
+ from t 
+ cross join number 
+ where i &lt; 2000; 
+</code></pre>再次说明，这些语句运行完需要一点时间，不适合放在产品环境中运行。思路是往item里插入随机行数的数据，这样subcategory就有1到2018之间个item。这不是实际中的完整数据，但效果一样。我想找出某个category中item数大于2000的全部subcategory。首先，我找到一个subcategory item数大于2000的，然后把它的category用在接下来的查询中。这是具体的查询语句：[sql]
+<p>代码如下:</p>
+<pre>
+
+<code>select c.id 
+from subcategory as c 
+ inner join item as i on i.subcategory = c.id 
+group by c.id 
+having count(*) &gt; 2000; 
+
+-- choose one of the results, then 
+select * from subcategory where id = ???? 
+-- result: category = 14 
+</code></pre>我拿到一个合适的值14，在以下的查询中会用到它。这是用来查询category 14 中所有item数大于2000的subcategory的语句：[sql]
+<p>代码如下:</p>
+<pre>
+
+<code>select c.id 
+from subcategory as c 
+ inner join item as i on i.subcategory = c.id 
+where c.category = 14 
+group by c.id 
+having count(*) &gt; 2000; 
+</code></pre>在我的样例数据里，查询的结果有10行记录，而且只用10多秒就完成了。EXPLAIN显示出很好地使用了索引；从数据的规模来看，相当不错了。查询计划是在索引上遍历并计算出目标记录。目前为止，非常好。这回假设我要从subcategory取出全部的字段。我可以把上面的查询当成嵌套，然后用JOIN，或者SELECT MAX之类(既然分组集对应的值都是唯一的)，但也写成跟下面的一样的，有木有？[sql]
+<p>代码如下:</p>
+<pre>
+
+<code>select * from subcategory 
+where id in ( 
+ select c.id 
+ from subcategory as c 
+ inner join item as i on i.subcategory = c.id 
+ where c.category = 14 
+ group by c.id 
+ having count(*) &gt; 2000 
+); 
+</code></pre>跑完这条查询估计要从破晓到夕阳沉入大地。我不知道它要跑多久，因为我没打算让它无休止地跑下去。你可能认为，单从语句上理解，它会:a)计算出里面的查询，找出那10个值，b)继续找出那10条记录，并且在primary索引上去找会非常地快。错，这是实际上的查询计划：[sql]
+<p>代码如下:</p>
+<pre>
+
+<code>*************************** 1. row *************************** 
+ id: 1 
+ select_type: PRIMARY 
+ table: subcategory 
+ type: ALL 
+possible_keys: NULL 
+ key: NULL 
+ key_len: NULL 
+ ref: NULL 
+ rows: 300783 
+ Extra: Using where 
+*************************** 2. row *************************** 
+ id: 2 
+ select_type: DEPENDENT SUBQUERY 
+ table: c 
+ type: ref 
+possible_keys: PRIMARY,category 
+ key: category 
+ key_len: 4 
+ ref: const 
+ rows: 100 
+ Extra: Using where; Using index; Using temporary; Using filesort 
+*************************** 3. row *************************** 
+ id: 2 
+ select_type: DEPENDENT SUBQUERY 
+ table: i 
+ type: ref 
+possible_keys: subcategory 
+ key: subcategory 
+ key_len: 4 
+ ref: c.id 
+ rows: 28 
+ Extra: Using index 
+</code></pre>如何你不熟悉如何分析mysql的语句查询计划，请看大概意思：mysql计划从外到内执行查询，而不是从内到外。我会一个一个地介绍查询的每个部分。外面的查询简单地变成了SELECT * FROM subcategory。虽然里面的查询对subcategory有个约束（WHERE category = 14），但出于某些原因mysql没有将它作用于外面的查询。我不知道是神马原因。我只知道它扫描了整张表(这就是 type:ALL 表示的意思)，并且没有使用任何的索引。这是在10几万行记录的表上扫描。在外面的查询，对每行都执行一次里面的查询，尽管没有值被里面的查询使用到，因为里面的查询被&ldquo;优化&rdquo;成引用外面的查询。照此分析，查询计划变成了嵌套循环。外面的查询的每一次循环，都执行一次里面的查询。下面就是优化器重写后的查询计划：[sql]
+<p>代码如下:</p>
+<pre>
+
+<code>select * from subcategory as s 
+where &lt;in_optimizer&gt;( 
+ s.id,&lt;exists&gt;( 
+ select c.id 
+ from subcategory as c 
+ join item as i 
+ where ((i.subcategory = c.id) and (c.category = 14)) 
+ group by c.id 
+ having ((count(0) &gt; 2000) 
+ and (&lt;cache&gt;(s.id) = &lt;ref_null_helper&gt;(c.id)))) 
+) 
+</code></pre>你可以通过在EXPLAIN EXTENDED 后面带上SHOW WARNINGS 得到优化后的查询。请留意在HAVING子句中指向的外部域。我举这个例子并非有意抨击mysql的优化策略。众所皆知mysql在有些情况下还不能很好地优化嵌套查询，这个问题已经被广泛报告过。我想指出的是，开发者有必要检查查询语句确保它们不是被糟糕地优化。大多数情况下，安全起见若非是非必要，避免使用嵌套&mdash;&mdash;尤其是WHERE...IN() 和 WHERE...NOT IN语句。我自己的原则是&ldquo;有疑问，EXPLAIN看看&rdquo;。如果面对的是一个大数据表，我会自然而然地产生疑问。如何强制里面的查询先执行上一节中的语句撞板只因为mysql把它当成相关的语句从外到里地执行，而不是当成不相关语句从里到外执行。让mysql先执行里面的查询也是有办法的，当成临时表来实现，从而避免巨大的性能开销。mysql从临时表来实现嵌套查询（某种程度上被讹传的衍生表）。这意味着mysql先执行里面的查询，并且把结果储存在临时表中，然后在其他的表里用到它。这就是我写这个查询时所期待的执行方式。查询语句修改如下：[sql]
+<p>代码如下:</p>
+<pre>
+
+<code>select * from subcategory 
+where id in ( 
+ select id from ( 
+ select c.id 
+ from subcategory as c 
+ inner join item as i on i.subcategory = c.id 
+ where c.category = 14 
+ group by c.id 
+ having count(*) &gt; 2000 
+ ) as x 
+); 
+</code></pre>我所做的就是把嵌套包着原来的嵌套查询。mysql会认为最里面是一个独立的嵌套查询先执行，然后现在只剩下包着外面的嵌套，它已经被装进一个临时表里，只有少量记录，因此要快很多。依此分析，这是相当笨的优化办法；倒不如把它重写成join方式。再说，免得被别人看到，当成多余代码清理掉。有些情况可以使用这种优化方法，比如mysql抛出错误，嵌套查询的表在其他地方被修改（译注：另一篇文章 MySQL SELECT同时UPDATE同一张表 ）。不幸的是，对于临时表只能在查询语句中使用一次的情况，这种方法就无能为力了。来源 http://blog.csdn.net/afeiqiang/article/details/8620038
+
+<p>注：关于MySQL嵌套查询和联表查询优化方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1402.html'>MySQL笔记之运算符使用分析</a><a>下一篇</a><a href='/mysql/biji/1404.html'>磁盘爆满导致MySQL无法启动:Disk is full writing &amp;#039;./mysql-bin.000031&amp;#039; (Errcode: 28). Waiting f</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

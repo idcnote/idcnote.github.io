@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL查询冗余索引和未使用过的索引操作的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL查询冗余索引和未使用过的索引操作的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL查询冗余索引和未使用过的索引操作的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:17:03                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL查询冗余索引和未使用过的索引操作的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL查询冗余索引和未使用过的索引操作的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>MySQL5.7及以上版本提供直接查询冗余索引、重复索引和未使用过索引的视图，直接查询即可。</p>
+<h2>查询冗余索引、重复索引</h2>
+<p>代码如下：</p>
+<pre>
+<code>
+select * sys.from schema_redundant_indexes;</code></pre>
+<p>MySQL查询冗余索引和未使用过的索引操作</p>
+<h2>查询未使用过的索引</h2>
+<p>代码如下：</p>
+<pre>
+<code>
+select * from sys.schema_unused_indexes;</code></pre>
+<p>MySQL查询冗余索引和未使用过的索引操作</p>
+<p>如果想在5.6和5.5版本使用，将视图转换成SQL语句查询即可</p>
+<h2>查询冗余索引、重复索引</h2>
+<p>代码如下：</p>
+<pre>
+<code>
+select a.`table_schema`,a.`table_name`,a.`index_name`,a.`index_columns`,b.`index_name`,b.`index_columns`,concat('ALTER TABLE `',a.`table_schema`,'`.`',a.`table_name`,'` DROP INDEX `',a.`index_name`,'`') from ((select `information_schema`.`statistics`.`TABLE_SCHEMA` AS `table_schema`,`information_schema`.`statistics`.`TABLE_NAME` AS `table_name`,`information_schema`.`statistics`.`INDEX_NAME` AS `index_name`,max(`information_schema`.`statistics`.`NON_UNIQUE`) AS `non_unique`,max(if(isnull(`information_schema`.`statistics`.`SUB_PART`),0,1)) AS `subpart_exists`,group_concat(`information_schema`.`statistics`.`COLUMN_NAME` order by `information_schema`.`statistics`.`SEQ_IN_INDEX` ASC separator ',') AS `index_columns` from `information_schema`.`statistics` where ((`information_schema`.`statistics`.`INDEX_TYPE` = 'BTREE') and (`information_schema`.`statistics`.`TABLE_SCHEMA` not in ('mysql','sys','INFORMATION_SCHEMA','PERFORMANCE_SCHEMA'))) group by `information_schema`.`statistics`.`TABLE_SCHEMA`,`information_schema`.`statistics`.`TABLE_NAME`,`information_schema`.`statistics`.`INDEX_NAME`) a join (select `information_schema`.`statistics`.`TABLE_SCHEMA` AS `table_schema`,`information_schema`.`statistics`.`TABLE_NAME` AS `table_name`,`information_schema`.`statistics`.`INDEX_NAME` AS `index_name`,max(`information_schema`.`statistics`.`NON_UNIQUE`) AS `non_unique`,max(if(isnull(`information_schema`.`statistics`.`SUB_PART`),0,1)) AS `subpart_exists`,group_concat(`information_schema`.`statistics`.`COLUMN_NAME` order by `information_schema`.`statistics`.`SEQ_IN_INDEX` ASC separator ',') AS `index_columns` from `information_schema`.`statistics` where ((`information_schema`.`statistics`.`INDEX_TYPE` = 'BTREE') and (`information_schema`.`statistics`.`TABLE_SCHEMA` not in ('mysql','sys','INFORMATION_SCHEMA','PERFORMANCE_SCHEMA'))) group by `information_schema`.`statistics`.`TABLE_SCHEMA`,`information_schema`.`statistics`.`TABLE_NAME`,`information_schema`.`statistics`.`INDEX_NAME`) b on(((a.`table_schema` = b.`table_schema`) and (a.`table_name` = b.`table_name`)))) where ((a.`index_name` &lt;&gt; b.`index_name`) and (((a.`index_columns` = b.`index_columns`) and ((a.`non_unique` &gt; b.`non_unique`) or ((a.`non_unique` = b.`non_unique`) and (if((a.`index_name` = 'PRIMARY'),'',a.`index_name`) &gt; if((b.`index_name` = 'PRIMARY'),'',b.`index_name`))))) or ((locate(concat(a.`index_columns`,','),b.`index_columns`) = 1) and (a.`non_unique` = 1)) or ((locate(concat(b.`index_columns`,','),a.`index_columns`) = 1) and (b.`non_unique` = 0))));</code></pre>
+<p>MySQL查询冗余索引和未使用过的索引操作</p>
+<h2>查询未使用过的索引</h2>
+<p>代码如下：</p>
+<pre>
+<code>
+select `information_schema`.`statistics`.`TABLE_SCHEMA` AS `table_schema`,`information_schema`.`statistics`.`TABLE_NAME` AS `table_name`,`information_schema`.`statistics`.`INDEX_NAME` AS `index_name`,max(`information_schema`.`statistics`.`NON_UNIQUE`) AS `non_unique`,max(if(isnull(`information_schema`.`statistics`.`SUB_PART`),0,1)) AS `subpart_exists`,group_concat(`information_schema`.`statistics`.`COLUMN_NAME` order by `information_schema`.`statistics`.`SEQ_IN_INDEX` ASC separator ',') AS `index_columns` from `information_schema`.`statistics` where ((`information_schema`.`statistics`.`INDEX_TYPE` = 'BTREE') and (`information_schema`.`statistics`.`TABLE_SCHEMA` not in ('mysql','sys','INFORMATION_SCHEMA','PERFORMANCE_SCHEMA'))) group by `information_schema`.`statistics`.`TABLE_SCHEMA`,`information_schema`.`statistics`.`TABLE_NAME`,`information_schema`.`statistics`.`INDEX_NAME`
+
+</code></pre>
+<p>MySQL查询冗余索引和未使用过的索引操作</p>
+<p></p>
+<h3>补充：mysql ID 取余索引_mysql重复索引、冗余索引、未使用索引的定义和查找</h3>
+<p></p>
+<h2>1.冗余和重复索引</h2>
+<p>mysql允许在相同列上创建多个索引，无论是有意还是无意，mysql需要单独维护重复的索引，并且优化器在优化查询的时候也需要逐个地进行考虑，这会影响性能。重复索引是指的在相同的列上按照相同的顺序创建的相同类型的索引，应该避免这样创建重复所以，发现以后也应该立即删除。但，在相同的列上创建不同类型的索引来满足不同的查询需求是可以的。</p>
+<p>冗余索引和重复索引有一些不同，如果创建了索引(a,b)，再创建索引(a)就是冗余索引，因为这只是前面一个索引的前缀索引，因此(a,b)也可以当作(a)来使用，但是(b,a)就不是冗余索引，索引(b)也不是，因为b不是索引(a,b)的最左前缀列，另外，其他不同类型的索引在相同列上创建(如哈希索引和全文索引)不会是btree索引的冗余索引。</p>
+<p>另外：对于二级索引(a,id)，id是主键，对于innodb来说，主键列已经包含在二级索引中了，所以这个也是冗余索引。大多数情况下都不需要冗余索引，应该尽量扩展已有的索引而不是创建新索引，但也有时候处于性能方面的考虑需要冗余索引，因为扩展已有的索引会导致其变得太大，从而影响其他使用该索引的查询性能。如：如果在整数列上有一个索引，现在需要额外增加一个很长的varchar列来扩展该索引，那么性可能会急剧下降，特别是有查询把这个索引当作覆盖索引，或者这是myisam表并且有很多范围查询的时候(由于myisam的前缀压缩)。</p>
+<p>如：表userinfo，myisam引擎，有100W行记录，每个state_id值大概2W行，在state_id列有一个索引对下面的查询有用：如：select count(*) from userinfo where state_id=5;测试每秒115次QPS</p>
+<p>对于下面的查询这个state_id列的索引就不太顶用了，每秒QPS是10次</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select state_id,city,address from userinfo where state_id=5;</code></pre>
+<p>MySQL查询冗余索引和未使用过的索引操作</p>
+<p>如果把state_id索引扩展为(state_id,city,address)，那么第二个查询的性能更快了，但是第一个查询却变慢了，如果要两个查询都快，那么就必须要把state_id列索引进行冗余了。但如果是innodb表，不冗余state_id列索引对第一个查询的影响并不明显，因为innodb没有使用索引压缩，myisam和innmodb表使用不同的索引策略的select查询的qps测试结果(以下测试数据仅供参考)：</p>
+<p>只有state_id列索引 只有state_id_2索引 同时有两个索引</p>
+<blockquote>
+<p>myisam,第一个查询 114.96 25.40 112.19</p>
+<p>myisam,第二个查询 9.97 16.34 16.37</p>
+<p>innodb,第一个查询 108.55 100.33 107.97</p>
+<p>innodb,第二个查询 12.12 28.04 28.06</p></blockquote>
+<p>从上图中可以看出，两个索引都有的时候，缺点是成本更高，下面是在不同的索引策略时插入innodb和myisam表100W行数据的速度(以下测试数据仅供参考)：</p>
+<p>只有state_id列索引 同时有两个索引</p>
+<blockquote>
+<p>innodb,对有两个索引都有足够的内容的时候 80秒 136秒</p>
+<p>myisam,只有一个索引有足够的内容的时候 72秒 470秒</p></blockquote>
+<p>可以看到，不论什么引擎，索引越多，插入速度越慢，特别是新增索引后导致达到了内存瓶颈的时候。解决冗余索引和重复索引的方法很简单，删除这些索引就可以了，但首先要做的是找出这样的索引，可以通过一些复杂的访问information_schema表的查询来找，不过还有两个更简单的方法，使用：shlomi noach的common_schema中的一些视图来定位，也可以使用percona toolkit中的pt-dupulicate-key-checker工具，该工具通过分析表结构来找出冗余和重复的索引，对于大型服务器来说，使用外部的工具更合适，如果服务器上有大量的数据或者大量的表，查询information_schema表可能会导致性能问题。建议使用pt-dupulicate-key-checker工具。</p>
+<p>在删除索引的时候要非常小心：</p>
+<p>如果在innodb引擎表上有where a=5 order by id这样的查询，那么索引(a)就会很有用，索引(a,b)实际上是(a,b,id)索引，这个索引对于where a=5 order by id这样的查询就无法使用索引做排序，而只能使用文件排序了。所以，建议使用percona工具箱中的pt-upgrade工具来仔细检查计划中的索引变更。</p>
+<h2>2. 未使用的索引</h2>
+<p>除了冗余索引和重复索引，可能还会有一些服务器永远不使用的索引，这样的索引完全是累赘，建议考虑删除，有两个工具可以帮助定位未使用的索引：</p>
+<p>A：在percona server或者mariadb中先打开userstat=ON服务器变量，默认是关闭的，然后让服务器运行一段时间，再通过查询information_schema.index_statistics就能查到每个索引的使用频率。</p>
+<p>B：使用percona toolkit中的pt-index-usage工具，该工具可以读取查询日志，并对日志中的每个查询进行explain操作，然后打印出关羽索引和查询的报告，这个工具不仅可以找出哪些索引是未使用的，还可以了解查询的执行计划，如：在某些情况下有些类似的查询的执行方式不一样，这可以帮助定位到那些偶尔服务器质量差的查询，该工具也可以将结果写入到mysql的表中，方便查询结果。</p>
+<p>以上为个人经验，希望能给大家一个参考，也希望大家多多支持512笔记。如有错误或未考虑完全的地方，望不吝赐教。</p>
+
+<p>注：关于MySQL查询冗余索引和未使用过的索引操作的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/524.html'>MySQL备份恢复MySQLdump.exe几个常用用例</a><a>下一篇</a><a href='/mysql/biji/526.html'>MySQL忘记密码恢复密码的实现方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>PHP内核学习教程之php opcode内核实现_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="opcode是计算机指令中的一部分，用于指定要执行的操作， 指令的格式和规范由处理器的指令规范指定。 除了指令本身以外通常还有指令所需要的操作数，可能有的指令不需要显式的操作" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">PHP内核学习教程之php opcode内核实现</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>opcode是计算机指令中的一部分，用于指定要执行的操作， 指令的格式和规范由处理器的指令规范指定。 除了指令本身以外通常还有指令所需要的操作数，可能有的指令不需要显式的操作</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>opcode是计算机指令中的一部分，用于指定要执行的操作， 指令的格式和规范由处理器的指令规范指定。 除了指令本身以外通常还有指令所需要的操作数，可能有的指令不需要显式的操作数。 这些操作数可能是寄存器中的值，堆栈中的值，某块内存的值或者IO端口中的值等等。</p>
+<p>通常opcode还有另一种称谓：字节码(byte codes)。 例如Java虚拟机(JVM)，.NET的通用中间语言(CIL: Common Intermeditate Language)等等。</p>
+<p><span style="color: #0000ff"><strong>1. Opcode简介</strong></span><br />
+</p>
+<p>opcode是计算机指令中的一部分，用于指定要执行的操作， 指令的格式和规范由处理器的指令规范指定。 除了指令本身以外通常还有指令所需要的操作数，可能有的指令不需要显式的操作数。 这些操作数可能是寄存器中的值，堆栈中的值，某块内存的值或者IO端口中的值等等 <br />
+</p>
+<p>通常opcode还有另一种称谓: 字节码(byte codes)。 例如Java虚拟机(JVM)，.NET的通用中间语言(CIL: Common Intermeditate Language)等等 <br />
+</p>
+<p>PHP中的opcode则属于前面介绍中的后着，PHP是构建在Zend虚拟机(Zend VM)之上的。PHP的opcode就是Zend虚拟机中的指令(基于Zend的中间代码)<br />
+</p>
+<p><strong>Relevant Link:</strong><br />
+</p>
+<p>http://www.luocong.com/learningopcode/doc/1._%E4%BB%80%E4%B9%88%E6%98%AFOpCode%EF%BC%9F.htm <br />
+</p>
+<p><span style="color: #0000ff"><strong>2. PHP中的Opcode</strong></span><br />
+</p>
+<p><strong>0x1: 数据结构</strong><br />
+</p>
+<p>在PHP实现内部，opcode由如下的结构体表示<br />
+</p>
+<p><strong>\php-5.6.17\Zend\zend_compile.h</strong></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+struct _zend_op 
+{
+opcode_handler_t handler; // 执行该opcode时调用的处理函数
+znode_op op1; // opcode所操作的操作数
+znode_op op2; // opcode所操作的操作数
+znode_op result;
+ulong extended_value;
+uint lineno;
+zend_uchar opcode; // opcode代码
+zend_uchar op1_type;
+zend_uchar op2_type;
+zend_uchar result_type;
+}; </pre>
+</div>
+<p>和CPU的指令类似，有一个标示指令的opcode字段，以及这个opcode所操作的操作数，PHP不像汇编那么底层， 在脚本实际执行的时候可能还需要其他更多的信息，extended_value字段就保存了这类信息， 其中的result域则是保存该指令执行完成后的结果<br />
+</p>
+<p>例如如下代码是在编译器遇到print语句的时候进行编译的函数</p>
+<p><strong>\php-5.6.17\Zend\zend_compile.c</strong></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+void zend_do_print(znode *result, const znode *arg TSRMLS_DC) /* {{{ */
+{ 
+//新创建一条zend_op 
+zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
+
+//将新建的zend_op的返回值类型设置为临时变量(IS_TMP_VAR)，因为print中的内存仅仅为了临时输出，并不需要保存
+opline-&gt;result_type = IS_TMP_VAR;
+//为临时变量申请空间
+opline-&gt;result.var = get_temporary_variable(CG(active_op_array));
+//指定opcode为ZEND_PRINT
+opline-&gt;opcode = ZEND_PRINT;
+//将传递进来的参数赋值给这条opcode的第一个操作数
+SET_NODE(opline-&gt;op1, arg);
+SET_UNUSED(opline-&gt;op2);
+GET_NODE(result, opline-&gt;result);
+}</pre>
+</div>
+<p></p>
+<p><strong>0x2: opcode类型: zend_op-&gt;zend_uchar opcode</strong><br />
+</p>
+<p>比对汇编语言的概念，每个opcode都对应于一个类型，表明该opcpde的"操作指令"，opcode的类型为zend_uchar，zend_uchar实际上就是unsigned char，此字段保存的整形值即为op的编号，用来区分不同的op类型，opcode的可取值都被定义成了宏</p>
+<p><strong>/Zend/zend_vm_opcodes.h</strong><br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+#define ZEND_NOP 0
+#define ZEND_ADD 1
+#define ZEND_SUB 2
+#define ZEND_MUL 3
+#define ZEND_DIV 4
+#define ZEND_MOD 5
+#define ZEND_SL 6
+#define ZEND_SR 7
+#define ZEND_CONCAT 8
+#define ZEND_BW_OR 9
+#define ZEND_BW_AND 10
+#define ZEND_BW_XOR 11
+#define ZEND_BW_NOT 12
+#define ZEND_BOOL_NOT 13
+#define ZEND_BOOL_XOR 14
+#define ZEND_IS_IDENTICAL 15
+#define ZEND_IS_NOT_IDENTICAL 16
+#define ZEND_IS_EQUAL 17
+#define ZEND_IS_NOT_EQUAL 18
+#define ZEND_IS_SMALLER 19
+#define ZEND_IS_SMALLER_OR_EQUAL 20
+#define ZEND_CAST 21
+#define ZEND_QM_ASSIGN 22
+#define ZEND_ASSIGN_ADD 23
+#define ZEND_ASSIGN_SUB 24
+#define ZEND_ASSIGN_MUL 25
+#define ZEND_ASSIGN_DIV 26
+#define ZEND_ASSIGN_MOD 27
+#define ZEND_ASSIGN_SL 28
+#define ZEND_ASSIGN_SR 29
+#define ZEND_ASSIGN_CONCAT 30
+#define ZEND_ASSIGN_BW_OR 31
+#define ZEND_ASSIGN_BW_AND 32
+#define ZEND_ASSIGN_BW_XOR 33
+#define ZEND_PRE_INC 34
+#define ZEND_PRE_DEC 35
+#define ZEND_POST_INC 36
+#define ZEND_POST_DEC 37
+#define ZEND_ASSIGN 38
+#define ZEND_ASSIGN_REF 39
+#define ZEND_ECHO 40
+#define ZEND_PRINT 41
+#define ZEND_JMP 42
+#define ZEND_JMPZ 43
+#define ZEND_JMPNZ 44
+#define ZEND_JMPZNZ 45
+#define ZEND_JMPZ_EX 46
+#define ZEND_JMPNZ_EX 47
+#define ZEND_CASE 48
+#define ZEND_SWITCH_FREE 49
+#define ZEND_BRK 50
+#define ZEND_CONT 51
+#define ZEND_BOOL 52
+#define ZEND_INIT_STRING 53
+#define ZEND_ADD_CHAR 54
+#define ZEND_ADD_STRING 55
+#define ZEND_ADD_VAR 56
+#define ZEND_BEGIN_SILENCE 57
+#define ZEND_END_SILENCE 58
+#define ZEND_INIT_FCALL_BY_NAME 59
+#define ZEND_DO_FCALL 60
+#define ZEND_DO_FCALL_BY_NAME 61
+#define ZEND_RETURN 62
+#define ZEND_RECV 63
+#define ZEND_RECV_INIT 64
+#define ZEND_SEND_VAL 65
+#define ZEND_SEND_VAR 66
+#define ZEND_SEND_REF 67
+#define ZEND_NEW 68
+#define ZEND_INIT_NS_FCALL_BY_NAME 69
+#define ZEND_FREE 70
+#define ZEND_INIT_ARRAY 71
+#define ZEND_ADD_ARRAY_ELEMENT 72
+#define ZEND_INCLUDE_OR_EVAL 73
+#define ZEND_UNSET_VAR 74
+#define ZEND_UNSET_DIM 75
+#define ZEND_UNSET_OBJ 76
+#define ZEND_FE_RESET 77
+#define ZEND_FE_FETCH 78
+#define ZEND_EXIT 79
+#define ZEND_FETCH_R 80
+#define ZEND_FETCH_DIM_R 81
+#define ZEND_FETCH_OBJ_R 82
+#define ZEND_FETCH_W 83
+#define ZEND_FETCH_DIM_W 84
+#define ZEND_FETCH_OBJ_W 85
+#define ZEND_FETCH_RW 86
+#define ZEND_FETCH_DIM_RW 87
+#define ZEND_FETCH_OBJ_RW 88
+#define ZEND_FETCH_IS 89
+#define ZEND_FETCH_DIM_IS 90
+#define ZEND_FETCH_OBJ_IS 91
+#define ZEND_FETCH_FUNC_ARG 92
+#define ZEND_FETCH_DIM_FUNC_ARG 93
+#define ZEND_FETCH_OBJ_FUNC_ARG 94
+#define ZEND_FETCH_UNSET 95
+#define ZEND_FETCH_DIM_UNSET 96
+#define ZEND_FETCH_OBJ_UNSET 97
+#define ZEND_FETCH_DIM_TMP_VAR 98
+#define ZEND_FETCH_CONSTANT 99
+#define ZEND_GOTO 100
+#define ZEND_EXT_STMT 101
+#define ZEND_EXT_FCALL_BEGIN 102
+#define ZEND_EXT_FCALL_END 103
+#define ZEND_EXT_NOP 104
+#define ZEND_TICKS 105
+#define ZEND_SEND_VAR_NO_REF 106
+#define ZEND_CATCH 107
+#define ZEND_THROW 108
+#define ZEND_FETCH_CLASS 109
+#define ZEND_CLONE 110
+#define ZEND_RETURN_BY_REF 111
+#define ZEND_INIT_METHOD_CALL 112
+#define ZEND_INIT_STATIC_METHOD_CALL 113
+#define ZEND_ISSET_ISEMPTY_VAR 114
+#define ZEND_ISSET_ISEMPTY_DIM_OBJ 115
+#define ZEND_PRE_INC_OBJ 132
+#define ZEND_PRE_DEC_OBJ 133
+#define ZEND_POST_INC_OBJ 134
+#define ZEND_POST_DEC_OBJ 135
+#define ZEND_ASSIGN_OBJ 136
+#define ZEND_INSTANCEOF 138
+#define ZEND_DECLARE_CLASS 139
+#define ZEND_DECLARE_INHERITED_CLASS 140
+#define ZEND_DECLARE_FUNCTION 141
+#define ZEND_RAISE_ABSTRACT_ERROR 142
+#define ZEND_DECLARE_CONST 143
+#define ZEND_ADD_INTERFACE 144
+#define ZEND_DECLARE_INHERITED_CLASS_DELAYED 145
+#define ZEND_VERIFY_ABSTRACT_CLASS 146
+#define ZEND_ASSIGN_DIM 147
+#define ZEND_ISSET_ISEMPTY_PROP_OBJ 148
+#define ZEND_HANDLE_EXCEPTION 149
+#define ZEND_USER_OPCODE 150
+#define ZEND_JMP_SET 152
+#define ZEND_DECLARE_LAMBDA_FUNCTION 153
+#define ZEND_ADD_TRAIT 154
+#define ZEND_BIND_TRAITS 155
+#define ZEND_SEPARATE 156
+#define ZEND_QM_ASSIGN_VAR 157
+#define ZEND_JMP_SET_VAR 158
+#define ZEND_DISCARD_EXCEPTION 159
+#define ZEND_YIELD 160
+#define ZEND_GENERATOR_RETURN 161
+#define ZEND_FAST_CALL 162
+#define ZEND_FAST_RET 163
+#define ZEND_RECV_VARIADIC 164
+#define ZEND_SEND_UNPACK 165
+#define ZEND_POW 166
+#define ZEND_ASSIGN_POW 167 </pre>
+</div>
+<p><strong>0x3: opcode执行句柄: zend_op-&gt;handler </strong></p>
+<p>op的执行句柄，其类型为opcode_handler_t<br />
+</p>
+<p>typedef int (ZEND_FASTCALL *opcode_handler_t) (ZEND_OPCODE_HANDLER_ARGS); <br />
+这个函数指针为op定义了执行方式，每一种opcode字段都对应一个种类的handler，比如如果$a = 1;这样的代码生成的op，操作数为const和cv，最后就能确定handler为函数ZEND_ASSIGN_SPEC_CV_CONST_HANDLER<br />
+</p>
+<p><strong>/Zend/zend_vm_execute.h</strong></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+void zend_init_opcodes_handlers(void)
+{
+static const opcode_handler_t labels[] = {
+..
+ZEND_ASSIGN_SPEC_CV_CONST_HANDLER,
+..
+}
+}</pre>
+</div>
+<p><strong>0x4: opcpde操作数znode</strong><br />
+</p>
+<p>操作数字段是_zend_op类型中比较重要的部分了，其中op1,op2,result三个操作数定义为znode类型 <br />
+</p>
+<p><strong>\php-5.6.17\Zend\zend_compile.h</strong><br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+typedef struct _znode { /* used only during compilation */
+/*
+这个int类型的字段定义znode操作数的类型
+#define IS_CONST (1&lt;&lt;0) //表示常量，例如$a = 123; $b = "hello";这些代码生成OP后，123和"hello"都是以常量类型操作数存在
+#define IS_TMP_VAR (1&lt;&lt;1) //表示临时变量，临时变量一般在前面加~来表示，这是一些OP执行过程中需要用到的中间变量，例如初始化一个数组的时候，就需要一个临时变量来暂时存储数组zval，然后将数组赋值给变量
+#define IS_VAR (1&lt;&lt;2) //一般意义上的变量，以$开发表示
+#define IS_UNUSED (1&lt;&lt;3) // Unused variable 
+#define IS_CV (1&lt;&lt;4) // Compiled variable，这种类型的操作数比较重要，此类型是在PHP后来的版本中(大概5.1)中才出现，CV的意思是compiled variable，即编译后的变量，变量都是保存在一个符号表中，这个符号表是一个哈希表，如果每次读写变量的时候都需要到哈希表中去检索，会对效率有一定的影响，因此在执行上下文环境中，会将一些编译期间生成的变量缓存起来。此类型操作数一般以!开头表示，比如变量$a=123;$b="hello"这段代码，$a和$b对应的操作数可能就是!0和!1, 0和1相当于一个索引号，通过索引号从缓存中取得相应的值
+*/
+int op_type;
+/*
+此字段为一个联合体，根据op_type的不同，u取不同的值
+1. op_type=IS_CONST的时候，u中的constant保存的就是操作数对应的zval结构
+2. 例如$a=123时，123这个操作数中，u中的constant是一个IS_LONG类型的zval,其值lval为123 
+*/
+union {
+znode_op op;
+zval constant; /* replaced by literal/zv */
+zend_op_array *op_array;
+zend_ast *ast;
+} u;
+zend_uint EA; /* extended attributes */
+} znode; </pre>
+</div>
+<p><strong>0x5: opcode编译后数组op_array</strong><br />
+</p>
+<p>在zend_do_print函数中的第一行，我们注意到下面这行代码<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC); </pre>
+<br />
+</div>
+<p>PHP脚本代码被编译后产生的opcode保存在op_array中，其内部存储的结构如下</p>
+<p><strong>\php-5.6.17\Zend\zend_compile.h</strong></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+struct _zend_op_array 
+{
+/* Common elements */
+zend_uchar type;
+const char *function_name; // 如果是用户定义的函数则，这里将保存函数的名字
+zend_class_entry *scope;
+zend_uint fn_flags;
+union _zend_function *prototype;
+zend_uint num_args;
+zend_uint required_num_args;
+zend_arg_info *arg_info;
+/* END of common elements */
+zend_uint *refcount;
+zend_op *opcodes; // opcode数组
+zend_uint last;
+zend_compiled_variable *vars;
+int last_var;
+zend_uint T;
+zend_uint nested_calls;
+zend_uint used_stack;
+zend_brk_cont_element *brk_cont_array;
+int last_brk_cont;
+zend_try_catch_element *try_catch_array;
+int last_try_catch;
+zend_bool has_finally_block;
+/* static variables support */
+HashTable *static_variables;
+zend_uint this_var;
+const char *filename;
+zend_uint line_start;
+zend_uint line_end;
+const char *doc_comment;
+zend_uint doc_comment_len;
+zend_uint early_binding; /* the linked list of delayed declarations */
+zend_literal *literals;
+int last_literal;
+void **run_time_cache;
+int last_cache_slot;
+void *reserved[ZEND_MAX_RESERVED_RESOURCES];
+}; </pre>
+</div>
+<p>整个PHP脚本代码被编译后的opcodes保存在这里，在执行的时候由下面的execute函数执行<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+ZEND_API void execute(zend_op_array *op_array TSRMLS_DC)
+{
+// ... 循环执行op_array中的opcode或者执行其他op_array中的opcode
+}</pre>
+</div>
+<p>每条opcode都有一个opcode_handler_t的函数指针字段，用于执行该opcode，PHP有三种方式来进行opcode的处理</p>
+<p>1. CALL: PHP默认使用CALL的方式，也就是函数调用的方式<br />
+2. SWITCH: 由于opcode执行是每个PHP程序频繁需要进行的操作，可以使用SWITCH或者GOTO的方式来分发<br />
+3. GOTO: 通常GOTO的效率相对会高一些，不过效率是否提高依赖于不同的CPU <br />
+实际上我们会发现，在/zend/zend_language_parser.c中就是Zend的opcode翻译解释执行过程，其中包含了call、switch、goto三种opcode执行方式<br />
+</p>
+<p>这就是PHP为什么称之为解释型语言的内核原理，PHP在完成Lex词法解析后，在语法解析即生成产生式的时候，直接通过call、switch、goto的方式调用zend api进行即使解释执行<br />
+</p>
+<p><strong>Relevant Link:</strong></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+http://www.nowamagic.net/librarys/veda/detail/1325
+http://php.net/manual/zh/internals2.opcodes.list.php
+http://www.nowamagic.net/librarys/veda/detail/1543
+http://www.nowamagic.net/librarys/veda/detail/1324
+http://www.nowamagic.net/librarys/veda/detail/1543 
+http://www.laruence.com/2008/06/18/221.html
+http://www.php-internals.com/book/&#63;p=chapt02/02-03-02-opcode </pre>
+</div>
+<p><span style="color: #0000ff"><strong>3. opcode翻译执行(即时解释执行)</strong></span><br />
+</p>
+<p><strong>Relevant Link:</strong><br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+http://www.php-internals.com/book/&#63;p=chapt02/02-03-03-from-opcode-to-handler</pre>
+</div>
+<p>以上所述本文给大家介绍的PHP内核学习教程之php opcode内核实现的相关知识，希望对大家有所帮助。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/85962.html'>ajaxForm和ajaxSubmit 粘贴就可用示例代码</a><a>下一篇</a><a href='/php/biji/85964.html'>MySQL中Innodb的事务隔离级别和锁的关系的讲解教程</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

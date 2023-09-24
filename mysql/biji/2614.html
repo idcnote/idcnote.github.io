@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server事务、锁定、阻塞、死锁用法的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server事务、锁定、阻塞、死锁用法的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+本文实例" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server事务、锁定、阻塞、死锁用法的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:38:58                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server事务、锁定、阻塞、死锁用法的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+本文实例</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server事务、锁定、阻塞、死锁用法的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>本文实例讲述了SQL Server学习笔记之事务、锁定、阻塞、死锁用法。分享给大家供大家参考，具体如下：</p>
+<p></p>
+<h3>1、事务</h3>
+<p></p>
+<p>隐式事务</p>
+<p>代码如下：</p>
+<pre>
+<code>
+/*==================================================================
+当以create,drop,
+ fetch,open,
+ revoke,grand,
+ alter table,select,insert,delete,update,truncate table
+语句首先执行的时候，SQL Server会话自动打开一个新的事务，
+如果在会话中激活了隐式事务模式，那么这个事务会一直保持打开状态，
+直到rollback或commit语句这个事务才结束，如果忘记提交事务,
+那么在相应的隔离级别下，事务占用的锁可能不会释放，因此尽量不要用隐式事务。
+====================================================================*/
+--会话1
+set implicit_transactions on
+update t
+set v = 'ext12'
+set implicit_transactions off
+select @@TRANCOUNT --输出：1，说明事务没有释放
+     --占用的X独占锁不会释放，会阻塞其他会话
+
+</code></pre>
+<p>代码如下：</p>
+<pre>
+<code>
+--会话2,被会话1阻塞住了，不会返回任何记录
+select *
+from t
+
+</code></pre>
+<p>在会话1中执行commit来提交事务，那么会话2马上就会返回记录了。</p>
+<p>现在把两个会话的执行顺序调换一下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+--会话1
+set implicit_transactions on --打开了隐式事务
+select *
+from t
+set implicit_transactions off
+select @@TRANCOUNT --输入：1，说明这个会话中的事务也没有提交
+
+</code></pre>
+<p>代码如下：</p>
+<pre>
+<code>
+--会话2，会话2没有被会话1阻塞，
+--之所以这样是因为会话的默认隔离级别是read committed，
+--会话1中的事务虽然没有提交，但是select语句在这种隔离级别下，
+--运行完就会释放占用的S共享锁，所以不会阻塞写操作
+update t
+set v = 'ext'
+
+</code></pre>
+<p></p>
+<h3>显示数据库最早的活动事务</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+/*==============================================================
+如果事务在数据库中始终打开，有可能会阻塞其他进程的操作,
+为什么是有可能而不是一定呢，
+原因就是：在默认隔离级别下的select语句查询到数据后就会立即释放共享锁。
+另外，日志备份也只会截断不活动事务的那部分日志，所以活动的事务
+会导致日志数据越来越多。
+为了找到没有提交的事务，可以用下面的命令显示某个数据库最早的活动事务.
+不过有个例外，就是下面的命令不会返回：不占用锁资源的未提交事务
+================================================================*/
+begin tran --开始显示事务
+select *
+from t  --运行后立即释放共享锁
+select @@TRANCOUNT --输入：1，说明没有提交事务
+dbcc opentran('wc') --显示数据库最早的活动事务，
+       --但是这儿显示"没有处于打开状态的活动事务"
+
+</code></pre>
+<p></p>
+<h3>通过会话来查询事务信息</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+--由于上面未提交事务中的select语句在默认的隔离级别下执行后自动释放了共享锁，
+--所以dbcc opentran命令并没有返回这个活动事务，
+--不过下面的视图解决了这个问题，可以找到所有活动事务。
+--找到活动事务
+select session_id,      --session_id与transaction_id的对应关系
+  transaction_id,
+  is_user_transaction,
+  is_local
+from sys.dm_tran_session_transactions --会话中的事务，识别所有打开的事务
+where is_user_transaction =1
+--找到活动事务对应的执行语句
+select c.session_id,     --session_id与connection_id的对应关系
+  c.connection_id,
+  c.most_recent_sql_handle,
+  s.text
+from sys.dm_exec_connections c  --执行连接，最近执行的查询信息
+cross apply sys.dm_exec_sql_text(c.most_recent_sql_handle) s
+where c.session_id = 361
+--活动事务的具体信息
+select t.transaction_id,
+  t.name,      --这里显示user_transaction
+  t.transaction_begin_time,
+  case t.transaction_type   --事务类型
+   when 1 then '读/写事务'
+   when 2 then '只读事务'
+   when 3 then '系统事务'
+   when 4 then '分布式事务'
+  end 'transaction type',
+  case t.transaction_state
+   when 0 then '事务尚未完全初始化'
+   when 1 then '事务已初始化但尚未启动'
+   when 2 then '事务处于活动状态'
+   when 3 then '事务已结束。该状态用于只读事务'
+   when 4 then '已对分布式事务启动提交进程'
+   when 5 then '事务处于准备就绪状态且等待解析'
+   when 6 then '事务已提交'
+   when 7 then '事务正在被回滚'
+   when 8 then '事务已回滚'
+  end 'transaction state'
+from sys.dm_tran_active_transactions t --活动的事务
+where transaction_id = 150764485
+
+</code></pre>
+<p></p>
+<h3>2、锁定</h3>
+<p></p>
+<p>当一个用户要读取另一个用户正在修改的数据，或者一个用户正在修改另一个用户正在读取的数据，或者一个用户要修改另一个用户正在修改的数据，就会出现并发问题。锁定能防止并发问题。</p>
+<p>资源的锁定方式称为锁定模式，SQL Server中的锁定模式：共享锁，意向锁，更新锁，排他锁，架构稳定锁，架构修改锁，大批量更新锁，键范围锁。不是所有锁模式都是兼容的，如：一个加了排他锁的资源不能再加其他锁，其他事务必须等待，直到释放排他锁。</p>
+<p>可以锁定SQL Server中的各类对象，可以锁定的资源在粒度上差异很大，从细粒度(行、键)到粗粒度(数据库)。细粒度的锁允许用户能查询那些未被锁定的行，并发性更高，但是需要更多的锁资源(每个被锁定的行都需要一个锁资源)；粗粒度的锁降低了并发性，但需要的锁资源很少。</p>
+<p>在SQL Server中可锁定的资源：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DB(数据库)
+ Metadata(系统元数据)
+ Object(数据库对象:视图,函数,存储过程,触发器)
+ Table(表)
+  Hobt(堆或B树)
+   Allocation Unit(按照数据的类型(数据,行溢出、大对象)分组的相关页面)
+    Extent(8个8KB的页面)
+     Page(8KB数据页面)
+      Rid(行标示符对应一个堆表的行)
+      Key(键范围上的锁、B树中的键)
+File
+Application
+
+</code></pre>
+<p></p>
+<h3>查看锁的活动</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+select resource_type,     --资源类型
+  resource_database_id,   --资源所在的数据库id
+  resource_associated_entity_id, --数据库中与资源相关联的实体的 ID。
+          --该值可以是对象ID、Hobt ID 或分配单元 ID，
+          --具体视资源类型而定
+  object_name(resource_associated_entity_id,resource_database_id),
+  resource_lock_partition, --已分区锁资源的锁分区ID。对于未分区锁资源值为 0
+  resource_description, --资源的说明，其中只包含从其他资源列中无法获取的信息
+  request_session_id, --请求资源的会话
+  request_type,   --请求类型，该值为 LOCK
+  request_mode,  --请求的模式,对于已授予的请求，为已授予模式,
+       --对于等待请求，为正在请求的模式(锁定模式)
+  request_status   --请求的当前状态，
+        --可能值为 GRANTED、CONVERT 或 WAIT
+from sys.dm_tran_locks
+WHERE request_session_id = 361
+
+</code></pre>
+<p></p>
+<h3>控制表的锁升级</h3>
+<p></p>
+<p>每个锁都会消耗内存资源，当锁的数量增加时，那么所需要的内存就会增加，而系统内可用的内存就会减少。如果锁占用的内存比率超过一个阀值，SQL Server会将细粒度锁（行锁）升级为粗粒度锁（表锁），这个过程就是锁升级。</p>
+<p>锁升级的优点是可以减少锁的数量，相应的减少内存的使用量，而缺点是由于锁住了更大的资源，所以会导致阻塞，降低并发性。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+--默认值，不管是不是分区表，会在表级别启用锁升级
+ALTER TABLE t
+SET (lock_escalation = TABLE)
+--当表升级时，如果表已经分区，会在分区级别启用锁升级
+ALTER TABLE t
+SET (lock_escalation = auto)
+--在表级别禁用锁升级，如果用了TabLock提示或在Serializable隔离级别下查询，还是会有表锁
+ALTER TABLE t
+SET (lock_escalation = disable)
+
+</code></pre>
+<p>影响锁定的除了上面提到的锁定模式、锁的粒度，还有就是事务的隔离级别。</p>
+<p>所谓隔离级别其实就是事务与事务之间相互影响的程度，比如，一个事务修改了数据，那么其他事务是否能看到这些修改的数据，无论事务是否提交。对于最高的隔离级别，这个事务所做的修改，其他任何事务都看不到；而最低的隔离级别，这个事务所做的修改，可以被其他任何事务看到。</p>
+<p></p>
+<h3>SQL Server隔离级别：</h3>
+<p></p>
+<p>1.read uncommitted能解决丢失更新的问题，但是会导致脏读。</p>
+<p>2.read committed读取的是已提交的数据，所以解决了脏读的问题，但是会有不可重复读取的问题，也就是在一个事务中有两次读取，第一次读取的和第二次读取的同一条数据，可能值是不同的，因为在事务中的select语句在读取完之后就立即释放的共享锁，而此时有另一个事务把刚才第一个事务读取的那条数据修改了，这样第一次读和第二次读到的值就会不同。</p>
+<p>3.repeatable read解决了不可重复读取的问题，也就是在一个事务中的前后两次读取，读取到的数据值是一样的，但是会有幻读的可能，也就是第一次读出的数据确实和第二次读取的数据一样，但是第二次读取的记录条数可能多于第一次读取的记录条数，因为在读取的时候确实是锁住了被读取的记录，但是这个表可能添加了新的记录。</p>
+<p>4.serializable通过锁住查询范围内的键、键与键之间的范围来解决幻读的问题，比如where id &gt;=5 and id &lt;=10,加入表表中只有id为7,9的两条记录，那么5-6、7-8、9-10这3个范围都会被锁住。</p>
+<p>5.在ALLOW_SNAPSHOT_ISOLATION下的snapshot这种隔离级别允许读取事务一致性版本的数据，但可能不是最新的版本，也就是说在一个事务中只能读到某个版本，比如，在一个事务中有两次读取，第一次读完后，数据被另一个事务修改且事务提交了，此时进行第2次读取，那么读出来的还是和第一次读取一样的数据，这就是在一个事务中如果数据被其他事务修改了，读出来的数据也一样。优点是数据读取不会阻塞写，写也不会阻塞读取。另外，如果两个事务同时修改同一行数据，会导致更新冲突错误。</p>
+<p>6.在READ_COMMITTED_SNAPSHOT下的read committed隔离级别允许在同一事务中总是能读取运行的已提交的数据，而且数据读取不会阻塞写，写也不会阻塞读取，也不会导致更新冲突。</p>
+<p>上面是关于锁定的概念，那么接下来就是如何找到阻塞的进程，并解决阻塞问题。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+--会话1，修改数据，但没有提交事务
+BEGIN TRAN
+select @@SPID --输出：287
+UPDATE t
+SET v = '88888'
+WHERE idd = 1
+--会话2，由于会话一事务没有提交，导致阻塞
+BEGIN TRAN
+select @@SPID --输出：105
+UPDATE t
+SET v = '888'
+WHERE idd = 1
+--查询会话1的等待信息
+select session_id,   --查询的会话，也就是被阻塞的会话
+  wait_duration_ms,  --等待毫秒数
+  wait_type,   --等待类型，如：LCK_M_X表示正在等待获取排他锁
+  blocking_session_id --阻塞session_id会话的会话
+from sys.dm_os_waiting_tasks
+where session_id = 105
+--查询这个被阻塞的会话请求的资源情况
+select resource_type,
+  request_status,
+  request_mode,
+  request_session_id
+from sys.dm_tran_locks
+where request_session_id = 105
+--说明会话2在update时一共获取了4个锁，共享数据库锁、2个意向独占锁(锁定表、数据页)，
+--一个键锁锁住那条要更新的记录，只有这个键锁的请求状态时wait，
+--其他3个锁状态为grant表示已经会话2已经获得了锁。
+--另一种查看阻塞会话的方法：--查看当前会话的执行请求
+select session_id,
+  status,
+  blocking_session_id,
+  wait_type,
+  wait_time
+from sys.dm_exec_requests
+where session_id = 105
+--配置语句等待锁释放的时间
+--设置语句的锁请求超时时段
+--超时时段是以毫秒为单位，超时后会返回锁定错误返回错误：(1 行受影响)消息 1222，级别 16，状态 51，第 7 行已超过了锁请求超时时段。语句已终止。
+
+</code></pre>
+<p></p>
+<h3>3、死锁</h3>
+<p></p>
+<p>当两个事务分别锁定了资源，而又继续请求对方已获取的资源，那么就会产生死锁。</p>
+<p></p>
+<h3>发生死锁的原因：</h3>
+<p></p>
+<p>A、会话以不同的顺序访问表。</p>
+<p>B、会话长时间运行事务，在一个事务中更新了很多表或行，这样增加了冲突的可能。</p>
+<p>C、会话1申请了一些行锁，会话2申请了一些行锁，之后决定将其升级为表锁。</p>
+<p>如果这些行在相同的数据页面中，并且两个会话同时在相同的页面上升级锁粒度，就会产生死锁。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+set lock_timeout 1000
+--跟踪死锁--会话1
+set transaction isolation level serializable
+begin tran
+update t
+set v ='563'
+where idd =2
+waitfor delay '00:00:10'
+update t
+set v = '963'
+where idd =1commit--会话2
+set transaction isolation level serializable
+begin tran
+update t
+set v ='234'
+where idd =1
+waitfor delay '00:00:10'
+update t
+set v = '987'
+where idd=2
+commit
+
+</code></pre>
+<p>再开启一个会话，开启跟踪：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+/*===================================================================
+开启跟踪标志位：
+    DBCC TRACEON(trace#[,...n],-1) [With No_InfoMsgs]
+检查某种或某些标志位是开启，还是关闭：
+    DBCC TRACESTATUS(trace#[,...n],-1) [With No_InfoMsgs]
+1.trace#:指定一个或多个需要开启或需要检查状态的跟踪标志位数字
+2. -1:如果指定了-1，则以全局方式打开某种或某些跟踪标志位
+3.with No_InfoMsgs:当命令中包含此参数时，则禁止DBCC输出信息性消息
+=====================================================================*/
+--跟踪1222能把详细的死锁信息返回到SQL Server的日志中
+--标志位-1表示跟踪标志位1222应该对所有SQL Server连接全局启用
+DBCC TraceOn(1222,-1)
+go
+--验证标志位是否启动
+DBCC TraceStatus
+go
+--关闭标志位
+DBCC TraceOff(1222,-1)
+go
+设置死锁优先级--设置死锁的优先级,调整一个查询会话由于死锁而被终止运行的可能性
+SET DeadLock_Priority Low | Normal | High | numeric-priority
+--是当前连接很有可能被终止运行
+set deadlock_priority Low
+--SQL Server终止回滚代价较小的连接
+set deadlock_priority Normal
+--减少连接被终止的可能性，除非另一个连接也是High或数值优先级大于5
+set deadlock_priority High
+--数值优先级：-10到10的值，-10最有可能被终止运行，10最不可能被终止运行，
+--两个数字谁大，谁就越不可能在死锁中被终止
+set deadlock_priority 10
+
+</code></pre>
+<p>希望本文所述对大家SQL Server数据库程序设计有所帮助。</p>
+
+<p>注：关于SQL Server事务、锁定、阻塞、死锁用法的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2613.html'>SQL Server sql存储过程的解决办法</a><a>下一篇</a><a href='/mysql/biji/2615.html'>SQL Server 2012使用Offset/Fetch Next实现分页数据查询的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

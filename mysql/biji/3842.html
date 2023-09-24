@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server 触发器及触发器中的事务学习实现方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server 触发器及触发器中的事务学习实现方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！如果你有对" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server 触发器及触发器中的事务学习实现方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:50:22                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server 触发器及触发器中的事务学习实现方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！如果你有对</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server 触发器及触发器中的事务学习实现方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>如果你有对触发器和事务的概念，有些了解，这篇文章，对你来说会是很简单，或能让你更进一步的了解触发器里面的一些故事，和触发器中事务个故事。在这边文章里面，我不会从触发器和事务的概念去讲述，而是从常见的两种触发器类型(DML触发器 &amp; DDL触发器)和After触发器 &amp; Instead Of 触发器的应用不同，开始说起它们，然后是说与事务有关的故事。如果，你有什么建议和意见，都可以通过文章后面的回复与我沟通，或者通过E-Mail方式，与 我交流；我的Email地址是：glal@163.com
+<p></p>
+<p> 在下面的内容，用到一些SQL Server 触发器和事务的一些术语，如果有些不明白的地方，可以查阅MSDN资料库，或SQL Server本地帮助文档：</p>DML触发器(DML Triggers) DDL触发器(DDL Triggers) 事务模式(Transaction modes) 显式事务(Explicit Transactions) 自动提交事务(Autocommit Transactions) 隐式事务(Implicit Transactions) 批范围的事务(Batch-scoped Transactions)
+<p></p>After触发器 Vs Instead Of触发器
+<hr />
+<p>  After 触发器将在处理触发操作（Insert、Update 或 Delete）、Instead Of 触发器和约束之后激发。Instead Of是将在处理约束前激发，以替代触发操作。下面两张图描述了After触发器和Instead Of触发器的执行先后顺序。</p>
+<p> 【图片暂缺】【图片暂缺】</p>
+<p> 图1 图2</p>
+<p> 左边的图1，描述了After触发器执行顺序情况，我在这里通过一个简单的例子来说明After触发器的执行顺序，以便能加深对左图1 After触发器的理解。</p>
+<p>先创建表Contact</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+if object_id(&#39;Contact&#39;) Is Not null </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Drop Table Contact</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Create Table Contact</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+(</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ ID int Primary Key Identity(1,1),</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Name nvarchar(50),</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Sex nchar(2) Check(Sex In(N&#39;F&#39;,N&#39;M&#39;)) Default(&#39;M&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>再创建After触发器tr_Contact</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+If Exists(Select 1 From sys.triggers Where name=&#39;tr_Contact&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Drop Trigger tr_Contact </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Create Trigger tr_Contact On Contact After Insert</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+As</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Select Name,Sex From Inserted /*显示Inserted表的内容，用来判断触发器执行的先后顺序*/</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>然后Insert数据，判断After触发器的执行顺序</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Insert Into Contact (Name,Sex) Values (&#39;Bill&#39;,&#39;U&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>这里，在没有运行Insert语句之前，我们可以判断，执行Insert过程会触发Check错误，因为字段Sex的值必须是&rdquo;F&rdquo; Or &ldquo;M&rdquo;，而这里将要插入的是&rdquo;U&rdquo;.好了，再来看运行Insert语句后的情况。</p>
+<p>【图片暂缺】</p>
+<p>本例子，只看到引发Check约束冲突的错误，而无法看到Inserted表的数据，说明一点就是,引起Check约束之前，不会引发After触发器tr_Contact的操作。这就验证了图1的After触发器执行顺序情况。</p>
+<p> 好了，接下来，我们再测试Instead Of触发器 图2的情况；我使用上边建好的测试表Contact来举例。</p>
+<p>先修改触发器tr_Contact内容,</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+If Exists(Select 1 From sys.triggers Where name=&#39;tr_Contact&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Drop Trigger tr_Contact </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Create Trigger tr_Contact On Contact Instead Of Insert</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+As</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+print &#39;触发器作代替执行操作&#39;</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Insert Into Contact (Name,Sex) Select Name,Sex From Inserted /*代替触发器外面的Insert行为*/</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>再Insert数据，观察SQL Server执行后的提示信息,</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Insert Into Contact (Name,Sex) Values (&#39;Bill&#39;,&#39;U&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>【图片暂缺】</p>
+<p>这里，看到，先是触发器操作，再是Check约束处理。本例中，在触发器里面使用一条Insert的语句来描述触发器的代替执行操作，这SQL语句通过Select表Inserted得到触发器外面Insert内容。当SQL Server执行到触发器里面的Insert语句，才会引起Check约束处理.倘若，在触发器tr_Contact没有Insert的代替行为，那么就不会出现Check约束处理错误的信息(注：没有Check错误信息，并不表示没有作Check处理)。修改上边的触发器tr_Contact内容，做个简易的验证.</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+If Exists(Select 1 From sys.triggers Where name=&#39;tr_Contact&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Drop Trigger tr_Contact </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Create Trigger tr_Contact On Contact Instead Of Insert</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+As</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+print &#39;触发器作代替执行操作&#39;</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Insert Into Contact (Name,Sex) Values (&#39;Bill&#39;,&#39;U&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Select * From Contact</pre></div></div>
+<p>【图片暂缺】【图片暂缺】</p>
+<p>可以看到，Instead Of 触发器tr_Contact内容没有Insert的SQL语句，不会引发Check处理错误，而且检查Insert动作后的结果，发现表Contact也没有之前我们Insert的数据。这些足够验证了Instead Of触发器的执行先后顺序和代替执行操作。</p>
+<p></p>
+<p></p>
+<p></p>
+<p><strong>DML 触发器 Vs DDL 触发器 </strong></p>
+<hr />
+<p> DML 触发器在 Insert、Update 和 Delete 语句上操作，可以作为After 触发器 和 Instead Of 触发器。</p>
+<p> DDL 触发器对 Create、Alter、Drop 和其他 DDL 语句以及执行 DDL 式操作的存储过程执行操作，只可作为After触发器，不能Instead Of触发器。</p>
+<p> 前面的内容，有描述DML触发器中的After &amp; Instead Of触发器内容，下面直接来看DDL的操作顺序：</p>
+<p> 【图片暂缺】</p>
+<p> 图3.</p>
+<p> 从图3.可以知道，在DDL触发器中，是没有创建Inserted &amp; Deleted过程的，我们通过简单的例子去测试下。</p>
+<p> 创建一个服务器范围内的DDL触发器，检查有没有Inserted 表，</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use master</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+If Exists(Select 1 From sys.server_triggers Where name=&#39;tr_createDataBase&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Drop Trigger tr_createDataBase On All Server</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Create Trigger tr_createDataBase On All Server After Create_DataBase</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+As </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Select * From inserted</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>执行创建数据库SQL语句,</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use master</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Create Database myDataBase On Primary</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+(Name=&#39;MyDataBase_Data&#39;,Filename=&#39;E:\DATA\SQL2008DE01\MyDataBase_Data.mdf&#39;) Log On </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+(Name=&#39;MyDataBase_Log&#39;,Filename=&#39;E:\DATA\SQL2008DE01\MyDataBase_Log.ldf&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>返回错误信息，</p>
+<p>【图片暂缺】</p>
+<p>使用上边相同的方法，我们验证DDL触发器中，不会创建Deleted表；是否创建Deleted &amp; Inserted,也可以认为是DDL触发器与DML触发器不同之处。在DLL触发器与DML触发器不同的一个重要特征是作用域，DML触发器只能应用在数据库层(Database Level)的表和视图上，而DDL触发器应用于数据库层(Database Level)和服务器层(Server Level)；DDL触发器的作用域取决于事件。下面简单描述下事件组的内容。</p>
+<p></p>
+<p>数据库层事件主要包含:</p>
+<ol>
+	<li>DDL Table events: Create table, Alter table, Drop table DDL view events : Create view, Alter view, Drop view DDL trigger events :Create trigger, Drop trigger, Alter trigger DDL synonym events: Create synonym, drop synonym DDL Index events: Create index, Alter index, Drop Index DDL Database level security events: Create User, Drop user, Alter user Create role, Drop role, Alter role Create application role, Drop application role, Alter Application role Create Schema, Drop Schema, Alter Schema Grant database access, Revoke database access, Deny Database access DDL Service broker events: Create Message type, Alter Message type, Drop Message type Create contract, Drop contract, Alter contract Create Service, Alter service, Drop Service Create route, Drop route, Alter route</li>
+</ol>
+<p>服务器层事件主要包含：</p>
+<ol>
+	<li>Create Database, Drop Database Create Login, Drop Login, Alter Login</li>
+</ol>
+<p></p>
+<p></p>
+<p><strong>触发器和事务的故事</strong></p>
+<hr />  在前面的几个例子中，如DML触发器例子，Insert 语句执行后，因为触发器操作 或 Check处理错误，没有把数据真正的插入到表Contact中。其实，当执行触发器时，触发器的操作好像有一个未完成的事务在起作用。 通过几个例子来讲解触发器和事务的故事。
+<p>创建一个表ContactHIST，用于对表Contact作Update Or Delete操作时，把操作前的数据Insert到表ContactHIST中。</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+if object_id(&#39;ContactHIST&#39;) Is Not null </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Drop Table ContactHIST</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Create Table ContactHIST</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+(</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ ID int Primary Key Identity(1,1),</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ ContactID int,</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Name nvarchar(50),</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Sex nchar(2),</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ ActionType nvarchar(10) Check(ActionType In(&#39;Update&#39;,&#39;Delete&#39;)),</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ LastUpdateDate datetime Default(getdate())</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>修改触发器tr_Contact内容，</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+If Exists(Select 1 From sys.triggers Where name=&#39;tr_Contact&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Drop Trigger tr_Contact </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Create Trigger tr_Contact On Contact After Update,Delete</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+As</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Insert Into ContactHIST(ContactID,Name,Sex)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Select ID,Name,Sex From deleted </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Rollback Tran </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Begin Tran</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>测试数据，</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Insert Into Contact (Name,Sex) Values (&#39;Bill&#39;,&#39;F&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+--Update</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Update Contact </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Set Sex=&#39;M&#39;</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Where Name=&#39;Bill&#39;</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Select * From Contact</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Select * From ContactHIST</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>测试结果：</p>
+<p>【图片暂缺】【图片暂缺】</p>
+<p>从上边的测试情况，看出，Update Contact触发tr_Contact触发器操作，触发器里面的Rollback Tran 动作导致了触发器外面的Update语句执行回滚，而Rollback Tran 语句后面的Begin Tran语句，主要是应用于保持整个事务的完整性。为了更能理解这一过程，我模拟了一个触发器中的事务开始结束过程。</p>
+<p>【图片暂缺】</p>
+<p>图4.</p>
+<p>在SQL Server 2005 和 SQL Server 2008上面，可以看到如图4.的效果。在低版本的SQL Server上，可能会出现错误提示情况，不管如何，在触发器外面，SQL Server都会Rollback Tran。下面我做个错误提示的例子。</p>
+<p>修改触发器tr_Contact内容</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+If Exists(Select 1 From sys.triggers Where name=&#39;tr_Contact&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Drop Trigger tr_Contact </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Create Trigger tr_Contact On Contact After Update,Delete</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+As</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Insert Into ContactHIST(ContactID,Name,Sex)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Select ID,Name,Sex From deleted </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Rollback Tran </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+--Begin Tran </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>重新执行Update操作，</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Update Contact </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Set Sex=&#39;M&#39;</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Where Name=&#39;Bill&#39;</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Select @@TRANCOUNT </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Select * From Contact</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Select * From ContactHIST</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>【图片暂缺】【图片暂缺】</p>
+<p>在触发器里面没有Begin Tran语句动作，触发器外面也能回滚操作。这里我们可以通过查询表数据和@@Trancount来判断。</p>
+<p> 其实，上面的例子，Update语句，是以自动提交事务(Autocommit Transactions)模式 开始执行的，触发器里Rollback Tran后面，不管有没有Begin Tran ，最后都会事务都会交回给SQL Server自动提交事务管理。当然，在DML触发器中，你可以使用显式事务(Explicit Transactions),或开启隐式事务(Implicit Transactions) 来控制，当然你也可以应用于批范围的事务(Batch-scoped Transactions) 中。这里，我通过开启隐式事务(Implicit Transactions) 的例子来说，触发器与事务的关系。</p>
+<p>修改触发器tr_Contact的内容，</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+If Exists(Select 1 From sys.triggers Where name=&#39;tr_Contact&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Drop Trigger tr_Contact </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Create Trigger tr_Contact On Contact After Update,Delete</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+As</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Print N&#39;触发器里Insert 前，@@Trancount=&#39;+Rtrim(@@Trancount)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Insert Into ContactHIST(ContactID,Name,Sex)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Select ID,Name,Sex From deleted </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Print N&#39;触发器里Insert后，Rollback Tran 前，@@Trancount=&#39;+Rtrim(@@Trancount)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Rollback Tran </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Print N&#39;触发器里Rollback Tran 后，@@Trancount=&#39;+Rtrim(@@Trancount)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Begin Tran </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p>开启隐式事务(Implicit Transactions) 来测试，</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Set Implicit_transactions On /**/</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Print N&#39;Update Contact前，@@Trancount=&#39;+Rtrim(@@Trancount)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Update Contact </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Set Sex=&#39;M&#39;</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Where Name=&#39;Bill&#39;</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Print N&#39;Update Contact后，@@Trancount=&#39;+Rtrim(@@Trancount)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Rollback Tran</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Print N&#39;触发器外面Rollback Tran 后，@@Trancount=&#39;+Rtrim(@@Trancount)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Set Implicit_transactions Off /**/</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Select * From Contact</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Select * From ContactHIST</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p></p>
+<p>【图片暂缺】</p>
+<p></p>
+<p>这里，你是否发现一个很有意思的问题，在触发器理，执行Insert ContactHIST之前，@@Trancount=1,执行Insert后，@@Trancount还是为1，触发器外面Update Contact后，@@Trancount就变成了2,。这里可以理解成，你在触发器里面，发出一个Begin Tran，那么SQL Server 就会创建一个嵌套事务。当你在触发器里面，在Rollback Tran后面屏蔽掉Begin Tran，就会出现错误3609，如，</p>
+<div id="codeSnippetWrapper" style="BORDER-RIGHT: silver 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: silver 1px solid; PADDING-LEFT: 4px; FONT-SIZE: 8pt; PADDING-BOTTOM: 4px; MARGIN: 20px 0px 10px; OVERFLOW: auto; BORDER-LEFT: silver 1px solid; WIDTH: 97.5%; CURSOR: text; DIRECTION: ltr; MAX-HEIGHT: 200px; LINE-HEIGHT: 12pt; PADDING-TOP: 4px; BORDER-BOTTOM: silver 1px solid; FONT-FAMILY: 'Courier New', courier, monospace; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left">
+<div id="codeSnippet" style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+use tempdb</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+If Exists(Select 1 From sys.triggers Where name=&#39;tr_Contact&#39;)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Drop Trigger tr_Contact </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Create Trigger tr_Contact On Contact After Update,Delete</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+As</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Print N&#39;触发器里Insert 前，@@Trancount=&#39;+Rtrim(@@Trancount)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Insert Into ContactHIST(ContactID,Name,Sex)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+ Select ID,Name,Sex From deleted </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Print N&#39;触发器里Insert后，Rollback Tran 前，@@Trancount=&#39;+Rtrim(@@Trancount)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Rollback Tran </pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Print N&#39;触发器里Rollback Tran 后，@@Trancount=&#39;+Rtrim(@@Trancount)</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: #f4f4f4; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+
+</pre>
+<pre style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; FONT-SIZE: 8pt; PADDING-BOTTOM: 0px; MARGIN: 0em; OVERFLOW: visible; WIDTH: 100%; COLOR: black; DIRECTION: ltr; BORDER-TOP-STYLE: none; LINE-HEIGHT: 12pt; PADDING-TOP: 0px; FONT-FAMILY: 'Courier New', courier, monospace; BORDER-RIGHT-STYLE: none; BORDER-LEFT-STYLE: none; BACKGROUND-COLOR: white; TEXT-ALIGN: left; BORDER-BOTTOM-STYLE: none">
+Go</pre></div></div>
+<p></p>
+<p>【图片暂缺】</p>
+<p>这里，可以看到事务在触发器中Rollback，又没有开启新的事务，导致整个批处理就中止，不会继续执行触发器外面的Rollback Tran操作。倘若，你在触发器中使用Begin Tran &hellip;&hellip; Commit Tran格式，那么触发器Commit Tran不会影响到外面的事务；下面描述三种常见触发器中事务的情况：</p>
+<p>【图片暂缺】【图片暂缺】【图片暂缺】</p>
+<p>图5. 图6. 图7.</p>
+<p>图5.描述在触发器中含有Begin Tran &hellip;&hellip; Commit Tran的情况，</p>
+<p>图6.描述在触发器中含有Save Tran savepoint_name<em> &hellip;&hellip;</em> Rollback Tran savepoint_name 的情况，触发器中的Rollback Tran 只会回滚指定的保存点，不会影响到触发器外面的Commit Tran Or Rollback Tran操作。</p>
+<p>图7.描述在触发器中含有Rollback Tran的情况，不管触发器里面有没有Begin Tran，都会出现错误3609，中止批处理。</p>
+<p> <strong>注：</strong>DDL触发器操作可以触发器中回滚操作，可以使用命令如Rollback，但严重错误可能会导致整个事务自动回滚。不能回滚发生在 DDL 触发器正文内的 Alter Database事件。在触发器中使用Rollback &hellip; Begin Tran 可能会导致意想不到的结果，在没有确认和测试情况下，请不要随便在触发器中直接使用Rollback &hellip;Begin Tran处理方式.特别是Create Database事件，在SQL Server 2008和SQL Server 2005环境下，产生的结果不同。</p>
+<p>Rollback &hellip;Begin Tran情况：</p>
+<p>Create Trigger &hellip;.</p>
+<p>As</p>
+<p>&hellip;&hellip;</p>
+<p>Rollback</p>
+<p>Begin Tran</p>
+<p>End</p>
+<p></p>
+<p><strong>小结</strong></p>
+<hr />
+<p></p>
+<p> 回顾前文至后文，从After触发器VsInstead Of 触发器，说到DML触发器 Vs DDL触发器，再到触发器中事务的故事。也许有些地方描述的有些模糊，有些地方只有一笔带过；你在测试代码过程中，可能发现有些地方与这里测试的情况不同，那可能是因为SQL Server版本的不同，导致一些测试结果不同。无论如何，只要你感觉对你了解触发器，有些帮助，就OK了。</p>
+
+<p>注：关于SQL Server 触发器及触发器中的事务学习实现方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3841.html'>SQL Server SQL基础知识入门实例</a><a>下一篇</a><a href='/mysql/biji/3843.html'>SQL Server临时表 Vs 表变量用法详细说明</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

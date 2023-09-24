@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Android中使用socket通信实现消息推送的方法详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="原理<br />
+<br />
+最近用socket写了一个消息推送的demo，在这里和大家分享一下。<br />
+主要实现了：一台手机向另外一台手机发送消息，这两台手机可以随时自由发送文本消息进行通信，类似我们常用的Q" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Android中使用socket通信实现消息推送的方法详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>原理<br />
+<br />
+最近用socket写了一个消息推送的demo，在这里和大家分享一下。<br />
+主要实现了：一台手机向另外一台手机发送消息，这两台手机可以随时自由发送文本消息进行通信，类似我们常用的Q</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>原理<br />
+</strong>最近用socket写了一个消息推送的demo，在这里和大家分享一下。</p>
+<p>主要实现了：一台手机向另外一台手机发送消息，这两台手机可以随时自由发送文本消息进行通信，类似我们常用的QQ。</p>
+<p>效果图：<br />
+</p>
+<p></p>
+<p></p>
+<p></p>
+<p>原理：手机通过socket发送消息到服务器，服务器每接收到一条消息之后，都会把这条消息放进一个messageList里面，服务器会不停地检测messageList是否含有消息，如果有的话就会根据messageList里面item的数据，推送到相应的另一端手机上面。</p>
+<p>下面简单画了一个图来说明这个原理：</p>
+<p>演示：手机客户端client1发送消息msg1到手机客户端client2，client2收到消息后回复msg2给client1<br />
+</p>
+<p></p>
+<p>1.手机客户端client1发送一条“msg1”的文本消息到服务器；</p>
+<p>2.服务器收到来自client1的“msg1”消息后，把它add进messageList里面；</p>
+<p>3.服务器检测到messageList里面含有消息（开启服务器时就新建里一个检测messageList的线程，线程里面有一个死循环，用于不停检测messageList是否含有消息）；</p>
+<p>4.服务器读取消息数据，如读取到来自client1发给client2的消息“msg1”，那么服务器就把“msg1”推送到client2上；</p>
+<p>5.client2检测到服务器推送的消息，做出相应的操作（如：震动、铃声、显示消息等）；</p>
+<p>6.client2接收到来自服务器推送的“msg1”消息后，client2也回复一条文本消息“msg2”给client1，此过程和client1发送消息给client2一样。</p>
+<p>7.最后，client2就可以显示来自client1发送的消息“msg1”，而client1则可以显示来自client2的回复消息“msg2”。</p>
+<p><strong>实现过程<br />
+</strong>根据消息推送的原理图，我们的实现过程主要分为Server端和Client端，Server端采用Java的编程，而Client端则用Android编程。</p>
+<p>所以在这里也分别创建了两个工程SocketServer和SocketClient<br />
+</p>
+<p></p>
+<p>我们先来看一下SocketMessage.java类：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class SocketMessage { 
+ 
+  public int to;//socketID，指发送给谁 
+  public int from;//socketID，指谁发送过来的 
+  public String msg;//消息内容 
+  public String time;//接收时间 
+  public SocketThread thread;//socketThread下面有介绍 
+} 
+</pre>
+</div>
+<p>该类是一个消息类，用于表示消息是由谁发给谁的、消息内容是什么、接收时间是多少，只有几个属性，比较简单。</p>
+<p>而MyServer.java类就相对比较多一些代码：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.jimstin.server; 
+ 
+import java.io.BufferedReader; 
+import java.io.BufferedWriter; 
+import java.io.InputStreamReader; 
+import java.io.OutputStreamWriter; 
+import java.net.ServerSocket; 
+import java.net.Socket; 
+import java.text.SimpleDateFormat; 
+import java.util.ArrayList; 
+import java.util.Date; 
+ 
+import org.json.JSONObject; 
+ 
+ 
+import com.jimstin.msg.SocketMessage; 
+ 
+public class MyServer { 
+ 
+  private boolean isStartServer; 
+  private ServerSocket mServer; 
+  /** 
+   * 消息队列，用于保存SocketServer接收来自于客户机（手机端）的消息 
+   */ 
+  private ArrayList&lt;SocketMessage&gt; mMsgList = new ArrayList&lt;SocketMessage&gt;(); 
+  /** 
+   * 线程队列，用于接收消息。每个客户机拥有一个线程，每个线程只接收发送给自己的消息 
+   */ 
+  private ArrayList&lt;SocketThread&gt; mThreadList = new ArrayList&lt;SocketThread&gt;(); 
+   
+  /** 
+   * 开启SocketServer 
+   */ 
+  private void startSocket() { 
+    try { 
+      isStartServer = true; 
+      int prot = 2000;//端口可以自己设置，但要和Client端的端口保持一致 
+      mServer = new ServerSocket(prot);//创建一个ServerSocket 
+      System.out.println("启动server,端口："+prot); 
+      Socket socket = null; 
+      int socketID = 0;//Android（SocketClient）客户机的唯一标志，每个socketID表示一个Android客户机 
+      //开启发送消息线程 
+      startSendMessageThread(); 
+      //用一个循环来检测是否有新的客户机加入 
+      while(isStartServer) { 
+        //accept()方法是一个阻塞的方法，调用该方法后， 
+        //该线程会一直阻塞，直到有新的客户机加入，代码才会继续往下走 
+        socket = mServer.accept(); 
+        //有新的客户机加入后，则创建一个新的SocketThread线程对象 
+        SocketThread thread = new SocketThread(socket, socketID++); 
+        thread.start(); 
+        //将该线程添加到线程队列 
+        mThreadList.add(thread); 
+      } 
+       
+    } catch (Exception e) { 
+      e.printStackTrace(); 
+    } 
+  } 
+   
+  /** 
+   * 开启推送消息线程，如果mMsgList中有SocketMessage，则把该消息推送到Android客户机 
+   */ 
+  public void startSendMessageThread() { 
+    new Thread(){ 
+      @Override 
+      public void run() { 
+        super.run(); 
+        try { 
+          /*如果isStartServer=true，则说明SocketServer已启动， 
+          用一个循环来检测消息队列中是否有消息，如果有，则推送消息到相应的客户机*/ 
+          while(isStartServer) { 
+            //判断消息队列中的长度是否大于0，大于0则说明消息队列不为空 
+            if(mMsgList.size() &gt; 0) { 
+              //读取消息队列中的第一个消息 
+              SocketMessage from = mMsgList.get(0); 
+              for(SocketThread to : mThreadList) { 
+                if(to.socketID == from.to) { 
+                  BufferedWriter writer = to.writer; 
+                  JSONObject json = new JSONObject(); 
+                  json.put("from", from.from); 
+                  json.put("msg", from.msg); 
+                  json.put("time", from.time); 
+                  //writer写进json中的字符串数据，末尾记得加换行符："\n"，否则在客户机端无法识别 
+                  //因为BufferedReader.readLine()方法是根据换行符来读取一行的 
+                  writer.write(json.toString()+"\n"); 
+                  //调用flush()方法，刷新流缓冲，把消息推送到手机端 
+                  writer.flush(); 
+                  System.out.println("推送消息成功："+from.msg+"&gt;&gt; to socketID:"+from.to); 
+                  break; 
+                } 
+              } 
+              //每推送一条消息之后，就要在消息队列中移除该消息 
+              mMsgList.remove(0); 
+            } 
+            Thread.sleep(200); 
+          } 
+        } catch (Exception e) { 
+          e.printStackTrace(); 
+        } 
+      } 
+    }.start(); 
+  } 
+   
+  /** 
+   * 定义一个SocketThread类，用于接收消息 
+   * 
+   */ 
+  public class SocketThread extends Thread { 
+     
+    public int socketID; 
+    public Socket socket;//Socket用于获取输入流、输出流 
+    public BufferedWriter writer;//BufferedWriter 用于推送消息 
+    public BufferedReader reader;//BufferedReader 用于接收消息 
+     
+    public SocketThread(Socket socket, int count) { 
+      socketID = count; 
+      this.socket = socket; 
+      System.out.println("新增一台客户机，socketID："+socketID); 
+    } 
+     
+    @Override 
+    public void run() { 
+      super.run(); 
+ 
+      try { 
+        //初始化BufferedReader 
+        reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "utf-8")); 
+        //初始化BufferedWriter 
+        writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "utf-8")); 
+        //如果isStartServer=true，则说明SocketServer已经启动， 
+        //现在需要用一个循环来不断接收来自客户机的消息，并作其他处理 
+        while(isStartServer) { 
+          //先判断reader是否已经准备好 
+          if(reader.ready()) { 
+            /*读取一行字符串，读取的内容来自于客户机 
+            reader.readLine()方法是一个阻塞方法， 
+            从调用这个方法开始，该线程会一直处于阻塞状态， 
+            直到接收到新的消息，代码才会往下走*/ 
+            String data = reader.readLine(); 
+            //讲data作为json对象的内容，创建一个json对象 
+            JSONObject json = new JSONObject(data); 
+            //创建一个SocketMessage对象，用于接收json中的数据 
+            SocketMessage msg = new SocketMessage(); 
+            msg.to = json.getInt("to"); 
+            msg.msg = json.getString("msg"); 
+            msg.from = socketID; 
+            msg.time = getTime(System.currentTimeMillis()); 
+            //接收到一条消息后，将该消息添加到消息队列mMsgList 
+            mMsgList.add(msg); 
+            System.out.println("收到一条消息："+json.getString("msg")+" &gt;&gt;&gt;&gt; to socketID:"+json.getInt("to")); 
+          } 
+          //睡眠100ms，每100ms检测一次是否有接收到消息 
+          Thread.sleep(100); 
+        } 
+         
+      } catch (Exception e) { 
+        e.printStackTrace(); 
+      }  
+       
+    } 
+  } 
+  /** 
+   * 获取指定格式的时间字符串，通过毫秒转换日期 
+   * @param millTime 
+   */ 
+  private String getTime(long millTime) { 
+    Date d = new Date(millTime); 
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
+    return sdf.format(d); 
+  } 
+  public static void main(String[] args) { 
+    MyServer server = new MyServer(); 
+    server.startSocket(); 
+  } 
+ 
+} 
+</pre>
+</div>
+<p><strong>2.SocketClient工程<br />
+</strong></p>
+<p></p>
+<p>该工程是一个Android的工程，只有一个MainActivity.java和activity_main.xml文件，</p>
+<p>先看一下activity_main.xml布局文件：</p>
+<div class="phpstudycode">
+<pre class="brush:xml;">
+&lt;LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" 
+  xmlns:tools="http://schemas.android.com/tools" 
+  android:layout_width="match_parent" 
+  android:layout_height="match_parent" 
+  tools:context=".MainActivity" 
+  android:orientation="vertical" &gt; 
+   
+  &lt;LinearLayout  
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" 
+    android:orientation="horizontal"&gt; 
+    &lt;EditText  
+      android:id="@+id/ip_edt" 
+      android:layout_width="0dp" 
+      android:layout_height="wrap_content" 
+      android:layout_weight="1" 
+      android:hint="ip" 
+      android:text="172.16.1.200"/&gt; 
+    &lt;EditText  
+      android:id="@+id/port_edt" 
+      android:layout_width="0dp" 
+      android:layout_height="wrap_content" 
+      android:layout_weight="1" 
+      android:hint="port" 
+      android:text="2000"/&gt; 
+  &lt;/LinearLayout&gt; 
+  &lt;Button  
+    android:id="@+id/start_btn" 
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" 
+    android:text="start"/&gt; 
+  &lt;EditText  
+    android:id="@+id/socket_id_edt" 
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" 
+    android:hint="socketID"/&gt; 
+   
+ 
+   
+  &lt;EditText  
+    android:id="@+id/msg_edt" 
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" 
+    android:minLines="5" 
+    android:hint="content" 
+    android:gravity="top" 
+    /&gt; 
+  &lt;Button  
+    android:id="@+id/send_btn" 
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" 
+    android:text="send"/&gt; 
+  &lt;TextView  
+    android:id="@+id/console_txt" 
+    android:layout_width="match_parent" 
+    android:layout_height="0dp" 
+    android:layout_weight="1"/&gt;   
+  &lt;Button  
+    android:id="@+id/clear_btn" 
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" 
+    android:text="clear"/&gt; 
+&lt;/LinearLayout&gt; 
+
+</pre>
+</div>
+<p>效果图：<br />
+</p>
+<p></p>
+<p>MainActivity.java类：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.jimstin.socketclient; 
+ 
+import java.io.BufferedReader; 
+import java.io.BufferedWriter; 
+import java.io.IOException; 
+import java.io.InputStreamReader; 
+import java.io.OutputStreamWriter; 
+import java.net.Socket; 
+import java.net.UnknownHostException; 
+import java.text.SimpleDateFormat; 
+import java.util.Date; 
+ 
+import org.json.JSONObject; 
+ 
+import com.tencent.stat.MtaSDkException; 
+import com.tencent.stat.StatConfig; 
+import com.tencent.stat.StatService; 
+ 
+import android.R.integer; 
+import android.os.AsyncTask; 
+import android.os.Bundle; 
+import android.os.Handler; 
+import android.os.Message; 
+import android.util.Log; 
+import android.view.View; 
+import android.view.View.OnClickListener; 
+import android.widget.EditText; 
+import android.widget.TextView; 
+import android.widget.Toast; 
+import android.app.Activity; 
+ 
+public class MainActivity extends Activity implements OnClickListener { 
+ 
+  private EditText mIPEdt, mPortEdt, mSocketIDEdt, mMessageEdt; 
+  private static TextView mConsoleTxt; 
+   
+  private static StringBuffer mConsoleStr = new StringBuffer(); 
+  private Socket mSocket; 
+  private boolean isStartRecieveMsg; 
+   
+  private SocketHandler mHandler; 
+  protected BufferedReader mReader;//BufferedWriter 用于推送消息 
+  protected BufferedWriter mWriter;//BufferedReader 用于接收消息 
+   
+  @Override 
+  protected void onCreate(Bundle savedInstanceState) { 
+    super.onCreate(savedInstanceState); 
+    setContentView(R.layout.activity_main); 
+    initView(); 
+  } 
+ 
+  private void initView() { 
+    mIPEdt = (EditText) findViewById(R.id.ip_edt); 
+    mPortEdt = (EditText) findViewById(R.id.port_edt); 
+    mSocketIDEdt = (EditText) findViewById(R.id.socket_id_edt); 
+    mMessageEdt = (EditText) findViewById(R.id.msg_edt); 
+    mConsoleTxt = (TextView) findViewById(R.id.console_txt); 
+    findViewById(R.id.start_btn).setOnClickListener(this); 
+    findViewById(R.id.send_btn).setOnClickListener(this); 
+    findViewById(R.id.clear_btn).setOnClickListener(this); 
+    mHandler = new SocketHandler(); 
+  } 
+ 
+  /** 
+   * 初始化socket 
+   */ 
+  private void initSocket() { 
+    //新建一个线程，用于初始化socket和检测是否有接收到新的消息 
+    Thread thread = new Thread(new Runnable() { 
+       
+      @Override 
+      public void run() { 
+        String ip = mIPEdt.getText().toString();//IP 
+        int port = Integer.parseInt(mPortEdt.getText().toString());//Socket 
+         
+        try { 
+          isStartRecieveMsg = true; 
+          mSocket = new Socket(ip, port); 
+          mReader = new BufferedReader(new InputStreamReader(mSocket.getInputStream(), "utf-8")); 
+          mWriter = new BufferedWriter(new OutputStreamWriter(mSocket.getOutputStream(), "utf-8")); 
+          while(isStartRecieveMsg) { 
+            if(mReader.ready()) { 
+              /*读取一行字符串，读取的内容来自于客户机 
+              reader.readLine()方法是一个阻塞方法， 
+              从调用这个方法开始，该线程会一直处于阻塞状态， 
+              直到接收到新的消息，代码才会往下走*/ 
+              String data = mReader.readLine(); 
+              //handler发送消息，在handleMessage()方法中接收 
+              mHandler.obtainMessage(0, data).sendToTarget(); 
+            } 
+            Thread.sleep(200); 
+          } 
+          mWriter.close(); 
+          mReader.close(); 
+          mSocket.close(); 
+        } catch (Exception e) { 
+          e.printStackTrace(); 
+        }  
+      } 
+    }); 
+    thread.start(); 
+  } 
+   
+  @Override 
+  public void onClick(View v) { 
+    switch (v.getId()) { 
+    case R.id.send_btn: 
+      send(); 
+      break; 
+    case R.id.clear_btn: 
+      mConsoleStr.delete(0, mConsoleStr.length()); 
+      mConsoleTxt.setText(mConsoleStr.toString()); 
+      break; 
+    case R.id.start_btn: 
+      if(!isStartRecieveMsg) { 
+        initSocket(); 
+      } 
+      break; 
+    default: 
+      break; 
+    } 
+  } 
+ 
+  /** 
+   * 发送 
+   */ 
+  private void send() { 
+    new AsyncTask&lt;String, Integer, String&gt;() { 
+ 
+      @Override 
+      protected String doInBackground(String... params) { 
+        sendMsg(); 
+        return null; 
+      } 
+    }.execute(); 
+  } 
+  /** 
+   * 发送消息 
+   */ 
+  protected void sendMsg() { 
+    try { 
+      String socketID = mSocketIDEdt.getText().toString().trim(); 
+      String msg = mMessageEdt.getText().toString().trim(); 
+      JSONObject json = new JSONObject(); 
+      json.put("to", socketID); 
+      json.put("msg", msg); 
+      mWriter.write(json.toString()+"\n"); 
+      mWriter.flush(); 
+      mConsoleStr.append("我:" +msg+"  "+getTime(System.currentTimeMillis())+"\n"); 
+      mConsoleTxt.setText(mConsoleStr); 
+    } catch (Exception e) { 
+      e.printStackTrace(); 
+    } 
+  } 
+ 
+  static class SocketHandler extends Handler { 
+     
+    @Override 
+    public void handleMessage(Message msg) { 
+      // TODO Auto-generated method stub 
+      super.handleMessage(msg); 
+      switch (msg.what) { 
+      case 0: 
+        try { 
+          //将handler中发送过来的消息创建json对象 
+          JSONObject json = new JSONObject((String)msg.obj); 
+          mConsoleStr.append(json.getString("from")+":" +json.getString("msg")+"  "+getTime(System.currentTimeMillis())+"\n"); 
+          //将json数据显示在TextView中 
+          mConsoleTxt.setText(mConsoleStr); 
+        } catch (Exception e) { 
+          e.printStackTrace(); 
+        } 
+         
+        break; 
+ 
+      default: 
+        break; 
+      } 
+    } 
+  } 
+   
+  @Override 
+  public void onBackPressed() { 
+    super.onBackPressed(); 
+    isStartRecieveMsg = false; 
+  } 
+   
+  private static String getTime(long millTime) { 
+    Date d = new Date(millTime); 
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
+    return sdf.format(d); 
+  } 
+   
+} 
+
+</pre>
+</div>
+<p>以上代码的注释都比较详细，就不再多说了。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/105830.html'>用js将内容复制到剪贴板兼容浏览器</a><a>下一篇</a><a href='/php/biji/105832.html'>C# 实现抓取网站页面内容的实例方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

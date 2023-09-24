@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>CascadeView级联组件实现思路详解(分离思想和单链表)_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="本文介绍自己最近做省市级联的类似的级联功能的实现思路，为了尽可能地做到职责分离跟表现与行为分离，这个功能拆分成了2个组件并用到了单链表来实现关键的级联逻辑，下一段有演" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">CascadeView级联组件实现思路详解(分离思想和单链表)</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>本文介绍自己最近做省市级联的类似的级联功能的实现思路，为了尽可能地做到职责分离跟表现与行为分离，这个功能拆分成了2个组件并用到了单链表来实现关键的级联逻辑，下一段有演</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>本文介绍自己最近做省市级联的类似的级联功能的实现思路，为了尽可能地做到职责分离跟表现与行为分离，这个功能拆分成了2个组件并用到了单链表来实现关键的级联逻辑，下一段有演示效果的gif图。虽然这是个很常见的功能，但是本文的实现逻辑清晰，代码好理解，脱离了省市级联这样的语义，考虑了表现与行为的分离，希望本文的内容能够为你的工作带来一些参考的价值，欢迎阅读和指正。</p>
+<p><span style="color: #0000ff"><strong>Cascade 级联操作</strong></span></p>
+<p>CascadeType. PERSIST 级联持久化 ( 保存 ) 操作</p>
+<p>CascadeType. MERGE 级联更新 ( 合并 ) 操作</p>
+<p>CascadeType. REFRESH 级联刷新操作，只会查询获取操作</p>
+<p>CascadeType. REMOVE 级联删除操作</p>
+<p>CascadeType. ALL 级联以上全部操作</p>
+<p>Fetch 抓取是否延迟加载，默认情况一的方为立即加载，多的一方为延迟加载 <br />
+</p>
+<p>mappedBy 关系维护 <br />
+</p>
+<p>mappedBy= "parentid" 表示在children 类中的 parentid 属性来维护关系，这个名称必须和children 类中的 parentid属性名称完全一致才行。</p>
+<p>另外需要注意，parent类中的集合类型必须是List或者Set，不能设置为ArrayList，否则会报错</p>
+<p>演示效果（代码下载，注：该效果需要http才能运行，另外效果中的数据是模拟数据，并不是后台真实返回的，所以看到的省市县的下拉数据都是一样的）：</p>
+<p style="text-align: center"><a href="http://images2015.cnblogs.com/blog/459873/201604/459873-20160408183017406-1361588901.gif"></a></p>
+<p>注：本文用到了前面几篇相关博客的技术实现，如果有需要的话可以点击下面的链接前去了解：</p>
+<p>1）详解Javascript的继承实现：提供一个class.js，用来定义javascript的类和构建类的继承关系；</p>
+<p>2）jquery技巧之让任何组件都支持类似DOM的事件管理：提供一个eventBase.js，用来给任意组件实例提供类似DOM的事件管理功能；</p>
+<p>3）对jquery的ajax进行二次封装以及ajax缓存代理组件：AjaxCache：提供ajax.js和ajaxCache.js，简化jquery的ajax调用，以及对请求进行客户端的缓存代理。</p>
+<p>下面先来详细了解下这个功能的要求。</p>
+<p><span style="color: #0000ff"><strong>1. 功能分析</strong></span></p>
+<p>以包含三个级联项的级联组件来说明这个功能：</p>
+<p>1）每个级联项可能需要一个用作输入提示的option：</p>
+<p style="text-align: center"><a href="http://images2015.cnblogs.com/blog/459873/201604/459873-20160411223030145-349535834.png"></a></p>
+<p>这种情况每个级联项的数据列表中都能选择一个空的option（就是输入提示的那个）：</p>
+<p style="text-align: center"><a href="http://images2015.cnblogs.com/blog/459873/201604/459873-20160411223031316-871081866.png"></a></p>
+<p>也可能不需要用作输入提示的option：</p>
+<p style="text-align: center"><a href="http://images2015.cnblogs.com/blog/459873/201604/459873-20160411223032410-493612153.png"></a></p>
+<p>这种情况每个级联项的数据列表中只能选数据option，选不到空的option：</p>
+<p style="text-align: center"><a href="http://images2015.cnblogs.com/blog/459873/201604/459873-20160411223033457-2115955079.png"></a></p>
+<p>2）如果当前这个页面是从数据库中查询出来跟级联组件对应的字段有值，那么就把查询出来的值回显到级联组件上：</p>
+<p style="text-align: center"><a href="http://images2015.cnblogs.com/blog/459873/201604/459873-20160411223034285-508323425.png"></a></p>
+<p>如果查询出来的对应字段没有值，那么就按第1）点需求描述的2种情况显示。</p>
+<p>3）各个级联项在数据结构上构成单链表的关系，后一个级联项的数据列表，跟前一个级联项所选择的数据有关联的。</p>
+<p>4）考虑到性能方面的问题，各个级联项的数据列表都采用ajax异步加载显示。</p>
+<p>5）在级联组件初始化完成以后，自动加载第一个级联项的列表。</p>
+<p>6）当前一个级联项发生改变时，清空后面所有直接或间接关联的级联项的数据列表，同时如果前一个级联项改变后的值不为空则自动加载跟它直接关联的下一个级联项的数据列表。清空级联项的数据列表时要注意：如果级联项需要显示输入提示的option，在清空的时候得保留该option。</p>
+<p>7）要充分考虑性能问题，避免重复加载。</p>
+<p>8）考虑到表单提交的问题，当级联组件任意级联项发生改变后，得把级联组件所选的值体现到一个隐藏的文本域内，方便把级联组件的值通过该文本域提交到后台。<br />
+</p>
+<p>功能大致如上。</p>
+<p><span style="color: #0000ff"><strong>2. 实现思路</strong></span></p>
+<p>1）数据结构</p>
+<p>级联组件跟别的组件不太一样的是，它跟后台的数据有一些依赖，我考虑的比较好实现的数据结构是：</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{
+"id": 1,
+"text": "北京市",
+"code": 110000,
+"parentId": 0
+},
+{
+"id": 2,
+"text": "河北省",
+"code": 220000,
+"parentId": 0
+},
+{
+"id": 3,
+"text": "河南省",
+"code": 330000,
+"parentId": 0
+}</pre>
+</div>
+<p>id是数据的唯一标识，数据之间的关联关系通过parentId来构建，text,code这种都属于普通的业务字段。如果按这个数据结构，我们查询级联项数据列表的接口就会变得很简单：</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+//查第一个级联项的列表
+/api/cascade&#63;parentId=0
+//根据第一个级联项选的值，查第二个级联项的列表
+/api/cascade&#63;parentId=1
+//根据第二个级联项选的值，查第三个级联项的列表
+/api/cascade&#63;parentId=4</pre>
+</div>
+<p>这个结构对于后台来说也很好处理，虽然在结构上它们是一种树形的表结构，但是查询都是单层的，所以很好实现。</p>
+<p>从前面的查询演示也能够看出，这个结构能够很方便地帮我们把数据查询的接口和参数统一成一个，这对于组件开发来说是一个很方便的事情。我们从后台拿到这个数据结构之后，把每一条数据解析成一个option，如&lt;option value=”北京市” data-param-value=”1”&gt;北京市&lt;/option&gt;，这样既能完成数据列表的下拉显示，还能通过select这个表单元素的作用收集到当前级联项所选中的值，最后当级联项发生改变的时候，还能够获取到选中的option，把它上面存储的data-param-value的值作为parentId这个参数，去加载下一个级联项的列表。这也是级联组件数据查询和解析的思路。</p>
+<p>但是这里面还需要考虑的是灵活性的问题，在实际的项目中，可能级联组件的数据结构是按id parentId这种类似的关联关系定义的，但是它们的字段不一定是叫id parentId text code，很有可能是别的字段。也就是说：在把数据解析成option的时候，option的text还有value到底用什么字段来解析，以及data-param-value这个属性的用什么字段的值，都是不确定的；还有查询数据时用的参数名称parentId也不能是死的，有的时候如果后台人员先写好了查询接口，用了别的名称，你不可能要求人家去改他的参数名称，因为他那边是需要编译再部署的，相比前端更麻烦一些；还有parentId=0这个0值也是不能固定，因为实际项目中第一层的数据的parentid有可能是空，也有可能是-1。这些东西都得设计成option，一方面提供默认值，同时留给外部根据实际情况来设置，比如本文最终的实现中这个option都是这样定义的：</p>
+<p>textField: 'text', //返回的数据中要在&lt;option&gt;元素内显示的字段名称<br />
+valueField: 'text', //返回的数据中要设置在&lt;option&gt;元素的value上的字段名称<br />
+paramField: 'id', //当调用数据查询接口时，要传递给后台的数据对应的字段名称<br />
+paramName: 'parentId', //当调用数据查询接口时，跟在url后面传递数据的参数名<br />
+defaultParam: '', //当查询第一个级联项时，传递给后台的值，一般是0，''，或者-1等，表示要查询第上层的数据</p>
+<p>2）html结构</p>
+<p>根据前面的功能分析的第1条，级联组件的初始html结构有2种：</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+&lt;ul id="licenseLocation-view" class="cascade-view clearfix"&gt;
+&lt;li&gt;
+&lt;select class="form-control"&gt;
+&lt;option value=""&gt;请选择省份&lt;/option&gt;
+&lt;/select&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;select class="form-control"&gt;
+&lt;option value=""&gt;请选择城市&lt;/option&gt;
+&lt;/select&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;select class="form-control"&gt;
+&lt;option value=""&gt;请选择区县&lt;/option&gt;
+&lt;/select&gt;
+&lt;/li&gt;
+&lt;/ul&gt;</pre>
+</div>
+<p>或</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+&lt;ul id="companyLocation-view" class="cascade-view clearfix"&gt;
+&lt;li&gt;
+&lt;select class="form-control"&gt;
+&lt;/select&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;select class="form-control"&gt;
+&lt;/select&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;select class="form-control"&gt;
+&lt;/select&gt;
+&lt;/li&gt;
+&lt;/ul&gt;</pre>
+</div>
+<p>这两个结构唯一的区别就在于是否配置了用作输入提示的option。另外需要注意的是如果需要这个空的option，一定得把value属性设置成空，否则这个空的option在表单提交的时候会把option的提示信息提交到后台。</p>
+<p>这两个结构最关键的是select元素，跟ul和li没有任何关系，ul跟li是为了UI而用到的；select元素没有任何语义，不用去标识哪个是省份，哪个是城市，哪个是区县。从功能上来说，一个select代表一个级联项，这些select在哪定义都不重要，我们只要告诉级联组件，它的级联项由哪些select元素构成就行了，唯一需要额外告诉组件的就是这些select元素的先后关系，但是这个通常都是用元素在html中的默认顺序来控制的。这个结构能够帮助我们把组件的功能尽可能地做到表现与行为分离。</p>
+<p>3）职责分离和单链表的运用</p>
+<p>从前面的部分也差不多能看出来了，这个级联组件如果按职责划分，可以分成两个核心的组件，一个负责整体功能和内部级联项的管理（CascadeView），另一个负责级联项的功能实现（CascadeItem）。另外为了更方便地实现级联的逻辑，我们只需要把所有的级联项通过链表连起来，通过发布-订阅模式，后一个级联项订阅前一个级联项发生改变的消息；当前面的级联项发生改变的时候，发布消息，通知后面的级联项去处理相关逻辑；通过链表的作用，这个消息可能可以一直传递到最后一个级联项为止。用图来描述的话，大致就是这个样子：</p>
+<p style="text-align: center"><a href="http://images2015.cnblogs.com/blog/459873/201604/459873-20160411223035207-1953980313.png"></a></p>
+<p>我们需要做的就是控制好消息的发布跟传递。</p>
+<p>4）表单提交</p>
+<p>为了能够方便地将级联组件的值提交到后台，可以把整个级联组件当成一个整体，对外提供一个onChanged事件，外部可通过这个事件获取所有级联项的值。由于存在多个级联项，所以在发布onChanged这个事件时，只能在任意级联项发生改变的时候，都去触发这个事件。</p>
+<p>5）ajax缓存</p>
+<p>在这个组件里面得考虑两个层级的ajax缓存，第一个是组件这一层级的，比如我把第一个级联项切换到了北京，这个时候第二个级联项就把北京的数据加载出来了，然后我把第一个级联项从北京切换到河北再切换到北京，这个时候第二个级联项要显示的还是北京的关联数据列表，如果我们在第一次加载这个列表的时候就把它的数据缓存下来了，那么这次就不用发起ajax请求了；第二个是ajax请求这一层级的，假如页面上有多个级联组件，我先把第一个级联组件的第一个级联项切换到北京，浏览器发起一个ajax请求加载数据，当我再把第二个级联组件的第一个级联项切换到北京的时候，浏览器还会再发一个请求去加载数据，如果我把第一个组件第一次ajax请求的返回的数据，先缓存起来，当第二个组件，用同样的参数请求同样的接口时，直接拿之前缓存觉得结果返回，这样也能减少一次ajax请求。第二个层级的ajax缓存依赖上文《对jquery的ajax进行二次封装以及ajax缓存代理组件：AjaxCache》，对于组件来说，它内部只实现了第一个层级的缓存，但是它不用考虑第二个层级的缓存，因为第二个层级的缓存实现对它来说是透明的，它不知道它用到的ajax组件有缓存的功能。</p>
+<p><span style="color: #0000ff"><strong>3. 实现细节</strong></span></p>
+<p>最终的实现包含了三个组件，CascadeView、CascadeItem、CascadePublicDefaults，前面两个是组件的核心，最后一个只是用来定义一些option，它的作用在CascadeItem的注释里面有详细的描述。另外在下面的代码中有非常详细的注释解释了一些关键代码的作用，结合着前面的需求来看代码，应该还是比较容易理解的。我以前倾向于用文字来解释一些实现细节，后来我慢慢觉得这种方式有点费力不讨好，第一是细节层面的语言不好组织，有的时候言不达意，明明想把一件事情解释清楚，结果反而弄得更加迷糊，至少我自己看自己写的东西就会这样的感触；第二是本身开发人员都具有阅读源码的能力，而且大部分积极的开发人员都愿意通过琢磨别人的代码来理解实现思路；所以我改用注释的方式来说明实现细节：）</p>
+<p><strong>CascadePublicDefaults:</strong></p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+define(function () {
+return {
+url: '',//数据查询接口
+textField: 'text', //返回的数据中要在&lt;option&gt;元素内显示的字段名称
+valueField: 'text', //返回的数据中要设置在&lt;option&gt;元素的value上的字段名称
+paramField: 'id', //当调用数据查询接口时，要传递给后台的数据对应的字段名称
+paramName: 'parentId', //当调用数据查询接口时，跟在url后面传递数据的参数名
+defaultParam: '', //当查询第一个级联项时，传递给后台的值，一般是0，''，或者-1等，表示要查询第上层的数据
+keepFirstOption: true, //是否保留第一个option（用作输入提示，如：请选择省份），如果为true，在重新加载级联项时，不会清除默认的第一个option
+resolveAjax: function (res) {
+return res;
+}//因为级联项在加载数据的时候会发异步请求，这个回调用来解析异步请求返回的响应
+}
+});</pre>
+</div>
+<p><strong>CascadeView：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+define(function (require, exports, module) {
+var $ = require('jquery');
+var Class = require('mod/class');
+var EventBase = require('mod/eventBase');
+var PublicDefaults = require('mod/cascadePublicDefaults');
+var CascadeItem = require('mod/cascadeItem');
+/**
+* PublicDefaults的作用见CascadeItem组件内的注释
+*/
+var DEFAULTS = $.extend({}, PublicDefaults, {
+$elements: undefined, //级联项jq对象的数组，元素在数据中的顺序代表级联的先后顺序
+valueSeparator: ',', //获取所有级联项的值时使用的分隔符，如果是英文逗号，返回的值形如 北京市,区,朝阳区
+values: '', //用valueSeparator分隔的字符串，表示初始时各个select的值
+onChanged: $.noop //当任意级联项的值发生改变的时候会触发这个事件
+});
+var CascadeView = Class({
+instanceMembers: {
+init: function (options) {
+//通过this.base调用父类EventBase的init方法
+this.base();
+var opts = this.options = this.getOptions(options),
+items = this.items = [],
+that = this,
+$elements = opts.$elements,
+values = opts.values.split(opts.valueSeparator);
+this.on('changed.cascadeView', $.proxy(opts.onChanged, this));
+$elements && $elements.each(function (i) {
+var $el = $(this);
+//实例化CascadeItem组件，并把每个实例的prevItem属性指向前一个实例
+//第一个prevItem属性设置为undefined
+var cascadeItem = new CascadeItem($el, $.extend(that.getItemOptions(), {
+prevItem: i == 0 &#63; undefined : items[i - 1],
+value: $.trim(values[i])
+}));
+items.push(cascadeItem);
+//每个级联项实例发生改变都会触发CascadeView组件的changed事件
+//外部可在这个回调内处理业务逻辑
+//比如将所有级联项的值设置到一个隐藏域里面，用于表单提交
+cascadeItem.on('changed.cascadeItem', function () {
+that.trigger('changed.cascadeView', that.getValue());
+});
+});
+//初始化完成自动加载第一个级联项
+items.length && items[0].load();
+},
+getOptions: function (options) {
+return $.extend({}, this.getDefaults(), options);
+},
+getDefaults: function () {
+return DEFAULTS;
+},
+getItemOptions: function () {
+var opts = {}, _options = this.options;
+for (var i in PublicDefaults) {
+if (PublicDefaults.hasOwnProperty(i) && i in _options) {
+opts[i] = _options[i];
+}
+}
+return opts;
+},
+//获取所有级联项的值，是一个用valueSeparator分隔的字符串
+//为空的级联项的值不会返回
+getValue: function () {
+var value = [];
+this.items.forEach(function (item) {
+var val = $.trim(item.getValue());
+val != '' && value.push(val);
+});
+return value.join(this.options.valueSeparator);
+}
+},
+extend: EventBase
+});
+return CascadeView;
+});</pre>
+</div>
+<p><strong>CascadeItem:</strong></p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+define(function (require, exports, module) {
+var $ = require('jquery');
+var Class = require('mod/class');
+var EventBase = require('mod/eventBase');
+var PublicDefaults = require('mod/cascadePublicDefaults');
+var AjaxCache = require('mod/ajaxCache');
+//这是一个可缓存的Ajax组件
+var Ajax = new AjaxCache();
+/**
+* 有一部分option定义在PublicDefaults里面，因为CascadeItem组件不会被外部直接使用
+* 外部用的是CascadeView组件，所以有一部分的option必须变成公共的，在CascadeView组件也定义一次
+* 外部通过CascadeView组件传递所有的option
+* CascadeView内部实例化CascadeItem的时候，再把PublicDefaults内的option传递给CascadeItem
+*/
+var DEFAULTS = $.extend({}, PublicDefaults, {
+prevItem: undefined, // 指向前一个级联项
+value: '' //初始时显示的value
+});
+var CascadeItem = Class({
+instanceMembers: {
+init: function ($el, options) {
+//通过this.base调用父类EventBase的init方法
+this.base($el);
+this.$el = $el;
+this.options = this.getOptions(options);
+this.prevItem = this.options.prevItem; //前一个级联项
+this.hasContent = false;//这个变量用来控制是否需要重新加载数据
+this.cache = {};//用来缓存数据
+var that = this;
+//代理select元素的change事件
+$el.on('change', function () {
+that.trigger('changed.cascadeItem');
+});
+//当前一个级联项的值发生改变的时候，根据需要做清空和重新加载数据的处理
+this.prevItem && this.prevItem.on('changed.cascadeItem', function () {
+//只要前一个的值发生改变并且自身有内容的时候，就得清空内容
+that.hasContent && that.clear();
+//如果不是第一个级联项，同时前一个级联项没有选中有效的option时，就不处理
+if (that.prevItem && $.trim(that.prevItem.getValue()) == '') return;
+that.load();
+});
+var value = $.trim(this.options.value);
+value !== '' && this.one('render.cascadeItem', function () {
+//设置初始值
+that.$el.val(value.split(','));
+//通知后面的级联项做清空和重新加载数据的处理
+that.trigger('changed.cascadeItem');
+});
+},
+getOptions: function (options) {
+return $.extend({}, this.getDefaults(), options);
+},
+getDefaults: function () {
+return DEFAULTS;
+},
+clear: function () {
+var $el = this.$el;
+$el.val('');
+if (this.options.keepFirstOption) {
+//保留第一个option
+$el.children().filter(':gt(0)').remove();
+} else {
+//清空全部
+$el.html('');
+}
+//通知后面的级联项做清空和重新加载数据的处理
+this.trigger('changed.cascadeItem');
+this.hasContent = false;//表示内容为空
+},
+load: function () {
+var opts = this.options,
+paramValue,
+that = this,
+dataKey;
+//dataKey是在cache缓存时用的键名
+//由于第一个级联项的数据是顶层数据，所以在缓存的时候用的是固定且唯一的键：root
+//其它级联项的数据缓存时用的键名跟前一个选择的option有关
+if (!this.prevItem) {
+paramValue = opts.defaultParam;
+dataKey = 'root';
+} else {
+paramValue = this.prevItem.getParamValue();
+dataKey = paramValue;
+}
+//先看数据缓存中有没有加载过的数据，有就直接显示出来，避免Ajax
+if (dataKey in this.cache) {
+this.render(this.cache[dataKey]);
+} else {
+var params = {};
+params[opts.paramName] = paramValue;
+Ajax.get(opts.url, params).done(function (res) {
+//resolveAjax这个回调用来在外部解析ajax返回的数据
+//它需要返回一个data数组
+var data = opts.resolveAjax(res);
+if (data) {
+that.cache[dataKey] = data;
+that.render(data);
+}
+});
+}
+},
+render: function (data) {
+var html = [],
+opts = this.options;
+data.forEach(function (item) {
+html.push(['&lt;option value="',
+item[opts.valueField],
+'" data-param-value="',//将paramField对应的值存放在option的data-param-value属性上
+item[opts.paramField],
+'"&gt;',
+item[opts.textField],
+'&lt;/option&gt;'].join(''));
+});
+//采用append的方式动态添加，避免影响第一个option
+//最后还要把value设置为空
+this.$el.append(html.join('')).val('');
+this.hasContent = true;//表示有内容
+this.trigger('render.cascadeItem');
+},
+getValue: function () {
+return this.$el.val();
+},
+getParamValue: function () {
+return this.$el.find('option:selected').data('paramValue');
+}
+},
+extend: EventBase
+});
+return CascadeItem;
+});</pre>
+</div>
+<p><span style="color: #0000ff"><strong>4. demo说明</strong></span></p>
+<p>演示代码的结构：</p>
+<p style="text-align: center"><a href="http://images2015.cnblogs.com/blog/459873/201604/459873-20160411232634285-1174789463.png"></a></p>
+<p>其中框起来的就是演示的相关部分。html/regist.html是演示效果的页面，js/app/regist.js是演示效果的入口js：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+define(function (require, exports, module) {
+  var $ = require('jquery');
+  var CascadeView = require('mod/cascadeView');
+  function publicSetCascadeView(fieldName, opts) {
+    this.cascadeView = new CascadeView({
+      $elements: $('#' + fieldName + '-view').find('select'),
+      url: '../api/cascade.json',
+      onChanged: this.onChanged,
+      values: opts.values,
+      keepFirstOption: this.keepFirstOption,
+      resolveAjax: function (res) {
+        if (res.code == 200) {
+          return res.data;
+        }
+      }
+    });
+  }
+  var LOCATION_VIEWS = {
+    licenseLocation: {
+      $input: $('input[name="licenseLocation"]'),
+      keepFirstOption: true,
+      setCascadeView: publicSetCascadeView,
+      onChanged: function(e, value){
+        LOCATION_VIEWS.licenseLocation.$input.val(value);
+      }
+    },
+    companyLocation: {
+      $input: $('input[name="companyLocation"]'),
+      keepFirstOption: false,
+      setCascadeView: publicSetCascadeView,
+      onChanged: function(e, value){
+        LOCATION_VIEWS.companyLocation.$input.val(value);
+      }
+    }
+  };
+  LOCATION_VIEWS.licenseLocation.setCascadeView('licenseLocation', {
+    values: LOCATION_VIEWS.licenseLocation.$input.val()
+  });
+  LOCATION_VIEWS.companyLocation.setCascadeView('companyLocation', {
+    values: LOCATION_VIEWS.companyLocation.$input.val()
+  });
+});</pre>
+</div>
+<p>注意以上代码中LOCATION_VIEWS这个变量的作用，因为页面上有多个级联组件，这个变量其实是通过策略模式，把各个组件的相关的东西都用一种类似的方式管理起来而已。如果不这么做的话，很容易产生重复代码；这种形式也比较有利于在入口文件这种处理业务逻辑的地方，进行一些业务逻辑的分离与封装。</p>
+<p><span style="color: #0000ff"><strong>5. others</strong></span></p>
+<p>这估计是在现在公司写的最后一篇博客，过两天就得去新单位去上班了，不确定还能否有这么多空余的时间来记录平常的工作思路，但是好歹已经培养了写博客的习惯，将来没时间也会挤出时间来的。今年的目标主要是拓宽知识面，提高代码质量，后续的博客更多还是在组件化开发这个类别上，希望以后能够得到大家的继续关注phpstudy网站！<br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/104478.html'>用 Composer构建自己的 PHP 框架之基础准备</a><a>下一篇</a><a href='/php/biji/104480.html'>非常全面的php日期时间运算汇总</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

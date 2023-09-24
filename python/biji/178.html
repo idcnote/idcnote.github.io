@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Python中实现多任务耗资源最小的方式_IDC笔记</title>
+    <meta name="keywords" content=",Python教程"/>
+    <meta name="description" content="协程，又称微线程，纤程。英文名 Coroutine。
+协程是 Python 中另外一种实现多任务的方式，只不过比线程更小，占用更小执行单元（理解为需要的资源）。
+为啥说它是一个执行单元，因为它自"/>
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author"/>
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python入门			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/python/1.html">Python环境搭建</a></li><li><a href="/python/python/2.html">Python解释器及IDLE教程</a></li><li><a href="/python/python/3.html">Pycharm安装及使用教程</a></li><li><a href="/python/python/4.html">学习方向及教程规划</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python基础语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/basic/5.html">第一个Python实例</a></li><li><a href="/python/basic/6.html">Python编码规范</a></li><li><a href="/python/basic/7.html">Python标识符和关键字</a></li><li><a href="/python/basic/9.html">Python基本数据类型介绍</a></li><li><a href="/python/basic/8.html">Python变量</a></li><li><a href="/python/basic/10.html">基本数据类型之字符串</a></li><li><a href="/python/basic/11.html">布尔类型和强制类型转换</a></li><li><a href="/python/basic/12.html">Python的输入和输出方法</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python入门语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/syntax/13.html">python算术运算符和关系运算符</a></li><li><a href="/python/syntax/14.html">python算术运算符和关系运算符</a></li><li><a href="/python/syntax/15.html">python位运算符</a></li><li><a href="/python/syntax/16.html">Python控制结构详解</a></li><li><a href="/python/syntax/17.html">python基础ifelse选择结构详解</a></li><li><a href="/python/syntax/18.html">python选择结构的嵌套</a></li><li><a href="/python/syntax/20.html">Python基础for循环语句详解</a></li><li><a href="/python/syntax/19.html">Pyhon基础while循环语句详解</a></li><li><a href="/python/syntax/21.html">python循环嵌套</a></li><li><a href="/python/syntax/24.html">Python序列的加法和乘法操作详解</a></li><li><a href="/python/syntax/23.html">Python序列详解（包括索引和切片）</a></li><li><a href="/python/syntax/22.html">python基础break语句详解</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python核心语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/core/25.html">Python序列常用的内置函数详解</a></li><li><a href="/python/core/26.html">Python列表list的基础操作与代码实现</a></li><li><a href="/python/core/27.html">Python列表list操作(遍历查找增加删除修改)实例详解</a></li><li><a href="/python/core/28.html">列表的排序和逆序</a></li><li><a href="/python/core/29.html">列表推导式</a></li><li><a href="/python/core/30.html">python二维列表</a></li><li><a href="/python/core/31.html">python元组的操作详解</a></li><li><a href="/python/core/32.html">python字典及基础操作</a></li><li><a href="/python/core/33.html">python字典常用函数（clear、get、items、keys、values、pop）</a></li><li><a href="/python/core/34.html">字典-混合字典和字典推导式</a></li><li><a href="/python/core/35.html">python集合类型介绍</a></li><li><a href="/python/core/36.html">集合的运算（交集、并集和差集）</a></li><li><a href="/python/core/37.html">Python字符串基础操作</a></li><li><a href="/python/core/38.html">Python字符串常用方法</a></li><li><a href="/python/core/39.html">字符串的测试方法</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/functions/42.html">python函数的创建和调用</a></li><li><a href="/python/functions/43.html">python函数的参数传递</a></li><li><a href="/python/functions/44.html">python函数的返回值</a></li><li><a href="/python/functions/46.html">python匿名函数</a></li><li><a href="/python/functions/47.html">python三大基础函数</a></li><li><a href="/python/functions/48.html">python递归函数</a></li><li><a href="/python/functions/49.html">python内置函数</a></li><li><a href="/python/functions/45.html">python变量的作用域</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 面向对象编程			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/programming/50.html">python面向对象编程</a></li><li><a href="/python/programming/51.html">python类的定义和构造方法及参数传递</a></li><li><a href="/python/programming/52.html">python类方法</a></li><li><a href="/python/programming/53.html">python继承实例讲解</a></li><li><a href="/python/programming/54.html">模块概述</a></li><li><a href="/python/programming/55.html">Python创建和引入模块实例详解</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python模块			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/modular/56.html">Python引入math模块及库函数大全</a></li><li><a href="/python/modular/57.html">random模块</a></li><li><a href="/python/modular/58.html">datetime模块</a></li><li><a href="/python/modular/59.html">Python如何安装第三方模块？</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 异常处理和程序调试			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/exception/60.html">异常问题和常见异常</a></li><li><a href="/python/exception/61.html">Python异常处理语句try,except实例详解</a></li><li><a href="/python/exception/62.html">Python异常处理语句实例详解二</a></li><li><a href="/python/exception/63.html">Python程序调试图文教程</a></li><li><a href="/python/exception/64.html">使用assert断言对Ptyhon程序调试分析</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 文件及目录操作			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/file/65.html">python文件操作</a></li><li><a href="/python/file/66.html">python读取文件</a></li><li><a href="/python/file/67.html">python中os模块和os.path模块</a></li><li><a href="/python/file/68.html">目录管理</a></li><li><a href="/python/file/69.html">Python项目管理操作</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> GUI编程			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/program/70.html">GUI编程</a></li><li><a href="/python/program/71.html">Tkinter模块(1)-简介和Label</a></li><li><a href="/python/program/72.html">Tkinter模块(2)-Frame和Button</a></li><li><a href="/python/program/73.html">Tkinter模块(3)-Entry</a></li><li><a href="/python/program/74.html">Tkinter模块(4)-Radio和Check</a></li><li><a href="/python/program/75.html">Tkinter模块(5)-Canvas</a></li><li><a href="/python/program/76.html">Tkinter模块(6)-练习</a></li><li><a href="/python/program/77.html">wxPython模块(1)-简介和初始化</a></li><li><a href="/python/program/78.html">wxPython模块(2)-文本控件</a></li><li><a href="/python/program/79.html">wxPython模块(3)-按钮和复选框</a></li><li><a href="/python/program/80.html">wxPython(4)-布局</a></li><li><a href="/python/program/81.html">wxPython(5)-事件管理</a></li><li><a href="/python/program/82.html">wxPython(6)-下拉列表和菜单</a></li><li><a href="/python/program/83.html">综合案例</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 进程和线程			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/processes/84.html">Python进程和线程的区别</a></li><li><a href="/python/processes/85.html">Python如何创建线程</a></li><li><a href="/python/processes/87.html">Python临界区与线程安全（线程通信）</a></li><li><a href="/python/processes/86.html">Python线程管理</a></li><li><a href="/python/processes/89.html">Python进程间通信代码详解</a></li><li><a href="/python/processes/88.html">Python创建进程的方式详解</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 数据库管理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/database/91.html">MySQL下载安装图文教程</a></li><li><a href="/python/database/90.html">数据库概述</a></li><li><a href="/python/database/92.html">Navicat for MySQL管理软件安装使用图文教程</a></li><li><a href="/python/database/93.html">对象和游标</a></li><li><a href="/python/database/95.html">SQlite数据库(2)</a></li><li><a href="/python/database/94.html">SQlite数据库(1)</a></li><li><a href="/python/database/96.html">PyMySQL数据库的使用</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python算法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/algorithm/97.html">python枚举算法</a></li><li><a href="/python/algorithm/98.html">python递归算法</a></li><li><a href="/python/algorithm/99.html">python分治算法</a></li><li><a href="/python/algorithm/101.html">python试探算法</a></li><li><a href="/python/algorithm/100.html">python贪心算法</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 爬虫			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/reptile/102.html">python爬虫概述</a></li><li><a href="/python/reptile/103.html">python爬虫协议</a></li><li><a href="/python/reptile/104.html">python爬虫技术基础(1)-网络请求</a></li><li><a href="/python/reptile/106.html">python正则表达式(1)</a></li><li><a href="/python/reptile/105.html">python爬虫技术基础(2)header是处理及网络超时</a></li><li><a href="/python/reptile/108.html">BeautifulSoup(1)</a></li><li><a href="/python/reptile/107.html">python正则表达式(2)</a></li><li><a href="/python/reptile/109.html">BeautifulSoup(2)</a></li><li><a href="/python/reptile/110.html">Python爬虫入门抓取天气信息</a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/python/biji" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>Python笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Python中实现多任务耗资源最小的方式</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>协程，又称微线程，纤程。英文名 Coroutine。
+协程是 Python 中另外一种实现多任务的方式，只不过比线程更小，占用更小执行单元（理解为需要的资源）。
+为啥说它是一个执行单元，因为它自</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>协程，又称微线程，纤程。英文名 Coroutine。</p>
+<p>协程是 Python 中另外一种实现多任务的方式，只不过比线程更小，占用更小执行单元（理解为需要的资源）。</p>
+<p>为啥说它是一个执行单元，因为它自带 CPU 上下文。这样只要在合适的时机， 我们可以把一个协程 切换到另一个协程。 只要这个过程中保存或恢复 CPU上下文那么程序还是可以运行的。</p>
+<p>通俗的理解：在一个线程中的某个函数，可以在任何地方保存当前函数的一些临时变量等信息，然后切换到另外一个函数中执行，注意不是通过调用函数的方式做到的，并且切换的次数以及什么时候再切换到原来的函数都由开发者自己确定。</p>
+<h4 id="协程和线程差异">协程和线程差异</h4>
+<p>在实现多任务时, 线程切换从系统层面远不止保存和恢复 CPU上下文这么简单。</p>
+<p>操作系统为了程序运行的高效性每个线程都有自己缓存 Cache 等等数据，操作系统还会帮你做这些数据的恢复操作，所以线程的切换非常耗性能。</p>
+<p>但是协程的切换只是单纯的操作 CPU 的上下文，所以一秒钟切换个上百万次系统都抗得住。</p>
+<p>之前我们讲过 yield 关键字，现在就用它来实现多任务。</p>
+<p>例子：</p>
+<pre>
+<code class="language-python">import time
+
+def task_1():
+    while True:
+        print(&quot;--1--&quot;)
+        time.sleep(0.5)
+        yield
+
+def task_2():
+    while True:
+        print(&quot;--2--&quot;)
+        time.sleep(0.5)
+        yield
+
+def main():
+    t1 = task_1()
+    t2 = task_2()
+    while True:
+        next(t1)
+        next(t2)
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+<p>运行过程：</p>
+<p>先让 t1 运行一会，当 t1 遇到 yield 的时候，再返回到 main() 循环的地方，然后执行 t2 ， 当它遇到 yield 的时候，再次切换到 t1 中，这样 t1 和 t2 就交替运行，最终实现了多任务，协程。</p>
+<p>运行结果：</p>
+<p><img alt="yield 并发实现多任务" loading="lazy" src="/d/file/p/20221107/1603072563127033.gif" /></p>
+<h4 id="greenlet">greenlet</h4>
+<p>为了更好使用协程来完成多任务，Python 中的 greenlet 模块对其封装，从而使得切换任务变的更加简单。</p>
+<p>首先你要安装一下 greenlet 模块。</p>
+<pre>
+<code>pip3 install greenlet
+</code></pre>
+<pre>
+<code class="language-python">from greenlet import greenlet
+import time
+
+def test1():
+    while True:
+        print(&quot;---A--&quot;)
+        gr2.switch()
+        time.sleep(0.5)
+
+def test2():
+    while True:
+        print(&quot;---B--&quot;)
+        gr1.switch()
+        time.sleep(0.5)
+
+gr1 = greenlet(test1)
+gr2 = greenlet(test2)
+
+# 切换到gr1中运行
+gr1.switch()
+</code></pre>
+<p>运行结果：</p>
+<p><img alt="greenlet 实现多任务" loading="lazy" src="/d/file/p/20221107/1603072564135846.gif" /></p>
+<p>和我们之前用 yield 实现的效果基本一样，greenlet 其实是对 yield 进行了简单的封装。</p>
+<p>greenlet 实现多任务要比 yield 更简单，但是我们以后还是不用它。</p>
+<p>上面例子中的延时是0.5秒，如果延迟是100秒，那么程序就会卡住100秒，就算有其他需要执行的任务，系统也不会切换过去，这100秒的时间是无法利用的。</p>
+<p>这个问题下面来解决。</p>
+<h4 id="gevent">gevent</h4>
+<p>greenlet 已经实现了协程，但是还是得进行人工切换，是不是觉得太麻烦了。</p>
+<p>Python 还有一个比 greenlet 更强大的并且能够自动切换任务的模块 gevent。</p>
+<p>gevent 是对 greenlet 的再次封装。</p>
+<p>其原理是当一个 greenlet 遇到 IO(指的是input output 输入输出，比如网络、文件操作等)操作时，比如访问网络，就自动切换到其他的 greenlet，等到 IO 操作完成，再在适当的时候切换回来继续执行。</p>
+<p>由于 IO 操作非常耗时，经常使程序处于等待状态，有了gevent 为我们自动切换协程，就保证总有 greenlet 在运行，而不是等待 IO。</p>
+<p>首先还是得先安装 gevent。</p>
+<pre>
+<code>pip3 install gevent
+</code></pre>
+<p>例子：</p>
+<pre>
+<code class="language-python">import gevent
+
+def f(n):
+    for i in range(n):
+        print(gevent.getcurrent(), i)
+
+g1 = gevent.spawn(f, 3)
+g2 = gevent.spawn(f, 3)
+g3 = gevent.spawn(f, 3)
+g1.join()
+g2.join()
+g3.join()
+</code></pre>
+<p>运行结果:</p>
+<pre>
+<code>&lt;Greenlet at 0x35aae40: f(3)&gt; 0
+&lt;Greenlet at 0x35aae40: f(3)&gt; 1
+&lt;Greenlet at 0x35aae40: f(3)&gt; 2
+&lt;Greenlet at 0x374a780: f(3)&gt; 0
+&lt;Greenlet at 0x374a780: f(3)&gt; 1
+&lt;Greenlet at 0x374a780: f(3)&gt; 2
+&lt;Greenlet at 0x374a810: f(3)&gt; 0
+&lt;Greenlet at 0x374a810: f(3)&gt; 1
+&lt;Greenlet at 0x374a810: f(3)&gt; 2
+</code></pre>
+<p>可以看到，3个 greenlet 是依次运行而不是交替运行。</p>
+<p>这还无法判断 gevent 是否实现了多任务的效果，最好的判断情况是在运行结果中 0 1 2 不按顺序出现。</p>
+<p>在 gevent 的概念中，我们提到 gevent 在遇到延时的时候会自动切换任务。</p>
+<p>那么，我们先给上面的例子添加延时，再看效果。</p>
+<pre>
+<code class="language-python">import gevent
+import time
+
+def f(n):
+    for i in range(n):
+        print(gevent.getcurrent(), i)
+        time.sleep(0.5)
+
+g1 = gevent.spawn(f, 3)
+g2 = gevent.spawn(f, 3)
+g3 = gevent.spawn(f, 3)
+g1.join()
+g2.join()
+g3.join()
+</code></pre>
+<p>运行结果：</p>
+<pre>
+<code>&lt;Greenlet at 0x36aae40: f(3)&gt; 0
+&lt;Greenlet at 0x36aae40: f(3)&gt; 1
+&lt;Greenlet at 0x36aae40: f(3)&gt; 2
+&lt;Greenlet at 0x384a780: f(3)&gt; 0
+&lt;Greenlet at 0x384a780: f(3)&gt; 1
+&lt;Greenlet at 0x384a780: f(3)&gt; 2
+&lt;Greenlet at 0x384a810: f(3)&gt; 0
+&lt;Greenlet at 0x384a810: f(3)&gt; 1
+&lt;Greenlet at 0x384a810: f(3)&gt; 2
+</code></pre>
+<p>在添加了延时之后，运行结果并没有改变。</p>
+<p>其实，gevent 要的不是 time.sleep() 的延时，而是 gevent.sleep() 的延时。</p>
+<pre>
+<code class="language-python">import gevent
+
+def f(n):
+    for i in range(n):
+        print(gevent.getcurrent(), i)
+        gevent.sleep(0.5)
+
+g1 = gevent.spawn(f, 3)
+g2 = gevent.spawn(f, 3)
+g3 = gevent.spawn(f, 3)
+g1.join()
+g2.join()
+g3.join()
+</code></pre>
+<p>join 还有一种更简单的写法。</p>
+<pre>
+<code class="language-python">import time
+import gevent
+
+def f(n):
+    for i in range(n):
+        print(gevent.getcurrent(), i)
+        gevent.sleep(0.5)
+
+gevent.joinall([
+    gevent.spawn(f, 3),
+    gevent.spawn(f, 3),
+    gevent.spawn(f, 3)
+])
+</code></pre>
+<p>一般都是后面的这种写法。</p>
+<p>运行结果:</p>
+<pre>
+<code>&lt;Greenlet at 0x2e5ae40: f(3)&gt; 0
+&lt;Greenlet at 0x2ffa780: f(3)&gt; 0
+&lt;Greenlet at 0x2ffa810: f(3)&gt; 0
+&lt;Greenlet at 0x2e5ae40: f(3)&gt; 1
+&lt;Greenlet at 0x2ffa780: f(3)&gt; 1
+&lt;Greenlet at 0x2ffa810: f(3)&gt; 1
+&lt;Greenlet at 0x2e5ae40: f(3)&gt; 2
+&lt;Greenlet at 0x2ffa780: f(3)&gt; 2
+&lt;Greenlet at 0x2ffa810: f(3)&gt; 2
+</code></pre>
+<p>这下终于实现多任务的效果了, gevent 在遇到延时的时候，就自动切换到其他任务。</p>
+<p>这里是将 time 中的 sleep 换成了 gevent 中的 sleep。</p>
+<p>那如果有网络程序，网络程序中也有许多堵塞，比如 connect， recv，accept，需要不需要换成 gevent 中的对应方法。</p>
+<p>理论上来说，是要换的。如果想用 gevent，那么就要把所有的延时操作，堵塞这一类的函数，统统换成 gevent 中的对应方法。</p>
+<p>那有个问题，万一我的代码已经写了10万行了，这换起来怎么破......</p>
+<p>有什么办法不需要手动修改么，有，打个补丁即可。</p>
+<pre>
+<code class="language-python">import time
+import gevent
+from gevent import monkey
+
+# 有耗时操作时需要
+# 将程序中用到的耗时操作的代码，换为gevent中自己实现的模块
+monkey.patch_all()  
+
+def f(n):
+    for i in range(n):
+        print(gevent.getcurrent(), i)
+        time.sleep(0.5)
+
+g1 = gevent.spawn(f, 3)
+g2 = gevent.spawn(f, 3)
+g3 = gevent.spawn(f, 3)
+g1.join()
+g2.join()
+g3.join()
+</code></pre>
+<p><code>monkey.patch_all()</code> 会自动去检查代码，将所有会产生延时堵塞的方法，都自动换成 gevent 中的方法。</p>
+<p>运行结果：</p>
+<pre>
+<code>&lt;Greenlet at 0x3dd91e0: f(3)&gt; 0
+&lt;Greenlet at 0x3dd9810: f(3)&gt; 0
+&lt;Greenlet at 0x3dd99c0: f(3)&gt; 0
+&lt;Greenlet at 0x3dd91e0: f(3)&gt; 1
+&lt;Greenlet at 0x3dd9810: f(3)&gt; 1
+&lt;Greenlet at 0x3dd99c0: f(3)&gt; 1
+&lt;Greenlet at 0x3dd91e0: f(3)&gt; 2
+&lt;Greenlet at 0x3dd9810: f(3)&gt; 2
+&lt;Greenlet at 0x3dd99c0: f(3)&gt; 2
+</code></pre>
+<p>总结：</p>
+<p>通过利用延时的时间去做其他任务，把时间都利用起来，这就是协程最大的意义。</p></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span>[!--zhushi--]</span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/python/biji/177.html'>Python的内置数据结构说明</a><a>下一篇</a><a href='/python/biji/179.html'>Python数据可视化-Matplotlib坐标轴设置</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

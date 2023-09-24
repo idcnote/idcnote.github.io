@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server自旋锁功能实例_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server自旋锁功能实例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+
+为什么我们需要自旋锁？用闩锁同" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server自旋锁功能实例</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:38:41                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server自旋锁功能实例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+
+为什么我们需要自旋锁？用闩锁同</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server自旋锁功能实例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p></p>
+<h3>为什么我们需要自旋锁？</h3>用闩锁同步多个线程间数据结构访问，在每个共享数据结构前都放置一个闩锁没有意义的。闩锁与此紧密关联：当你不能获得闩锁（因为其他人已经有一个不兼容的闩锁拿到），查询就会强制等待，并进入挂起（SUSPENDED）状态。查询在挂起状态等待直到可以拿到闩锁，然后就会进入可执行（RUNNABLE）状态。对于查询执行只要没有可用的CPU，查询就一直在可执行（RUNNABLE）状态。一旦CPU有空闲，查询会进入运行（RUNNING）状态，最后成功获取到闩锁，用它来保护访问的共享数据结构。下图展示了SQLOS对协调线程调度实现的状态机。
+<p></p>
+<p>【图片暂缺】</p>
+<p>因为太多关联的闩锁，对&ldquo;忙碌&rdquo;数据结构使用闩锁保护没有意义。因此SQL Server实现所谓<strong>自旋锁（Spinlocks）。自旋锁就像一个闩锁，存储引擎使用的一个轻量级同步对象，用来同步对共享数据结构线程访问。和闩锁的主要区别是你积极等待自旋锁&mdash;&mdash;不离开CPU。在自旋锁上的&ldquo;等待&rdquo;总会发生在运行（RUNNING）状态的CPU。在你闭合循环里旋转直到获得自旋锁。这就是所谓的忙碌等待（busy wait）。自旋锁的最大优点是当查询在自旋锁上等待时，不会涉及到上下文切换。另一方面忙碌等待浪费CPU周期，其他查询也许能对它们更有效的使用。</strong></p><strong> </strong>
+<p><strong>为了避免太多的CPU周期浪费，SQL Server 2008 R2及后续版本实现所谓的<strong>指数补偿机制（exponential backoff mechanism），那里在CPU上一些时间的休眠后，线程停止旋转。在线程进入休眠期间，增加了尝试获得自旋锁的超时。这个行为可以降低对CPU性能的影响。</strong></strong></p><strong><strong> </strong></strong>
+<p><strong><strong>（补充说明：Spinlock中文可以称为自旋锁。它是一个轻量级的，用户态的同步对象，和critical section类似，但是粒度比前者小多了。它主要用来保护某些特定的内存对象的多线程并发访问。Spinlock是排他性的。一次只能一个线程拥有。</strong></strong></p><strong><strong> </strong></strong>
+<p><strong><strong>Spinlock的设计目标是非常快和高效率。Spinlock内部如何工作呢？它首先试图获得某个对象的锁，如果目标被其它线程占有，就在那里轮询（spin）一定时间。如果还得不到锁，就sleep一小会，然后继续spin。反复这个过程直到得到对象的占有权。）</strong></strong></p><strong><strong> </strong></strong>
+<p></p>
+<h3><strong><strong>自旋锁与故障排除</strong></strong></h3><strong><strong>对自旋锁故障排除的主要DMV是<strong> sys.dm_os_spinlock_stats。这个DMV里返回的每一行都代表SQL Server里的一个自旋锁。SQL Server 2014实现了262个不同自旋锁。我们来详细看下这个DMV里的各个列：</strong></strong></strong>
+<p></p><strong><strong><strong> </strong></strong></strong>
+<p></p>
+<h3><strong><strong><strong>name</strong></strong></strong></h3><strong><strong><strong>：自旋锁名称<strong>collision：当尝试访问保护的数据结构时，被自旋锁阻塞的线程次数<strong>spins：在循环里尝试获得自旋锁的自旋锁线程次数<strong>spins_per_collision：旋转和碰撞之间的比率<strong>sleep_time：因为退避线程休眠时间<strong>backoffs：为了其他线程在CPU上继续，线程退避次数在这个DMV里最重要的列是backoffs，对于特定的自旋锁类型，这列告诉你退避发生频率。高频率的退避会屈服于CPU消耗引起SQL Server里的自旋锁竞争（Spinlock Contention）。我就见过一个32核的SQL Server服务器，CPU运行在100%而不进行任何工作&mdash;&mdash;典型的自旋锁竞争症状。</strong></strong></strong></strong></strong></strong></strong></strong>
+<p></p><strong><strong><strong><strong><strong><strong><strong><strong> </strong></strong></strong></strong></strong></strong></strong></strong>
+<p><strong><strong><strong><strong><strong><strong><strong><strong>对自旋锁问题进行故障排除你可以使用扩展事件提供的sqlos.spinlock_backoff。当退避（backoff）发生时，就会触发这个扩展事件。如果你捕获了这个事件，你还要保证你使用非常好的选择性谓语，因为在SQL Server里退避会经常发生。一个好的谓语可以是特定的自旋锁类型，通过刚才提到的DMV你已经看到。下列代码给你展示了如何创建这样的扩展事件会话。</strong></strong></strong></strong></strong></strong></strong></strong></p><strong><strong><strong><strong><strong><strong><strong><strong> </strong></strong></strong></strong></strong></strong></strong></strong>
+<p></p><strong><strong><strong><strong><strong><strong><strong><strong> </strong></strong></strong></strong></strong></strong></strong></strong>
+<p><strong><strong><strong><strong><strong><strong><strong><strong>代码如下：</strong></strong></strong></strong></strong></strong></strong></strong></p><strong><strong><strong><strong><strong><strong><strong><strong> </strong></strong></strong></strong></strong></strong></strong></strong>
+<pre>
+<strong><strong><strong><strong><strong><strong><strong><strong>
+<code>
+ -- Retrieve the type value for the LOCK_HASH spinlock.
+ -- That value is used by the next XEvent session
+ SELECT * FROM sys.dm_xe_map_values
+ WHERE name = &#39;spinlock_types&#39;
+ AND map_value = &#39;LOCK_HASH&#39;
+ GO
+ 
+ -- Tracks the spinlock_backoff event
+ CREATE EVENT SESSION SpinlockContention ON SERVER 
+ ADD EVENT sqlos.spinlock_backoff
+(
+ ACTION
+ (
+  package0.callstack
+ )
+  WHERE
+ (
+  [type] = 129 -- &lt;&lt;&lt; Value from the previous query
+ )
+) 
+ADD TARGET package0.histogram
+ (
+  SET source = &#39;package0.callstack&#39;, source_type = 1
+ )
+ GO
+</code></strong></strong></strong></strong></strong></strong></strong></strong></pre><strong><strong><strong><strong><strong><strong><strong><strong> </strong></strong></strong></strong></strong></strong></strong></strong>
+<p><strong><strong><strong><strong><strong><strong><strong><strong>从代码里可以看到，这里我在<strong>调用堆栈（callstack）上使用了<strong>直方图（histogram）目标来bucktize。因此对于特定的自旋锁，你可以可能到SQL Serve里生成的最高退避（backoffs）代码路径。你甚至可以通过启用3656跟踪标记（trace flag）来标识调用堆栈。这里你可以看到来自这个扩展会话的输出：</strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></p><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong> </strong></strong></strong></strong></strong></strong></strong></strong></strong></strong>
+<p><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong>sqldk.dll!XeSosPkg::spinlock_backoff::Publish+0x138sqldk.dll!SpinlockBase::Sleep+0xc5sqlmin.dll!Spinlock&lt;129,7,1&gt;::<strong>SpinToAcquireWithExponentialBackoff+0x169sqlmin.dll!lck_lockInternal+0x841sqlmin.dll!XactWorkspaceImp::<strong>GetSharedDBLockFromLockManager+0x18dsqlmin.dll!XactWorkspaceImp::GetDBLockLocal+0x15bsqlmin.dll!XactWorkspaceImp::GetDBLock+0x5asqlmin.dll!lockdb+0x4a sqlmin.dll!DBMgr::OpenDB+0x1ecsqlmin.dll!sqlusedb+0xebsqllang.dll!usedb+0xb3sqllang.dll!LoginUseDbHelper::UseByMDDatabaseId+0x93sqllang.dll!LoginUseDbHelper::FDetermineSessionDb+0x3e1sqllang.dll!FRedoLoginImpl+0xa1bsqllang.dll!FRedoLogin+0x1c1sqllang.dll!process_request+0x3ecsqllang.dll!process_commands+0x4a3sqldk.dll!SOS_Task::Param::Execute+0x21esqldk.dll!SOS_Scheduler::RunTask+0xa8sqldk.dll!SOS_Scheduler::ProcessTasks+0x279sqldk.dll!SchedulerManager::WorkerEntryPoint+0x24csqldk.dll!SystemThread::RunWorker+0x8fsqldk.dll!SystemThreadDispatcher::ProcessWorker+0x3absqldk.dll!SchedulerManager::ThreadEntryPoint+0x226</strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></p><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong> </strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong>
+<p><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong>使用提供调用堆栈，不难找出自旋锁竞争发生的地方。在那个指定的笤俑堆栈里竞争发生在LOCK_HASH自旋锁类型里，它是保护锁管理器的哈希表。每次在锁管理器里加锁或解锁被执行时，自旋锁必须在对应的哈希桶里获得。如你所见，在调用堆栈里，当从XactWorkspacelmp类调用GetSharedDBLockFromLockManager函数时，自旋锁被获得。这表示当竞争到数据库时，共享数据库锁被尝试获取。最后在用很高的退避（backoffs）的LOCK_HASH自旋锁里，这屈服于自旋锁竞争。</strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></p><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong> </strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong>
+<p><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong>以上就是本文的全部内容，希望对大家的学习有所帮助。</strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></p><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong><strong> </strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong></strong>
+
+<p>注：关于SQL Server自旋锁功能实例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2585.html'>SQL SERVER 2014 安装教程（含SQL SERVER 2014下载）</a><a>下一篇</a><a href='/mysql/biji/2587.html'>SQL Server自动循环归档分区数据脚本示例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

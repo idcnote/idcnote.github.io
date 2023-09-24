@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL的表空间的深入分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL的表空间的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+今天我要跟你分享的话题" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL的表空间的深入分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:16:17                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL的表空间的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+今天我要跟你分享的话题</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL的表空间的深入分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>今天我要跟你分享的话题是：&ldquo;大家常说的表空间到底是什么？究竟什么又是数据表？&rdquo;</p>
+<p>这其实是一个概念性的知识点，当作拓展知识。涉及到的概念大家了解一下就好，涉及的参数，留个印象就好。</p>
+<h3>一、什么是表？</h3>
+<p>但凡是用过MySQL都知道，直观上看，MySQL的数据都存在数据表中。</p>
+<p>比如一条Update SQL：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+update user set username = '白日梦' where id = 999;</code></pre>
+<p>MySQL的表空间是什么</p>
+<p>它将user这张数据表中id为1的记录的username列修改成了&lsquo;白日梦&#39;</p>
+<p>这里的user其实就是数据表。当然这不是重点，重点是我想表达：数据表其实是逻辑上的概念。而下面要说的表空间是物理层面的概念。</p>
+<h3>二、什么是表空间？</h3>
+<p>不知道你有没有看到过这句话：&ldquo;在innodb存储引擎中数据是按照表空间来组织存储的&rdquo;。其实有个潜台词是：表空间是表空间文件是实际存在的物理文件。</p>
+<p>大家不用纠结为啥它叫表空间、为啥表空间会对应着磁盘上的物理文件，因为MySQL就是这样设计、设定的。直接接受这个概念就好了。</p>
+<p>MySQL有很多种表空间，下面一起来了解一下。</p>
+<h3>三、sys表空间</h3>
+<p>你可以像下面这样查看你的MySQL的系统表空间</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>Value部分的的组成是：name:size:attributes</p>
+<p>默认情况下，MySQL会初始化一个大小为12MB，名为ibdata1文件，并且随着数据的增多，它会自动扩容。</p>
+<p>这个ibdata1文件是系统表空间，也是默认的表空间，也是默认的表空间物理文件，也是传说中的共享表空间。</p>
+<blockquote>
+<p>关于这个共享表空间，直观上看，如果这个表空间能为multiple tables.存储数据，那么它就可以被称为共享表空间，所以你可以认为系统表空间是共享表空间。</p></blockquote>
+<p></p>
+<h3>四、配置sys表空间</h3>
+<p>系统表空间的数量和大小可以通过启动参数：innodb_data_file_path</p>
+<p>代码如下：</p>
+<pre>
+<code>
+# my.cnf
+[mysqld]
+innodb_data_file_path=/dir1/ibdata1:2000M;/dir2/ibdata2:2000M:autoextend</code></pre>
+<p>MySQL的表空间是什么</p>
+<p></p>
+<h3>五、file per table 表空间</h3>
+<p></p>
+<p>如果你想让每一个数据库表都有一个单独的表空间文件的话，可以通过参数innodb_file_per_table设置。</p>
+<blockquote>
+<p>这个参数只有在MySQL5.6或者是更高的版本中才可以使用。</p></blockquote>
+<p>可以通过配置文件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[mysqld]
+innodb_file_per_table=ON</code></pre>
+<p>MySQL的表空间是什么</p>
+<p>也可以通过命令</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; SET GLOBAL innodb_file_per_table=ON;	</code></pre>
+<p>MySQL的表空间是什么</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>让你将其设置为ON，那之后InnoDB存储引擎产生的表都会自己独立的表空间文件。</p>
+<p>独立的表空间文件命名规则：表名.ibd</p>
+<p>注意：</p>
+<blockquote>
+<p>独立表空间文件中仅存放该表对应数据、索引、insert buffer bitmap。</p>
+<p>其余的诸如：undo信息、insert buffer 索引页、double write buffer 等信息依然放在默认表空间，也就是共享表空间中。</p>
+<p>这里的undo、insert buffer、double write buffer 如果你不了解他们是啥也没关系。按照大纲排期，我会在第 41、42 篇文中跟大家分享。在这里只需要先了解即使你设置了innodb_file_per_table=ON 共享表空间的体量依然会不断的增长，并且你即使你不断的使用undo进行rollback，共享表空间大小也不会缩减就好了。</p></blockquote>
+<p>查看我的表空间文件：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>最后再简述一下这种file per table的优缺点：</p>
+<p>优点：</p>
+<ul>
+	<li>提升容错率，表A的表空间损坏后，其他表空间不会收到影响。s</li>
+	<li>使用MySQL Enterprise Backup快速备份或还原在每表文件表空间中创建的表，不会中断其他InnoDB 表的使用</li>
+</ul>
+<p>缺点：</p>
+<p>对fsync系统调用来说不友好，如果使用一个表空间文件的话单次系统调用可以完成数据的落盘，但是如果你将表空间文件拆分成多个。原来的一次fsync可能会就变成针对涉及到的所有表空间文件分别执行一次fsync，增加fsync的次数。</p>
+<p></p>
+<h3>六、临时表空间</h3>
+<p></p>
+<p>临时表空间用于存放用户创建的临时表和磁盘内部临时表。</p>
+<p>参数innodb_temp_data_file_path定义了临时表空间的一些名称、大小、规格属性如下图：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>查看临时表空间文件存放的目录</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>七、undo表空间</h3>
+<p></p>
+<p>相信你肯定听过说undolog，常见的当你的程序想要将事物rollback时，底层MySQL其实就是通过这些undo信息帮你回滚的。</p>
+<p>在MySQL的设定中，有一个表空间可以专门用来存放undolog的日志文件。</p>
+<p>然而，在MySQL的设定中，默认的会将undolog放置到系统表空间中。</p>
+<p>如果你的MySQL是新安装的，那你可以通过下面的命令看看你的MySQL undo表空间的使用情况：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>大家可以看到，我的MySQL的undo log 表空间有两个。</p>
+<p>也就是我的undo从默认的系统表空间中转移到了undo log专属表空间中了。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>那undo log到底是该使用默认的配置放在系统表空间呢？还是该放在undo表空间呢？</p>
+<p>这其实取决服务器使用的存储卷的类型。</p>
+<p>如果是SSD存储，那推荐将undo info存放在 undo表空间中。</p>
+<p>以上就是MySQL的表空间是什么的详细内容，更多关于MySQL 表空间的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL的表空间的深入分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/435.html'>解决Datagrip2020下载MySQL驱动失败的问题</a><a>下一篇</a><a href='/mysql/biji/437.html'>MySQL表的几种连接方式的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

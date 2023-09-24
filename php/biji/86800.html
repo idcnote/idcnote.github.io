@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>浅析nodejs实现Websocket的数据接收与发送_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="WebSocket是HTML5开始提供的一种浏览器与服务器间进行全双工通讯的网络技术。在WebSocket API中，浏览器和服务器只需要要做一个握手(handshaking)的动作，然后，浏览器和服务器之" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">浅析nodejs实现Websocket的数据接收与发送</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>WebSocket是HTML5开始提供的一种浏览器与服务器间进行全双工通讯的网络技术。在WebSocket API中，浏览器和服务器只需要要做一个握手(handshaking)的动作，然后，浏览器和服务器之</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>WebSocket是HTML5开始提供的一种浏览器与服务器间进行全双工通讯的网络技术。在WebSocket API中，浏览器和服务器只需要要做一个握手(handshaking)的动作，然后，浏览器和服务器之间就形成了一条快速通道。两者之间就直接可以数据互相传送。</p>
+<p>WebSocket是一个通信的协议，分为服务器和客户端。服务器放在后台，保持与客户端的长连接，完成双方通信的任务。客户端一般都是实现在支持HTML5浏览器核心中，通过提供JavascriptAPI使用网页可以建立websocket连接。</p>
+<p>在我写这篇文章里：基于html5和nodejs相结合实现websocket即使通讯，里面主要是借助了nodejs-websocket这个插件，后来还用了socket.io做了些demo，但是，这些都是借助于别人封装好的插件做出来的，websocket到底是怎么实现的呢？之前真没想过，最近看朴灵大神的《深入浅析node.js》时候，看到了websocket那一节，看了websocket的数据帧定义，想着用nodejs实现。经过一番折腾实现了。<br />
+</p>
+<p>客户端的代码就不说了，websocket的API还是很简单的，就通过onmessage、onopen、onclose，以及send方法就可以实现了。<br />
+websocket api通过onmessage、onopen、onclose以及send方法实现客户端的代码。具体详情就不多说了。</p>
+<p>主要说服务端的代码：</p>
+<p>首先是协议的升级，这个比较简单，就简述一下：当在客户端执行new Websocket("ws://XXX.com/")的时候，客户端就会发起请求报文进行握手申请，报文中有个很重要的key就是Sec-WebSocket-Key，服务端获取到key，然后将这个key与字符串258EAFA5-E914-47DA-95CA-C5AB0DC85B11相连，对新的字符串通过sha1安全散列算法计算出结果后，再进行base64编码，并且将结果放在请求头的"Sec-WebSocket-Accept"中返回即可完成握手。具体请看代码：</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+server.on('upgrade', function (req, socket, upgradeHead) {
+ var key = req.headers['sec-websocket-key'];
+ key = crypto.createHash("sha1").update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").digest("base64");
+ var headers = [
+ 'HTTP/1.1 101 Switching Protocols',
+ 'Upgrade: websocket',
+ 'Connection: Upgrade',
+ 'Sec-WebSocket-Accept: ' + key
+ ];
+ socket.setNoDelay(true);
+ socket.write(headers.join("\r\n") + "\r\n\r\n", 'ascii');
+ var ws = new WebSocket(socket);
+ webSocketCollector.push(ws);
+ callback(ws);
+});</pre>
+</div>
+<p>upgrade事件其实是http这个模块的封装，再往底层就是net模块的实现，其实都差不多，如果直接用net模块来实现的话，就是监听net.createServer返回的server对象的data事件，接收到的第一份数据就是客户端发来的升级请求报文。</p>
+<p>上面那段代码就完成了websocket的握手，然后就可以开始数据传输了。</p>
+<p>看数据传输之前，先看看websocket数据帧的定义（因为觉得深入浅出nodejs里的帧定义图最容易理解，所以就贴这张了）：</p>
+<p style="text-align: center">&nbsp;</p>
+<p>上面的图中，每一列就是一个字节，一个字节总共是8位，每一位就是一个二进制数，不同位的值会对应不同的意义。</p>
+<p>fin：指示这个是消息的最后片段。第一个片段可能也是最后的片段。如果为1即为最后片段，（其实这个位的用途我个人有点疑惑，按照书上以及网上查的资料，当数据被分片的时候，不同片应该都会有fin位，会根据fin为是不是0来判断是否为最后一帧，但是实际实现中却发现，当数据比较大需要分片时，服务端收到的数据就只有第一帧是有fin位为1，其他帧则整个帧都是数据段，也就是说，感觉这个fin位似乎用不上，至少我自己写的demo中是通过数据长度来判断是否到了最后一帧，完全没用到这个fin位是否为1来判断）</p>
+<p>rsv1、rsv2、rsv3：各占一个位，用于扩展协商，基本上不怎么需要理，一般都是0</p>
+<p>opcode：占四个位，可以表示0~15的十进制，0表示为附加数据帧，1表示为文本数据帧，2表示二进制数据帧，8表示发送一个连接关闭的数据帧，9表示ping，10表示pong，ping和pong都是用于心跳检测，当一端发送ping时，另一端必须响应pong表示自己仍处于响应状态。</p>
+<p>masked：占一个位，表示是否进行掩码处理，客户端发送给服务端时为1，服务端发送给客户端时为0</p>
+<p>payload length：占7位，或者7+16位、或者7+64位。如果第二个字节的后面七个位的十进制值小于或等于125，则直接用这七个位表示数据长度；如果该值为126，说明 125&lt;数据长度&lt;65535（16个位能描述的最大值，也就是16个1的时候），就用第三个字节及第四个字节即16个位来表示；如果该值为127，则说明数据长度已经大于65535，16个位也已经不足以描述数据长度了，就用第三到第十个字节这八个字节来描述数据长度。</p>
+<p>masking key：当masked为1的时候才存在，用于对我们需要的数据进行解密。</p>
+<p>payload data：我们需要的数据，如果masked为1，该数据会被加密，要通过masking key进行异或运算解密才能获取到真实数据。</p>
+<p>帧定义解释完了，就可以根据数据来进行解析了，当有data过来的时候，先获取需要的数据信息，下面这段代码将获取到数据在data里的位置，以及数据长度，masking key以及opcode：</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+WebSocket.prototype.handleDataStat = function (data) {
+ if (!this.stat) {
+ var dataIndex = 2; //数据索引，因为第一个字节和第二个字节肯定不为数据，所以初始值为2
+ var secondByte = data[1]; //代表masked位和可能是payloadLength位的第二个字节
+ var hasMask = secondByte &gt;= 128; //如果大于或等于128，说明masked位为1
+ secondByte -= hasMask &#63; 128 : 0; //如果有掩码，需要将掩码那一位去掉
+ var dataLength, maskedData;
+ //如果为126，则后面16位长的数据为数据长度，如果为127，则后面64位长的数据为数据长度
+ if (secondByte == 126) {
+  dataIndex += 2;
+  dataLength = data.readUInt16BE(2);
+ } else if (secondByte == 127) {
+  dataIndex += 8;
+  dataLength = data.readUInt32BE(2) + data.readUInt32BE(6);
+ } else {
+  dataLength = secondByte;
+ }
+ //如果有掩码，则获取32位的二进制masking key，同时更新index
+ if (hasMask) {
+  maskedData = data.slice(dataIndex, dataIndex + 4);
+  dataIndex += 4;
+ }
+ //数据量最大为10kb
+ if (dataLength &gt; 10240) {
+  this.send("Warning : data limit 10kb");
+ } else {
+  //计算到此处时，dataIndex为数据位的起始位置，dataLength为数据长度，maskedData为二进制的解密数据
+  this.stat = {
+  index: dataIndex,
+  totalLength: dataLength,
+  length: dataLength,
+  maskedData: maskedData,
+  opcode: parseInt(data[0].toString(16).split("")[1] , 16) //获取第一个字节的opcode位
+  };
+ }
+ } else {
+ this.stat.index = 0;
+ }
+};</pre>
+</div>
+<p>代码中均有注释，理解起来应该不难，直接看下一步，获取到数据信息后，就要对数据进行实际解析了：</p>
+<p>经过上面handleDataStat方法的处理，stat中已经有了data的相关数据，先判断opcode，如果为9说明是客户端发起的ping心跳检测，直接返回pong响应，如果为10则为服务端发起的心跳检测。如果有masking key，则遍历数据段，对每个字节都与masking key的字节进行异或运算（网上看到一个说法很形象：就是轮流发生X关系），^符号就是进行异或运算啦。如果没有masking key则直接通过slice方法把数据截取下来。</p>
+<p>获取到数据后，放进datas里保存，因为有可能数据被分片了，所以再将stat里的长度减去当前数据长度，只有当stat里的长度为0的时候，说明当前帧为最后一帧，然后通过Buffer.concat将所有数据合并，此时再判断一下opcode，如果opcode为8，则说明客户端发起了一个关闭请求，而我们获取到的数据则是关闭原因。如果不为8，则这数据就是我们需要的数据。然后再将stat重置为null，datas数组置空即可。至此，我们的数据解析就完成了。</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+WebSocket.prototype.dataHandle = function (data) {
+ this.handleDataStat(data);
+ var stat;
+ if (!(stat = this.stat)) return;
+ //如果opcode为9，则发送pong响应，如果opcode为10则置pingtimes为0
+ if (stat.opcode === 9 || stat.opcode === 10) {
+ (stat.opcode === 9) &#63; (this.sendPong()) : (this.pingTimes = 0);
+ this.reset();
+ return;
+ }
+ var result;
+ if (stat.maskedData) {
+ result = new Buffer(data.length-stat.index);
+ for (var i = stat.index, j = 0; i &lt; data.length; i++, j++) {
+  //对每个字节进行异或运算，masked是4个字节，所以%4，借此循环
+  result[j] = data[i] ^ stat.maskedData[j % 4];
+ }
+ } else {
+ result = data.slice(stat.index, data.length);
+ }
+ this.datas.push(result);
+ stat.length -= (data.length - stat.index);
+ //当长度为0，说明当前帧为最后帧
+ if (stat.length == 0) {
+ var buf = Buffer.concat(this.datas, stat.totalLength);
+ if (stat.opcode == 8) {
+  this.close(buf.toString());
+ } else {
+  this.emit("message", buf.toString());
+ }
+ this.reset();
+ }
+};</pre>
+</div>
+<p>完成了客户端发来的数据解析，还需要一个服务端发数据至客户端的方法，也就是按照上面所说的帧定义来组装数据并且发送出去。下面的代码中基本上每一行都有注释，应该还是比较容易理解的。</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+//数据发送
+WebSocket.prototype.send = function (message) {
+ if(this.state !== "OPEN") return;
+ message = String(message);
+ var length = Buffer.byteLength(message);
+// 数据的起始位置，如果数据长度16位也无法描述，则用64位，即8字节，如果16位能描述则用2字节，否则用第二个字节描述
+ var index = 2 + (length &gt; 65535 &#63; 8 : (length &gt; 125 &#63; 2 : 0));
+// 定义buffer，长度为描述字节长度 + message长度
+ var buffer = new Buffer(index + length);
+// 第一个字节，fin位为1，opcode为1
+ buffer[0] = 129;
+// 因为是由服务端发至客户端，所以无需masked掩码
+ if (length &gt; 65535) {
+ buffer[1] = 127;
+// 长度超过65535的则由8个字节表示，因为4个字节能表达的长度为4294967295，已经完全够用，因此直接将前面4个字节置0
+ buffer.writeUInt32BE(0, 2);
+ buffer.writeUInt32BE(length, 6);
+ } else if (length &gt; 125) {
+ buffer[1] = 126;
+// 长度超过125的话就由2个字节表示
+ buffer.writeUInt16BE(length, 2);
+ } else {
+ buffer[1] = length;
+ }
+// 写入正文
+ buffer.write(message, index);
+ this.socket.write(buffer);
+};</pre>
+</div>
+<p>最后还要实现一个功能，就是心跳检测：防止服务端长时间不与客户端交互而导致客户端关闭连接，所以每隔十秒都会发送一次ping进行心跳检测</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+//每隔10秒进行一次心跳检测，若连续发出三次心跳却没收到响应则关闭socket
+WebSocket.prototype.checkHeartBeat = function () {
+ var that = this;
+ setTimeout(function () {
+ if (that.state !== "OPEN") return;
+ if (that.pingTimes &gt;= 3) {
+  that.close("time out");
+  return;
+ }
+ //记录心跳次数
+ that.pingTimes++;
+ that.sendPing();
+ that.checkHeartBeat();
+ }, 10000);
+};
+WebSocket.prototype.sendPing = function () {
+ this.socket.write(new Buffer(['0x89', '0x0']))
+};
+WebSocket.prototype.sendPong = function () {
+ this.socket.write(new Buffer(['0x8A', '0x0']))
+};</pre>
+</div>
+<p>至此，整个websocket的实现就完成了，此demo只是大概实现了一下websocket而已，在安全之类方面肯定还是有很多问题，若是真正生产环境中还是用socket.io这类成熟的插件比较好。不过这还是很值得一学的。</p>
+<p>以上内容就是小编给大家分享的浅析nodejs实现Websocket的数据接收与发送的全部内容，希望大家喜欢。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/86799.html'>C#配置文件Section节点处理总结</a><a>下一篇</a><a href='/php/biji/86801.html'>CSS实现输入框的周围高亮效果让边框发亮</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

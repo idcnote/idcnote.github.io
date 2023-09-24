@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>浅谈VueJS SSR 后端绘制内存泄漏的相关解决经验_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了浅谈VueJS SSR 后端绘制内存泄漏的相关解决经验，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+对此感兴趣的朋友，看看idc笔记做的技术笔记！<br />
+<br />
+引言<br />
+<br />
+Mem" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/122.html"></a></li><li><a href="/php/phpbiji/123.html"></a></li><li><a href="/php/phpbiji/124.html"></a></li><li><a href="/php/phpbiji/125.html"></a></li><li><a href="/php/phpbiji/126.html"></a></li><li><a href="/php/phpbiji/127.html"></a></li><li><a href="/php/phpbiji/128.html"></a></li><li><a href="/php/phpbiji/129.html"></a></li><li><a href="/php/phpbiji/130.html"></a></li><li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">浅谈VueJS SSR 后端绘制内存泄漏的相关解决经验</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了浅谈VueJS SSR 后端绘制内存泄漏的相关解决经验，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+对此感兴趣的朋友，看看idc笔记做的技术笔记！<br />
+<br />
+引言<br />
+<br />
+Mem</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了浅谈VueJS SSR 后端绘制内存泄漏的相关解决经验，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p></p>
+<h3>引言</h3>
+<p></p>
+<p>Memory Leak 是最难排查调试的 Bug 种类之一，因为内存泄漏是个 undecidable problem，只有开发者才能明确一块内存是不是需要被回收。再加上内存泄漏也没有特定的报错信息，只能通过一定时间段的日志来判断是否存在内存泄漏。大家熟悉的常用调试工具对排查内存泄漏也没有用武之地。当然了，除了专门用于排查内存泄漏的工具（抓取Heap之类的工具）之外。</p>
+<p>对于不同的语言，各种排查内存泄漏的方式方法也不尽相同。对于 JavaScript 来说，针对不同的平台，调试工具也是不一样的，最常用的恐怕还是 Chrome 自带的各种利器（针对 browser 也好，nodeJS 也好）都有不错的使用体验，网上也有很多使用教程。</p>
+<p>这次我想给大家介绍的内存泄漏的定位方法，并非工具的使用。而是一些经验的总结，也就是我所知道的 VueJS SSR 中最容易出现内存泄漏的地方，如果大家知道更多 VueJS SSR 内存泄漏点，可以在评论处留言告诉更多的人。</p>
+<p></p>
+<h3>难点</h3>
+<p></p>
+<p>遇到过 VueJS SSR 内存泄漏的朋友可能知道，针对 VueJS SSR 内存泄漏的排查，与普通 NodeJS 和 Browser 平台相比是要麻烦很多的。如果你使用了 webpack-dev-server 在本地调试，你会发现常用的内存泄漏工具毫无用武之地，因为抓取到的信息不仅包括 VueJS SSR 进程信息，还包含了 Webpack 的进程信息，甚至还有 webpack-dev-server 的各种堆信息。当然了，你也可以通过各种手段来过滤掉无关的信息，从而只剩下 VueJS SSR 的堆信息。</p>
+<p>我在排查我们组项目内存泄漏的时候，动用了各种常规工具，但最终发现 VueJS SSR 的内存泄漏有很大可能性出现在以下地方，也就说如果，你碰巧也有 VueJS SSR 内存泄漏的问题，先不要使用内存泄漏排查工具，首先从下面几个地方着手，看看是否有内存泄漏的逻辑。可能直击要害，节约时间。</p>
+<p></p>
+<h3>可能造成泄漏的位置</h3>
+<p></p>
+<p></p>
+<h3>生命周期处的 beforeCreate/created</h3>
+<p></p>
+<p>以下是 VueJS 开发者看过无数次的说明图，我还请大家再多看一遍</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>在官方文档里，有这么一句话：</p>
+<blockquote>Since there are no dynamic updates, of all the lifecycle hooks, only beforeCreate and created will be called during SSR. This means any code inside other lifecycle hooks such as beforeMount or mounted will only be executed on the client.</blockquote>
+<p>也就是说 SSR 跟前端绘制一样，也有生命周期，只不过 SSR 的生命周期里只有 beforeCreate 和 created 。</p>
+<p>所以你需要首先排查你的组件的 beforeCreate 和 created 里面是否有内存泄漏的代码，或者他们是否调用了会内存泄漏的代码。</p>
+<p></p>
+<h3>路由守卫(Route Guards)处</h3>
+<p></p>
+<p>路由也是会引起 SSR 内存泄漏的地方之一</p>
+<p>跟生命周期不同，所有的 route guard 都会在 SSR 运行。他们分别都是</p>
+<ul>
+	<li>beforeEach</li>
+	<li>beforeRouteUpdate</li>
+	<li>beforeEnter</li>
+	<li>beforeRouteEnter</li>
+	<li>beforeResolve</li>
+	<li>afterEach</li>
+	<li>beforeRouteEnter</li>
+</ul>
+<p></p>
+<h3>Data-Prefetch 处</h3>
+<p></p>
+<p>还需要特别注意的地方就是 Date-prefetch 的地方，里面很容易出现内存泄漏的代码。 所谓 Date-prefetch 就是自定义实现的，在SSR处提前获取第三方数据，用于绘制的过程。</p>
+<p></p>
+<h3>Global Mixin 处</h3>
+<p></p>
+<p>这个内存泄漏的点想必大家都已经熟知，作者也在github上详细阐述过：GitHub issue</p>
+<p>简单来说，就是 global mixin 会给每个 Vue 实例一个拷贝，而不是引用。</p>
+<p></p>
+<h3>内存泄漏的例子</h3>
+<p></p>
+<p>以上列举了一些可能出现内存泄漏的地方，那么具体怎么样的代码才会引起内存泄漏呢？引起代码泄漏的例子网上有很多，我在这里想给大家介绍几种常见的泄漏例子。</p>
+<p></p>
+<h3>不小心造成的全局变量</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+function foo(arg) {
+ bar = "this is a hidden global variable";
+}</code></pre>
+<p>以上的代码会顺利运行，但是因为不小心声明了一个 <code>bar</code> 的变量。相当于：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+function foo(arg) {
+ window.bar = "this is an explicit global variable";
+}</code></pre>
+<p>生成了一个全局变量 <code>window.bar</code></p>
+<p>如果不手动回收，这个全局变量会一直存在于内存中，不会被CG回收。积少成多，最后造成内存泄漏。</p>
+<p>现在大家都是在各种模块化（CommonJS/AMD/CMD/etc..）之后的环境下进行开发，这种全局变量的内存泄漏的问题基本上是被消除了。但是要提醒大家，由于JavaScript的各种特性，会有很多意想不到的状况发生。当摸不清头脑的时候，可以尝试从这些特性出发找到问题。</p>
+<p></p>
+<h3>被遗忘了的 Timer 或者 callback</h3>
+<p></p>
+<p>请大家先看以下的例子</p>
+<p>代码如下：</p>
+<pre>
+<code>
+var someResource = getData();
+setInterval(function() {
+ var node = document.getElementById('Node');
+ if(node) {
+ // Do stuff with node and someResource.
+ node.innerHTML = JSON.stringify(someResource));
+ }
+}, 1000);</code></pre>
+<p>乍一看没啥问题，之后如果 <code>Node</code> 节点从DOM上被移除，因为上面的 callback 对 <code>Node</code> 节点有引用，所以 <code>Node</code> 节点会一直常驻内存，不会被CG回收。</p>
+<p>要避免以上问题，就要养成 <code>removeEventListener</code> 和 <code>clearInterval</code> 的习惯。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+var someResource = getData();
+var interval = setInterval(function() {
+ var node = document.getElementById('Node');
+ if(node) {
+ // Do stuff with node and someResource.
+ node.innerHTML = JSON.stringify(someResource));
+ } else {
+ // Remove Timer
+ clearInterval(interval);
+ }
+}, 1000);</code></pre>
+<p>还比如：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+var element = document.getElementById('button');
+
+function onClick(event) {
+ element.innerHtml = 'text';
+}
+
+element.addEventListener('click', onClick);
+// Do stuff
+element.removeEventListener('click', onClick);
+element.parentNode.removeChild(element);
+// Now when element goes out of scope,
+// both element and onClick will be collected even in old browsers that don't
+// handle cycles well.</code></pre>
+<p>在 <code>addEventListener</code> 之后已经要记得 <code>removeEventListener</code></p>
+<p></p>
+<h3>闭包</h3>
+<p></p>
+<p>闭包造成内存泄漏的情况比较复杂，而且较难查找。限于本文主旨，不做原理说明。</p>
+<p></p>
+<h3>总结</h3>
+<p></p>
+<p>个人认为 VueJS SSR 后端绘制内存泄漏造成影响要比普通的 VueJS 前端内存泄漏造成的影响要更大。</p>
+<p>前端内存泄漏的影响，都是发生在客户机器上，而且基本上现代浏览器也会做好保护机制，一般自行刷新之后都会解决。但是，一旦后端绘制内存泄漏造成宕机之后，整个服务器都会受影响，危险性更大，搞不好年终奖就没了。</p>
+<p>前端工程师一般都是关注于浏览器端表现，在开发过程中的内存泄漏问题不太在意也不太容易被发现。一般都是在项目上线一段时间之后，才发现内存泄漏的情况。那个时候再去着手，可能会有些无从下手或者手忙脚乱。</p>
+<p>那么，就让我们在开发的时候开始关注内存泄漏问题，将 VueJS SSR 后端绘制内存泄漏问题扼杀于襁褓之中。</p>
+<p>以上就是本文的全部内容，希望对大家的学习有所帮助，也希望大家多多支持php教程。</p>
+
+<p>注：关于浅谈VueJS SSR 后端绘制内存泄漏的相关解决经验的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/111665.html'>vue的.vue文件是怎么run起来的(vue-loader)</a><a>下一篇</a><a href='/php/biji/111676.html'>php免费/不限量-快递查询接口API对接解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

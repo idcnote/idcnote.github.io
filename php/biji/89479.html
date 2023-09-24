@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>使用C#来编写一个异步的Socket服务器_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="介绍<br />
+我最近需要为一个.net项目准备一个内部线程通信机制. 项目有多个使用ASP.NET，Windows 表单和控制台应用程序的服务器和客户端构成. 考虑到实现的可能性，我下定决心要使用" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">使用C#来编写一个异步的Socket服务器</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>介绍<br />
+我最近需要为一个.net项目准备一个内部线程通信机制. 项目有多个使用ASP.NET，Windows 表单和控制台应用程序的服务器和客户端构成. 考虑到实现的可能性，我下定决心要使用</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>介绍</strong></p>
+<p>我最近需要为一个.net项目准备一个内部线程通信机制. 项目有多个使用ASP.NET，Windows 表单和控制台应用程序的服务器和客户端构成. 考虑到实现的可能性，我下定决心要使用原生的socket，而不是许多.NET中已经提前为我们构建好的组件, 像是所谓的管道, NetTcpClient 还有 Azure 服务总线.</p>
+<p>这篇文章中的服务器基于System.Net.Sockets类异步方法. 这些允许你支持大量的socket客户端, 而一个客户端的连接是唯一的阻塞机制. 阻塞的时间是可以忽略不记得，所以服务器基本上是在当做一个多线程socket服务器在运作的.</p>
+<p><strong>背景</strong></p>
+<p>原生的socket在为你提供通信层面的完全控制权上具有优势, 而在处理不同的数据类型是具有很大的灵活性. 你甚至可以通过socket发送序列化了的CLR对象，尽管我在这里不会那样做. 这个项目将会想你展示如何在socket之间发送文本.<br />
+<strong>代码的运用</strong></p>
+<p>使用下面的代码，你初始化了一个Server类，并运行了Start()方法:<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+Server myServer = new Server();
+myServer.Start();
+</pre>
+</div>
+<p>如果你计划在一个Windows表单中管理服务器的话，我建议使用一个BackgroundWorker, 因为socket方法(一般会是ManualResentEvent) 将会阻塞GUI线程的运行.</p>
+<p>Server 类:<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+using System.Net.Sockets;
+ 
+public class Server
+{
+  private static Socket listener;
+  public static ManualResetEvent allDone = new ManualResetEvent(false);
+  public const int _bufferSize = 1024;
+  public const int _port = 50000;
+  public static bool _isRunning = true;
+ 
+  class StateObject
+  {
+    public Socket workSocket = null;
+    public byte[] buffer = new byte[bufferSize];
+    public StringBuilder sb = new StringBuilder();
+  }
+ 
+  // Returns the string between str1 and str2
+  static string Between(string str, string str1, string str2)
+  {
+    int i1 = 0, i2 = 0;
+    string rtn = "";
+ 
+    i1 = str.IndexOf(str1, StringComparison.InvariantCultureIgnoreCase);
+    if (i1 &gt; -1)
+    {
+      i2 = str.IndexOf(str2, i1 + 1, StringComparison.InvariantCultureIgnoreCase);
+      if (i2 &gt; -1)
+      {
+        rtn = str.Substring(i1 + str1.Length, i2 - i1 - str1.Length);
+      }
+    }
+    return rtn;
+  }
+ 
+  // Checks if the socket is connected
+  static bool IsSocketConnected(Socket s)
+  {
+    return !((s.Poll(1000, SelectMode.SelectRead) && (s.Available == 0)) || !s.Connected);
+  }
+ 
+  // Insert all the other methods here.
+}
+</pre>
+</div>
+<p><br />
+ManualResetEvent 是一个实现了你的socket服务器中事件的.NET类. 我们需要这个项目在我们想要发布阻塞操作的时候向代码发送信号. 你可以试验一下用bufferSize来适配你的需求. 如果能预期到消息的大小, 使用byte单位来设置消息的大小参数bufferSize. port是侦听TCP的端口参数. 要意识到为其它应用程序伺服所使用的接口. 如果你想要能够方便地停止服务器，你需要实现一些机制来将_isRunning设置成false. 这一般可以借助于使用一个 BackgroundWorker做到, 其中你可以使用myWorker.CancellationPending替换_isRunning. 我提到_isRunning的原因是给你在处理取消操作的问题上提供一个方向, 并向你展示侦听器可以方便的停止的.</p>
+<p>Between() 和IsSocketConnected() 是辅助方法.</p>
+<p><br />
+现在转过来看看方法. 首先是Start()方法:<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+public void Start()
+{
+  IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
+  IPEndPoint localEP = new IPEndPoint(IPAddress.Any, _port);
+  listener = new Socket(localEP.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+  listener.Bind(localEP);
+ 
+  while (_IsRunning)
+  {
+    allDone.Reset();
+    listener.Listen(10);
+    listener.BeginAccept(new AsyncCallback(acceptCallback), listener);
+    bool isRequest = allDone.WaitOne(new TimeSpan(12, 0, 0)); // Blocks for 12 hours
+ 
+    if (!isRequest)
+    {
+      allDone.Set();
+      // Do some work here every 12 hours
+    }
+  }
+  listener.Close();
+}
+</pre>
+</div>
+<p>这个方法初始化了侦听器socket, 并开始等待用户连接的到来. 项目中主要的模式是使用异步委派. 异步委派是在调用者中的状态改变时被异步调用的方法. isRequest 告诉你WaitOne 是否已经因为有客户端连接或者超时而退出.</p>
+<p>如果你有大量的客户端连接同时发生, 考虑提高Listen()方法的队列参数.</p>
+<p><br />
+现在来看看下一个方法, acceptCallback . 这个方法由listener.BeginAccept异步调用. 当方法完成执行时，侦听器会立即侦听新的客户端.<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+static void acceptCallback(IAsyncResult ar)
+{
+  // Get the listener that handles the client request.
+  Socket listener = (Socket)ar.AsyncState;
+ 
+  if (listener != null)
+  {
+    Socket handler = listener.EndAccept(ar);
+ 
+    // Signal main thread to continue
+    allDone.Set();
+ 
+    // Create state
+    StateObject state = new StateObject();
+    state.workSocket = handler;
+    handler.BeginReceive(state.buffer, 0, _bufferSize, 0, new AsyncCallback(readCallback), state);
+  }
+}
+</pre>
+</div>
+<p>acceptCallback 会派生出另外一个异步指派: readCallback. 这个方法会读取来自socket的实际数据. 我已经为收发数据作了我自己的控制, 对于_bufferSize来说是不变的. 所有发送到服务器的字符串都必须用&lt;!--SOCKET--&gt; 和 &lt;!--ENDSOCKET--&gt;包起来. 同样，客户端在收到服务器的响应式，必须解除响应信息的包裹, 后者被&lt;!--RESPONSE--&gt; 和 &lt;!--ENDRESPONSE--&gt;包了起来。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+static void readCallback(IAsyncResult ar)
+{
+  StateObject state = (StateObject)ar.AsyncState;
+  Socket handler = state.workSocket;
+ 
+  if (!IsSocketConnected(handler)) 
+  {
+    handler.Close();
+    return;
+  }
+ 
+  int read = handler.EndReceive(ar);
+ 
+  // Data was read from the client socket.
+  if (read &gt; 0)
+  {
+    state.sb.Append(Encoding.UTF8.GetString(state.buffer, 0, read));
+ 
+    if (state.sb.ToString().Contains("&lt;!--ENDSOCKET--&gt;"))
+    {
+      string toSend = "";
+      string cmd = ts.Strings.Between(state.sb.ToString(), "&lt;!--SOCKET--&gt;", "&lt;!--ENDSOCKET--&gt;");
+           
+      switch (cmd)
+      {
+        case "Hi!":
+          toSend = "How are you&#63;";
+          break;
+        case "Milky Way&#63;":
+          toSend = "No I am not.";
+          break;
+      }
+ 
+      toSend = "&lt;!--RESPONSE--&gt;" + toSend + "&lt;!--ENDRESPONSE--&gt;";
+ 
+      byte[] bytesToSend = Encoding.UTF8.GetBytes(toSend);
+      handler.BeginSend(bytesToSend, 0, bytesToSend.Length, SocketFlags.None
+        , new AsyncCallback(sendCallback), state);
+    }
+    else 
+    {
+      handler.BeginReceive(state.buffer, 0, _bufferSize, 0
+          , new AsyncCallback(readCallback), state);
+    }
+  }
+  else
+  {
+      handler.Close();
+  }
+}
+</pre>
+</div>
+<p>readCallback 会派生另外一个方法, sendCallback, 它将会向客户端发送请求. 如果客户端没有关闭连接, sendCallback 将会向socket发送信号以获得更多的数据.<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+static void sendCallback(IAsyncResult ar)
+{
+  StateObject state = (StateObject)ar.AsyncState;
+  Socket handler = state.workSocket;
+  handler.EndSend(ar);
+ 
+  StateObject newstate = new StateObject();
+  newstate.workSocket = handler;
+  handler.BeginReceive(newstate.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(readCallback), newstate);
+}
+</pre>
+</div>
+<p>我会将写一个socket客户端作为联系留给读者. socket客户端应该使用同异步调用同样的编程模式. 我希望你能从这篇文章中收获乐趣，并且会像一个socket程序员那样付诸实践!</p>
+<p><strong>要点</strong></p>
+<p>我在生产环境下使用了此代码，其中的socket服务器是一个自由文本搜索引擎。 SQL Server缺乏对自由文本搜索支持（你可以使用自由文本索引，但它们是缓慢和昂贵的）。socket服务器负载了大量导向IEnumerables的文本数据，并使用Linq来搜索文本。来自socket服务器的响应从数百万行的Unicode文本数据中搜索时间在几毫秒内。我们还使用了三个分布式的Sphinx服务器（www.sphinxsearch.com）。socket服务器充当了Sphinx服务器的高速缓存。如果你需要一个快速的自由文本搜索引擎，我强烈建议使用Sphinx。<br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/89478.html'>Win7旗舰版系统在更新补丁途中出现无响应现象的三种解决方法</a><a>下一篇</a><a href='/php/biji/89480.html'>Linux服务器上用iScanner删除网页恶意代码的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

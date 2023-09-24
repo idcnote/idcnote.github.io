@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Java并发编程之性能、扩展性和响应_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="本文讨论的重点在于多线程应用程序的性能问题。我们会先给性能和扩展性下一个定义，然后再仔细学习一下Amdahl法则。下面的内容我们会考察一下如何用不同的技术方法来减少锁竞" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Java并发编程之性能、扩展性和响应</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>本文讨论的重点在于多线程应用程序的性能问题。我们会先给性能和扩展性下一个定义，然后再仔细学习一下Amdahl法则。下面的内容我们会考察一下如何用不同的技术方法来减少锁竞</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>本文讨论的重点在于多线程应用程序的性能问题。我们会先给性能和扩展性下一个定义，然后再仔细学习一下Amdahl法则。下面的内容我们会考察一下如何用不同的技术方法来减少锁竞争，以及如何用代码来实现。</p>
+<p><strong>1、性能</strong></p>
+<p>我们都知道，多线程可以用来提高程序的性能，背后的原因在于我们有多核的CPU或多个CPU。每个CPU的内核都可以自己完成任务，因此把一个大的任务分解成一系列的可彼此独立运行的小任务就可以提高程序的整体性能了。可以举个例子，比如有个程序用来将硬盘上某个文件夹下的所有图片的尺寸进行修改，应用多线程技术就可以提高它的性能。使用单线程的方式只能依次遍历所有图片文件并且执行修改，如果我们的CPU有多个核心的话，毫无疑问，它只能利用其中的一个核。使用多线程的方式的话，我们可以让一个生产者线程扫描文件系统把每个图片都添加到一个队列中，然后用多个工作线程来执行这些任务。如果我们的工作线程的数量和CPU总的核心数一样的话，我们就能保证每个CPU核心都有活可干，直到任务被全部执行完成。</p>
+<p>对于另外一种需要较多IO等待的程序来说，利用多线程技术也能提高整体性能。假设我们要写这样一个程序，需要抓取某个网站的所有HTML文件，并且将它们存储到本地磁盘上。程序可以从某一个网页开始，然后解析这个网页中所有指向本网站的链接，然后依次抓取这些链接，这样周而复始。因为从我们对远程网站发起请求到接收到所有的网页数据需要等待一段时间，所以我们可以将此任务交给多个线程来执行。让一个或稍微更多一点的线程来解析已经收到的HTML网页以及将找到的链接放入队列中，让其他所有的线程负责请求获取页面。与上一个例子不同的是，在这个例子中，你即便使用多于CPU核心数量的线程也仍然能够获得性能提升。</p>
+<p>上面这两个例子告诉我们，高性能就是在短的时间窗口内做尽量多的事情。这个当然是对性能一词的最经典解释了。但是同时，使用线程也能很好地提升我们程序的响应速度。想象我们有这样一个图形界面的应用程序，上方有一个输入框，输入框下面有一个名字叫“处理”的按钮。当用户按下这个按钮的时候，应用程序需要重新对按钮的状态进行渲染（按钮看起来被按下了，当松开鼠标左键时又恢复原状），并且开始对用户的输入进行处理。如果处理用户输入的这个任务比较耗时的话，单线程的程序就无法继续响应用户其他的输入动作了，比如，来自操作系统传送过来的用户单击鼠标事件或鼠标指针移动事件等等，这些事件的响应需要有独立的线程来响应。</p>
+<p>可扩展性（Scalability）的意思是程序具备这样的能力：通过添加计算资源就可以获得更高的性能。想象我们需要调整很多图片的大小，因为我们机器的CPU核心数是有限的，所以增加线程数量并不总能相应提高性能。相反，因为调度器需要负责更多线程的创建和关闭，也会占用CPU资源，反而有可能降低性能。</p>
+<p><span style="color: #800000"><strong>1.1 Amdahl法则</strong></span></p>
+<p>上一段提到了在某些情形下，添加额外的运算资源可以提高程序的整体性能。为了能够计算出当我们添加了额外的资源的时候到底能获得多少性能提升，我们有必要来检查一下程序有哪些部分是串行运行（或同步运行），有哪些部分是并行运行的。如果我们把需要同步执行的代码占比量化为B（例如，需要同步执行的代码的行数），把CPU的总核心数记为n，那么，根据Amdahl法则，我们可以获得的性能提升的上限是：</p>
+<p style="text-align: center"></p>
+<p>如果n趋于无穷大的话，(1-B)/n就收敛于0。因此，我们可以忽略这个表达式的值，因此性能提升位数收敛于1/B，这里面的B代表是那些必须同步运行的代码比例。如果B等于0.5的话，那意味着程序的一半代码无法并行运行，0.5的倒数是2，因此，即使我们添加无数个CPU核心，我们获得的性能提升也最多是2倍。假设我们现在把程序修改了一下，修改之后只有0.25的代码必须同步运行，现在1/0.25=4，表示我们的程序如果在具有大量CPU的硬件上运行时速度将会比在单核的硬件上快大概4倍。</p>
+<p>另一方面，通过Amdahl法则，我们也能根据我们想获得的提速的目标计算出程序应该的同步代码的比例。如果我们想要达到100倍的提速，而1/100=0.01，意味着，我们程序同步执行的代码的数量最多不能超过1%。</p>
+<p>总结Amdahl法则我们可以看出，我们通过添加额外CPU来获得性能提升的最大值取决于程序同步执行部分代码所占的比例有多小。虽然在实际中，想要计算出这个比例并不总是那么容易，更别说面对一些大型的商业系统应用了，但是Amdahl法则给了我们很重要的启示，那就是，我们必须非常仔细地去考虑那些必须同步执行的代码，并且力图减少这部分代码。</p>
+<p><span style="color: #800000"><strong>1.2 对性能的影响</strong></span></p>
+<p>文章写到这里，我们已经表明这样一个观点：增加更多的线程可以提高程序的性能和响应速度。但是另一方面，想要取得这些好处却并非轻而易举，也需要付出一些代价。线程的使用对性能的提升也会有所影响。</p>
+<p>首先，第一个影响来自线程创建的时候。线程的创建过程中，JVM需要从底层操作系统申请相应的资源，并且在调度器中初始化数据结构，以便决定执行线程的顺序。</p>
+<p>如果你的线程的数量和CPU的核心数量一样的话，每个线程都会运行在一个核心上，这样或许他们就不会经常被打断了。但是事实上，在你的程序运行的时候，操作系统也会有些自己的运算需要CPU去处理。所以，即使这种情形下，你的线程也会被打断并且等待操作系统来重新恢复它的运行。当你的线程数量超过CPU的核心数量的时候，情况有可能变得更坏。在这种情况下，JVM的进程调度器会打断某些线程以便让其他线程执行，线程切换的时候，刚才正在运行的线程的当前状态需要被保存下来，以便等下次运行的时候可以恢复数据状态。不仅如此，调度器也会对它自己内部的数据结构进行更新，而这也需要消耗CPU周期。所有这些都意味着，线程之间的上下文切换会消耗CPU计算资源，因此带来相比单线程情况下没有的性能开销。</p>
+<p>多线程程序所带来的另外一个开销来自对共享数据的同步访问保护。我们可以使用synchronized关键字来进行同步保护，也可以使用Volatile关键字来在多个线程之间共享数据。如果多于一个线程想要去访问某一个共享数据结构的话，就发生了争用的情形，这时，JVM需要决定哪个进程先，哪个进程后。如果决定该要执行的线程不是当前正在运行的线程，那么就会发生线程切换。当前线程需要等待，直到它成功获得了锁对象。JVM可以自己决定如何来执行这种“等待”，假如JVM预计离成功获得锁对象的时间比较短，那JVM可以使用激进等待方法，比如，不停地尝试获得锁对象，直到成功，在这种情况下这种方式可能会更高效，因为比较进程上下文切换来说，还是这种方式更快速一些。把一个等待状态的线程挪回到执行队列也会带来额外的开销。</p>
+<p>因此，我们要尽力避免由于锁竞争而带来的上下文切换。下面一节将阐述两种降低这种竞争发生的方法。</p>
+<p><span style="color: #800000"><strong>1.3 锁竞争</strong></span></p>
+<p>像上一节所说的那样，两个或更多线程对锁的竞争访问会带来额外的运算开销，因为竞争的发生逼迫调度器来让一个线程进入激进等待状态，或者让它进行等待状态而引发两次上下文切换。有某些情况下，锁竞争的恶果可以通过以下方法来减轻：</p>
+<p>1、减少锁的作用域；</p>
+<p>2、减少需要获取锁的频率；</p>
+<p>3、尽量使用由硬件支持的乐观锁操作，而不是synchronized；</p>
+<p>4、尽量少用synchronized；</p>
+<p>5、减少使用对象缓存</p>
+<p><strong>1.3.1 缩减同步域</strong></p>
+<p>如果代码持有锁超过必要的时间，那么可以应用这第一种方法。通常我们可以将一行或多行代码移出同步区域来降低当前线程持有锁的时间。在同步区域里运行的代码数量越少，当前线程就会越早地释放锁，从而让其他线程更早地获得锁。这与Amdahl法则相一致的，因为这样做减少了需要同步执行的代码量。</p>
+<p>为了更好地理解，看下面的源码：</p>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class ReduceLockDuration implements Runnable {
+ private static final int NUMBER_OF_THREADS = 5;
+ private static final Map&lt;String, Integer&gt; map = new HashMap&lt;String, Integer&gt;();
+
+ public void run() {
+ for (int i = 0; i &lt; 10000; i++) {
+  synchronized (map) {
+  UUID randomUUID = UUID.randomUUID();
+  Integer value = Integer.valueOf(42);
+  String key = randomUUID.toString();
+  map.put(key, value);
+  }
+  Thread.yield();
+ }
+ }
+
+ public static void main(String[] args) throws InterruptedException {
+ Thread[] threads = new Thread[NUMBER_OF_THREADS];
+ for (int i = 0; i &lt; NUMBER_OF_THREADS; i++) {
+  threads[i] = new Thread(new ReduceLockDuration());
+ }
+ long startMillis = System.currentTimeMillis();
+ for (int i = 0; i &lt; NUMBER_OF_THREADS; i++) {
+  threads[i].start();
+ }
+ for (int i = 0; i &lt; NUMBER_OF_THREADS; i++) {
+  threads[i].join();
+ }
+ System.out.println((System.currentTimeMillis()-startMillis)+"ms");
+ }
+}
+
+</pre>
+</div>
+<p>在上面的例子中，我们让五个线程来竞争访问共享的Map实例，为了在同一时刻只有一个线程可以访问到Map实例，我们将向Map中添加Key/Value的操作放到了synchronized保护的代码块中。当我们仔细察看这段代码的时候，我们可以看到，计算key和value的几句代码并不需要同步执行，key和value只属于当前执行这段代码的线程，仅仅对当前线程有意义，并且不会被其他线程所修改。因此，我们可以把这几句移出同步保护。如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public void run() {
+ for (int i = 0; i &lt; 10000; i++) {
+ UUID randomUUID = UUID.randomUUID();
+ Integer value = Integer.valueOf(42);
+ String key = randomUUID.toString();
+ synchronized (map) {
+  map.put(key, value);
+ }
+ Thread.yield();
+ }
+}
+</pre>
+</div>
+<p>降低同步代码所带来的效果是可以测量的。在我的机器上，整个程序的执行时间从420ms降低到了370ms。看看吧，仅仅把三行代码移出同步保护块就可以将程序运行时间减少11%。Thread.yield()这句代码是为了诱发线程上下文切换的，因为这句代码会告诉JVM当前线程想要交出当前使用的计算资源，以便让其他等待运行的线程运行。这样也会带来更多的锁竞争的发生，因为，如果不如此的话某一个线程就会更久地占用某个核心继而减少了线程上下文切换。</p>
+<p><strong>1.3.2 分拆锁</strong></p>
+<p>另外一种减少锁竞争的方法是将一块被锁定保护的代码分散到多个更小的保护块中。如果你的程序中使用了一个锁来保护多个不同对象的话，这种方式会有用武之地。假设我们想要通过程序来统计一些数据，并且实现了一个简单的计数类来持有多个不同的统计指标，并且分别用一个基本计数变量来表示（long类型）。因为我们的程序是多线程的，所以我们需要对访问这些变量的操作进行同步保护，因为这些操作动作来自不同的线程。要达到这个目的，最简单的方式就是对每个访问了这些变量的函数添加synchronized关键字。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public static class CounterOneLock implements Counter {
+ private long customerCount = 0;
+ private long shippingCount = 0;
+
+ public synchronized void incrementCustomer() {
+ customerCount++;
+ }
+
+ public synchronized void incrementShipping() {
+ shippingCount++;
+ }
+
+ public synchronized long getCustomerCount() {
+ return customerCount;
+ }
+
+ public synchronized long getShippingCount() {
+ return shippingCount;
+ }
+}
+
+</pre>
+</div>
+<p>这种方式也就意味着，对这些变量的每次修改都会引发对其他Counter实例的锁定。其他线程如果想要对另外一个不同的变量调用increment方法，那也只能等待前一个线程释放了锁控制之后才能有机会去完成。在此种情况下，对每个不同的变量使用单独的synchronized保护将会提高执行效率。</p>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public static class CounterSeparateLock implements Counter {
+ private static final Object customerLock = new Object();
+ private static final Object shippingLock = new Object();
+ private long customerCount = 0;
+ private long shippingCount = 0;
+
+ public void incrementCustomer() {
+ synchronized (customerLock) {
+  customerCount++;
+ }
+ }
+
+ public void incrementShipping() {
+ synchronized (shippingLock) {
+  shippingCount++;
+ }
+ }
+
+ public long getCustomerCount() {
+ synchronized (customerLock) {
+  return customerCount;
+ }
+ }
+
+ public long getShippingCount() {
+ synchronized (shippingLock) {
+  return shippingCount;
+ }
+ }
+}
+
+</pre>
+</div>
+<p>这种实现为每个计数指标引入了一个单独synchronized对象，因此，一个线程想要增加Customer计数的时候，它必须等待另一个正在增加Customer计数的线程完成，而并不用等待另一个正在增加Shipping计数的线程完成。</p>
+<p>使用下面的类，我们可以非常容易地计算分拆锁所带来的性能提升。</p>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class LockSplitting implements Runnable {
+ private static final int NUMBER_OF_THREADS = 5;
+ private Counter counter;
+
+ public interface Counter {
+ void incrementCustomer();
+
+ void incrementShipping();
+
+ long getCustomerCount();
+
+ long getShippingCount();
+ }
+
+ public static class CounterOneLock implements Counter { ... }
+
+ public static class CounterSeparateLock implements Counter { ... }
+
+ public LockSplitting(Counter counter) {
+ this.counter = counter;
+ }
+
+ public void run() {
+ for (int i = 0; i &lt; 100000; i++) {
+  if (ThreadLocalRandom.current().nextBoolean()) {
+  counter.incrementCustomer();
+  } else {
+  counter.incrementShipping();
+  }
+ }
+ }
+
+ public static void main(String[] args) throws InterruptedException {
+ Thread[] threads = new Thread[NUMBER_OF_THREADS];
+ Counter counter = new CounterOneLock();
+ for (int i = 0; i &lt; NUMBER_OF_THREADS; i++) {
+  threads[i] = new Thread(new LockSplitting(counter));
+ }
+ long startMillis = System.currentTimeMillis();
+ for (int i = 0; i &lt; NUMBER_OF_THREADS; i++) {
+  threads[i].start();
+ }
+ for (int i = 0; i &lt; NUMBER_OF_THREADS; i++) {
+  threads[i].join();
+ }
+ System.out.println((System.currentTimeMillis() - startMillis) + "ms");
+ }
+}
+
+</pre>
+</div>
+<p>在我的机器上，单一锁的实现方法平均花费56ms，两个单独锁的实现是38ms。耗时大约降低了大概32%。</p>
+<p>另外一种提升方式是，我们甚至可以更进一步地将读写分开用不同的锁来保护。原来的Counter类提供了对计数指标分别提供了读和写的方法，但是事实上，读操作并不需要同步保护，我们可以放心让多个线程并行读取当前指标的数值，同时，写操作必须得到同步保护。java.util.concurrent包里提供了有对ReadWriteLock接口的实现，可以方便地实现这种区分。</p>
+<p>ReentrantReadWriteLock实现维护了两个不同的锁，一个保护读操作，一个保护写操作。这两个锁都有获取锁和释放锁的操作。仅仅当在没有人获取读锁的时候，写锁才能成功获得。反过来，只要写锁没有被获取，读锁可以被多个线程同时获取。为了演示这种方法，下面的Counter类使用了ReadWriteLock，如下：</p>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public static class CounterReadWriteLock implements Counter {
+ private final ReentrantReadWriteLock customerLock = new ReentrantReadWriteLock();
+ private final Lock customerWriteLock = customerLock.writeLock();
+ private final Lock customerReadLock = customerLock.readLock();
+ private final ReentrantReadWriteLock shippingLock = new ReentrantReadWriteLock();
+ private final Lock shippingWriteLock = shippingLock.writeLock();
+ private final Lock shippingReadLock = shippingLock.readLock();
+ private long customerCount = 0;
+ private long shippingCount = 0;
+
+ public void incrementCustomer() {
+ customerWriteLock.lock();
+ customerCount++;
+ customerWriteLock.unlock();
+ }
+
+ public void incrementShipping() {
+ shippingWriteLock.lock();
+ shippingCount++;
+ shippingWriteLock.unlock();
+ }
+
+ public long getCustomerCount() {
+ customerReadLock.lock();
+ long count = customerCount;
+ customerReadLock.unlock();
+ return count;
+ }
+
+ public long getShippingCount() {
+ shippingReadLock.lock();
+ long count = shippingCount;
+ shippingReadLock.unlock();
+ return count;
+ }
+}
+
+</pre>
+</div>
+<p>所有的读操作都被读锁保护，同时，所有的写操作都被写锁所保护。如果程序中执行的读操作要远大于写操作的话，这种实现可以带来比前一节的方式更大的性能提升，因为读操作可以并发进行。</p>
+<p><strong>1.3.3 分离锁</strong></p>
+<p>上面一个例子展示了如何将一个单独的锁分开为多个单独的锁，这样使得各线程仅仅获得他们将要修改的对象的锁就可以了。但是另一方面，这种方式也增加了程序的复杂度，如果实现不恰当的话也可能造成死锁。</p>
+<p>分离锁是与分拆锁类似的一种方法，但是分拆锁是增加锁来保护不同的代码片段或对象，而分离锁是使用不同的锁来保护不同范围的数值。JDK的java.util.concurrent包里的ConcurrentHashMap即使用了这种思想来提高那些严重依赖HashMap的程序的性能。在实现上，ConcurrentHashMap内部使用了16个不同的锁，而不是封装一个同步保护的HashMap。16个锁每一个负责保护其中16分之一的桶位（bucket）的同步访问。这样一来，不同的线程想要向不同的段插入键的时候，相应的操作会受到不同的锁来保护。但是反过来也会带来一些不好的问题，比如，某些操作的完成现在需要获取多个锁而不是一个锁。如果你想要复制整个Map的话，这16个锁都需要获得才能完成。</p>
+<p><strong>1.3.4 原子操作</strong></p>
+<p>另外一种减少锁竞争的方法是使用原子操作，这种方式会在其他文章中详细阐述原理。java.util.concurrent包对一些常用基础数据类型提供了原子操作封装的类。原子操作类的实现基于处理器提供的“比较置换”功能（CAS），CAS操作只在当前寄存器的值跟操作提供的旧的值一样的时候才会执行更新操作。</p>
+<p>这个原理可以用来以乐观的方式来增加一个变量的值。如果我们的线程知道当前的值的话，就会尝试使用CAS操作来执行增加操作。如果期间别的线程已经修改了变量的值，那么线程提供的所谓的当前值已经跟真实的值不一样了，这时JVM来尝试重新获得当前值，并且再尝试一次，反反复复直到成功为止。虽然循环操作会浪费一些CPU周期，但是这样做的好处是，我们不需要任何形式的同步控制。</p>
+<p>下面的Counter类的实现就利用了原子操作的方式，你可以看到，并没有使用任何synchronized的代码。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public static class CounterAtomic implements Counter {
+ private AtomicLong customerCount = new AtomicLong();
+ private AtomicLong shippingCount = new AtomicLong();
+
+ public void incrementCustomer() {
+ customerCount.incrementAndGet();
+ }
+
+ public void incrementShipping() {
+ shippingCount.incrementAndGet();
+ }
+
+ public long getCustomerCount() {
+ return customerCount.get();
+ }
+
+ public long getShippingCount() {
+ return shippingCount.get();
+ }
+}
+
+</pre>
+</div>
+<p>与CounterSeparateLock类相比，平均运行时间从39ms降低到了16ms，大约降低了58%。</p>
+<p><strong>1.3.5 避免热点代码段</strong></p>
+<p>一个典型的LIST实现通过会在内容维护一个变量来记录LIST自身所包含的元素个数，每一次从列表里删除或增加元素的时候，这个变量的值都会改变。如果LIST在单线程应用中使用的话，这种方式无可厚非，每次调用size()时直接返回上一次计算之后的数值就行了。如果LIST内部不维护这个计数变量的话，每次调用size()操作都会引发LIST重新遍历计算元素个数。</p>
+<p>这种很多数据结构都使用了的优化方式，当到了多线程环境下时却会成为一个问题。假设我们在多个线程之间共享一个LIST，多个线程同时地去向LIST里面增加或删除元素，同时去查询大的长度。这时，LIST内部的计数变量成为一个共享资源，因此所有对它的访问都必须进行同步处理。因此，计数变量成为整个LIST实现中的一个热点。</p>
+<p>下面的代码片段展示了这个问题：</p>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public static class CarRepositoryWithCounter implements CarRepository {
+ private Map&lt;String, Car&gt; cars = new HashMap&lt;String, Car&gt;();
+ private Map&lt;String, Car&gt; trucks = new HashMap&lt;String, Car&gt;();
+ private Object carCountSync = new Object();
+ private int carCount = 0;
+
+ public void addCar(Car car) {
+ if (car.getLicencePlate().startsWith("C")) {
+  synchronized (cars) {
+  Car foundCar = cars.get(car.getLicencePlate());
+  if (foundCar == null) {
+   cars.put(car.getLicencePlate(), car);
+   synchronized (carCountSync) {
+   carCount++;
+   }
+  }
+  }
+ } else {
+  synchronized (trucks) {
+  Car foundCar = trucks.get(car.getLicencePlate());
+  if (foundCar == null) {
+   trucks.put(car.getLicencePlate(), car);
+   synchronized (carCountSync) {
+   carCount++;
+   }
+  }
+  }
+ }
+ }
+
+ public int getCarCount() {
+ synchronized (carCountSync) {
+  return carCount;
+ }
+ }
+}
+
+</pre>
+</div>
+<p>上面这个CarRepository的实现内部有两个LIST变量，一个用来放洗车元素，一个用来放卡车元素，同时，提供了查询这两个LIST总共的大小的方法。采用的优化方式是，每次添加一个Car元素的时候，都会增加内部的计数变量的值，同时增加的操作受synchronized保护，返回计数值的方法也是一样。</p>
+<p>为了避免带来这种额外的代码同步开销，看下面另外一种CarRepository的实现：它不再使用一个内部的计数变量，而是在返回汽车总数的方法里实时计数这个数值。如下：</p>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public static class CarRepositoryWithoutCounter implements CarRepository {
+ private Map&lt;String, Car&gt; cars = new HashMap&lt;String, Car&gt;();
+ private Map&lt;String, Car&gt; trucks = new HashMap&lt;String, Car&gt;();
+
+ public void addCar(Car car) {
+ if (car.getLicencePlate().startsWith("C")) {
+  synchronized (cars) {
+  Car foundCar = cars.get(car.getLicencePlate());
+  if (foundCar == null) {
+   cars.put(car.getLicencePlate(), car);
+  }
+  }
+ } else {
+  synchronized (trucks) {
+  Car foundCar = trucks.get(car.getLicencePlate());
+  if (foundCar == null) {
+   trucks.put(car.getLicencePlate(), car);
+  }
+  }
+ }
+ }
+
+ public int getCarCount() {
+ synchronized (cars) {
+  synchronized (trucks) {
+  return cars.size() + trucks.size();
+  }
+ }
+ }
+}
+
+</pre>
+</div>
+<p>现在，仅仅在getCarCount()方法里，两个LIST的访问需要同步保护，像上一种实现那样每次添加新元素时的同步开销已经不存在了。</p>
+<p><strong>1.3.6 避免对象缓存复用</strong></p>
+<p>在JAVA VM的第一版里，使用new关键字来创建新对象的开销比较大，因此，很多开发人员习惯了使用对象复用模式。为了避免一次又一次重复创建对象，开发人员维护一个缓冲池，每次创建完对象实例之后可以把它们保存在缓冲池里，下次其他线程再需要使用的时候就可以直接从缓冲池里去取。</p>
+<p>乍一看，这种方式是很合理的，但是这种模式在多线程应用程序里会出现问题。因为对象的缓冲池在多个线程之间共享，因此所有线程在访问其中的对象时的操作需要同步保护。而这种同步所带来的开销已经大过了创建对象本身了。当然了，创建过多的对象会加重垃圾回收的负担，但是即便把这个考虑在内，避免同步代码所带来的性能提升仍然要好过使用对象缓存池的方式。</p>
+<p>本文所讲述的这些优化方案再一次的表明，每一种可能的优化方式在真正应用的时候一定需要多多仔细评测。不成熟的优化方案表面看起来好像很有道理，但是事实上很有可能会反过来成为性能的瓶颈。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/106220.html'>苹果Mac系统休眠恢复时WiFi自动断开不重连现象的解决方法介绍</a><a>下一篇</a><a href='/php/biji/106222.html'>android配合viewpager实现可滑动的标签栏示例分享</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

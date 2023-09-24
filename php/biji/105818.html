@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>jQuery-1.9.1源码分析系列（十）事件系统之事件体系结构_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="又是一个重磅功能点。<br />
+　　在分析源码之前分析一下体系结构，有助于源码理解。实际上在jQuery出现之前，Dean Edwards的跨浏览器AddEvent()设计做的已经比较优秀了；而且jQuery事" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">jQuery-1.9.1源码分析系列（十）事件系统之事件体系结构</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>又是一个重磅功能点。<br />
+　　在分析源码之前分析一下体系结构，有助于源码理解。实际上在jQuery出现之前，Dean Edwards的跨浏览器AddEvent()设计做的已经比较优秀了；而且jQuery事</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>又是一个重磅功能点。</p>
+<p>　　在分析源码之前分析一下体系结构，有助于源码理解。实际上在jQuery出现之前，Dean Edwards的跨浏览器AddEvent()设计做的已经比较优秀了；而且jQuery事件系统的设计思想也是基于该思想的，所以我们先分析一下Dean Edwards前辈的事件绑定。</p>
+<p><strong>a. jQuery事件原型——Dean Edwards的跨浏览器AddEvent()设计</strong></p>
+<p>　　源码解读</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+//事件添加方法
+function addEvent(element, type, handler) {
+　　//保证每个不同的事件响应函数只有唯一一个id
+ if (!handler.$$guid) handler.$$guid = addEvent.guid++;
+　　// 给element维护一个events属性，初始化为一个空对象。 
+ // element.events的结构类似于 { "click": {...}, "dbclick": {...}, "change": {...} } 
+ if (!element.events) element.events = {};
+　　// 试图取出element.events中当前事件类型type对应的对象（这个对象更像数组），赋值给handlers
+　　//如果element.events中没有当前事件类型type对应的对象则初始化
+ var handlers = element.events[type];
+　　if (!handlers) {
+　　　　 handlers = element.events[type] = {};
+　　　　 // 如果这个element已经有了一个对应的事件的响应方法，例如已经有了onclick方法
+  // 就把element的onclick方法赋值给handlers的0元素，此时handlers的结构就是：
+  // { 0: function(e){...} }，这也是为什么addEvent.guid初始化为1的原因，预留看为0的空间;
+  // 此时element.events的结构就是： { "click": { 0: function(e){...} }, /*省略其他事件类型*/ } 
+  if (element["on" + type]) {
+   handlers[0] = element["on" + type];
+  }
+ }
+　　// 把当前的事件handler存放到handlers中，handler.$$guid = addEvent.guid++; addEvent.guid = 1; 肯定是从1开始累加的 
+　　//因此，这是handlers的结构可能就是 { 0: function(e){...}, 1: function(){}, 2: function(){} 等等... }
+ handlers[handler.$$guid] = handler;
+　　//下文定义了一个handleEvent(event)函数，将这个函数，绑定到element的type事件上作为事件入口。
+　　//说明：在element进行click时，将会触发handleEvent函数，handleEvent函数将会查找element.events，并调用相应的函数。可以把handleEvent称为“主监听函数”
+ element["on" + type] = handleEvent;
+};
+//计数器
+addEvent.guid = 1;
+function removeEvent(element, type, handler) {
+ // delete the event handler from the hash table
+ if (element.events && element.events[type]) {
+  delete element.events[type][handler.$$guid];
+ }
+};
+function handleEvent(event) {
+　　//兼容ie
+　　event = event || window.event;
+　　//this是响应事件的节点，这个接点上有events属性（在addEvent中添加的）
+　　//获取节点对应事件响应函数列表
+ var handlers = this.events[event.type];
+ // 循环响应函数列表执行
+　　for (var i in handlers) {
+   //保持正确的作用域，即this关键字
+　　　　 this.$$handleEvent = handlers[i];
+  this.$$handleEvent(event);
+ }
+};</pre>
+</div>
+<p>&nbsp;重新梳理一下数据结构，使用一个例子</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+&lt;input type="text" id="chua" onClick="f0();"&gt;
+function f0(){...}
+function f1(){...}
+function f2(){...}
+function f3(){...}
+var dom = document.getElementById("chua");
+addEvent(dom,"click",f1);
+addEvent(dom,"change",f1);
+addEvent(dom,"change",f2);
+addEvent(dom,"click",f3);
+addEvent(dom,"change",f3);</pre>
+</div>
+<p>　　经过addEvent()函数之后，当前的数据结构为：</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+element: {
+　　onclick: handleEvent(event), //click事件的主监听函数
+　　onchage: handleEvent(event),　　//change事件的主监听函数
+　　events: {
+　　　　click:{//这是一个类数组
+　　　　　　0: f0, //element已有的事件
+　　　　　　1: f1,　　//下标1实际上就是f1.$$guid
+　　　　　　3: f3 //下标3实际上就是f3.$$guid,需要注意的是每一个响应事件都有一个唯一的$$guid作为下标 
+　　　　　　...
+　　　　},
+　　　　change:{//这是一个类数组
+　　　　　　1: f1,
+　　　　　　2: f2,
+　　　　　　3: f3
+　　　　}
+ }
+}</pre>
+</div>
+<p>　　事件系统会根据调用addEvent的顺序给每个响应函数（也就是addEvent(element, type, handler)中的第三个参数handler）打上标记$$guid。源码</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+　　//保证每个不同的事件响应函数只有唯一一个id
+ if (!handler.$$guid) handler.$$guid = addEvent.guid++;</pre>
+</div>
+<p>　　最终三个响应函数的$$guid标记分别是</p>
+<p>　　f1.$$guid = 1<br />
+　　f2.$$guid = 2<br />
+　　f3.$$guid = 3</p>
+<p>　　而根据源码中<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+handlers[handler.$$guid] = handler;</pre>
+</div>
+<p>　　那么某一个函数在任何事件响应函数集合中的下标位置是固定的。比如click和change事件都调用f3作为响应事件，那么f3在element.events.click以及element.events.change中的下标位置都是f3.$$guid = 3；即element.events.click[3] = element.events.change[3] = f3。</p>
+<p>　　这个时候假设又新添了一个事件绑定：addEvent(dom,"focus",f3);那么element.events.focus[3] = f3;这也是对象相比于数组的方便之处，数组不可能没有下标0,1,2就直接有3了，但是对象却可以，此时3是作为对象的一个属性名称。</p>
+<p>　　这样的设计，其实已经具备了jquery事件系统的雏形，包含了几个最主要的特点：</p>
+<p>　　1）element上的所有事件，将保存到element.events属性中，不是直接绑定到element上；这样一个事件可以有无数个响应函数。</p>
+<p>　　2）handleEvent作为element所有事件的“主监听函数”，有它统一管理element上的所有函数。</p>
+<p>　　3）所有浏览器都支持element["on" + type]事件绑定方式，跨浏览器兼容。</p>
+<p>　　好啦，明白了addEvent的事件结构，这个想法确实让人觉得眼前一亮。下面分析jQuery的事件结构</p>
+<p><strong>b. jQuery的事件结构</strong></p>
+<p>　　所有的函数添加事件都会进入jQuery.event.add函数。该函数有两个主要功能：添加事件、附加很多事件相关信息。我们直接上源码，源码思想和Dean Edwards的跨浏览器兼容事件添加处理类似。</p>
+<p>　　源码分析</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+add: function( elem, types, handler, data, selector ) {
+ var tmp, events, t, handleObjIn,
+  special, eventHandle, handleObj,
+  handlers, type, namespaces, origType,
+  //获取elem节点对应的缓存数据
+  elemData = jQuery._data( elem );
+ //没有数据或文本/注释节点不能附加事件(但是允许附加普通对象)
+ if ( !elemData ) {
+  return;
+ }
+ //调用者能通过自定义数据替换handler
+ if ( handler.handler ) {
+  handleObjIn = handler;
+  handler = handleObjIn.handler;
+  selector = handleObjIn.selector;
+ }
+ //确保handler函数有唯一的ID,后续会用来查找/删除这个handler函数
+ if ( !handler.guid ) {
+  handler.guid = jQuery.guid++;
+ }
+ //如果是初次进入，初始化元素的事件结构和主事件响应入口
+ if ( !(events = elemData.events) ) {
+  events = elemData.events = {};
+ }
+ if ( !(eventHandle = elemData.handle) ) {
+  eventHandle = elemData.handle = function( e ) {
+   //当一个事件被调用后页面已经卸载，则放弃jQuery.event.trigger()的第二个事件，
+   return typeof jQuery !== core_strundefined && (!e || jQuery.event.triggered !== e.type) &#63;
+   jQuery.event.dispatch.apply( eventHandle.elem, arguments ) :
+   undefined;
+  };
+  //将elem作为handle函数的一个特征防止ie非本地事件引起的内存泄露
+  eventHandle.elem = elem;
+ }
+ //多个事件使用空格隔开的处理
+　　//如jQuery(...).bind("mouseover mouseout", fn);
+　　//core_rnotwhite = /\S+/g；匹配空白字符
+　　types = ( types || "" ).match( core_rnotwhite ) || [""];
+　　t = types.length;
+　　while ( t-- ) {
+  //rtypenamespace = /^([^.]*)(&#63;:\.(.+)|)$/;
+  //获取命名空间和原型事件
+  tmp = rtypenamespace.exec( types[t] ) || [];
+  type = origType = tmp[1];
+  namespaces = ( tmp[2] || "" ).split( "." ).sort();
+  //如果事件改变其类型，使用special事件处理器来处理更改后的事件类型
+  special = jQuery.event.special[ type ] || {};
+  //如果选择器已定义，确定special事件API类型，否则给他一个类型
+  type = ( selector &#63; special.delegateType : special.bindType ) || type;
+  //基于新设置的类型更新special
+  special = jQuery.event.special[ type ] || {};
+  // handleObj贯穿整个事件处理
+  handleObj = jQuery.extend({
+   type: type,
+   origType: origType,
+   data: data,
+   handler: handler,
+   guid: handler.guid,
+   selector: selector,
+   // For use in libraries implementing .is(). We use this for POS matching in `select`
+   //"needsContext": new RegExp( "^" + whitespace + "*[&gt;+~]|:(even|odd|eq|gt|lt|nth|first|last)(&#63;:\\(" +
+   //whitespace + "*((&#63;:-\\d)&#63;\\d*)" + whitespace + "*\\)|)(&#63;=[^-]|$)", "i" )
+   //用来判断亲密关系
+   needsContext: selector && jQuery.expr.match.needsContext.test( selector ),
+   namespace: namespaces.join(".")
+  }, handleObjIn );
+  //初次使用时初始化事件处理器队列
+  if ( !(handlers = events[ type ]) ) {
+   handlers = events[ type ] = [];
+   handlers.delegateCount = 0;
+   //非自定义事件，如果special事件处理器返回false，则只能使用addEventListener/attachEvent
+   if ( !special.setup || special.setup.call( elem, data, namespaces, eventHandle ) === false ) {
+    //给元素绑定全局事件
+    if ( elem.addEventListener ) {
+     elem.addEventListener( type, eventHandle, false );
+    } else if ( elem.attachEvent ) {
+     elem.attachEvent( "on" + type, eventHandle );
+    }
+   }
+  }
+  //自定义事件绑定
+  if ( special.add ) {
+   special.add.call( elem, handleObj );
+   if ( !handleObj.handler.guid ) {
+    handleObj.handler.guid = handler.guid;
+   }
+  }
+  //将事件对象handleObj添加到元素的处理列表,代理计数递增
+  if ( selector ) {
+   handlers.splice( handlers.delegateCount++, 0, handleObj );
+  } else {
+   handlers.push( handleObj );
+  }
+  //跟踪那个事件曾经被使用过，用于事件优化
+  jQuery.event.global[ type ] = true;
+ }
+ //防止ie内存泄漏
+ elem = null;
+}</pre>
+</div>
+<p>　　依然用实例来说明jQuery的事件结构</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+&lt;div id="#center"&gt;&lt;/div&gt;
+&lt;script&gt;
+ function dohander(){console.log("dohander")};
+ function dot(){console.log("dot");}
+ $(document).on("click",'#center',dohander)
+ .on("click",'#center',dot)
+ .on("click",dot);
+&lt;/script&gt;
+
+</pre>
+</div>
+<p>　　经过添加处理环节，事件添加到了元素上，而且节点对应的缓存数据也添加了相应的数据。结构如下</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+elemData = jQuery._data( elem );
+elemData = {
+　　events: {
+　　　　click: {//Array[3]
+　　　　　　0: {
+　　　　　　　　data: undefined/{...},
+　　　　　　　　guid: 2, //处理函数的id
+　　　　　　　　handler: function dohander(){…},
+　　　　　　　　namespace: "",
+　　　　　　　　needsContext: false,
+　　　　　　　　origType: "click",
+　　　　　　　　selector: "#center",//选择器,用来区分不同事件源
+　　　　　　　　type: "click"
+　　　　　　}
+　　　　　　1: {
+　　　　　　　　data: undefined/{...},
+　　　　　　　　guid: 3,
+　　　　　　　　handler: function dot(){…},
+　　　　　　　　namespace: "",
+　　　　　　　　needsContext: false,
+　　　　　　　　origType: "click",
+　　　　　　　　selector: "#center",
+　　　　　　　　type: "click"
+　　　　　　}
+　　　　　　2: {
+　　　　　　　　data: undefined,
+　　　　　　　　guid: 3,
+　　　　　　　　handler: function dot(){…},
+　　　　　　　　namespace: "",
+　　　　　　　　needsContext: false,
+　　　　　　　　origType: "click",
+　　　　　　　　selector: undefined,
+　　　　　　　　type: "click"
+　　　　　　}
+　　　　　　delegateCount: 2,//委托事件数量，有selector的才是委托事件
+　　　　　　length: 3
+　　　　}
+　　}
+　　handle: function ( e ) {…}/*事件处理主入口*/{
+　　　　elem: document//属于handle对象的特征
+　　}
+}</pre>
+</div>
+<p>　　jQuery的处理和Dean Edwards的跨浏览器兼容事件添加处理类似，比如为每一个函数添加guid；使用events对象存放响应事件列表，有一个总的事件处理入口handle等。</p>
+<p>　　<span style="color: #0000ff"><strong>jQuery做了哪些改进？</strong></span></p>
+<p>　　1）事件数据不再直接保存在节点上，而是使用jQuery缓存系统内（内部使用的缓存jQuery._data方式存取）</p>
+<p>　　2）事件委托：绑定到当前节点（例子中当前节点是document根节点）的处理函数不仅仅包含当前节点触发事件（click）响应时处理的事件（例子中selector为undefined时对应的处理函数dot）;还代理了其他节点（例子中的#center节点）触发事件（click）响应时处理的事件（例子中selector为"#center"对应的处理事件doHandler和dot）；委托机制在后续分析。</p>
+<p>　　3）增加了很多功能数据，比如命名空间namespace:这个主要用在自定义事件自定义触发，比如$(document).on("chua.click",'#center',dot)，主动触发$("#center").trigger("chua.click")。还有额外数据data:虽然没有看到那个地方有被用到。</p>
+<p>　　到此jQuery的事件结构就清楚了。后面再分析事件的绑定和触发以及委托原理。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/105817.html'>android图像绘制(一)多种方法做图像镜像</a><a>下一篇</a><a href='/php/biji/105819.html'>快速解决Android平台移植ffmpeg的一些问题</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>解决CodeIgniter框架数据库事务处理的设计缺陷的问题_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了解决CodeIgniter框架数据库事务处理的设计缺陷的问题，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+感兴趣的小伙伴，下面一起跟随php教程的小玲来看看" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">解决CodeIgniter框架数据库事务处理的设计缺陷的问题</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了解决CodeIgniter框架数据库事务处理的设计缺陷的问题，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+感兴趣的小伙伴，下面一起跟随php教程的小玲来看看</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了解决CodeIgniter框架数据库事务处理的设计缺陷的问题，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随php教程的小玲来看看吧！</p>
+<h3>起因：</h3>
+<p>在我们线上的某个业务中，使用较老版本的CodeIgniter框架，其中的DB类中，对DB事物处理部分存在着一个设计上的缺陷，或许也算不上缺陷吧。但他却影响了我们生产环境，导致连锁反应。对业务产生较大影响，且不容易排查。这个问题，我在今年的3月中旬，曾向codeigniter中国的站长Hex 报告过，之后，我也忘记这件事情了。直到今天，我们线上业务又一次以为这个问题，害的我又排查一次。具体原因，各位且先听我慢慢说完。(这个问题同样存在于最新版本Version 2.1.0中)</p>
+<h3>分析：</h3>
+<p>以CodeIgniter框架Version 2.1.0为例，在system\database\DB_driver.php的CI_DB_driver类中第58行有个$_trans_status属性。</p>
+<p>代码如下:</p>
+<pre>
+
+<code>
+//system\database\DB_driver.php
+
+var $trans_strict = TRUE;
+
+var $_trans_depth = 0;
+
+var $_trans_status = TRUE; // Used with transactions to determine if a rollback should occur
+
+var $cache_on  = FALSE;
+
+</code></pre>
+<p>同时，这个类的query方法中，有赋值此属性的代码，见文件306、307行</p>
+<p>代码如下:</p>
+<pre>
+
+<code>
+// This will trigger a rollback if transactions are being used
+
+$this-&gt;_trans_status = FALSE;
+
+</code></pre>
+<p>这里也给了注释，告诉我们，如果使用了事物处理，那么这属性将成为一个回滚的决定条件。</p>
+<p>在520行的事物提交方法trans_complete中，如下代码：</p>
+<p>代码如下:</p>
+<pre>
+
+<code>
+/**
+
+ * Complete Transaction
+
+ *
+
+ * @access public
+
+ * @return bool
+
+ */
+
+function trans_complete()
+
+{
+
+ if ( ! $this-&gt;trans_enabled)
+
+ {
+
+  return FALSE;
+
+ }
+ // When transactions are nested we only begin/commit/rollback the outermost ones
+ if ($this-&gt;_trans_depth &gt; 1)
+ {
+  $this-&gt;_trans_depth -= 1;
+  return TRUE;
+ }
+
+ // The query() function will set this flag to FALSE in the event that a query failed
+ if ($this-&gt;_trans_status === FALSE)
+ {
+  $this-&gt;trans_rollback();
+
+  // If we are NOT running in strict mode, we will reset
+  // the _trans_status flag so that subsequent groups of transactions
+  // will be permitted.
+  if ($this-&gt;trans_strict === FALSE)
+  {
+   $this-&gt;_trans_status = TRUE;
+  }
+
+  log_message('debug', 'DB Transaction Failure');
+  return FALSE;
+ }
+
+ $this-&gt;trans_commit();
+ return TRUE;
+}</code></pre>
+<p>在535行中，如果_trans_status属性如果是false，那么将发生回滚，并且返回false。</p>
+<p>在我们的业务代码中，由于程序员疏忽，没有判断trans_complete()方法是否正确执行，直接告诉用户操作成功，但实际上，程序已经向DB下达回滚指令，并未成功更新DB记录。当用户执行下一步操作时，程序又发现相应记录并未更新，又提醒用户上个操作没有完成，通知用户重新执行。如此反复&hellip;</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>排查的过程，也是挺有意思的，起初从PHP代码中，总是不能确定问题所在，并没有把焦点放到trans_complete()方法的返回上。直到后来strace抓包分析，才知道是因为此属性而导致了回滚。</p>
+<p>代码如下:</p>
+<pre>
+
+<code>
+22:54:08.380085 write(9, "_\0\0\0\3UPDATE `cfc4n_user_info` SET `cfc4n_user_lock` = 1\nWHERE `cfc4n_user_id` = \'6154\'\nAND `cfc4n_user_lock` = 0", 99) = 99    //执行更新命令
+
+22:54:08.380089 read(9, ":\0\0\1\377\36\4#42S22Unknown column \'cfc4n_user_lock\' in \'where clause\'", 16384) = 62    //不存在字段，SQL执行错误
+
+22:54:08.381791 write(9, "\21\0\0\0\3SET AUTOCOMMIT=0", 21) = 21    //禁止自动提交
+
+22:54:08.381891 read(9, "\7\0\0\1\0\0\0\0\0\0\0", 16384) = 11
+
+22:54:08.382186 poll([{fd=9, events=POLLIN|POLLPRI}], 1, 0) = 0
+
+22:54:08.382258 write(9, "\v\0\0\0\2jv01_roles", 15) = 15
+
+22:54:08.382343 read(9, "\7\0\0\1\0\0\0\0\0\0\0", 16384) = 11
+
+22:54:08.382631 poll([{fd=9, events=POLLIN|POLLPRI}], 1, 0) = 0
+
+22:54:08.382703 write(9, "\22\0\0\0\3START TRANSACTION", 22) = 22   //开始事务处理
+
+22:54:08.401954 write(9, "\v\0\0\0\2database_demo", 15) = 15
+
+22:54:08.402043 read(9, "\7\0\0\1\0\0\0\1\0\1\0", 16384) = 11
+
+22:54:08.417773 write(9, "\v\0\0\0\2database_demo", 15) = 15
+
+22:54:08.417872 read(9, "\7\0\0\1\0\0\0\1\0\0\0", 16384) = 11
+
+22:54:08.418256 write(9, "[\0\0\0\3UPDATE `cfc4n_user_info` SET `silver` = CAST( silver + (5) as signed )\nWHERE `cfc4n_user_id` = \'6154\'", 95) = 95    //执行其他SQL语句
+
+22:54:08.418363 read(9, "0\0\0\1\0\1\0\1\0\0\0(Rows matched: 1  Changed: 1  Warnings: 0", 16384) = 52    //成功更新，影响条数1.
+
+22:54:08.430212 write(9, "\v\0\0\0\2database_demo", 15) = 15
+
+22:54:08.430314 read(9, "\7\0\0\1\0\0\0\1\0\0\0", 16384) = 11
+
+22:54:08.430698 write(9, "B\0\0\0\3UPDATE `cfc4n_user_info` SET `exp` = exp + 26\nWHERE `cfc4n_user_id` = \'6154\'", 70) = 70     //执行其他SQK语句
+
+22:54:08.430814 read(9, "0\0\0\1\0\1\0\1\0\0\0(Rows matched: 1  Changed: 1  Warnings: 0", 16384) = 52    //成功更新，影响条数1.
+
+22:54:08.432130 write(9, "\v\0\0\0\2database_demo", 15) = 15
+
+22:54:08.432231 read(9, "\7\0\0\1\0\0\0\1\0\0\0", 16384) = 11
+
+22:54:08.432602 write(9, "\244\0\0\0\3UPDATE `cfc4n_user_quest` SET `rew` = 1, `retable` = retable + 1, `re_time` = 1335797648\nWHERE `cfc4n_user_id` = \'6154\'\nAND `quest_id` = \'300001\'\nAND `rew` = 0", 168) = 168    //执行其他SQK语句
+
+22:54:08.432743 read(9, "0\0\0\1\0\1\0\1\0\0\0(Rows matched: 1  Changed: 1  Warnings: 0", 16384) = 52    //成功更新，影响条数1.
+
+22:54:08.433517 write(9, "\v\0\0\0\2database_demo", 15) = 15
+
+22:54:08.433620 read(9, "\7\0\0\1\0\0\0\1\0\0\0", 16384) = 11
+
+22:54:08.433954 write(9, "\t\0\0\0\3ROLLBACK", 13) = 13    //回滚事务 #注意看这里
+
+22:54:08.434041 read(9, "\7\0\0\1\0\0\0\0\0\0\0", 16384) = 11
+
+22:54:08.434914 write(9, "\v\0\0\0\2database_demo", 15) = 15
+
+22:54:08.434999 read(9, "\7\0\0\1\0\0\0\0\0\0\0", 16384) = 11
+
+22:54:08.435342 write(9, "\21\0\0\0\3SET AUTOCOMMIT=1", 21) = 21  //恢复自动提交
+
+22:54:08.435430 read(9, "\7\0\0\1\0\0\0\2\0\0\0", 16384) = 11
+
+22:54:08.436923 write(9, "\1\0\0\0\1", 5) = 5
+
+</code></pre>
+<p>可以看到，在22:54:08.380085时间点处，发送更新SQL语句指令，在22:54:08.380089时间读取返回结果，得到SQL执行错误，不存在字段&rdquo;cfc4n_user_lock&rdquo;；22:54:08.381791和22:54:08.382703两个时间点，PHP发送停止&ldquo;自动提交&rdquo;与&ldquo;开始事务处理&rdquo;指令，在 22:54:08.433954 发送&ldquo;事务回滚&rdquo;指令。</p>
+<p>配合如上的代码分析，可以清楚的知道，因为&ldquo;UPDATE `cfc4n_user_info` SET `cfc4n_user_lock` = 1 WHERE `cfc4n_user_id` = &#39;6154&prime; AND `cfc4n_user_lock` = 0&rdquo;这句SQL执行错误，导致$_trans_status属性被设置为FALSE，当代码提交事务时，被trans_complete()方法判断，认为&ldquo;上一个事务处理&rdquo;(下面将仔细分析)中存在SQL语句执行失败，决定回滚事务，不提交。</p>
+<p>刚刚提到&ldquo;上一个事务处理&rdquo;，可能有些朋友不能理解，我们先继续回到代码中来，继续看该属性，同样在trans_complete方法中，542-545行：</p>
+<p>代码如下:</p>
+<pre>
+
+<code>
+// If we are NOT running in strict mode, we will reset
+
+// the _trans_status flag so that subsequent groups of transactions
+
+// will be permitted.
+
+if ($this-&gt;trans_strict === FALSE)
+
+{
+
+ $this-&gt;_trans_status = TRUE;
+
+}
+
+</code></pre>
+<p></p>
+<p>也可以很容易的从注释中看明白，设置CI的设计者，为了更严谨的处理 同一个脚本中，存在多个事务时，事务间彼此关系重要，一荣俱荣，一损俱损。这里的trans_strict属性，是个开关，当 trans_strict为false，便是非严格模式，意味着多个事务之间，彼此关系不重要，不影响。当前一个事务中有SQL语句执行失败，影响不到自己。便将_trans_status 设置为TRUE。毫无疑问，这是个非常周全的考虑。考虑了多个事务之间的关系，保证业务跑在更严谨的代码上。</p>
+<p>可是，我们的代码中，错误的SQL语句是执行在事务处理以外的，并不是事务之内。按照我们对事务的认识，可以很清晰的知道，事务之外的SQL相比事务之内的SQL来说，事务之内的SQL更重要，之外的可以允许出错，但事务之内的，务必要正确，不受外界干扰。但CI的框架中，因为一个事务以外的语句执行失败，却导致整个事务回滚&hellip;当然，我们的程序员没有对事务提交方法的返回做判断，这也是个问题。</p>
+<p>问题已经很清晰了，那么解决方法想必对你来说，是多么的简单。比如在trans_start方法中，对_trans_status 属性赋值，设置为TRUE，不理会事务外的问题。</p>
+<p>代码如下:</p>
+<pre>
+
+<code>
+function trans_start($test_mode = FALSE)
+
+{
+
+ if ($this-&gt;trans_strict === FALSE)
+
+ {
+
+  $this-&gt;_trans_status = TRUE;    //在开始事务处理时，重新设定这个属性的值为TRUE
+
+ }
+
+    //2012/05/01 18:00 经过CI中文社区网友 http://codeigniter.org.cn/forums/space-uid-5721.html指正，这里修改为增加trans_strict 属性判断 ，在决定是否重设_trans_status 为好。
+
+ if ( ! $this-&gt;trans_enabled)
+
+ {
+
+  return FALSE;
+
+ }
+ // When transactions are nested we only begin/commit/rollback the outermost ones
+ if ($this-&gt;_trans_depth &gt; 0)
+ {
+  $this-&gt;_trans_depth += 1;
+  return;
+ }
+
+ $this-&gt;trans_begin($test_mode);
+}</code></pre>
+<p>结束：</p>
+<p>在不明白对方设计意图的情况下，不能盲目的定义对方的代码评价，不管程序作者的水平如何。比自己强，也不能盲目崇拜；比自己弱，更不能乱加指责；理解读懂设计意图，学习他人优秀的设计思路、代码风格、算法效率，这才是一个好习惯。当然codeigniter框架是优秀的。</p>
+
+<p>注：关于解决CodeIgniter框架数据库事务处理的设计缺陷的问题的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/phpbiji/108695.html'>python基础分析之if循环语句的解决办法</a><a>下一篇</a><a href='/php/phpbiji/108709.html'>Python之Django使用channels + websocket打造在线聊天室的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Oracle CBO优化模式中的5种索引访问方法浅析_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="本文主要讨论以下几种索引访问方法：<br />
+1.索引唯一扫描(INDEX UNIQUE SCAN)<br />
+<br />
+2.索引范围扫描(INDEX RANGE SCAN)<br />
+<br />
+3.索引全扫描(INDEX FULL SCAN)<br />
+<br />
+4.索引跳跃扫描(INDEX SKIP S" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Oracle CBO优化模式中的5种索引访问方法浅析</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>本文主要讨论以下几种索引访问方法：<br />
+1.索引唯一扫描(INDEX UNIQUE SCAN)<br />
+<br />
+2.索引范围扫描(INDEX RANGE SCAN)<br />
+<br />
+3.索引全扫描(INDEX FULL SCAN)<br />
+<br />
+4.索引跳跃扫描(INDEX SKIP S</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>本文主要讨论以下几种索引访问方法：</p>
+<p>1.索引唯一扫描(INDEX UNIQUE SCAN)<br />
+2.索引范围扫描(INDEX RANGE SCAN)<br />
+3.索引全扫描(INDEX FULL SCAN)<br />
+4.索引跳跃扫描(INDEX SKIP SCAN)<br />
+5.索引快速全扫描(INDEX FAST FULL SCAN)</p>
+<p><strong>索引唯一扫描(INDEX UNIQUE SCAN)</strong></p>
+<p>通过这种索引访问数据的特点是对于某个特定的值只返回一行数据，通常如果在查询谓语中使用UNIQE和PRIMARY KEY索引的列作为条件的时候会选用这种扫描；访问的高度总是索引的高度加一，除了某些特殊的情况，如另外存储的LOB对象。</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="20508" class="copybut" id="copybut20508" onclick="doCopy('code20508')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code20508"><br />
+SQL&gt; set autotrace traceonly explain<br />
+SQL&gt; select * from hr.employees where employee_id = 100;</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 1833546154</p>
+<p>---------------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+---------------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp; 69 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; TABLE ACCESS BY INDEX ROWID| EMPLOYEES&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp; 69 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 2 |&nbsp;&nbsp; INDEX UNIQUE SCAN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | EMP_EMP_ID_PK |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; (0)| 00:00:01 |<br />
+---------------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 2 - access("EMPLOYEE_ID"=100)<br />
+</div></p>
+<p><strong>索引范围扫描(INDEX RANGE SCAN)</strong></p>
+<p>谓语中包含将会返回一定范围数据的条件时就会选用索引范围扫描，索引可以是唯一的亦可以是不唯一的；所指定的条件可以是(&lt;,&gt;,LIKE,BETWEEN,=)等运算符，不过使用LIKE的时候，如果使用了通配符%，极有可能就不会使用范围扫描，因为条件过于的宽泛了，下面是一个示例：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="12223" class="copybut" id="copybut12223" onclick="doCopy('code12223')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code12223"><br />
+SQL&gt; select * from hr.employees where DEPARTMENT_ID = 30;</p>
+<p>6 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 2056577954</p>
+<p>-------------------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+-------------------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 6 |&nbsp;&nbsp; 414 |&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; TABLE ACCESS BY INDEX ROWID| EMPLOYEES&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 6 |&nbsp;&nbsp; 414 |&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 2 |&nbsp;&nbsp; INDEX RANGE SCAN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp;&nbsp; 6 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+-------------------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 2 - access("DEPARTMENT_ID"=30)</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1716&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 523&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 6&nbsp; rows processed<br />
+</div></p>
+<p>范围扫描的条件需要准确的分析返回数据的数目，范围越大就越可能执行全表扫描；</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="90196" class="copybut" id="copybut90196" onclick="doCopy('code90196')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code90196"><br />
+SQL&gt; select department_id,count(*) from hr.employees group by department_id order by count(*);</p>
+<p>DEPARTMENT_ID&nbsp;&nbsp; COUNT(*)<br />
+------------- ----------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 40&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 70&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 110&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 90&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 60&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 30&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 6<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 100&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 6<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 80&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 34<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 50&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 45</p>
+<p>12 rows selected.</p>
+<p>-- 这里使用数值最多的50来执行范围扫描<br />
+SQL&gt; set autotrace traceonly explain<br />
+SQL&gt; select * from hr.employees where DEPARTMENT_ID = 50;</p>
+<p>45 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 1445457117</p>
+<p>-------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+-------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 45 |&nbsp; 3105 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 1 |&nbsp; TABLE ACCESS FULL| EMPLOYEES |&nbsp;&nbsp;&nbsp; 45 |&nbsp; 3105 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+-------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 1 - filter("DEPARTMENT_ID"=50)</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4733&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 545&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 45&nbsp; rows processed<br />
+</div></p>
+<p>可以看到在获取范围数据较大的时候，优化器还是执行了全表扫描方法。</p>
+<p>一种对于索引范围扫描的优化方法是使用升序排列的索引来获得降序排列的数据行，这种情况多发生在查询中包含有索引列上的ORDER BY子句的时候，这样就可避免一次排序操作了，如下：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="29717" class="copybut" id="copybut29717" onclick="doCopy('code29717')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code29717"><br />
+SQL&gt; set autotrace traceonly explain<br />
+SQL&gt; select * from hr.employees<br />
+&nbsp; 2&nbsp; where department_id in (90, 100)<br />
+&nbsp; 3&nbsp; order by department_id desc;</p>
+<p>&nbsp; Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 3707994525</p>
+<p>---------------------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+---------------------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 9 |&nbsp;&nbsp; 621 |&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; INLIST ITERATOR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; TABLE ACCESS BY INDEX ROWID | EMPLOYEES&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 9 |&nbsp;&nbsp; 621 |&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 3 |&nbsp;&nbsp;&nbsp; INDEX RANGE SCAN DESCENDING| EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp;&nbsp; 9 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+---------------------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 3 - access("DEPARTMENT_ID"=90 OR "DEPARTMENT_ID"=100)<br />
+</div></p>
+<p>上例中，索引条目被相反的顺序读取，避免了排序操作。</p>
+<p><strong>索引全扫描(INDEX FULL SCAN)</strong></p>
+<p>索引全扫描的操作将会扫描索引结构的每一个叶子块，读取每个条目的的行编号，并取出数据行，既然是访问每一个索引叶子块，那么它相对的全表扫描的优势在哪里呢？实际上在索引块中因为包含的信息列数较少，通常都是索引键和ROWID，所以对于同一个数据块和索引块，包含的索引键的条目数通常都是索引块中居多，因此如果查询字段列表中所有字段都是索引的一部分的时候，就可以完全跳过对表数据的访问了，这种情况索引全扫描的方法会获得更高的效率。</p>
+<p>发生索引全扫描的情况有很多，几种典型的场景：</p>
+<p>1，查询总缺少谓语，但获取的列可以通过索引直接获得<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="11154" class="copybut" id="copybut11154" onclick="doCopy('code11154')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code11154"><br />
+SQL&gt; select email from hr.employees;</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 2196514524</p>
+<p>---------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+---------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp; 107 |&nbsp;&nbsp; 856 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; INDEX FULL SCAN | EMP_EMAIL_UK |&nbsp;&nbsp; 107 |&nbsp;&nbsp; 856 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+---------------------------------------------------------------------------------<br />
+</div></p>
+<p>2，查询谓语中包含一个位于索引中非引导列上的条件(其实也取决于引导列值的基数大小，如果引导列的唯一值较少，也可能出现跳跃扫描的情况)<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="93401" class="copybut" id="copybut93401" onclick="doCopy('code93401')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code93401"><br />
+SQL&gt; select first_name, last_name from hr.employees<br />
+&nbsp; 2&nbsp; where first_name like 'A%' ;</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 2228653197</p>
+<p>--------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+--------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp; 45 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 1 |&nbsp; INDEX FULL SCAN | EMP_NAME_IX |&nbsp;&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp; 45 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+--------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 1 - access("FIRST_NAME" LIKE 'A%')<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; filter("FIRST_NAME" LIKE 'A%')</p>
+<p>SQL&gt; SET LONG 2000000<br />
+SQL&gt; select dbms_metadata.get_ddl('INDEX','EMP_NAME_IX','HR') from dual;</p>
+<p>DBMS_METADATA.GET_DDL('INDEX','EMP_NAME_IX','HR')<br />
+--------------------------------------------------------------------------------</p>
+<p>&nbsp; CREATE INDEX "HR"."EMP_NAME_IX" ON "HR"."EMPLOYEES" ("LAST_NAME", "FIRST_NAME"<br />
+)<br />
+&nbsp; PCTFREE 10 INITRANS 2 MAXTRANS 255 NOLOGGING COMPUTE STATISTICS<br />
+&nbsp; STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645<br />
+&nbsp; PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DE<br />
+FAULT CELL_FLASH_CACHE DEFAULT)<br />
+&nbsp; TABLESPACE "EXAMPLE"<br />
+-- 可以看到EMP_NAME_IX索引是建立在列(("LAST_NAME", "FIRST_NAME")上的，使用了带非引导列FIRST_NAME的谓语<br />
+</div></p>
+<p>3，数据通过一个已经排序的索引获得从而省去单独的排序操作</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="20104" class="copybut" id="copybut20104" onclick="doCopy('code20104')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code20104"><br />
+SQL&gt; select * from hr.employees order by employee_id ;</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 2186312383</p>
+<p>---------------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+---------------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp; 107 |&nbsp; 7383 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; TABLE ACCESS BY INDEX ROWID| EMPLOYEES&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp; 107 |&nbsp; 7383 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; INDEX FULL SCAN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | EMP_EMP_ID_PK |&nbsp;&nbsp; 107 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+---------------------------------------------------------------------------------------------</p>
+<p>-- 同样可以使用升序索引返回降序数据<br />
+SQL&gt; select employee_id from hr.employees order by employee_id desc ;</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 753568220</p>
+<p>--------------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+--------------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp; 107 |&nbsp;&nbsp; 428 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; INDEX FULL SCAN DESCENDING| EMP_EMP_ID_PK |&nbsp;&nbsp; 107 |&nbsp;&nbsp; 428 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+--------------------------------------------------------------------------------------------<br />
+</div><br />
+在上面的例子中可以看出，索引全扫描也可以想范围扫描一样，通过升序索引返回降序数据，而它的优化不止这一种，当我们查询某一列的最大值或最小值而这一列又是索引列的时候，索引全扫描就会获得非常显著的优势，因为这时的优化器并没有对索引的数据进行全部叶子节点的检索，而只是对一个根块，第一个或最后一个叶子块的扫描，这无疑会显著的提高性能！！</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="39994" class="copybut" id="copybut39994" onclick="doCopy('code39994')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code39994"><br />
+-- 索引全扫描获得最小值<br />
+SQL&gt; select min(department_id) from hr.employees ;</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 613773769</p>
+<p>------------------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+------------------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; SORT AGGREGATE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; INDEX FULL SCAN (MIN/MAX)| EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+------------------------------------------------------------------------------------------------</p>
+<p>-- 如果同时包含MAX和MIN的求值，优化器并不会主动选择效率较高的索引全扫描方法<br />
+SQL&gt; select min(department_id), max(department_id) from hr.employees ;</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 1756381138</p>
+<p>--------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+--------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; SORT AGGREGATE&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; TABLE ACCESS FULL| EMPLOYEES |&nbsp;&nbsp; 107 |&nbsp;&nbsp; 321 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+--------------------------------------------------------------------------------<br />
+-- 一种替代的优化方案<br />
+SQL&gt; select<br />
+&nbsp; 2&nbsp; (select min(department_id) from hr.employees) min_id,<br />
+&nbsp; 3&nbsp; (select max(department_id) from hr.employees) max_id<br />
+&nbsp; 4&nbsp; from dual;</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 2189307159</p>
+<p>------------------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+------------------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; SORT AGGREGATE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; INDEX FULL SCAN (MIN/MAX)| EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 3 |&nbsp; SORT AGGREGATE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+|&nbsp;&nbsp; 4 |&nbsp;&nbsp; INDEX FULL SCAN (MIN/MAX)| EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 5 |&nbsp; FAST DUAL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp; (0)| 00:00:01 |<br />
+------------------------------------------------------------------------------------------------<br />
+</div></p>
+<p><strong>索引跳跃扫描(INDEX SKIP SCAN)</strong></p>
+<p>这种扫描方式也是一种特例，因为在早期的版本中，优化器会因为使用了非引导列而拒绝使用索引。跳跃扫描的前提有着对应的情景，当谓语中包含索引中非引导列上的条件，并且引导列的唯一值较小的时候，就有极有可能使用索引跳跃扫描方法；同索引全扫描，范围扫描一样，它也可以升序或降序的访问索引；不同的是跳跃扫描会根据引导列的唯一值数目将复合索引分成多个较小的逻辑子索引，引导列的唯一值数目越小，分割的子索引数目也就越少，就越可能达到相对全表扫描较高的运算效率。<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="6882" class="copybut" id="copybut6882" onclick="doCopy('code6882')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code6882"><br />
+-- 创建测试表，以dba_objects表为例<br />
+SQL&gt; create table test as select * from dba_objects;</p>
+<p>Table created.</p>
+<p>-- 创建一个复合索引，这里选取了一个唯一值较少的owner列作为引导列<br />
+SQL&gt; create index i_test on test(owner,object_id,object_type) ;</p>
+<p>Index created.</p>
+<p>-- 分析表收集统计信息<br />
+SQL&gt; exec dbms_stats.gather_table_stats('SYS','TEST');</p>
+<p>PL/SQL procedure successfully completed.</p>
+<p>-- 先看一下引导列的唯一值的比较<br />
+SQL&gt; select count(*),count(distinct owner) from test;</p>
+<p>&nbsp; COUNT(*) COUNT(DISTINCTOWNER)<br />
+---------- --------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp; 72482&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 29</p>
+<p>-- 使用非引导列的条件查询来访问触发SKIP SCAN<br />
+SQL&gt; select * from test where object_id = 46;</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 1001786056</p>
+<p>--------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+--------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp; 97 |&nbsp;&nbsp;&nbsp; 31&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; TABLE ACCESS BY INDEX ROWID| TEST&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp; 97 |&nbsp;&nbsp;&nbsp; 31&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 2 |&nbsp;&nbsp; INDEX SKIP SCAN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | I_TEST |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 30&nbsp;&nbsp; (0)| 00:00:01 |<br />
+--------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 2 - access("OBJECT_ID"=46)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; filter("OBJECT_ID"=46)</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 101&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 38&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1610&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 523&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; rows processed</p>
+<p>-- 来看看这条语句全扫描的效率<br />
+SQL&gt; select /*+ full(test) */ * from test where object_id = 46;</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 1357081020</p>
+<p>--------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+--------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp; 97 |&nbsp;&nbsp; 282&nbsp;&nbsp; (1)| 00:00:04 |<br />
+|*&nbsp; 1 |&nbsp; TABLE ACCESS FULL| TEST |&nbsp;&nbsp;&nbsp;&nbsp; 1 |&nbsp;&nbsp;&nbsp; 97 |&nbsp;&nbsp; 282&nbsp;&nbsp; (1)| 00:00:04 |<br />
+--------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 1 - filter("OBJECT_ID"=46)</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1037&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1607&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 523&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; rows processed<br />
+</div></p>
+<p>分析上面的查询可以看出，我们使用的索引中引导列有29个唯一值，也就是说在执行索引跳跃扫描的时候，分割成了29个逻辑子索引来查询，只产生了38次逻辑读；而相对全表扫描的1037次逻辑读，性能提升非常明显！</p>
+<p><strong>索引快速全扫描(INDEX FAST FULL SCAN)</strong></p>
+<p>这种访问方法在获取数据上和全表扫描相同，都是通过无序的多块读取来进行的，因此也就无法使用它来避免排序代价了；索引快速全扫描通常发生在查询列都在索引中并且索引中一列有非空约束时，当然这个条件也容易发生索引全扫描，它的存在多可用来代替全表扫描，比较数据获取不需要访问表上的数据块。</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="6218" class="copybut" id="copybut6218" onclick="doCopy('code6218')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code6218"><br />
+-- 依旧使用上面创建的test表<br />
+SQL&gt; desc test<br />
+&nbsp;Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Null&#63;&nbsp;&nbsp;&nbsp; Type<br />
+&nbsp;----------------------------------------- -------- ----------------------------<br />
+&nbsp;OWNER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VARCHAR2(30)<br />
+&nbsp;OBJECT_NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VARCHAR2(128)<br />
+&nbsp;SUBOBJECT_NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VARCHAR2(30)<br />
+&nbsp;OBJECT_ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NOT NULL NUMBER<br />
+&nbsp;DATA_OBJECT_ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NUMBER<br />
+&nbsp;OBJECT_TYPE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VARCHAR2(19)<br />
+&nbsp;CREATED&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DATE<br />
+&nbsp;LAST_DDL_TIME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DATE<br />
+&nbsp;TIMESTAMP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VARCHAR2(19)<br />
+&nbsp;STATUS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VARCHAR2(7)<br />
+&nbsp;TEMPORARY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VARCHAR2(1)<br />
+&nbsp;GENERATED&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VARCHAR2(1)<br />
+&nbsp;SECONDARY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VARCHAR2(1)<br />
+&nbsp;NAMESPACE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NUMBER<br />
+&nbsp;EDITION_NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VARCHAR2(30)</p>
+<p>-- 在object_id列上创建索引<br />
+SQL&gt; create index pri_inx on test (object_id);</p>
+<p>Index created.</p>
+<p>-- 直接执行全表扫描<br />
+SQL&gt; select object_id from test;</p>
+<p>72482 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 1357081020</p>
+<p>--------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+--------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 72482 |&nbsp;&nbsp; 353K|&nbsp;&nbsp; 282&nbsp;&nbsp; (1)| 00:00:04 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; TABLE ACCESS FULL| TEST | 72482 |&nbsp;&nbsp; 353K|&nbsp;&nbsp; 282&nbsp;&nbsp; (1)| 00:00:04 |<br />
+--------------------------------------------------------------------------</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5799&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp; 1323739&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 53675&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4834&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 72482&nbsp; rows processed</p>
+<p>-- 修改object_id为not null<br />
+SQL&gt; alter table test modify (object_id not null);</p>
+<p>Table altered.</p>
+<p>-- 再次使用object_id列查询就可以看到使用了快速全扫描了<br />
+SQL&gt; select object_id from test;</p>
+<p>72482 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 3806735285</p>
+<p>--------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+--------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 72482 |&nbsp;&nbsp; 353K|&nbsp;&nbsp;&nbsp; 45&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; INDEX FAST FULL SCAN| PRI_INX | 72482 |&nbsp;&nbsp; 353K|&nbsp;&nbsp;&nbsp; 45&nbsp;&nbsp; (0)| 00:00:01 |<br />
+--------------------------------------------------------------------------------</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 167&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5020&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 161&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp; 1323739&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 53675&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4834&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 72482&nbsp; rows processed<br />
+</div></p>
+<p>PS，这个INDEX FAST FULL SCAN的例子真是不好模拟，上面的例子弄了好久。。。。。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/100404.html'>使用jquery获取网页中图片高度的两种方法</a><a>下一篇</a><a href='/php/biji/100406.html'>Oracle+Mybatis的foreach insert批量插入报错的快速解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

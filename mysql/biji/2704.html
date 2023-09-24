@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server使用扩展事件获取Session级别的等待信息及SQLServer 2016中Session级别等待信息的增强示例_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server使用扩展事件获取Session级别的等待信息及SQLServer 2016中Session级别等待信息的增强示例，具有一定的参考价值，可以用来参考一下。" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server使用扩展事件获取Session级别的等待信息及SQLServer 2016中Session级别等待信息的增强示例</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:39:47                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server使用扩展事件获取Session级别的等待信息及SQLServer 2016中Session级别等待信息的增强示例，具有一定的参考价值，可以用来参考一下。</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server使用扩展事件获取Session级别的等待信息及SQLServer 2016中Session级别等待信息的增强示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p></p>
+<h3>什么是等待</h3>
+<p></p>
+<p>简单说明一下什么是等待：</p>
+<p>当应用程序对SQL Server发起一个Session请求的时候，这个Session请求在数据库中执行的过程中会申请其所需要的资源，</p>
+<p>比如可能会申请内存资源，表上的锁资源，物理IO资源，网络资源等等，</p>
+<p>如果当前Session运行过程中需要申请的某些资源无法立即得到满足，就会产生等待。</p>
+<p>SQL Server会以不用的方式来展现这个等待信息，比活动Session的等待信息，实例级的等待信息等等。</p>
+<p>SQL Server中，等待事件是作为DBA进行TroubleShooting的重要参考信息之一，SQL Server中可以通过多中方式来获取等待信息。</p>
+<p>但是对于SQL Server 2016之前的版本来说，不管是活动Session级别的等待和实例级的等待，参考意义都有限，</p>
+<p>更多的时候是想要更加详细的且可以事后分析的等待，这就需要收集那些曾经已执行过的Session产生的等待信息，也就是特定Session等待信息的历史记录</p>
+<p>本文重点介绍使用扩展事件来捕获等待信息，但不介绍扩展事件本身的使用，重点放在如何使用扩展事件来获取想要的等待事件信息。</p>
+<p>需要对扩展事件有一定的了解。</p>
+<p></p>
+<h3>等待信息的获取途径</h3>
+<p></p>
+<p>在SQL Server中有一个系统视图sys.dm_os_wait_stats记录了自数据库服务启动以来累积产生的等待信息，</p>
+<p>如下图，这个结果是实例级的，也就是记录的整个数据库服务器所有的等待事件的累积。</p>
+<p>多数时候参考意义不是很大，比如某一天的网络延时很高，sys.dm_os_wait_stats中累计记录了大量的ASYNC_NETWORK_IO等待信息。</p>
+<p>但是到了第二天或者什么时候，网络变好了，但是sys.dm_os_wait_stats中记录的ASYNC_NETWORK_IO等待信息是不变的</p>
+<p>也就是说sys.dm_os_wait_stats无法反映实时等待情况。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>当然要获取实时的等待信息也简单，记录两个时间点之间sys.dm_os_wait_stats中等待时间的差值，可以间接地反映出来某一段时间的数据的等待信息。</p>
+<p>但是这个信息仍然比较粗略，依旧是实例级的，某些时候依旧是不足够作为参考的。</p>
+<p>另外一个是通过sys.dm_exec_requests这个系统视图的wait_type，wait_time等获取活动Session的等待信息</p>
+<p>如截图，但是这个是活动Session的信息，当Session完成之后，它的等待信息就看不到曾经都产生了那些等待，分别是多久。</p>
+<p>也就说，你无法追溯历史上某一个Session或者某一个SQL（存储过程）执行过程中的都产生了什么类型的等待，等待了多长时间。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>实话说，不管是sys.dm_os_wait_stats还是sys.dm_exec_requests，在正常情况下，获取到的等待信息实用价值都是不高或者是适用场景有限。</p>
+<p>更多的时候我们是想要更细一级的等待，比如某一个Login、某一部分Session、甚至某些特定的SQL（存储过程）的执行过程中产生的等待信息。</p>
+<p>举个实际例子，数据库又10个Login给10个不同的应用程序访问，其中只有1个应用程序端反馈说访问数据库慢，或者有性能问题，其他Login都反馈正常</p>
+<p>那么很有可能是这个Login请求自己的问题，此时就需要针对这一个Login的情况进行针对性分析，而不是在实例级分析诊断。</p>
+<p>如果能够拿到这个Login执行的Session的等待情况，或者这个Login某些特定的数据库对象的执行过程中的等待信息，对定位问题的针对性的就比较强了。</p>
+<p>本文就以此为切入点，针对如何获取Session级别的等待信息展开说明和演示。</p>
+<p></p>
+<h3>SQL Server 2016中获取Session级别的等待信息</h3>
+<p></p>
+<p>在SQL Server 2016中，获取Session级别的等待信息是比较方便的，有直接的系统视图sys.dm_exec_session_wait_stats可以使用</p>
+<p>当前情况下，想要知道某一个Session的等待信息就很简单了，</p>
+<p>在sql语句开始的时候把当前Session的等待信息记录下来</p>
+<p>在sql语句结束的时候把当前Session的等待信息再次记录出来</p>
+<p>计算两次等待信息的差值，就可以知道当前Session运行的过程中有哪些等待，分别是多少。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>　　sqlserver开发团队可能也意识到了对于等待信息，更多的时候，需要的是较为具体的等待，而不是一个笼统的实例级的等待</p>
+<p>　　因此在SQL Server 2016中增加了sys.dm_exec_session_wait_stats这个支持统计Session级别的等待的视图</p>
+<p>　　很不幸的SQL Server2016之前的版本中是没有这个系统视图可以很方便地记录Session级别的等待。</p>
+<p>　　但是可以借助扩展事件来实现类似的功能。</p>
+<p></p>
+<h3>使用扩展事件来捕获Session级别的等待信息</h3>
+<p></p>
+<p>因为这里是是用扩展事件来实现的，这里要求读者要对扩展事件有一个基本的认识，扩展事件本身就不多说了。</p>
+<p>上代码，启动一个扩展事件，来记录执行时间超过三秒的SQL语句，其执行过程中等待时间大于0的等待事件信息。</p>
+<p>当然这个捕获的信息可以加上各种过滤条件。具体参考代码备注。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name='CollectionSessionWaitStats')
+ DROP EVENT session CollectionSessionWaitStats ON SERVER;
+GO
+-- 创建事件会话 
+CREATE EVENT SESSION CollectionSessionWaitStats ON SERVER  
+ADD EVENT sqlserver.rpc_completed
+( 
+  ACTION
+  (
+    sqlos.task_time,
+    sqlserver.database_name,
+    sqlserver.nt_username,
+    sqlserver.username,
+    sqlserver.sql_text,
+    sqlserver.session_id,
+    sqlserver.transaction_id
+  ) WHERE [duration]&gt;=3000000
+), 
+ADD EVENT sqlserver.sql_batch_completed
+( 
+  ACTION
+  (
+    sqlos.task_time,
+    sqlserver.database_name,
+    sqlserver.nt_username,
+    sqlserver.username,
+    sqlserver.sql_text,
+    sqlserver.session_id,
+    sqlserver.transaction_id
+  ) WHERE [duration]&gt;=3000000
+),
+ADD EVENT sqlos.wait_info
+(
+  ACTION 
+  (
+    sqlos.task_time,
+    sqlserver.database_name,
+    sqlserver.nt_username,
+    sqlserver.sql_text,
+    sqlserver.username,
+    sqlserver.session_id,
+    sqlserver.transaction_id
+  ) WHERE session_id&gt;50 
+      and opcode=1 
+      and duration&gt;0
+      and sql_text not like '%sp_MScdc_capture_job%' --排除某些信息
+      --and username = '' --限定只记录某些信息
+),
+ADD EVENT sqlos.wait_info_external
+(
+  ACTION
+  (
+    sqlos.task_time,
+    sqlserver.database_name,
+    sqlserver.nt_username,
+    sqlserver.username,
+    sqlserver.sql_text,
+    sqlserver.session_id,
+    sqlserver.transaction_id
+  ) WHERE  session_id&gt;50 
+      and opcode=1 
+      and duration&gt;0
+      and sql_text not like '%sp_MScdc_capture_job%'
+      --and username = ''
+)
+ADD TARGET package0.event_file
+( 
+  SET filename=N'D:\XEventFiles\CollectionSessionWaitStats',
+  max_file_size=(1024),  
+  max_rollover_files=(10) 
+)
+WITH ( 
+    MAX_MEMORY=4096 KB,      
+    EVENT_RETENTION_MODE=ALLOW_SINGLE_EVENT_LOSS,
+    MAX_DISPATCH_LATENCY=30 SECONDS,
+    MAX_EVENT_SIZE=0 KB,      
+    MEMORY_PARTITION_MODE=NONE,   
+    TRACK_CAUSALITY=OFF,      
+    STARTUP_STATE=ON
+  )
+GO
+-- 启用（停止）事件会话（START / STOP） 
+ALTER EVENT SESSION CollectionSessionWaitStats ON SERVER STATE=START 
+GO</code></pre>
+<p>是用扩展事件收集的Session级别的等待信息有以下几个特点</p>
+<p>1，SessionId是可以重复的</p>
+<p>　　举例说明就是:比如一个SessionId = 80的Session，可以第一次执行一个SQLA，第二次执行一个SQLB.</p>
+<p>　　同时这两个SQL的执行与其执行过程中产生的等待信息都可以被捕获出来</p>
+<p>2，同一个时间段内，一个同一个SessionId不可能同时执行，</p>
+<p>　　比如16：46：36秒到16：46：46秒到这个时间内，SessionId = 80的Session正在执行，扩展事件捕获到了其产生的等待信息</p>
+<p>　　但是在16：46：36秒到16：46：46这个时间段内，不可能有另外一个SessionId = 80也在执行，这个逻辑不难理解</p>
+<p>为什么要特意说明这个问题？</p>
+<p>因为扩展事件收集到的事件信息中SQL语句完成事件（rpc_completed或者sql_batch_completed）与产生的等待之间，没有一个直接的对应关系。</p>
+<p>怎么理解？动起手来才能发现问题，我是这个纠结了大半天，截图示例。</p>
+<p>如下截图，扩展事件捕获到的两个目标事件的SessionId都是58，但是执行的SQL是不一样的，</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>如下截图是不区分事件类型，捕获到的所有的事件信息。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>也就是上面说的，对于58号Session:</p>
+<p>第一次运行了<code>SELECT COUNT(1) FROM TestCollectionSessionWaitStats</code></p>
+<p>第二次运行了<code>SELECT COUNT(1) FROM TestCollectionSessionWaitStats WHERE Id&gt;10</code></p>
+<p>两次运行的SQL一致或者不一致问题不大，关键是捕获到的等待事件信心的SessionId也是58，怎么区分产生的事件是归属于哪一次的运行？</p>
+<p>比如58号Session运行两次sql，产生了10条等待信息，怎么区分这10条等待信息哪些归属于第一次运行生成的，哪些归属于第二次运行生成的？</p>
+<p>这个就依靠上面说的第二点&ldquo;同一个时间段内，一个同一个SessionId不可能同时执行&rdquo;</p>
+<p>对于同一个SessionId，在sql_batch_completed事件中，从时间的维度来看</p>
+<p>小于第一次sql_batch_completed事件完成时间的必然是58号Session第一次执行生成的</p>
+<p>大于第一次sql_batch_completed事件完成事件的且小于第二次sql_batch_completed的必然是58号Session第二次执行生成的</p>
+<p>有了这个理论基础，我们统计Session级别的等待就比较容易了，相信这个逻辑的实现并不难。</p>
+<p>如下图是58号Session执行某SQL语句产生的等待详细信息，可以看到多次产生了CXPACKET和 PAGEIOLATCH_SH等待</p>
+<p>鉴于截图问题，下面还有另外一个同样是58号Session的执行另外一个SQL捕获到的等待信息</p>
+<p>这个统计办法就是上面提到的，在两次sql_batch_completed事件中，虽然等待事件的SessionId一样，</p>
+<p>但是其发生的时候是处于当前事件的sql_batch_completed之前，上一次sql_batch_completed之后，</p>
+<p>这样就可以完美地匹配到sql_batch_completed事件与其对应的wait_info事件。</p>
+<p>在这种情况下，统计得到类似于SQL Server 2016中的sys.dm_os_wait_stats的结果也就不难了。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>与sys.dm_os_wait_stats 等待信息的结果相比，上述通过扩展事件获取的等待信息，是不是更加详细和具体？</p>
+<p>比如对于CXPACKET等待时间，</p>
+<p>不难发现，如果计算计算其产生的次数（count），就类似于sys.dm_os_wait_stats 中的waiting_tasks_count，计算其产生的总时间（sum），就类似于wait_time_ms</p>
+<p>但是上述时间的信息已经细化到Session级别了，比sys.dm_os_wait_stats 中的等待信息更有参考价值。对于问题的诊断和分析，也会是更加有效。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>上述统计结果的SQL语句</p>
+<p>代码如下：</p>
+<pre>
+<code>
+-- Parse the XML to show rpc_completed,sql_batch_completed details
+if object_id('tempdb..#t1') is not null
+  drop table #t1
+SELECT 
+  event_xml.value('(./action[@name="session_id"]/value)[1]', 'INT') as session_id,
+  event_xml.value('(./@timestamp)', 'varchar(1000)') as timestamp,
+  event_xml.value('(./data[@name="statement"]/value)[1]', 'varchar(max)') as statement,
+  event_xml.value('(./data[@name="batch_text"]/value)[1]', 'varchar(max)') as batch_text,
+  event_xml.value('(./@name)', 'varchar(1000)') as Event_Name,
+  event_xml.value('(./data[@name="duration"]/value)[1]', 'bigint') as Duration,
+  event_xml.value('(./data[@name="cpu_time"]/value)[1]', 'bigint') as cpu_time,
+  event_xml.value('(./data[@name="physical_reads"]/value)[1]', 'bigint') as physical_reads,
+  event_xml.value('(./data[@name="logical_reads"]/value)[1]', 'bigint') as logical_reads,
+  event_xml.value('(./action[@name="username"]/value)[1]', 'varchar(max)') as username
+INTO #t1
+FROM (
+    SELECT CAST(event_data AS XML) xml_event_data 
+    FROM sys.fn_xe_file_target_read_file(N'D:\XEventFiles\CollectionSessionWaitStats*', NULL, NULL, NULL)
+   ) AS event_table
+CROSS APPLY xml_event_data.nodes('//event') n (event_xml)
+WHERE event_xml.value('(./@name)', 'varchar(1000)') in ('rpc_completed','sql_batch_completed')
+order by Event_Name
+-- Parse the XML to show wait_info,wait_info_external details
+if object_id('tempdb..#t2') is not null
+  drop table #t2
+SELECT 
+  cast(event_xml.value('(./@timestamp)', 'varchar(1000)') as DATETIME2) as timestamp,
+  event_xml.value('(./data[@name="duration"]/value)[1]', 'bigint') as duration,
+  event_xml.value('(./action[@name="session_id"]/value)[1]', 'INT') as session_id,
+  event_xml.value('(./data[@name="wait_type"]/text)[1]', 'VARCHAR(200)') as wait_type
+INTO #t2
+FROM (
+    SELECT CAST(event_data AS XML) xml_event_data 
+    FROM sys.fn_xe_file_target_read_file(N'D:\XEventFiles\CollectionSessionWaitStats*', NULL, NULL, NULL)
+   ) AS event_table
+   CROSS APPLY xml_event_data.nodes('//event') n (event_xml)
+WHERE event_xml.value('(./@name)', 'varchar(1000)') in ('wait_info','wait_info_external')
+if object_id('tempdb..#t3') is not null
+  drop table #t3
+SELECT 
+  a.session_id          AS SessionId,
+  isnull(statement,batch_text)  AS SQLTEXT,
+  a.Duration            AS TotalExecuteTime,
+  CAST(a.timestamp AS DATETIME2)  AS CompletedTime,
+  CAST(b.timestamp AS DATETIME2)  AS WaitTypeStartTime,
+  b.wait_type            AS WaitType,
+  b.duration            AS WaitDuration
+INTO #t3
+FROM #t1 a INNER JOIN #t2 b on a.session_id = b.session_id
+  and b.timestamp &lt; a.timestamp 
+  and b.timestamp&gt;(
+             select top 1 timestamp from #t1 c 
+             where a.session_id = a.session_id and a.timestamp &gt; b.timestamp
+             order by a.timestamp
+          )
+select 
+  case when rn = 1 then SessionId else NULL end as SessionId,
+  case when rn = 1 then SQLTEXT else NULL end as SQLTEXT,
+  case when rn = 1 then TotalExecuteTime else NULL end as TotalExecuteTime,
+  CompletedTime as CompletedTime,
+  WaitType,
+  WaitTypeStartTime as WaitTypeStartTime,
+  WaitDuration
+from 
+(
+  select ROW_NUMBER()over(partition by SessionId,SQLTEXT,TotalExecuteTime,CompletedTime order by CompletedTime,WaitTypeStartTime) as rn,
+  * FROM #t3
+)</code></pre>
+<p>当然该语句仅供参考，目的是为了收集Session级的统计信息，当收集到Session级别的统计信息之后，具体的统计方式也不难。</p>
+<p></p>
+<h3>总结</h3>
+<p></p>
+<p>　　　等待事件可以帮助我们诊断SQL Server上的一些资源瓶颈，对于问题的处理和解决有着比较重要的参考意义，如果能够细化地收集等待事件，对于解决问题的参考意义会更大。</p>
+<p>　　　本文通过一个简单的示例，使用扩展事件来收集SQL Server中一些特定场景下的等待信息，来更加有针对性地进行问题的诊断和识别，使得问题的分析更加高效和具有针对性。</p>
+<p>以上所述是小编给大家介绍的SQLServer中使用扩展事件获取Session级别的等待信息及SQLServer 2016中Session级别等待信息的增强，希望对大家有所帮助，如果大家有任何疑问请给我留言，小编会及时回复大家的。在此也非常感谢大家对512笔记网站的支持！</p>
+
+<p>注：关于SQL Server使用扩展事件获取Session级别的等待信息及SQLServer 2016中Session级别等待信息的增强示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2703.html'>win10安装Sql Server 2014教程</a><a>下一篇</a><a href='/mysql/biji/2705.html'>SQL Server清除历史记录的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

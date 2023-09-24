@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL中Stmt 预处理提高效率问题的小研究_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL中Stmt 预处理提高效率问题的小研究，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+代码如下:
+
+ 
+DEL" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL中Stmt 预处理提高效率问题的小研究</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:21:39                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL中Stmt 预处理提高效率问题的小研究，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+代码如下:
+
+ 
+DEL</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL中Stmt 预处理提高效率问题的小研究，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>代码如下:</p>
+<pre>
+<code> 
+DELIMITER $$ 
+set @stmt = &#39;select userid,username from myuser where userid between ? and ?&#39;; 
+prepare s1 from @stmt; 
+set @s1 = 2; 
+set @s2 = 100; 
+execute s1 using @s1,@s2; 
+deallocate prepare s1; 
+$$ 
+DELIMITER ; 
+</code></pre>用这种形式写的查询，可以随意替换参数，给出代码的人称之为预处理，我想这个应该就是MySQL中的变量绑定吧&hellip;&hellip;但是，在查资料的过程中我却听到了两种声音，一种是，MySQL中有类似Oracle变量绑定的写法，但没有其实际作用，也就是只能方便编写，不能提高效率，这种说法在几个09年的帖子中看到：http://www.itpub.net/thread-1210292-1-1.htmlhttp://cuda.itpub.net/redirect.php?fid=73&amp;tid=1210572&amp;goto=nextnewset另一种说法是MySQL中的变量绑定是能确实提高效率的，这个是希望有的，那到底有木有，还是自己去试验下吧。试验是在本机进行的，数据量比较小，具体数字并不具有实际意义，但是，能用来说明一些问题，数据库版本是mysql-5.1.57-win32免安装版。　　本着对数据库不是很熟悉的态度^_^,试验过程中走了不少弯路，此文以结论为主，就不列出实验的设计过程，文笔不好，文章写得有点枯燥，写出来是希望有人来拍砖，因为我得出的结论是：预处理在有没有cache的情况下的执行效率都不及直接执行&hellip;&hellip; 我对自己的实验结果不愿接受。。如果说预处理只为了规范下Query，使cache命中率提高的话个人觉得大材小用了，希望有比较了解的人能指出事实究竟是什么样子的&mdash;&mdash;NewSilen实验准备　　第一个文件NormalQuery.sql
+<p>代码如下:</p>
+<pre>
+<code> 
+Set profiling=1; 
+Select * From MyTable where DictID = 100601000004; 
+Select DictID from MyTable limit 1,100; 
+Select DictID from MyTable limit 2,100; 
+/*从limit 1，100 到limit 100,100 此处省略重复代码*/ 
+...... 
+Select DictID from MyTable limit 100,100; 
+SELECT query_id,seq,STATE,10000*DURATION FROM information_schema.profiling INTO OUTFILE &#39;d:/NormalResults.csv&#39; FIELDS TERMINATED BY &#39;,&#39; LINES TERMINATED BY &#39;\n&#39;; 
+</code></pre>第二个sql文件 StmtQuery.sql
+<p>代码如下:</p>
+<pre>
+<code> 
+Set profiling=1; 
+Select * From MyTable where DictID = 100601000004; 
+set @stmt = &#39;Select DictID from MyTable limit ?,?&#39;; 
+prepare s1 from @stmt; 
+set @s = 100; 
+set @s1 = 101; 
+set @s2 = 102; 
+...... 
+set @s100 =200; 
+execute s1 using @s1,@s; 
+execute s1 using @s2,@s; 
+...... 
+execute s1 using @s100,@s; 
+SELECT query_id,seq,STATE,10000*DURATION FROM information_schema.profiling INTO OUTFILE &#39;d:/StmtResults.csv&#39; FIELDS TERMINATED BY &#39;,&#39; LINES TERMINATED BY &#39;\n&#39;; 
+</code></pre>做几点小说明：1. Set profiling=1; 执行此语句之后，可以从information_schema.profiling这张表中读出语句执行的详细信息，其实包含不少内容，包括我需要的时间信息，这是张临时表，每新开一个会话都要重新设置profiling属性才能从这张表中读取数据2. Select * From MyTable where DictID = 100601000004;　　这行代码貌似和我们的实验没什么关系，本来我也是这么认为的，之所以加这句，是我在之前的摸索中发现，执行过程中有个步骤是open table，如果是第一次打开某张表，那时间是相当长的，所以在执行后面的语句前，我先执行了这行代码打开试验用的表3. MySQL默认在information_schema.profiling表中保存的查询历史是15条，可以修改profiling_history_size属性来进行调整，我希望他大一些让我能一次取出足够的数据，不过最大值只有100，尽管我调整为150，最后能够查到的也只有100条，不过也够了4. SQL代码我没有全列出来，因为查询语句差不多，上面代码中用省略号表示了，最后的结果是两个csv文件，个人习惯，你也可以把结果存到数据库进行分析　　实验步骤重启数据库，执行文件NormalQuery.sql，执行文件StmtQuery.sql，得到两个结果文件再重启数据库，执行StmtQuery.sql，执行文件NormalQuery.sql，得到另外两个结果文件　　实验结果详细结果在最后提供了附件下载，有兴趣的朋友可以看下　　结果分析每一个SQL文件中执行了一百个查询语句，没有重复的查询语句，不存在查询cache，统计执行SQL的平均时间得出如下结果
+<p><strong><!---ecms -ecms 
+【图缺】
+--></strong></p>
+<p>从结果中可以看出，无论是先执行还是后执行，NormalQuery中的语句都比使用预处理语句的要快一些=.=！</p>
+<p>那再来看看每一句查询具体的情况，Normal和Stmt的query各执行了两百次，每一步的详细信息如下：</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>从这里面可以看出，第一个，normalquery比stmtquery少一个步骤，第二个，虽然stmt在不少步骤上是优于normal的,但在executing一步上输掉太多，最后结果上也是落败</p>
+<p><strong></strong>最后，再给出一个查询缓存的实验结果，具体步骤就不列了</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>在查询缓存的时候，Normal完胜&hellip;&hellip;</p>
+<p>写在最后</p>
+<p>大概情况就是这样，我回忆了一下，网上说预处理可以提高效率的，基本都是用编程的方式去执行查询，不知道这个有没有关系，基础有限，希望园子里的大牛能看到，帮忙解惑实验结果附件MySQL预处理实验结果</p>
+
+<p>注：关于MySQL中Stmt 预处理提高效率问题的小研究的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1010.html'>安装MySQL 5后无法启动(不能Start service)解决方法小结</a><a>下一篇</a><a href='/mysql/biji/1012.html'>MySQL数据库编码问题 （修改数据库，表，字段编码为utf8)</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

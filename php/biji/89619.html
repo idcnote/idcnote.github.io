@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>.net 中的SqlConnection连接池机制详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="正确的理解这个连接池机制，有助于我们编写高效的数据库应用程序。<br />
+很多人认为 SqlConnection 的连接是不耗时的，理由是循环执行 SqlConnection.Open 得到的平均时间几乎为0，但" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">.net 中的SqlConnection连接池机制详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>正确的理解这个连接池机制，有助于我们编写高效的数据库应用程序。<br />
+很多人认为 SqlConnection 的连接是不耗时的，理由是循环执行 SqlConnection.Open 得到的平均时间几乎为0，但</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><P>正确的理解这个连接池机制，有助于我们编写高效的数据库应用程序。</P>
+<P>很多人认为 SqlConnection 的连接是不耗时的，理由是循环执行 SqlConnection.Open 得到的平均时间几乎为0，但每次首次open 时，耗时又往往达到几个毫秒到几秒不等，这又是为什么呢？</P>
+<P>首先我们看一下 MSDN 上的权威文档上是怎么说的</P>
+<P>Connecting to a database server typically consists of several time-consuming steps. A physical channel such as a socket or a named pipe must be established, the initial handshake with the server must occur, the connection string information must be parsed, the connection must be authenticated by the server, checks must be run for enlisting in the current transaction, and so on.</P>
+<P>以上摘自 http://msdn.microsoft.com/en-us/library/8xx3tyca%28VS.80%29.aspx</P>
+<P>也就是说物理连接建立时，需要做和服务器握手，解析连接字符串，授权，约束的检查等等操作，而物理连接建立后，这些操作就不会去做了。这些操作是需要一定的时间的。所以很多人喜欢用一个静态对象存储 SqlConnection 来始终保持物理连接，但采用静态对象时，多线程访问会带来一些问题，实际上，我们完全不需要这么做，因为 SqlConnection 默认打开了连接池功能，当程序 执行&nbsp; SqlConnection.Close 后，物理连接并不会被立即释放，所以这才出现当循环执行 Open操作时，执行时间几乎为0.</P>
+<P>下面我们先看一下不打开连接池时，循环执行 SqlConnection.Open 的耗时</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="44962" class="copybut" id="copybut44962" onclick="doCopy('code44962')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code44962"><BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; public static void OpenWithoutPooling()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;string connectionString =&nbsp; "Data Source=192.168.10.2; Initial Catalog=News; Integrated Security=True;Pooling=False;";<BR>&nbsp;Stopwatch sw = new Stopwatch();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;sw.Start();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;using (SqlConnection conn =&nbsp; new SqlConnection(connectionString))&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;conn.Open();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;sw.Stop();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;Console.WriteLine("Without Pooling, first connection elapsed {0} ms", sw.ElapsedMilliseconds);&nbsp; <br><br>&nbsp;sw.Reset();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;sw.Start();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;for (int i = 0; i &lt; 100; i++)&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;using (SqlConnection conn = new SqlConnection(connectionString))&nbsp;&nbsp; <BR>&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;conn.Open();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;sw.Stop();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;Console.WriteLine("Without Pooling, average connection elapsed {0} ms", sw.ElapsedMilliseconds / 100);&nbsp; <BR>&nbsp;}<BR></div></P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="36676" class="copybut" id="copybut36676" onclick="doCopy('code36676')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code36676"><BR>.csharpcode { BACKGROUND-COLOR: #ffffff; FONT-FAMILY: consolas, "Courier New", courier, monospace; COLOR: black; FONT-SIZE: small }<BR>.csharpcode PRE { BACKGROUND-COLOR: #ffffff; FONT-FAMILY: consolas, "Courier New", courier, monospace; COLOR: black; FONT-SIZE: small }<BR>.csharpcode PRE { MARGIN: 0em } <BR>.csharpcode .rem { COLOR: #008000 }<BR>.csharpcode .kwrd { COLOR: #0000ff } <BR>.csharpcode .str { COLOR: #006080 }<BR>.csharpcode .op { COLOR: #0000c0 }<BR>.csharpcode.preproc { COLOR: #cc6633 }<BR>.csharpcode .asp { BACKGROUND-COLOR: #ffff00 } <BR>.csharpcode .html { COLOR: #800000 }<BR>.csharpcode .attr { COLOR: #ff0000 }<BR>.csharpcode .alt { BACKGROUND-COLOR: #f4f4f4; MARGIN: 0em; WIDTH: 100% }<BR>.csharpcode .lnum { COLOR: #606060 } </P>
+<P></div></P>
+<P>SqlConnection 默认是打开连接池的，如果要强制关闭，我们需要在连接字符串中加入 Pooling=False</P>
+<P>调用程序如下：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="14650" class="copybut" id="copybut14650" onclick="doCopy('code14650')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code14650"><BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Test.SqlConnectionTest.OpenWithoutPooling();&nbsp; <BR>&nbsp;&nbsp;Console.WriteLine("Waiting for 10s");&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;System.Threading.Thread.Sleep(10 * 1000);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;Test.SqlConnectionTest.OpenWithoutPooling();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;Console.WriteLine("Waiting for 600s");&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;System.Threading.Thread.Sleep(600 * 1000);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;Test.SqlConnectionTest.OpenWithoutPooling();<BR></div></P>
+<P>下面是测试结果</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="54171" class="copybut" id="copybut54171" onclick="doCopy('code54171')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code54171"><BR>Without Pooling, first connection elapsed 13 ms<BR>Without Pooling, average connection elapsed 5 ms<BR>Wating for 10s<BR>Without Pooling, first connection elapsed 6 ms<BR>Without Pooling, average connection elapsed 4 ms<BR>Wating for 600s<BR>Without Pooling, first connection elapsed 7 ms<BR>Without Pooling, average connection elapsed 4 ms<BR></div><BR>从这个测试结果看，关闭连接池后，平均每次连接大概要耗时4个毫秒左右，这个就是建立物理连接的平均耗时。</P>
+<P>下面再看默认情况下的测试代码</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="35608" class="copybut" id="copybut35608" onclick="doCopy('code35608')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code35608"><BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; public static void OpenWithPooling()&nbsp; <BR>&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;string connectionString =&nbsp; "Data Source=192.168.10.2; Initial Catalog=News; Integrated Security=True;";<BR>&nbsp;Stopwatch sw = new Stopwatch();&nbsp;&nbsp;&nbsp; <BR>&nbsp;sw.Start();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;using (SqlConnection conn =&nbsp; new SqlConnection(connectionString))&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;conn.Open();&nbsp;&nbsp;&nbsp; <BR>&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;sw.Stop();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;Console.WriteLine("With Pooling, first connection elapsed {0} ms", sw.ElapsedMilliseconds); <BR>&nbsp;sw.Reset();&nbsp;&nbsp;&nbsp; <BR>&nbsp;sw.Start();&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;for (int i = 0; i &lt; 100; i++)&nbsp;&nbsp;&nbsp; <BR>&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;using (SqlConnection conn = new SqlConnection(connectionString))&nbsp;&nbsp;&nbsp; <BR>&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;conn.Open();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;sw.Stop();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;Console.WriteLine("With Pooling, average connection elapsed {0} ms", sw.ElapsedMilliseconds / 100);&nbsp; <BR>&nbsp;}<BR></div></P>
+<P>调用代码</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="17854" class="copybut" id="copybut17854" onclick="doCopy('code17854')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code17854"><BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Test.SqlConnectionTest.OpenWithPooling();&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;Console.WriteLine("Waiting for 10s");&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;System.Threading.Thread.Sleep(10 * 1000);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;Test.SqlConnectionTest.OpenWithPooling();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;Console.WriteLine("Waiting for 600s");&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;System.Threading.Thread.Sleep(600 * 1000);&nbsp; <BR>&nbsp;&nbsp;Test.SqlConnectionTest.OpenWithPooling();</P>
+<P></div></P>
+<P>测试结果</P>
+<P>With Pooling, first connection elapsed 119 ms<BR>With Pooling, average connection elapsed 0 ms<BR>Waiting for 10s<BR>With Pooling, first connection elapsed 0 ms<BR>With Pooling, average connection elapsed 0 ms<BR>Waiting for 600s<BR>With Pooling, first connection elapsed 6 ms<BR>With Pooling, average connection elapsed 0 ms</P>
+<P><BR>这个测试结果看，第一次耗时是119ms，这是因为我在测试代码中，首先运行的是这个测试过程，119 ms 是程序第一次启动时的首次连接耗时，这个耗时可能不光包括连接数据库的时间，还有 ado.net 自己初始化的用时，所以这个用时可以不管。10秒以后在执行这个测试过程，首次执行的时间变成了0ms，这说明连接池机制发生了作用，SqlConnection Close 后，物理连接并没有被关闭，所以10秒后再执行，连接几乎没有用时间。</P>
+<P>但我们发现一个有趣的现象，10分钟后，首次连接时间变成了6ms，这个和前面不打开连接池的测试用时几乎一样，也就是说10分钟后，物理连接被关闭了，又重新打开了一个物理连接。这个现象是因为连接池有个超时时间，默认情况下应该在5-10分钟之间，如果在此期间没有任何的连接操作，物理连接就会被关闭。那么我们有没有办法始终保持物理连接呢？方法是有的。</P>
+<P>连接池设置中有一个最小连接池大小，默认为0，我们把它设置为大于0的值就可以保持若干物理连接始终不释放了。看代码</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="44558" class="copybut" id="copybut44558" onclick="doCopy('code44558')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code44558"><BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; public static void OpenWithPooling(int minPoolSize) <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string connectionString = string.Format("Data Source=192.168.10.2; Initial Catalog=News; Integrated Security=True;Min Pool Size={0}",minPoolSize);&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stopwatch sw = new Stopwatch();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sw.Start();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; using (SqlConnection conn =&nbsp;&nbsp; new SqlConnection(connectionString))&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; conn.Open();&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sw.Stop();&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Console.WriteLine("With Pooling Min Pool Size={0}, first connection elapsed {1} ms",minPoolSize, sw.ElapsedMilliseconds); <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sw.Reset();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sw.Start();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (int i = 0; i &lt; 100; i++)&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; using (SqlConnection conn = new SqlConnection(connectionString))&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;conn.Open();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;sw.Stop();&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;Console.WriteLine("With Pooling Min Pool Size={0}, average connection elapsed {1} ms",minPoolSize, sw.ElapsedMilliseconds / 100);&nbsp; <BR>&nbsp;}<BR></div><BR>其实只要在连接字符串中加入一个 Min Pool Size=n 就可以了。</P>
+<P>调用代码</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="64448" class="copybut" id="copybut64448" onclick="doCopy('code64448')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code64448"><BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Test.SqlConnectionTest.OpenWithPooling(1);&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Console.WriteLine("Waiting for 10s");&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; System.Threading.Thread.Sleep(10 * 1000);&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Test.SqlConnectionTest.OpenWithPooling(1);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Console.WriteLine("Waiting for 600s");&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; System.Threading.Thread.Sleep(600 * 1000);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Test.SqlConnectionTest.OpenWithPooling(1);<BR></div><BR>With Pooling Min Pool Size=1, first connection elapsed 5 ms<BR>With Pooling Min Pool Size=1, average connection elapsed 0 ms<BR>Waiting for 10s<BR>With Pooling Min Pool Size=1, first connection elapsed 0 ms<BR>With Pooling Min Pool Size=1, average connection elapsed 0 ms<BR>Waiting for 600s<BR>With Pooling Min Pool Size=1, first connection elapsed 0 ms<BR>With Pooling Min Pool Size=1, average connection elapsed 0 ms</P>
+<P><BR>我们可以看到当 Min Pool Size = 1&nbsp; 时，除了首次连接用时5ms以外，即便过了10分钟，用时还是0ms，物理连接没有被关闭。</P>
+<P>&nbsp;</P>
+<P>多线程调用问题<BR>多线程调用我也做了测试，这里不贴代码了，我大概讲一下结果。如果是多线程访问 SqlConnection ，注意是通过 new SqlConnection 方式访问，</P>
+<P>那么这里有两个问题，如果后一个线程在前一个线程 Close 前调用了Open操作，那么 Ado.net 不可能复用一个物理连接，它将为第二个线程分配一个新的物理连接。如果后一个线程 Open&nbsp; 时，前一个线程已经 Close 了，则新的线程使用前一个线程的物理连接。也就是说，如果同时有n个线程连接数据库，最多情况下会创建n条物理连接，最少情况下为1条。如果创建n条物理连接，则用时理论上等于 n * t / cpu , n 为线程数，t 为每次创建物理连接的用时，前面测试的结果大概是5-10ms左右，cpu 为当前机器的CPU数量。另外网络，服务器的负荷也影响这个用时。为了保证在大并发时，尽量少的创建新的物理连接，我们可以适当把 Min Pool Size 调大一些，但也不要太大，因为单个机器TCP链路的数量是有限的，详见我另外一篇文章 Windows 下单机最大TCP连接数</P>
+<P>连接字符串中关于 连接池方面的参数</P>
+<P>见下面链接 SqlConnection.ConnectionString Property</P>
+<P>&nbsp;</P>
+<P>IIS 回收应用程序池对连接池的影响<BR>在做 ASP.NET 程序时，我们会发现，如果网站20分钟不访问，再次访问就会比较慢，这是因为IIS默认的 idle timeout 是20分钟，如果在20分钟内没有一个访问，IIS 将回收应用程序池，回收应用程序池的结果就相当于应用程序被重启，所有原来的全局变量，session, 物理连接都将清空。回收应用程序池后首次访问，相当于前面我们看到的程序启动后第一次访问数据库，连接的建立时间将比较长。所以如果网站在某些时段访问量很少的话，需要考虑 idle timeout 是否设置合理。</P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/89618.html'>Win10斯巴达浏览器如何全屏浏览网页</a><a>下一篇</a><a href='/php/biji/89620.html'>VC++操作SQLite简单实例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

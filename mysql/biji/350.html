@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL优化之like和=性能的深入分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL优化之like和=性能的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+引言
+那使用过" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL优化之like和=性能的深入分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:15:26                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL优化之like和=性能的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+引言
+那使用过</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL优化之like和=性能的深入分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>引言</p>
+<p>那使用过数据库的人大部分都知道，like和=号在功能上的相同点和不同点，那我在这里简单的总结下：</p>
+<p>1，不同点：like可以用作模糊查询，而&#39;=&#39;不支持此功能；如下面的例子，查询info表中字段id第一个字母为1的数据：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select * from info where id like '1%';
+
+</code></pre>
+<p>MySQL优化之like和=性能详析</p>
+<p>2，相同点：like和&quot;=&quot;都可以进行精确查询，</p>
+<p>比如下面的例子，从结果上看，都是查询info表中字段id等于&#39;12345&#39;的结果：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select * from info where id like '12345';
+</code></pre>
+<p>MySQL优化之like和=性能详析</p>
+<p>以上就是返回结果中，like和&#39;=&#39;中的相同和不同点。那好奇的小伙伴可能就要问了，那执行过程呢？mysql不管是遇到like还是&#39;=&#39;时的执行过程也都是一样的么？</p>
+<p>没错，事情不能只看表面，如果你细心研究，就会发现其实like和等于号&#39;=&#39;并不是那么简单，下面我们将详细的分析他们两者的真正区别~~~</p>
+<p>正文</p>
+<p>首先，我们来介绍一下mysql中的explain关键字；explain是执行计划的意思，即通过该命令查看这条sql是如何执行的。使用方法也很简单，即explain + sql语句，例如：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+explain select * from info where id like '12345';
+</code></pre>
+<p>MySQL优化之like和=性能详析</p>
+<p>那我们来使用explain测试一下like和=下的查询情况，首先我们来测试一下为索引的字段：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+EXPLAIN SELECT
+ * 
+FROM
+ crms_customer 
+WHERE
+ id = '7cf79d7c8a3a4f94b5373b3ec392e32d';
+</code></pre>
+<p>MySQL优化之like和=性能详析</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>而现在我们把&quot;=&quot;换成like试一下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+EXPLAIN SELECT
+ * 
+FROM
+ crms_customer 
+WHERE
+ id LIKE '7cf79d7c8a3a4f94b5373b3ec392e32d';
+</code></pre>
+<p>MySQL优化之like和=性能详析</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>小伙伴通过对比可以看到两条返回结果的type字段和Extra字段中的数据有所不同，那为什么不同，他们所代表的含义是什么呢？</p>
+<p>type字段</p>
+<p>type字段是一个可选值，这些值的性能从低到高的排序如下：</p>
+<p></p>
+<table>
+	<thead>
+		<tr>
+			<th>type</th>
+			<th>说明</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>SYSTEM</td>
+			<td>系统，表仅有一行(=系统表)。这是const联接类型的一个特例</td>
+		</tr>
+		<tr>
+			<td>CONST</td>
+			<td>常量，表最多有一个匹配行,因为仅有一行,在这行的列值可被优化器剩余部分认为是常数,const表很快,因为它们只读取一次</td>
+		</tr>
+		<tr>
+			<td>EQ_REF</td>
+			<td>搜索时使用primary key 或 unique类型</td>
+		</tr>
+		<tr>
+			<td>REF</td>
+			<td>根据索引查找一个或多个值</td>
+		</tr>
+		<tr>
+			<td>INDEX_MERGE</td>
+			<td>合并索引，使用多个单列索引搜索</td>
+		</tr>
+		<tr>
+			<td>RANGE</td>
+			<td>对索引列进行范围查找</td>
+		</tr>
+		<tr>
+			<td>index</td>
+			<td>全索引表扫描</td>
+		</tr>
+		<tr>
+			<td>ALL</td>
+			<td>全数据表扫描</td>
+		</tr>
+	</tbody>
+</table>
+<p>根据表格可以明显看出，其中const是常量查找，而RANGE是对索引列进行范围查找，所以性能也就很明显的体现了出来。</p>
+<p>那使用like查询时，Extra字段代表什么呢？Extra字段中的Using where，又代表什么？</p>
+<p>Extra字段</p>
+<p>1，Extra字段是Explain输出中也很重要的列，所代表着MySQL查询优化器执行查询的过程中对查询计划的重要补充信息。</p>
+<p>2，Extra字段中的Using where意味着mysql服务器将在存储引擎检索行后再进行过滤。所以比起使用使用&#39;=&#39;又多了一步查找过程。</p>
+<p>显然通过以上的总结我们可以得出结论：当我们使用索引字段进行条件查询时，&#39;=&#39;的性能要比like快。</p>
+<p>是不是以为到这里就结束了呢？</p>
+<p>然而并没有</p>
+<p>有的小伙伴该问了那非索引字段呢？</p>
+<p>对的，我们下面继续测试非索引字段</p>
+<p>代码如下：</p>
+<pre>
+<code>
+EXPLAIN SELECT
+ * 
+FROM
+ crms_customer 
+WHERE
+ customer_name = '张飞';
+-----------------------------------
+ 
+EXPLAIN SELECT
+ * 
+FROM
+ crms_customer 
+WHERE
+ customer_name LIKE '张飞';</code></pre>
+<p>MySQL优化之like和=性能详析</p>
+<p>除了&quot;=&quot;和like同样的两条语句，让我们运行一下：&quot;=&quot;:</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>like:</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>可以看出当非索引字段时like和&quot;=&quot;是一样的，性能上也没有差别。</p>
+<p>(当然，explain中还有很多其他字段，后续我会一一给小伙伴们讲解的。)</p>
+<p>结论</p>
+<p>经过我们的不懈努力，可以得到结论：当like和&quot;=&quot;在使用非索引字段查询时，他们的性能是一样的；而在使用索引字段时，由于&quot;=&quot;是直接命中索引的，只读取一次，而like需要进行范围查询，所以&quot;=&quot;要比like性能好一些。~~~~</p>
+<p>到此这篇关于mysql优化之like和=性能的文章就介绍到这了,更多相关mysql like和=性能内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL优化之like和=性能的深入分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/349.html'>MySQL基于java备份表操作的解决办法</a><a>下一篇</a><a href='/mysql/biji/351.html'>MySQLdump不知道的参数的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

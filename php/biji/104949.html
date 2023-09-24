@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL基于SSL协议进行主从复制的详细操作教程_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="当mysql跨越互联网进行复制时别人可以窃取到mysql的复制信息，这些信息是明文的，因此存在不安全性，这里通过ssl对复制的信息进行加密。当在客户没有固定ip而要访问服务器时，mysql" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL基于SSL协议进行主从复制的详细操作教程</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>当mysql跨越互联网进行复制时别人可以窃取到mysql的复制信息，这些信息是明文的，因此存在不安全性，这里通过ssl对复制的信息进行加密。当在客户没有固定ip而要访问服务器时，mysql</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>当mysql跨越互联网进行复制时别人可以窃取到mysql的复制信息，这些信息是明文的，因此存在不安全性，这里通过ssl对复制的信息进行加密。当在客户没有固定ip而要访问服务器时，mysql要允许任意地址的访问，服务端和客户端通过证书验证可以防止暴力破解。</p>
+<p>开始之前让我们先来回顾一下SSL协议客户端OpenSSL的安装过程：<br />
+<strong>安装openssl</strong></p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mkdir /test/setup
+cd /test/setup
+tar zxvf openssl-0.9.8b.tar.gz
+cd openssl-0.9.8b
+./config
+make && make install
+
+</pre>
+</div>
+<p>开启mysql中ssl功能<br />
+登录Mysql查看</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysql&gt; show variables like '%ssl%'; 
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:plain;">
++---------------+----------+ 
+| Variable_name | Value  | 
++---------------+----------+ 
+| have_openssl | DISABLED | 
+| have_ssl   | DISABLED | 
+| ssl_ca    |     | 
+| ssl_capath  |     | 
+| ssl_cert   |     | 
+| ssl_cipher  |     | 
+| ssl_key    |     | 
++---------------+----------+
+
+</pre>
+</div>
+<p>如果mysql输出如上所述，那么继续操作开启ssl；如果不是，重新编译安装mysql，注意生成makefile时填写参数正确。<br />
+退出mysql，编辑/etc/my.cnf<br />
+在[mysqld]和[mysqldump]之间，加入下列配置信息：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+ssl
+</pre>
+</div>
+<p>保存后重新启动mysql，再次登录mysql</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysql -uroot -p
+mysql&gt; show variables like '%ssl%'; 
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:plain;">
++---------------+-------+ 
+| Variable_name | Value | 
++---------------+-------+ 
+| have_openssl | YES  | 
+| have_ssl   | YES  | 
+| ssl_ca    |    | 
+| ssl_capath  |    | 
+| ssl_cert   |    | 
+| ssl_cipher  |    | 
+| ssl_key    |    | 
++---------------+-------+
+
+</pre>
+</div>
+<p>好了，下面进入正题：<br />
+<strong>mysql基于ssl复制<br />
+1、创建证书中心<br />
+</strong>在主服务器上创建证书中心</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+cd /etc/pki/CA
+</pre>
+</div>
+<p>生成私钥</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+(umask 077;openssl genrsa -out /etc/pki/CA/private/cakey.pem 2048)
+</pre>
+</div>
+<p>生成自签证书,由于需要输入大量用户信息，因此编辑证书的配置文件，在私有的CA上创建证书要注意所有的用户信息要和CA中的一致，从国家到部门都要相同，否则会造成证书无法使用</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+vim /etc/pki/tls/openssh.cnf
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+ [ req_distinguished_name ]
+ countryName     = Country Name (2 letter code)
+ countryName_default = CN
+ countryName_min   = 2
+ countryName_max   = 2
+ stateOrProvinceName = State or Province Name (full name)
+ stateOrpovinceName_default = FJ
+ localityName    = Locality Name (eg,city)
+ localityName    = FZ
+ O.organizationName = Organization Name (eg,company)
+ O.organizationName_default = zdz
+ organizationalUnitName   = Organizational Unit Name (eg,section)
+ organizationalUnitName_default = zdz
+</pre>
+</div>
+<p>生成自签证书</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+openssl req -new -x509 -key /etc/pki/CA/private/cakey.pem -out /etc/pki/CA/cacert.pem -days 3650
+</pre>
+</div>
+<p>-x509是创建自签证书是需要的参数，在创建其他证书时不能加该参数</p>
+<p>由于是自签证书因此要修改证书路径</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+vim /etc/pki/tls/openssl.cnf
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+ [ CA_defalut ]
+ dir = /etc/pki/CA
+ certs = $dir/certs   #存放生成证书的目录
+ crl_dir = $dir/crl   #存放吊销证书的目录
+ database = $dir/index.txt  #证书的索引文件
+ new_certs_dir = $dir_newcerts  #新签的证书目录
+ serial = $dir/serial  #序列号
+ crl = $dir/crl.pem
+ private_key = $dir/private/cakey.pem  #证书中心私钥文件
+</pre>
+</div>
+<p>创建证书编号</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mkdir certs crl newcerts
+ touch index.txt
+ echo 00 &gt; serial
+</pre>
+</div>
+<p><strong>2、为主服务器创建证书<br />
+</strong>服务器的名称必须固定，在申请证书时要输入服务器名称，证书和服务器名称对应</p>
+<p>创建私钥</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mkdir /usr/local/mysql/ssl
+ cd /usr/local/mysql/ssl
+ (umask 077;openssl genrsa -out /usr/local/mysql/ssl/master.key 2048)
+</pre>
+</div>
+<p>生成证书申请</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+openssl req -new -key master.key -out master.csr
+</pre>
+</div>
+<p>在证书服务器上对master的证书进行签发</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+openssl ca -in master.csr -out master.crt -days 365
+</pre>
+</div>
+<p><strong>3、创建从服务器证书</strong></p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+(umask 077;openssl genrsa -out /usr/local/mysql/ssl/slave.key 2048)
+ openssl req -new -key slave.key -out slave.csr
+</pre>
+</div>
+<p>将从服务器的证书申请文件复制到证书服务器上进行签发</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+opessl ca -in slave.csr -out slave.crt -days 356
+</pre>
+</div>
+<p><strong>4、修改证书权限和mysql配置文件<br />
+</strong>将证书的公钥cacert.pem复制到主从服务器的目录下</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+cd /usr/local/mysql/ssl
+ cp /etc/pki/CA/cacert.pem ./
+ chown -R mysql:mysql master.crt master.key cacert.pem
+ chmod 600 master.crt master.key cacert.pem
+ vim /usr/local/mysql/my.cnf
+ ssl
+ ssl_ca         = /usr/local/mysql/ssl/cacrt.pem
+ ssl_cert        = /usr/local/mysql/ssl/master.crt
+ ssl_key         = /usr/local/mysql/ssl/master.key
+</pre>
+</div>
+<p>修改从服务器配置</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+cd /usr/local/mysql/ssl
+ cp /etc/pki/CA/cacert.pem ./
+ chown -R mysql:mysql slave.crt slave.key cacert.pem
+ chmod 600 slave.crt slave.key cacert.pem
+ vim /usr/local/mysql/my.cnf
+ ssl
+ ssl_ca         = /usr/local/mysql/ssl/cacrt.pem
+ ssl_cert        = /usr/local/mysql/ssl/slave.crt
+ ssl_key         = /usr/local/mysql/ssl/slave.key
+</pre>
+</div>
+<p><strong>5、在主服务器上创建复制用户</strong></p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+grant replication slave on *.* to slave@'192.168.216.133' identified by 'slave' requere ssl;
+ flush privileges;
+</pre>
+</div>
+<p>查看主服务器当前二进制位置</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysql&gt; show master status ;
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+ +-------------------------+------------+---------------------+--------------------------+--------------------------+
+ | File              | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
+ +-------------------------+------------+---------------------+--------------------------+--------------------------+
+ | mysql-bin.000007 |   1015  |               |                  |                  |
+ +-------------------------+------------+---------------------+--------------------------+---------------------------+
+ 1 row in set (0.00 sec)
+</pre>
+</div>
+<p><strong>6、在从服务器上开始复制</strong></p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+change master to
+ master_host='192.168.216.132',
+ master_user='slave',
+ master_password='slave',
+ master_log_file='mysql-bin.000007',
+ master_log_pos=1015,
+ master_ssl=1,
+ master_ssl_ca=' /usr/local/mysql/ssl/cacrt.pem',
+ master_ssl_cert='/usr/local/mysql/ssl/slave.crt',
+ master_ssl_key='/usr/local/mysql/ssl/slave.key';
+ start slave;
+</pre>
+</div>
+<p>查看状态<br />
+</p>
+<p></p>
+<p>错误1：</p>
+<p>如果要确保证书没有问题可以通过建立测试的用户同ssl进行连接在主服务器上开一个权限很大的用户，进行ssl的登录测试<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+grant all privileges on *.* to root@'192.168.216.133′ identified by ‘root' require ssl;
+
+[root@slave ssl]# mysql -uroot -proot -h192.168.216.133 –ssl-ca=cacrt.pem –ssl-cert=slave.crt –ssl-key=slave.key
+
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+Warning: Using a password on the command line interface can be insecure.
+
+ERROR 2026 (HY000): SSL connection error: ASN: before date in the future
+
+</pre>
+</div>
+<p>这是由于虚拟的时间不正确导致<br />
+如果这时候不使用ssl方式进行连接则会报出错误</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@slave ssl]# mysql -uroot -proot -h192.168.216.133;
+
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+Warning: Using a password on the command line interface can be insecure.
+
+ERROR 1045 (28000): Access denied for user ‘root'@'192.168.216.132′ (using password: YES)
+
+</pre>
+</div>
+<p>错误2：</p>
+<p>在配置文件中添加证书配置后执行 show variables like ‘%ssl%'显示<br />
+</p>
+<p></p>
+<p>这是由于没有将证书的属主改为mysql，可以从日志中得知是无权限获取私钥<br />
+</p>
+<p></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/104948.html'>让IE6支持important的注意事项</a><a>下一篇</a><a href='/php/biji/104950.html'>js添加千分位的实现代码(超简单)</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

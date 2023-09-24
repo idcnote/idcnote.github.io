@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Centos环境下负载均衡软件Haproxy安装、配置+keepalive实现高可用_IDC笔记</title>
+    <meta name="keywords" content=",Linux常用命令" />
+    <meta name="description" content="首先看下百度百科给的介绍：HAProxy是一个使用C语言编写的自由及开放源代码软件，其提供高可用性、负载均衡，以及基于TCP和HTTP的应用程序代理。" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+            <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> Linux命令大全            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/linux/1.html">Linux常用命令(手册)大全</a></li><li><a href="/linux/linux/2.html">Linux命令格式</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 系统管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/system/3.html">Linux ls命令:显示指定工作目录下的内容</a></li><li><a href="/linux/system/4.html">Linux pwd命令:显示当前工作目录</a></li><li><a href="/linux/system/5.html">Linux cd命令:切换工作目录</a></li><li><a href="/linux/system/6.html">Linux date命令:显示或设置系统时间</a></li><li><a href="/linux/system/7.html">Linux su命令:切换用户</a></li><li><a href="/linux/system/9.html">Linux man命令:查看帮助信息</a></li><li><a href="/linux/system/8.html">Linux clear命令:清除屏幕</a></li><li><a href="/linux/system/11.html">Linux whoami命令:显示目前登录用户名</a></li><li><a href="/linux/system/10.html">Linux who命令:显示目前登录用户信息</a></li><li><a href="/linux/system/13.html">Linux ps命令:显示进程状态</a></li><li><a href="/linux/system/12.html">Linux free命令:显示系统内存状态</a></li><li><a href="/linux/system/15.html">Linux help命令:显示帮助信息</a></li><li><a href="/linux/system/14.html">Linux top命令:查看系统活跃进程</a></li><li><a href="/linux/system/18.html">Linux shutdown命令:关机或重启</a></li><li><a href="/linux/system/17.html">Linux halt命令:关闭系统</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 文件管理与编辑命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/file/27.html">Linux mkdir命令:创建目录</a></li><li><a href="/linux/file/29.html">Linux cat命令:连接文件并打印到标准输出设备上</a></li><li><a href="/linux/file/28.html">Linux more命令:显示文本文件内容</a></li><li><a href="/linux/file/30.html">Linux grep命令:检索文件内容</a></li><li><a href="/linux/file/31.html">Linux rm命令:删除文件或目录</a></li><li><a href="/linux/file/32.html">Linux touch命令:修改文件的时间</a></li><li><a href="/linux/file/34.html">Linux cp命令:复制文件或目录</a></li><li><a href="/linux/file/33.html">Linux ln命令:创建链接</a></li><li><a href="/linux/file/35.html">Linux find命令:查找文件</a></li><li><a href="/linux/file/37.html">Linux mv命令:移动或重命名文件或目录</a></li><li><a href="/linux/file/36.html">Linux split命令:分割文件</a></li><li><a href="/linux/file/40.html">Linux head命令:查看文件前几行</a></li><li><a href="/linux/file/39.html">Linux less命令:分页显示文件内容</a></li><li><a href="/linux/file/38.html">Linux vi/vim命令:文本编辑器</a></li><li><a href="/linux/file/42.html">Linux wc命令:统计字节数、字数、行数</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 压缩与解压命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/compression/55.html">Linux unzip命令:解压文件或目录</a></li><li><a href="/linux/compression/54.html">Linux zip命令:压缩文件或目录</a></li><li><a href="/linux/compression/56.html">Linux tar命令:归档工具</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 磁盘管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/disk/57.html">Linux df命令:显示磁盘空间使用情况</a></li><li><a href="/linux/disk/59.html">Linux quota命令:显示磁盘已使用的空间与限制</a></li><li><a href="/linux/disk/58.html">Linux mount命令:挂载文件系统</a></li><li><a href="/linux/disk/62.html">Linux ip命令:执行网络管理任务</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 网络设置与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/network/61.html">Linux netstat命令:显示网络状态</a></li><li><a href="/linux/network/60.html">Linux ifconfig命令:配置或显示网络接口信息</a></li><li><a href="/linux/network/63.html">Linux ping命令:测试主机间网络连通性</a></li><li><a href="/linux/network/65.html">Linux finger命令:查找并显示用户信息</a></li><li><a href="/linux/network/64.html">Linux wall命令:发送广播</a></li><li><a href="/linux/network/67.html">Linux rlogin命令:远端登入</a></li><li><a href="/linux/network/66.html">Linux rcp命令:远程文件复制</a></li>        </ul>
+    </li>
+        <li>
+        <a href="/linux/biji/" class="waves-effect">
+            <i class="icon-share"></i>
+            <span>Linux笔记
+                <span class="float-right menu-arrow">
+                <i class="mdi mdi-chevron-right"></i>
+                </span>
+            </span>
+        </a>
+    </li>
+    </ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+</div>
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="page-title-box">
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <h1 class="page-title">Centos环境下负载均衡软件Haproxy安装、配置+keepalive实现高可用</h1>
+                    </div>
+                </div>
+                <!-- end row -->
+            </div>
+            <!-- end page-title -->
+            <!-- START ROW -->
+            <div class="panel panel-forbid">
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+                <div class="panel-content">
+                <span>首先看下百度百科给的介绍：HAProxy是一个使用C语言编写的自由及开放源代码软件，其提供高可用性、负载均衡，以及基于TCP和HTTP的应用程序代理。</span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+                <div class="panel-content">
+                <span><p><span style="color: #000000;">首先看下百度百科给的介绍：</span><br /><span style="color: #000000;"><b>HAProxy</b>是一个使用C语言编写的自由及开放源代码软件，其提供高可用性、负载均衡，以及基于TCP和HTTP的应用程序代理。</span><br /><span style="color: #000000;">HAProxy特别适用于那些负载特大的web站点，这些站点通常又需要会话保持或七层处理。HAProxy运行在当前的硬件上，完全可以支持数以万计的并发连接。并且它的运行模式使得它可以很简单安全的整合进您当前的架构中， 同时可以保护你的web服务器不被暴露到网络上。</span></p>
+<p><span style="color: #000000;">haproxy是一款免费、开源的负载均衡软件，一些大型网站用的还是比较多比如京东，淘宝等，特点也比较突出：支持Session的保持，Cookie的引导，同时支持通过获取指定的url来检测后端服务器的状态；出色的负载均衡速度，而且并发处理上一定程度上高于nginx并发；支持TCP协议的负载均衡转发，对于各种基于tcp的软件进行负载均衡比如mysql；负载均衡算法策略比较多，设置更具体。</span></p>
+<p><span style="color: #000000;">云海天教程原创内容，转载请注明出处。</span></p>
+<p><span style="color: #000000;">下边正式开始安装、配置、测试以及高可用配置使用。</span></p>
+<p><span style="color: #000000;">haproxy 配置中分成五部分内容，分别如下：</span><br /><span style="color: #000000;">1、global：参数是进程级的，通常是和操作系统相关。这些参数一般只设置一次，如果配置无误，就不需要再次进行修改</span><br /><span style="color: #000000;">2、defaults：配置默认参数，这些参数可以被用到frontend，backend，Listen组件</span><br /><span style="color: #000000;">3、frontend：接收请求的前端虚拟节点，Frontend可以更加规则直接指定具体使用后端的backend</span><br /><span style="color: #000000;">4、backend：后端服务集群的配置，是真实服务器，一个Backend对应一个或者多个实体服务器</span><br /><span style="color: #000000;">5、Listen &nbsp; Fronted和backend的组合体。</span></p>
+<p><span style="color: #000000;">通过网上haproxy的了解以及学习、安装实践以及使用，这里本博客简单记录下haproxy的基础部分，包括安装、配置、使用以及配合keepalive的高可用。</span><br /><span style="color: #000000;">硬件：kvm虚拟机</span><br /><span style="color: #000000;">平台：centos &nbsp;6.8 &nbsp;x86_64</span><br /><span style="color: #000000;">4台机器如下：</span><br /><span style="color: #000000;">VIP：192.168.1.120</span><br /><span style="color: #000000;">DIP：192.168.1.102(keepalive_master)</span><br /><span style="color: #000000;">Dip :192.168.1.104 (keepalive_backup)</span><br /><span style="color: #000000;">RIP :192.168.1.122</span><br /><span style="color: #000000;">RIP :192.168.1.123</span></p>
+<p><span style="color: #000000;"><strong>一，haproxy的基本安装、配置和使用。</strong></span></p>
+<p><span style="color: #000000;">1，haproxy安装</span><br /><span style="color: #000000;">我们这里首先安装192.168.1.102机器，先单台测试。</span><br /><span style="color: #000000;">官网下载地址： haproxy软件官网下载地址：http://www.haproxy.org/#down &nbsp;可以根据自己的系统内核版本进行版本</span><br /><span style="color: #000000;">选择安装。</span><br /><span style="color: #000000;">这里以官网提供的1.5.19稳定版进行下载安装。可以直接yum install &nbsp;haproxy &nbsp;-y安装，这里源码编译安装，具体安装步骤如下：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+cd   /usr/local/src/
+wget  http://www.haproxy.org/download/1.5/src/haproxy-1.5.19.tar.gz
+tar  zxvf  haproxy-1.5.19.tar.gz
+cd haproxy-1.5.19
+uname  -a   #查看系统内核信息
+make  TARGET=linux26 ARCH=x86_64 PREFIX=/usr/local/haproxy  #根据内核配置参数和设置安装路径
+make  install PREFIX=/usr/local/haproxy</pre>
+<p><span style="color: #000000;">安装配置，设置配置文件以及haproxy服务、自启动。</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+mkdir /etc/haproxy -p
+cp &nbsp;examples/haproxy.cfg &nbsp;/etc/haproxy 
+cp &nbsp;examples/haproxy.init &nbsp;/etc/init.d/haproxy
+chmod +x&nbsp;/etc/init.d/haproxy
+chkconfig &nbsp;haproxy on
+</pre>
+<p><span style="color: #000000;">2，配置haproxy</span><br /><span style="color: #000000;">配置说明：</span><br /><span style="color: #000000;">(1),haproxy在1.5版本以后没有haproxy.cfg配置文件，1.5之前在examples中是存在haproxy.cfg的配置文件的。从官网下载了高于1.5，比如1.6或者1.7，则需要自己配置一个配置文件。 &nbsp;1.5之前的版本可以直接复制examples/haproxy.cfg到配置目录/etc/haproxy并根据自己的环境进行修改。</span><br /><span style="color: #000000;">(2)由于服务器读取的配置文件是/etc/haproxy/haproxy.cfg，所以我们新建了目录/etc/haproxy/并将配置文件放于这个目录。如果不创建而放到其他目录，请修改服务脚本中的配置文件路径或者采用后台-f指定配置文件运行，或者screen进行虚拟终端运行。建议设置haproxy服务方式，便于后期管理。</span></p>
+<p><span style="color: #000000;">这里我们以默认自带的配置文件haproxy.cfg为基础进行了简单修改，修改后的内容如下：</span><br /><span style="color: #000000;">当前简单配置如下：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+global 
+ log 127.0.0.1 local2 
+ chroot /usr/share/haproxy
+ pidfile /var/run/haproxy.pid 
+ maxconn 4000 
+ user haproxy
+ group haproxy 
+ daemon 
+defaults
+ mode http 
+ log global 
+ option httplog 
+ 
+ option dontlognull 
+ option http-server-close 
+ option forwardfor except 127.0.0.0/8 
+ option redispatch 
+ retries 3 
+ timeout http-request 10s 
+ timeout queue 1m 
+ timeout connect 10s 
+ timeout client 1m 
+ timeout server 1m 
+ timeout http-keep-alive 10s 
+ timeout check 10s 
+ maxconn 3000 
+frontend http_default_80
+ bind 0.0.0.0:80
+ mode http
+ log global
+ option httplog
+ option httpclose
+ option forwardfor
+ acl 21yunwei_site hdr(host) -i 21yunwei.21yunwei.com
+ acl 21yunwei_site hdr(host) -i 21yunwei.21yunwei.cn
+ acl lvs_site hdr(host) -i lvs.21yunwei.com
+ acl lvs_site hdr(host) -i lvs.21yunwei.cn
+ use_backend web_21yunwei if 21yunwei_site
+ use_backend web_lvs if lvs_site
+ #acl url_static path_beg -i /static /images /javascript /stylesheets
+ #acl url_static path_end -i .jpg .gif .png .css .js
+ #use_backend static if url_static
+ default_backend web_21yunwei
+frontend www
+ bind :81
+ monitor-uri /haproxy 
+backend web_21yunwei 
+ mode http 
+ balance roundrobin 
+ cookie SERVERID 
+ option httpchk GET /index.html
+ server 21web1 192.168.1.123:80 check inter 2000 fall 3 weight 1 
+ server 21web2 192.168.1.122:80 check inter 2000 fall 3 weight 1
+backend web_lvs
+ mode http
+ balance roundrobin 
+ cookie SERVERID
+ option httpchk GET /index.html
+ server lvsweb1 192.168.1.123:80 check inter 2000 fall 3 weight 1 
+ server lvsweb2 192.168.1.122:80 check inter 2000 fall 3 weight 3 
+ 
+listen admin_stats 0.0.0.0:88
+ option httplog
+ stats refresh 30s
+ stats uri /admin
+ stats realm Haproxy Manager
+ stats auth admin:admin
+</pre>
+<p><span style="color: #000000;">3，启动服务。</span><br /><span style="color: #000000;">/etc/init.d/haproxy restart</span><br /><span style="color: #000000;">报错1：Starting haproxy: [ALERT] 233/172027 (21384) : [/usr/sbin/haproxy.main()] Cannot chroot(/usr/share/haproxy).</span><br /><span style="color: #000000;">解决办法：mkdir /usr/share/haproxy</span></p>
+<p><span style="color: #000000;">常见报错2：/etc/init.d/haproxy: line 40: /usr/sbin/haproxy: No such file or directory</span><br /><span style="color: #000000;">Errors found in configuration file, check it with &lsquo;haproxy check&rsquo;</span></p>
+<p><span style="color: #000000;">解决办法：ln &nbsp;-s &nbsp;/usr/local/haproxy/sbin/haproxy &nbsp; &nbsp;/usr/sbin/haproxy</span></p>
+<p><span style="color: #000000;">直接浏览器访问http://192.168.1.102/test.php效果：</span><br /><span style="color: #000000;">访问到了web1的测试页：</span><br /><img alt="1" class="alignnone size-medium wp-image-5805" height="106" sizes="(max-width: 300px) 100vw, 300px" src="/d/file/p/20221029/1-2-300x106.jpg" srcset="https://www.yht7.com/upload/image/20191211/1-2-300x106.jpg 300w, /d/file/p/20221029/1-2.jpg 679w" width="300" /><br />刷新，可见web2访问测试页：<br /><img alt="2" class="alignnone size-medium wp-image-5806" height="107" sizes="(max-width: 300px) 100vw, 300px" src="/d/file/p/20221029/2-300x107.jpg" srcset="https://www.yht7.com/upload/image/20191211/2-300x107.jpg 300w, /d/file/p/20221029/2.jpg 683w" width="300" /></p>
+<p>通过刚才设置的listen，查看haproxy监控页面信息，地址http://192.168.1.104:88/admin：</p>
+<p><img alt="1" class="alignnone size-medium wp-image-5832" height="150" sizes="(max-width: 300px) 100vw, 300px" src="/d/file/p/20221029/1-6-300x150.jpg" srcset="https://www.yht7.com/upload/image/20191211/1-6-300x150.jpg 300w, /d/file/p/20221029/1-6-768x385.jpg 768w, /d/file/p/20221029/1-6-1024x513.jpg 1024w, /d/file/p/20221029/1-6.jpg 1194w" width="300" /></p>
+<p><span style="color: #000000;"><strong>二，haproxy+keepalive的高可用方案。</strong></span><br /><span style="color: #000000;">由于haproxy部署于一个机器，存在单点故障风险，这里配置keepalive加以高可用，其中一个haprox死掉以后，通过keepa实现另外一个haproxy机器接管做高可用。</span><br /><span style="color: #000000;">VIP：192.168.1.120</span><br /><span style="color: #000000;">DIP：192.168.1.102(keepalive_master)</span><br /><span style="color: #000000;">Dip :192.168.1.104 (keepalive_backup)</span><br /><span style="color: #000000;">1，配置keepalive。</span><br /><span style="color: #000000;">首先备机配置一个haproxy：之前192.168.1.102也就是keepalive_master配置了一个haproxy，如果做高可用，那么备用机器keepalive_backup也需要安装这个haproxy。按照上边的方法也配置一个haproxy，只要访问192.168.1.104/test.php 跟之前的效果一样即可。</span></p>
+<p><span style="color: #000000;">安装keepalive很简单，keepalive_master，keepalive_backup都要安装，就如下几个小步骤：</span><br /><span style="color: #000000;">（1）开启转发</span><br /><span style="color: #000000;">vi /etc/sysctl.conf</span><br /><span style="color: #000000;">net.ipv4.ip_forward = 1</span><br /><span style="color: #000000;">sysctl -p可以查看是否开启。</span><br /><span style="color: #000000;">（2）安装keepalived</span><br /><span style="color: #000000;">首先安装依赖包：</span><br /><span style="color: #000000;">yum -y install gcc make openssl-devel openssl net-snmp net-snmp-devel popt popt-devel</span></p>
+<p><span style="color: #000000;">安装ipvs和keepalived：</span><br /><span style="color: #000000;">yum install &nbsp;keepalived &nbsp;-y</span><br /><span style="color: #000000;">chkconfig keepalived on</span><br /><span style="color: #000000;">（3）编辑配置文件</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+! Configuration File for keepalived
+
+global_defs {
+   router_id 21yunwei_haproxy_master
+}
+
+vrrp_instance  21yunwei {
+    state MASTER    #备机这里改成BACKUP
+    interface eth0
+    lvs_sync_daemon_inteface eth0
+    virtual_router_id 51
+    priority 100     #备机这里改成优先级99，低于100即可。数值越大，优先级越高。
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    virtual_ipaddress {
+        192.168.1.120
+    }
+}</pre>
+<p><span style="color: #000000;">两个机器都启动keepalive服务：/etc/init.d/keepalived &nbsp;start &nbsp;正常启动，通过ip addr 查看到192.168.1.120这个VIP即可。</span></p>
+<p><span style="color: #000000;">2，高可用测试。</span><br /><span style="color: #000000;">首先测试VIP 192.168.1.120 访问：</span><br /><span style="color: #000000;">http://192.168.1.120/test.php &nbsp;效果和之前的一样：</span><br /><img alt="1" class="alignnone size-full wp-image-5809" height="109" src="/d/file/p/20221029/1-4.jpg" width="251" /><img alt="2" class="alignnone size-full wp-image-5810" height="139" src="/d/file/p/20221029/2-1.jpg" width="252" /></p>
+<p><span style="color: #000000;">停掉keepalive_master 的keepalive，查看keepalive_backup的/var/log/messages日志：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+[[email&nbsp;protected]_backup haproxy]# tail  -f  /var/log/messages
+Aug 22 18:06:34 localhost Keepalived_vrrp[22946]: VRRP_Instance(21yunwei) Transition to MASTER STATE
+Aug 22 18:06:35 localhost Keepalived_vrrp[22946]: VRRP_Instance(21yunwei) Entering MASTER STATE
+Aug 22 18:06:35 localhost Keepalived_vrrp[22946]: VRRP_Instance(21yunwei) setting protocol VIPs.
+Aug 22 18:06:35 localhost Keepalived_vrrp[22946]: VRRP_Instance(21yunwei) Sending gratuitous ARPs on eth0 for 192.168.1.120
+Aug 22 18:06:35 localhost Keepalived_healthcheckers[22945]: Netlink reflector reports IP 192.168.1.120 added
+Aug 22 18:06:35 localhost kernel: IPVS: stopping backup sync thread 22144 ...
+Aug 22 18:06:35 localhost kernel: IPVS: sync thread started: state = MASTER, mcast_ifn = eth0, syncid = 51
+Aug 22 18:06:40 localhost Keepalived_vrrp[22946]: VRRP_Instance(21yunwei) Sending gratuitous ARPs on eth0 for 192.168.1.120
+</pre>
+<p><span style="color: #000000;">可见停掉keepalive_master 的keepalived以后，keepalive_backup接管了工作，此时测试http://192.168.1.120/test.php 访问没有受影响。</span></p>
+<p><span style="color: #000000;">恢复keepalive_master 的keepalived，查看keepalive_backup的/var/log/messages日志：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">
+Aug 22 18:08:29 localhost Keepalived_vrrp[22946]: VRRP_Instance(21yunwei) Received higher prio advert
+Aug 22 18:08:29 localhost kernel: IPVS: stopping master sync thread 24617 ...
+Aug 22 18:08:29 localhost Keepalived_vrrp[22946]: VRRP_Instance(21yunwei) Entering BACKUP STATE
+Aug 22 18:08:29 localhost Keepalived_vrrp[22946]: VRRP_Instance(21yunwei) removing protocol VIPs.
+Aug 22 18:08:29 localhost kernel: IPVS: sync thread started: state = BACKUP, mcast_ifn = eth0, syncid = 51
+Aug 22 18:08:29 localhost Keepalived_healthcheckers[22945]: Netlink reflector reports IP 192.168.1.120 removed
+</pre>
+<p><span style="color: #000000;">高可用已经实现，这样就不用担心haproxy的单点故障了。</span></p>
+<p><span style="color: #000000;">参考文档：</span><br /><span style="color: #000000;">haproxy 配置详解 &nbsp; http://freehat.blog.51cto.com/1239536/1347882</span><br /><span style="color: #000000;">haproxy配置文件详解 &nbsp;http://itnihao.blog.51cto.com/1741976/915537</span><br /><span style="color: #000000;">负载均衡之Haproxy配置详解（及httpd配置）&nbsp;&nbsp;/d/file/p/20221029/50056199 &nbsp;附带常用负载均衡的对比。<br />Haproxy+keepalived负载均衡配置&nbsp;http://blog.csdn.net/aa168b/article/details/50372649</span></p><!-- .entry-wrapper --></span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+                <div class="panel-content">
+                <span>[!--zhushi--]</span>                                     
+                </div>
+
+            </div>
+
+            <!-- END ROW -->
+            <div class="newsPage">
+                <div class="newsPageTurn">
+                    <span><a>上一篇</a><a href='/linux/biji/71.html'>linux跟踪文件命令lsof（重要）</a><a>下一篇</a><a href='/linux/biji/73.html'>linux操作系统MBR详解说明</a></span>
+                </div>
+            </div>
+        </div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+                <li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<!-- container-fluid -->
+    </div>
+<!-- content -->
+    <footer class="footer">
+    © 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    </footer>
+</div>
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

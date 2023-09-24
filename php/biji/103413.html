@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL中distinct语句去查询重复记录及相关的性能讨论_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="在 MySQL 查询中，可能会包含重复值。这并不成问题，不过，有时您也许希望仅仅列出不同（distinct）的值。<br />
+关键词 DISTINCT 用于返回唯一不同的值，就是去重啦。用法也很简单：<br />
+<br />
+<br />
+SELECT" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL中distinct语句去查询重复记录及相关的性能讨论</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>在 MySQL 查询中，可能会包含重复值。这并不成问题，不过，有时您也许希望仅仅列出不同（distinct）的值。<br />
+关键词 DISTINCT 用于返回唯一不同的值，就是去重啦。用法也很简单：<br />
+<br />
+<br />
+SELECT</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>在 MySQL 查询中，可能会包含重复值。这并不成问题，不过，有时您也许希望仅仅列出不同（distinct）的值。</p>
+<p>关键词 DISTINCT 用于返回唯一不同的值，就是去重啦。用法也很简单：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SELECT DISTINCT * FROM tableName
+</pre>
+</div>
+<p>DISTINCT 这个关键字来过滤掉多余的重复记录只保留一条。</p>
+<p>另外，如果要对某个字段去重，可以试下：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SELECT *, COUNT(DISTINCT nowamagic) FROM table GROUP BY nowamagic
+</pre>
+</div>
+<p>这个用法，MySQL的版本不能太低。</p>
+<p>在编写查询之前，我们甚至应该对过滤条件进行排序，真正高效的条件（可能有多个，涉到同的表）是查询的主要驱动力，低效条件只起辅助作用。那么定义高效过滤条件的准则是什呢？首先，要看过滤条件能否尽快减少必须处理的数据量。所以，我们必须倍加关注条件的写方式。<br />
+假设有四个表： customers 、 orders 、 orderdetail 、 articles ，现在假设 SQL 要处理的问题是：找出最近六个月内居住在 Gotham 市、订购了蝙蝠车的所有客户。当然，编写这个查询有多种方法， ANSI SQL 的推崇者可能写出下列语句：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+select distinct c.custname
+from customers c
+join orders o
+on o.custid = c.custid
+join orderdetail od
+on od.ordid = o.ordid
+join articles a
+on a.artid = od.artid
+where c.city = 'GOTHAM'
+and a.artname = 'BATMOBILE'
+and o.ordered &gt;= somefunc
+
+</pre>
+</div>
+<p>其中， somefunc 是个函数，返回距今六个月前的具体日期。注意上面用了 distinct ，因为考虑到某个客户可以是大买家，最近订购了好几台蝙蝠车。<br />
+暂不考虑优化器将如何改写此查询，我们先看一下这段代码的含义。首先，来自 customers 表的数据应只保留城市名为 Gotham 的记录。接着，搜索 orders 表，这意味着 custid 字段最好有索引，否则只有通过排序、合并或扫描 orders 表建立一个哈希表才能保证查询速度。对 orders 表 ，还要针对订单日期进行过滤：如果优化器比较聪明，它会在连接（ join ）前先过滤掉一些数据，从而减少后面要处理的数据量；不太聪明的优化器则可能会先做连接，再作过滤，这时在连接中指定过滤条件利于提高性能，例如：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+join orders o
+on o.custid = c.custid
+and a.ordered &gt;= somefunc
+
+</pre>
+</div>
+<p>注意，如果是：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+left outer join orders o on
+o.custid = c.custid
+and a.ordered &gt;= somefunc
+
+</pre>
+</div>
+<p>此处关于left表的筛选条件将失效，因为是左外连接，左表的所有列都将出现在这次连接结果集中）。<br />
+即使过滤条件与连接（ join ）无关，优化器也会受到过滤条件的影响。例如，若 orderdetail 的主键为（ ordid, artid ），即 ordid 为索引的第一个属性，那么我们可以利用索引找到与订单相关的记录。但如果主键是（ artid, ordid ）就太不幸了（注意，就关系理论而言 ，无论哪个版本都是完全一样），此时的访问效率比（ ordid, artid ）作为索引时要差，甚至一些数据库产品无法使用该索引（注 3 ），唯一的希望就是在ordid 上加独立索引了。<br />
+连接了表 orderdetail 和 orders 之后，来看 articles 表，这不会有问题，因为表 order 包括 artid 字段。最后，检查 articles 中的值是否为 Batmobile 。查询就这样结束了，因为用了 distinct ，通过层层筛选的客户名还必须要排序，以剔除重复项目。<br />
+避免在最高层使用 distinct 应该是一条基本规则 。原因在于，即使我们遗漏了连接的某个条件， distinct 也会使查询 " 看似正确 " 地执行 —— 无可否认，发现重复数据容易，发现数据不准确很难，所以避免在最高层使用 distinct 应该是一条基本规则。<br />
+发现结果不正确更难，例如，如果恰巧有多位客户都叫 " Wayne " ， distinct 不但会剔除由同个客户的多张订单产生的重复项目，也会剔除由名字相同的不同客户产生的重复项目。事实上，应该同时返回具唯一性的客户 ID 和客户名，以保证得到蝙蝠车买家的完整清单。<br />
+要摆脱 distinct ，可考虑以下思路：客户在 Gohtam 市，而且满足存在性测试，即在最近六个月订购过蝙蝠车。注意，多数（但非全部） SQL 方言支持以下语法：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+select c.custname
+from customers c
+where c.city = 'GOTHAM'
+and exists (select null
+from orders o,
+orderdetail od,
+articles a
+where a.artname = 'BATMOBILE'
+and a.artid = od.artid
+and od.ordid = o.ordid
+and o.custid = c.custid
+and o.ordered &gt;= somefunc )
+
+</pre>
+</div>
+<p>上例的存在性测试，同一个名字可能出现多次，但每个客户只出现一次，不管他有多少订单。有人认为我对 ANSI SQL 语法的挑剔有点苛刻（指 " 蝙蝠车买主 " 的例子），因为上面代码中customers 表的地位并没有降低。其实，关键区别在于，新查询中 customers 表是查询结果的唯一来源（嵌套的子查询会负责找出客户子集），而先前的查询却用了 join 。<br />
+这个嵌套的子查询与外层的 select 关系十分密切。如代码第 11 行所示（粗体部分），子查询参照了外层查询的当前记录，因此，内层子查询就是所谓的关联子查询（ correlated subquery ）。<br />
+此类子查询有个弱点，它无法在确定当前客户之前执行。如果优化器不改写此查询，就必须先找出每个客户，然后逐一检查是否满足存在性测试，当来自 Gotham 市的客户非常少时执行效率倒是很高，否则情况会很糟（此时，优秀的优化器应尝试其他执行查询的方式）。</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+select custname
+from customers
+where city = 'GOTHAM'
+and custid in
+(select o.custid
+from orders o,
+orderdetail od,
+articles a
+where a.artname = 'BATMOBILE'
+and a.artid = od.artid
+and od.ordid = o.ordid
+and o.ordered &gt;= somefunc)
+
+</pre>
+</div>
+<p>在这个例子中，内层查询不再依赖外层查询，它已变成了非关联子查询（ uncorrelated subquery ），只须执行一次。很显然，这段代码采用了原有的执行流程。在本节的前一个例子 中 ，必须先搜寻符合地点条件的客户（如均来自 GOTHAM ），接着依次检查各个订单。而现在，订购了蝙蝠车的客户，可以通过内层查询获得。<br />
+不过，如果更仔细地分析一下，前后两个版本的代码还有些更微妙的差异。含关联子查询的代码中，至关重要的是 orders 表中的 custid 字段要有索引，而这对另一段代码并不重要，因为这时要用到的索引（如果有的话）是表 customers 的主键索引。<br />
+你或许注意到，新版的查询中执行了隐式的 distinct 。的确，由于连接操作，子查询可能会返回有关一个客户的多条记录。但重复项目不会有影响，因为 in 条件只检查该项目是否出现在子查询返回的列表中，且 in 不在乎某值在列表中出现了一次还是一百次。但为了一致性，作为整体，应该对子查询和主查询应用相同的规则，也就是在子查询中也加入存在性测试：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+select custname
+from customers
+where city = 'GOTHAM'
+and custid in
+(select o.custid
+from orders o
+where o.ordered &gt;= somefunc
+and exists (select null
+from orderdetail od,
+articles a
+where a.artname = 'BATMOBILE'
+and a.artid = od.artid
+and od.ordid = o.ordid))
+
+</pre>
+</div>
+<p>或者</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+select custname
+from customers
+where city = 'GOTHAM'
+and custid in
+(select custid
+from orders
+where ordered &gt;= somefunc
+and ordid in (select od.ordid
+from orderdetail od,
+articles a
+where a.artname = 'BATMOBILE'
+and a.artid = od.artid)
+
+</pre>
+</div>
+<p>尽管嵌套变得更深、也更难懂了，但子查询内应选择 exists 还是 in 的选择规则相同：此选择取决于日期与商品条件的有效性。除非过去六个月的生意非常清淡，否则商品名称应为最有效的过滤条件，因此子查询中用 in 比 exists 好，这是因为，先找出所有蝙蝠车的订单、再检查销售是否发生在最近六个月，比反过来操作要快。如果表 orderdetail 的 artid 字段有索引，这个方法会更快，否则，这个聪明巧妙的举措就会黯然失色。<br />
+每当对大量记录做存在性检查时，选择 in 还是 exists 须斟酌。<br />
+利于多数 SQL 方言，非关联子查询可以被改写成 from 子句中的内嵌视图。然而，一定要记住的是， in 会隐式地剔除重复项目，当子查询改写为 from 子句中的内嵌视图时，必须要显式地消除重复项目。例如：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+select custname
+from customers
+where city = 'GOTHAM'
+and custid in
+(select o.custid
+from orders o,
+(select distinct od.ordid
+from orderdetail od,
+articles a
+where a.artname = 'BATMOBILE'
+and a.artid = od.artid) x
+where o.ordered &gt;= somefunc
+and x.ordid = o.ordid)
+
+</pre>
+</div>
+<p>总结：保证 SQL 语句返回正确结果，只是建立最佳 SQL 语句的第一步。</p>
+<div id="KSFIND_MASK" style="z-index: 100000; border-bottom: 0px; position: absolute !important; filter: alpha(opacity=22); border-left: 0px; padding-bottom: 0px !important; padding-left: 0px !important; width: 0px; padding-right: 0px !important; display: none; background: #000; height: 0px; border-top: 0px; top: 0px !important; cursor: auto; border-right: 0px; padding-top: 0px !important; left: 0px !important; opacity: 0.22"></div>
+<p></p>
+<p></p>
+<p></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/103412.html'>ASP.NET插件uploadify批量上传文件完整使用教程</a><a>下一篇</a><a href='/php/biji/103414.html'>jQuery之过滤元素操作小结</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

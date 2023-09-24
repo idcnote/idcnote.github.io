@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>解决MySQL GTID主备不一致的修复方案_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了解决MySQL GTID主备不一致的修复方案，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	方案" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">解决MySQL GTID主备不一致的修复方案</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:20:07                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了解决MySQL GTID主备不一致的修复方案，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	方案</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了解决MySQL GTID主备不一致的修复方案，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<div id="navCategory">
+<h5 class="catalogue">目录</h5>
+<ul class="first_class_ul">
+	<li>方案一：重建 Replicas
+	<ul class="second_class_ul">
+		<li>前提条件</li>
+		<li>优点</li>
+		<li>缺点</li>
+		<li>操作步骤
+		<ul class="third_class_ul">
+			<li>Master</li>
+			<li>Slave</li>
+		</ul></li>
+	</ul></li>
+	<li>方案二：使用percona-toolkit进行数据修复
+	<ul class="second_class_ul">
+		<li>前提条件
+		<ul class="third_class_ul">
+		</ul></li>
+		<li>优点
+		<ul class="third_class_ul">
+		</ul></li>
+		<li>缺点
+		<ul class="third_class_ul">
+		</ul></li>
+		<li>操作步骤
+		<ul class="third_class_ul">
+			<li>背景示例</li>
+			<li>校验一致性</li>
+		</ul></li>
+	</ul></li>
+</ul>
+<p class="maodian"></p>
+<h2>方案一：重建 Replicas</h2>
+<p>MySQL 5.6及以上版在复制中引入了新的全局事务ID（GTID）支持。 在启用了GTID模式的情况下执行MySQL和MySQL 5.7的备份时，Percona XtraBackup会自动将GTID值存储在xtrabackup_binlog_info中。 该信息可用于创建新的（或修复损坏的）基于GTID的副本。</p>
+<p class="maodian"></p>
+<p class="maodian"></p>
+<h3>前提条件</h3>
+<p>MySQL 机器上需要安装 percona xtrabackup</p>
+<p class="maodian"></p>
+<p class="maodian"></p>
+<h3>优点</h3>
+<p>比较安全，操作简单</p>
+<p class="maodian"></p>
+<p class="maodian"></p>
+<h3>缺点</h3>
+<ul>
+	<li>数据量较大的时候备份所需的时间比较久</li>
+	<li>当数据库有做读写分离的时候，Slave 承担的读请求需要转移到 Master</li>
+</ul>
+<p class="maodian"></p>
+<p class="maodian"></p>
+<h3>操作步骤</h3>
+<p class="maodian"></p>
+<h4>Master</h4>
+<p>在 Master 上使用 xtrabackup 工具对当前的数据库进行备份，执行该命令的用户需要有读取 MySQL data 目录的权限</p>
+<p>代码如下：</p>
+<pre>
+<code>
+innobackupex --default-file=/etc/my.cnf --user=root -H 127.0.0.1 --password=[PASSWORD] /tmp</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>将该备份文件拷贝到 Slave 机器上</p>
+<p class="maodian"></p>
+<h4>Slave</h4>
+<p>在 Slave 机器上执行该命令，准备备份文件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+innobackupex --default-file=/etc/my.cnf --user=root -H 127.0.0.1 --password=[PASSWORD] --apply-log /tmp/[TIMESTAMP]</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>备份并删除 Slave data目录</p>
+<p>代码如下：</p>
+<pre>
+<code>
+systemctl stop mysqld
+mv /data/mysql{,.bak}</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>将备份拷贝到目标目录，并赋予相应的权限，然后重启 Slave</p>
+<p>代码如下：</p>
+<pre>
+<code>
+innobackupex --default-file=/etc/my.cnf --user=root -H 127.0.0.1 --password=[PASSWORD] --copy-back /tmp/[TIMESTAMP]
+chmod 750 /data/mysql
+chown mysql.mysql -R /data/mysql
+systemctl start mysqld</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>查看当前备份已经执行过的最后一个的GTID，如下示例</p>
+<p>代码如下：</p>
+<pre>
+<code>
+$ cat /tmp/[TIMESTAMP]/xtrabackup_binlog_info
+mysql-bin.000002  1232    c777888a-b6df-11e2-a604-080027635ef5:1-4</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>这个GTID也会在 innobackupex 备份完成后打印出来</p>
+<p>代码如下：</p>
+<pre>
+<code>
+innobackupex: MySQL binlog position: filename 'mysql-bin.000002', position 1232, GTID of the last change 'c777888a-b6df-11e2-a604-080027635ef5:1-4'</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>使用 root 登录 MySQL，进行如下配置</p>
+<p>代码如下：</p>
+<pre>
+<code>
+NewSlave &gt; RESET MASTER;
+NewSlave &gt; SET GLOBAL gtid_purged='c777888a-b6df-11e2-a604-080027635ef5:1-4';
+NewSlave &gt; CHANGE MASTER TO
+       MASTER_HOST="$masterip",
+       MASTER_USER="repl",
+       MASTER_PASSWORD="$slavepass",
+       MASTER_AUTO_POSITION = 1;
+NewSlave &gt; START SLAVE;</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>查看 Slave 的复制状态是否正常</p>
+<p>代码如下：</p>
+<pre>
+<code>
+NewSlave &gt; SHOW SLAVE STATUS\G
+     [..]
+     Slave_IO_Running: Yes
+     Slave_SQL_Running: Yes
+     [...]
+     Retrieved_Gtid_Set: c777888a-b6df-11e2-a604-080027635ef5:5
+     Executed_Gtid_Set: c777888a-b6df-11e2-a604-080027635ef5:1-5</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>我们可以看到副本已检索到编号为5的新事务，因此从1到5的事务已在此副本上了。这样我们就完成了一个新 replicas 的搭建。</p>
+<p class="maodian"></p>
+<h2>方案二：使用percona-toolkit进行数据修复</h2>
+<p>PT工具包中包含pt-table-checksum和pt-table-sync两个工具，主要用于检测主从是否一致以及修复数据不一致情况。</p>
+<h3>前提条件</h3>
+<p>MySQL 机器上需要安装 percona-toolkit 工具</p>
+<h3>优点</h3>
+<p>修复速度快，不需要停止从库</p>
+<h3>缺点</h3>
+<p>操作复杂，操作前最后先备份数据库待修复的表需要具有 unique constraint</p>
+<h3>操作步骤</h3>
+<p class="maodian"></p>
+<h4>背景示例</h4>
+<p>IP 关系对应</p>
+<p>代码如下：</p>
+<pre>
+<code>
+| IP | Role |
+| ---- | ---- |
+| 192.168.100.132 | Master |
+| 192.168.100.131 | Slave |</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>假设待恢复的表结构如下所示</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show create table test.t;
++-------+-------------------------------------
+| Table | Create Table                                                                 |
++-------+-------------------------------------
+| t   | CREATE TABLE `t` (
+ `id` int(11) NOT NULL,
+ `content` varchar(20) DEFAULT NULL,
+ PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 |
++-------+-------------------------------------</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>正常主备一致的情况下，Master 和 Slave 的数据均为如下所示</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select * from test.t;
++----+---------+
+| id | content |
++----+---------+
+| 1 | a    |
+| 2 | b    |
++----+---------+
+2 rows in set (0.00 sec)</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>在极端情况下，假如出现了如下主备不一致的情况，情形如下：</p>
+<ol>
+	<li>Master 新增了一条 id 为 3 的记录，如下所示，但并没有同步到 Slave，同时自动 failover 到了 Slave。</li>
+	<li>Old Slave 作为 New Master 在服务了一段时间后，表中增加了新的记录。</li>
+</ol>
+<p>重新启动 Old Master 后，Old Master的数据如下所示:</p>
+<p>代码如下：</p>
+<pre>
+<code>
+old_master&gt; select * from test.t;
++----+---------+
+| id | content |
++----+---------+
+| 1 | a    |
+| 2 | b    |
+| 3 | c    |
++----+---------+
+3 rows in set (0.00 sec)</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>New Master 的数据如下所示:</p>
+<p>代码如下：</p>
+<pre>
+<code>
+new_master&gt; select * from test.t;
++----+---------+
+| id | content |
++----+---------+
+| 1 | a    |
+| 2 | b    |
+| 3 | cc   |
+| 4 | dd   |
++----+---------+
+4 rows in set (0.00 sec)</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>此时如果将 old master 配置为 new master 的slave，则会报错，比如出现如下报错</p>
+<p>代码如下：</p>
+<pre>
+<code>
+...Last_IO_Error: binary log: 'Slave has more GTIDs than the master has, using the master's SERVER_UUID.</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>可以看到 Old Master 的 GTID 已到 255</p>
+<p>代码如下：</p>
+<pre>
+<code>
+Executed_Gtid_Set: 5b750c75-86c2-11eb-af71-000c2973a2d5:1-10,
+60d082ee-86c2-11eb-a9df-000c2988edab:1-255</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>而 New Master 的 GTID才到254</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show master status\G
+*************************** 1. row ***************************
+       File: mysql-bin.000001
+     Position: 4062
+   Binlog_Do_DB:
+ Binlog_Ignore_DB:
+Executed_Gtid_Set: 5b750c75-86c2-11eb-af71-000c2973a2d5:1-2,
+60d082ee-86c2-11eb-a9df-000c2988edab:1-254
+1 row in set (0.00 sec)</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>此时我们配置 Old Master 跳过错误，将 Old Master 恢复成可以正常从 New Master 复制的状态</p>
+<p>代码如下：</p>
+<pre>
+<code>
+old_master&gt; stop slave;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+old_master&gt; set gtid_next='60d082ee-86c2-11eb-a9df-000c2988edab:254'; --Specify the version of the next transaction,the GTID you want to skip
+Query OK, 0 rows affected (0.00 sec)
+
+old_master&gt; begin;
+Query OK, 0 rows affected (0.00 sec)
+
+old_master&gt; commit;                          -- Inject an empty transaction
+Query OK, 0 rows affected (0.00 sec)
+
+old_master&gt; set gtid_next='AUTOMATIC'；  -- Restore to automaic GTID
+Query OK, 0 rows affected (0.00 sec)
+
+old_master&gt; start slave;
+Query OK, 0 rows affected (0.13 sec)</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>然后我们在 Old Master 上可以看到复制在正常进行</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show slave status\G
+      ...
+       Slave_IO_Running: Yes
+      Slave_SQL_Running: Yes
+      ...
+      Executed_Gtid_Set: 5b750c75-86c2-11eb-af71-000c2973a2d5:1-10,
+60d082ee-86c2-11eb-a9df-000c2988edab:1-255
+        Auto_Position: 1
+     Replicate_Rewrite_DB:
+         Channel_Name:
+      Master_TLS_Version:</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>最后我们在 New Master 上清除 slave_master_info</p>
+<p>代码如下：</p>
+<pre>
+<code>
+new_master&gt; reset slave all for channel '';
+Query OK, 0 rows affected (0.00 sec)
+
+new_master&gt; show slave status\G;
+Empty set (0.01 sec)</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p class="maodian"></p>
+<h4>校验一致性</h4>
+<p>接下来我们要校验主从一致性，在 New Master上执行 pt-table-checksum，ROWS为4，存在一条DIFFS</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@localhost ~]# pt-table-checksum h='127.0.0.1',u='mha',p='[PASSWORD]',P=3306 --no-check-binlog-format --databases test
+Checking if all tables can be checksummed ...
+Starting checksum ...
+      TS ERRORS DIFFS   ROWS DIFF_ROWS CHUNKS SKIPPED  TIME TABLE
+03-29T19:24:18   0   1    4     1    1    0  0.322 test.t</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>双向同步（同步操作会修改数据，操作前进行数据备份）</p>
+<p>在同步过程中，pt-table-sync 会在 Master 上进行数据修改，pt-table-sync的参数作用如下</p>
+<p>代码如下：</p>
+<pre>
+<code>
+pt-table-sync --databases test --bidirectional --conflict-column='*' --conflict-comparison 'newest' h='192.168.100.132',u='mha',p='[PASSWORD]',P=3306 h='192.168.100.131' --print
+--database        指定待执行的数据库
+--bidirectional      为双向同步
+--conflict-column     对比该列当冲突发生时
+--conflict-comparison   冲突对比策略
+--print          输出对比结果
+--dry-run         测试运行
+--execute         执行测试
+
+# 左边的DSN为 Slave
+# 右边的DSN为 Master</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>这里我们指定&mdash;conflict-name=&#39;content&#39;作为对比列，一般使用业务主键作为该列。可以看到打印出了待执行的语句</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@localhost ~]# pt-table-sync --databases test --bidirectional --conflict-column='content' --conflict-comparison 'newest' h='192.168.100.132',u='mha',p='[PASSWORD]',P=3306 h='192.168.100.131' --print
+/*192.168.100.132:3306*/ UPDATE `test`.`t` SET `content`='cc' WHERE `id`='3' LIMIT 1;
+/*192.168.100.132:3306*/ INSERT INTO `test`.`t`(`id`, `content`) VALUES ('4', 'dd');</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>接下来执行语句</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@localhost ~]# pt-table-sync --databases test --bidirectional --conflict-column='content' --conflict-comparison 'newest' h='192.168.100.132',u='mha',p='[PASSWORD]',P=3306 h='192.168.100.131' --execute</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>然后在 Master 上再次执行数据对比，可以看到数据正常了</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@localhost ~]# pt-table-checksum h='127.0.0.1',u='mha',p='[PASSWORD]',P=3306 --no-check-binlog-format --databases test
+Checking if all tables can be checksummed ...
+Starting checksum ...
+      TS ERRORS DIFFS   ROWS DIFF_ROWS CHUNKS SKIPPED  TIME TABLE
+03-30T12:09:57   0   0    4     0    1    0  0.330 test.t</code></pre>
+<p>MySQL GTID主备不一致的修复方案</p>
+<p>以上就是MySQL GTID主备不一致的修复方案的详细内容，更多关于MySQL GTID主备不一致修复的资料请关注512笔记其它相关文章！</p></div>
+
+<p>注：关于解决MySQL GTID主备不一致的修复方案的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/850.html'>MySQL &amp;quot;too many connections&amp;quot; 错误 之 MySQL解决方法</a><a>下一篇</a><a href='/mysql/biji/852.html'>MySQL日期数据类型、时间类型使用总结</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

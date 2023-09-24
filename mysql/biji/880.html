@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL InnoDB存储引擎的内存管理的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL InnoDB存储引擎的内存管理的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+存储引" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL InnoDB存储引擎的内存管理的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:20:25                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL InnoDB存储引擎的内存管理的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+存储引</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL InnoDB存储引擎的内存管理的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h2>存储引擎之内存管理</h2>
+<p>在InnoDB存储引擎中，数据库中的缓冲池是通过LRU(Latest Recent Used，最近最少使用)算法来进行管理的，即最频繁使用的页在LRU列表的最前段，而最少使用的页在LRU列表的尾端，当缓冲池不能存放新读取到的页时，首先释放LRU列表尾端的页。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>上面的图中，我使用8个数据页来表示队列，具体作用，先卖个关子。在InnoDB存储引擎中，缓冲池中页的默认大小是16KB，LRU列表中有一个midpoint的位置，新读取到的数据页并不是直接放入到LRU列表的首部，而是放入到LRU列表的midpoint位置，这个操作称之为midpoint insertion stategy，也叫中间点插入策略。在默认配置下，该位置在LRU长度的5/8处，这也就是上面使用8个数据页的作用。下面的图示意了新的数据页的插入过程：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>mitpoint的位置可通过参数innodb_old_blocks_pct控制，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show variables like 'innodb_old_blocks_pct';
++-----------------------+-------+
+| Variable_name         | Value |
++-----------------------+-------+
+| innodb_old_blocks_pct | 37    |
++-----------------------+-------+
+ row in set (. sec)</code></pre>
+<p>分析MySQL InnoDB存储引擎的内存管理</p>
+<p>从上面的例子看出，结果是37，这个37意味着新读取的页将被插入到大概距离LRU列表尾端37%的位置，差不多3/8的位置，在InnoDB存储引擎中，midpoint之前的页称为new列表，后面的页称之为old列表，new列表中的页是最为活跃的数据。</p>
+<h2>为什么不直接把数据页放在LRU队列的首部？</h2>
+<p>之所以不把新读取的数据页放在LRU队列的首部，是因为某些全表扫描的SQL操作可能会将所有的热点数据都刷新出LRU队列，导致下一次访问热点数据的时候，必须从磁盘中取相应的数据，从而影响缓冲池的效率。为了解决这个问题，InnoDB使用另外一个参数来管理LRU列表，就是innodb_old_blocks_time，用于表示页读取到midpoint之后，多久才会加入到LRU列表的热端。因此当需要执行上述所说的SQL操作时，可以通过下面的方法尽可能使LRU列表中的热点数据不被刷出。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; set global innodb_old_blocks_time=;
+Query OK,  rows affected (0.00 sec)</code></pre>
+<p>分析MySQL InnoDB存储引擎的内存管理</p>
+<p>这表示在1000s之后，才允许这些数据刷新到LRU列表的热端。</p>
+<p>如果在实际情况中，数据页活跃的比率不止63%，用户还可以通过设置innodb_old_blocks_pct来减少热点页可能被刷出的概率。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; set global innodb_old_blocks_pct=;                                                                                                     
+Query OK,  rows affected (0.00 sec)</code></pre>
+<p>分析MySQL InnoDB存储引擎的内存管理</p>
+<p>当数据库刚启动时，LRU的内容是空的，这个时候，所有的数据页都放在Free列表中，当需要从缓冲池中分页时，首先从Free列表中查找是否有可用的Free页，如果存在，则将该页从Free页中删除，然后放入到LRU的列表中。淘汰掉LRU列表末尾的数据页，将该内存空间分配给新的页。这个过程的流程图如下：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>当LRU列表中的页从old部分加入到new部分时，称此时发生的操作是page made young，而因为innodb_old_blocks_time的设置而没有从old部分移动到new部分的操作称之为page_not_made young。可以通过show engine innodb status来观察LRU列表以及Free列表的使用情况和运行状态。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show engine innodb status\G
+***
+***
+----------------------
+BUFFER POOL AND MEMORY
+----------------------
+Total large memory allocated 
+Dictionary memory allocated 
+Buffer pool size   
+Free buffers       
+Database pages     
+Old database pages 
+Modified db pages  
+Pending reads      
+Pending writes: LRU , flush list , single page 
+Pages made young , not young 
+0.00 youngs/s, 0.00 non-youngs/s
+Pages read , created , written 
+0.00 reads/s, 0.00 creates/s, 0.00 writes/s
+No buffer pool page gets since the last printout
+Pages read ahead 0.00/s, evicted without access 0.00/s, Random read ahead 0.00/s
+LRU len: , unzip_LRU len: 
+I/O sum[]:cur[], unzip sum[]:cur[]
+--------------
+ROW OPERATIONS
+--------------
+ queries inside InnoDB,  queries in queue
+ read views open inside InnoDB
+Process ID=, Main thread ID=, state: sleeping
+Number of rows inserted , updated , deleted , read 
+0.00 inserts/s, 0.00 updates/s, 0.00 deletes/s, 0.00 reads/s
+----------------------------
+END OF INNODB MONITOR OUTPUT
+============================
+
+ row in set (0.00 sec)</code></pre>
+<p>分析MySQL InnoDB存储引擎的内存管理</p>
+<p> 从上面的结果可以看到：当前buffer pool size总共有8191个页，每个数据页的大小是16k，总共的大小是8191*16k=128M的缓冲池，其中Free buffers表示当前Free列表中页的数量。page made young显示了LRU列表中页移动到前端的次数，因为该服务器在运行阶段没有改变innodb_old_blocks_time的值，因此not young为0，youngs/s、non_youngs/s表示每秒这两类操作的次数。</p>
+<p> InnoDB存储引擎从1.0.x版本开始支持压缩页的功能，即将原本16kb的数据页压缩成1KB、2KB、4KB和8KB。对于非16KB的页，是通过unzip_LRU来管理的，上述命令中的第22行就显示了压缩页和非压缩页的信息。</p>
+<p>需要注意的一点是Free buffers的值与Database Pages的值之和不一定等于buffer pool size，因为缓冲池中的页可能还会被分配各自适应哈希索引、锁信息等页，而这部分页并不需要LRU算法进行维护。</p>
+<h2>脏页</h2>
+<p> 在LRU列表中的页被修改之后，这个页就称之为&ldquo;脏页&rdquo;，即缓冲池中的数据页和磁盘上的数据产生了不一致，缓冲池的数据比较新，这时数据库会通过checkpoint机制将脏页刷新回磁盘，而Flush列表中的页也就是脏页列表，脏页既存在于LRU列表中，也存在与Flush列表中，LRU列表用来管理缓冲池中页的可用性，Flush列表用来管理将页刷新回磁盘，二者不影响。Flush列表也可以通过show engine innodb status来查看，前面的结果列表中的第13行，modified db pages就是当前的脏页数量，用户可以通过元数据表INNODB_BUFFER_PAGE_LRU表来查看。</p>
+<p>以上就是详解MySQL InnoDB存储引擎的内存管理的详细内容，更多关于InnoDB 内存管理的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL InnoDB存储引擎的内存管理的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/879.html'>MySQL LOAD语句批量录入数据</a><a>下一篇</a><a href='/mysql/biji/881.html'>使用distinct在MySQL中查询多条不重复记录值的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

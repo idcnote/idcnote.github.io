@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server游标的使用/关闭/释放/优化小结_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server游标的使用/关闭/释放/优化小结，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！游标是邪恶的！
+在" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server游标的使用/关闭/释放/优化小结</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:42:21                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server游标的使用/关闭/释放/优化小结，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！游标是邪恶的！
+在</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server游标的使用/关闭/释放/优化小结，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>游标是邪恶的！
+<p>在关系数据库中，我们对于查询的思考是面向集合的。而游标打破了这一规则，游标使得我们思考方式变为逐行进行.对于类C的开发人员来着，这样的思考方式会更加舒服。</p>
+<p>正常面向集合的思维方式是:</p>
+<p>【图片暂缺】</p>
+<p>而对于游标来说:</p>
+<p>【图片暂缺】</p>
+<p>这也是为什么游标是邪恶的，它会使开发人员变懒，懒得去想用面向集合的查询方式实现某些功能.</p>
+<p>同样的，在性能上，游标会吃更多的内存，减少可用的并发，占用宽带，锁定资源，当然还有更多的代码量&hellip;&hellip;</p>
+<p>从游标对数据库的读取方式来说，不难看出游标为什么占用更多的资源，打个比方:</p>
+<p>【图片暂缺】</p>
+<p>当你从ATM取钱的时候，是一次取1000效率更高呢，还是取10次100？</p>
+<p><strong>既然游标这么&ldquo;邪恶&rdquo;，为什么还要学习游标</strong></p>
+<p>我个人认为存在既是合理.归结来说，学习游标原因我归纳为以下2点</p>
+<p>1.现存系统有一些游标，我们查询必须通过游标来实现</p>
+<p>2.作为一个备用方式，当我们穷尽了while循环,子查询，临时表，表变量,自建函数或其他方式扔来无法实现某些查询的时候，使用游标实现.</p>
+<p><strong>T-SQL中游标的生命周期以及实现</strong></p>
+<p>在T-SQL中，游标的生命周期由5部分组成</p>
+<p><strong>1.定义一个游标</strong></p>
+<p>在T-SQL中，定义一个游标可以是非常简单，也可以相对复杂，取决于游标的参数.而游标的参数设置取决于你对游标原理的了解程度.</p>
+<p>游标其实可以理解成一个定义在特定<strong>数据集</strong>上的指针，我们可以控制这个指针遍历<strong>数据集</strong>，或者仅仅是指向特定的行，所以游标是定义在以Select开始的数据集上的:</p>
+<p>【图片暂缺】</p>
+<p>T-SQL中的游标定义在MSDN中如下:</p>DECLARE cursor_name CURSOR [ LOCAL | GLOBAL ] [ FORWARD_ONLY | SCROLL ] [ STATIC | KEYSET | DYNAMIC | FAST_FORWARD ] [ READ_ONLY | SCROLL_LOCKS | OPTIMISTIC ] [ TYPE_WARNING ] FOR select_statement [ FOR UPDATE [ OF column_name [ ,...n ] ] ][;]
+<p></p>
+<p> 看起来很让人头痛是吧.下面仔细讲一下如何定义游标:</p>
+<p> 游标分为游标类型和游标变量，对于游标变量来说，遵循T-SQL变量的定义方法（啥，不知道T-SQL变量定义的规则？参考我前面的博文）.游标变量支持两种方式赋值，定义时赋值和先定义后赋值，定义游标变量像定义其他局部变量一样，在游标前加&rdquo;@&rdquo;,注意，如果定义全局的游标，只支持定义时直接赋值，并且不能在游标名称前面加&ldquo;@&rdquo;，两种定义方式如下:</p>
+<p>【图片暂缺】</p>
+<p>下面我们来看游标定义的参数:</p>
+<p><strong>LOCAL和GLOBAL二选一</strong></p>
+<p>LOCAL意味着游标的生存周期只在批处理或函数或存储过程中可见，而GLOBAL意味着游标对于特定<strong>连接</strong>作为上下文，全局内有效,例如:</p>
+<p>【图片暂缺】</p>
+<p>如果不指定游标作用域，默认作用域为GLOBAL</p>
+<p><strong>FORWARD_ONLY 和 SCROLL 二选一</strong></p>
+<p>FORWARD_ONLY意味着游标只能从数据集开始向数据集结束的方向读取，FETCH NEXT是唯一的选项，而SCROLL支持游标在定义的数据集中向任何方向，或任何位置移动，如下图:</p>
+<p>【图片暂缺】</p>
+<p></p>
+<p><strong>STATIC KEYSET DYNAMIC 和 FAST_FORWARD 四选一</strong></p>
+<p>这四个关键字是游标所在数据集所反应的表内数据和游标读取出的数据的关系</p>
+<p>STATIC意味着，当游标被建立时，将会创建FOR后面的SELECT语句所包含数据集的副本存入tempdb数据库中，任何对于底层表内数据的更改不会影响到游标的内容.</p>
+<p>DYNAMIC是和STATIC完全相反的选项,当底层数据库更改时，游标的内容也随之得到反映，在下一次fetch中，数据内容会随之改变</p>
+<p>KEYSET可以理解为介于STATIC和DYNAMIC的折中方案。将游标所在结果集的唯一能确定每一行的主键存入tempdb,当结果集中任何行改变或者删除时，@@FETCH_STATUS会为-2,KEYSET无法探测新加入的数据</p>
+<p>FAST_FORWARD可以理解成FORWARD_ONLY的优化版本.FORWARD_ONLY执行的是静态计划，而FAST_FORWARD是根据情况进行选择采用动态计划还是静态计划，大多数情况下FAST_FORWARD要比FORWARD_ONLY性能略好.</p>
+<p><strong>READ_ONLY SCROLL_LOCKS OPTIMISTIC 三选一 </strong>READ_ONLY意味着声明的游标只能读取数据,游标不能做任何更新操作</p>
+<p>SCROLL_LOCKS是另一种极端，将读入游标的所有数据进行锁定，防止其他程序进行更改，以确保更新的绝对成功</p>
+<p>OPTIMISTIC是相对比较好的一个选择，OPTIMISTIC不锁定任何数据，当需要在游标中更新数据时,如果底层表数据更新，则游标内数据更新不成功，如果，底层表数据未更新，则游标内表数据可以更新</p>
+<p></p>
+<p><strong>2.打开游标</strong></p>
+<p>当定义完游标后，游标需要打开后使用，只有简单一行代码:</p>OPEN test_Cursor
+<p>注意，当全局游标和局部游标变量重名时，默认会打开局部变量游标</p>
+<p><strong>3.使用游标</strong></p>
+<p> 游标的使用分为两部分,一部分是操作游标在数据集内的指向，另一部分是将游标所指向的行的部分或全部内容进行操作</p>
+<p> 只有支持6种移动选项,分别为到第一行（FIRST),最后一行(LAST),下一行(NEXT),上一行(PRIOR),直接跳到某行(ABSOLUTE(n)),相对于目前跳几行(RELATIVE(n)),例如:</p>
+<p>【图片暂缺】</p>
+<p>对于未指定SCROLL选项的游标来说，只支持NEXT取值.</p>
+<p>第一步操作完成后，就通过INTO关键字将这行的值传入局部变量:</p>
+<p>比如下面代码:</p>
+<p>【图片暂缺】</p>
+<p>【图片暂缺】</p>
+<p>游标经常会和全局变量@@FETCH_STATUS与WHILE循环来共同使用,以达到遍历游标所在数据集的目的,例如：</p>
+<p>【图片暂缺】</p>
+<p><strong>4.关闭游标</strong></p>
+<p>在游标使用完之后，一定要记得关闭,只需要一行代码:CLOSE+游标名称</p>CLOSE test_Cursor
+<p><strong>5.释放游标</strong></p>
+<p>当游标不再需要被使用后，释放游标，只需要一行代码:DEALLOCATE+游标名称</p>DEALLOCATE test_Cursor
+<p><strong>对于游标一些优化建议</strong></p>如果能不用游标，尽量不要使用游标用完用完之后一定要关闭和释放尽量不要在大量数据上定义游标尽量不要使用游标上更新数据尽量不要使用insensitive, static和keyset这些参数定义游标如果可以，尽量使用FAST_FORWARD关键字定义游标如果只对数据进行读取，当读取时只用到FETCH NEXT选项，则最好使用FORWARD_ONLY参数
+<p><strong>总结</strong></p>
+<p>本文从游标的基本概念，到生命周期来谈游标。游标是非常<strong>邪恶</strong>的一种存在，使用游标经常会比使用面向集合的方法慢2-3倍，当游标定义在大数据量时，这个比例还会增加。如果可能，尽量使用while,子查询，临时表，函数，表变量等来替代游标，记住，游标永远只是你最后无奈之下的选择，而不是首选。</p>
+
+<p>注：关于SQL Server游标的使用/关闭/释放/优化小结的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2988.html'>SQL Server 2016的数据库范围内的配置分析</a><a>下一篇</a><a href='/mysql/biji/2990.html'>SQL Server 一条SQL语句修改多表多字段的信息的具体实现</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server基数估计计算预估行数的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server基数估计计算预估行数的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+关于SQL Server" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server基数估计计算预估行数的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:39:30                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server基数估计计算预估行数的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+关于SQL Server</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server基数估计计算预估行数的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>关于SQL Server 2014中的基数估计，官方文档Optimizing Your Query Plans with the SQL Server 2014 Cardinality Estimator里有大量细节介绍，但是全部是英文，估计也没有几个人仔细阅读。那么SQL Server 2014中基数估计的预估行数到底是怎么计算的呢？ 有哪一些规律呢？我们下面通过一些例子来初略了解一下，下面测试案例仅供参考，如有不足或肤浅的地方，敬请指教！</p>
+<p>下面实验测试的环境主要为SQL Server 2014 SP2 （Standard Edition (64-bit)） 具体版本号为12.0.5000.0 ，如有在其它版本测试，后面会做具体说明。如下所示，我们先创建一个测试表并插入一些测试数据后，方便后面的测试工作。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+IF EXISTS(SELECT 1 FROM sys.objects WHERE type='U' AND name='TEST_ESTIMATED_ROW')
+BEGIN
+ DROP TABLE TEST_ESTIMATED_ROW;
+END
+IF NOT EXISTS(SELECT 1 FROM sys.objects WHERE type='U' AND name='TEST_ESTIMATED_ROW')
+BEGIN
+  CREATE TABLE TEST_ESTIMATED_ROW
+  (
+   ID  INT,
+   NAME VARCHAR(24)
+  )
+END
+GO
+DECLARE @Index INT =1;
+WHILE @Index &lt;= 100
+BEGIN
+ INSERT INTO TEST_ESTIMATED_ROW
+ VALUES(10, 'id is 10');
+ SET @Index+=1;
+END
+GO
+DECLARE @Index INT =1;
+WHILE @Index &lt;= 200
+BEGIN
+ INSERT INTO TEST_ESTIMATED_ROW
+ VALUES(20, 'id is 20');
+ SET @Index+=1;
+END
+GO
+DECLARE @Index INT =1;
+WHILE @Index &lt;= 300
+BEGIN
+ INSERT INTO TEST_ESTIMATED_ROW
+ VALUES(30, 'id is 30');
+ SET @Index+=1;
+END
+GO
+DECLARE @Index INT =1;
+WHILE @Index &lt;= 400
+BEGIN
+ INSERT INTO TEST_ESTIMATED_ROW
+ VALUES(40, 'id is 40');
+ SET @Index+=1;
+END
+GO
+DECLARE @Index INT =1;
+WHILE @Index &lt;= 500
+BEGIN
+ INSERT INTO TEST_ESTIMATED_ROW
+ VALUES(50, 'id is 50');
+ SET @Index+=1;
+END
+GO
+CREATE INDEX IX_TEST_ESTIMATED_ROW_N1 ON TEST_ESTIMATED_ROW(ID);
+GO</code></pre>
+<p>我们来看看这个表的统计信息以及直方图内容。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DBCC SHOW_STATISTICS ('dbo.TEST_ESTIMATED_ROW','IX_TEST_ESTIMATED_ROW_N1');
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>SQL Server中有两种谓词：过滤谓词和连接谓词 。 我们先来看看过滤谓词的基数估计（预估行数），测试过程，如果要保持测试的公正性或不被其他因素影响，你可以使用下面的DBCC命令来排除干扰，如下例子所示：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DBCC FREEPROCCACHE;  --从执行计划缓冲区删除所有缓存的执行计划
+GO
+DBCC DROPCLEANBUFFERS;  --从缓冲池中删除所有缓存，清除缓冲区
+GO
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID = 10;
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>（注意，执行时请勾选包含实际执行计划按钮）如上所示，预估行数（Estimated Number of Rows）为100,跟实际行数一致。当然你换其他值，例如20， 30， 40 ，50，其预估行数（Estimated Number of Rows）跟实际行数都是正确的（SQL SERVER 2012中测试结果也相同）。那么如果我换一个不存在的值呢？预估行数会是多少呢？</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID = 4;
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>如上所示，预估行数（Estimated Number of Rows）为1. 你换其他任何不存在的值，预估行数（Estimated Number of Rows）都为1。这个跟沿用了老的基数评估：超出统计信息范围，那么老的基数评估就认为不存在，评估行数为1。很显然，对于没有超出统计信息范畴的，但是确实不存在的记录，其预估行数（Estimated Number of Rows）也是1，这个基数估计确实是合理，也是正确的。那么如果我使用变量呢？这个预估行数（Estimated Number of Rows）又会是什么值呢？</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DECLARE @SID INT = 11; --换任何值都可以
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID = @SID;
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>如上截图所示，实际执行计划的预估行数（Estimated Number of Rows）是300， 那么如何计算来的呢？ 其实你可以根据公式来计算， 如果不相信，你可以构造各种案例测试验证一下就能得到答案了.</p>
+<p> [Row Sampled ]* [ALL density ] = 1500 * 0.2 = 300 也就是统计信息中抽样总行数*All Density（统计信息对象中各列的每个前缀的密度）</p>
+<p>如果你加上<code>OPTION(RECOMPILE)</code>， 那么预估行数（Estimated Number of Rows）又会变成1</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DECLARE @SID INT = 11; 
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID = @SID OPTION(RECOMPILE)
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>如果你赋予@SID值为20，并加上OPTION(RECOMPILE)时，那么预估行数（Estimated Number of Rows）就会变成EQ_ROWS的值了</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DECLARE @SID INT = 20; 
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID = @SID OPTION(RECOMPILE)
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>接下来，我们修改一下SQL语句，将查询条件从等于符号改为大于符号，如下所示：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DECLARE @SID INT = 11;
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID &gt; @SID;
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>如上所示，预估行数<code>（Estimated Number of Rows）</code>变为了450，那么这个值是怎么计算得来的呢？</p>
+<p>计算公式是： [Row Sampled ] * 0.3（30%）</p>
+<p>1500 *0.3= 450</p>
+<p>肯定会有人问，你怎么知道是 [Row Sampled ] * 0.3 呢？ 不会是你逆推的吧。 不错，这里是一个推测（网上也有不少资料都确认是0.3，权且当做计算公式中的一个常量），而且也做了不少测试，确实就是30%。例如你将@SID赋值为41，预估行数（Estimated Number of Rows）依然为450，如果你怀疑是缓存的执行计划缘故，你可以先清空缓存的执行计划，结果依然如此。根据我的测试，不管你给@SID赋予任何值，预估行数（Estimated Number of Rows）全部为450</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DBCC FREEPROCCACHE;
+GO
+DBCC DROPCLEANBUFFERS;
+GO
+DECLARE @SID INT = 41;
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID &gt; @SID;
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>如果SQL加上 OPTION(RECOMPILE) ，然后@SID赋予RANGE_HI_KEY里的值，那么预估行数（Estimated Number of Rows）又是如何计算的呢？</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DECLARE @SID INT = 20;
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID &gt; @SID OPTION(RECOMPILE);
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>这个1200 是这样计算的，如下所示，大于20的RANGE_HI_KEY有30 ， 40， 50 ，他们对应的EQ_ROWS值相加 300+ 400 + 500 =1200， 不信你可以测试一下，将@SID赋予30，那么预估行数（Estimated Number of Rows）就会变成900.【图片暂缺】</p>
+<p>那么我们再修改一下SQL查询语句，例如，我们要做一个区间查询，预估行数（Estimated Number of Rows）又会有什么变化呢？</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DBCC FREEPROCCACHE;
+GO
+DBCC DROPCLEANBUFFERS;
+GO
+DECLARE @Min_Value INT = 20;
+DECLARE @Max_Value INT = 50;
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID &gt; @Min_Value AND ID &lt; @Max_Value
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>如上所示，预估行数（Estimated Number of Rows）为246.475 这个值怎么来的呢？其实它是这样计算的:</p>
+<p>代码如下：</p>
+<pre>
+<code>
+Selectivity of most selective predicate * Square root of (selectivity of second most selective predicate) * Total number of rows
+SELECT 0.3*SQRT(0.3)*1500 --246.475150877325 --0.3是计算规则里面的一个常量</code></pre>
+<p>那么如果我在SQL Server 2012中执行该SQL语句或者使用查询跟踪标记9481来关闭新的基数评估，数据库优化器使用老的基数评估，你会发现预估行数（Estimated Number of Rows）为135了。如下所示：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DBCC FREEPROCCACHE;
+GO
+DBCC DROPCLEANBUFFERS;
+GO
+DECLARE @Min_Value INT = 20;
+DECLARE @Max_Value INT = 50;
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID &gt; @Min_Value AND ID &lt; @Max_Value
+OPTION (QUERYTRACEON 9481);
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>这里的计算公式是</p>
+<p>代码如下：</p>
+<pre>
+<code>
+((Estimated number of rows for first predicate) *(Estimated number of rows for second predicate)) /Total number of rows
+(0.3*1500)*(0.3*1500)/1500 = 0.09*1500 = 135 </code></pre>
+<p>那么现在我们往表TEST_ESTIMATED_ROW里面插入50条记录，此时这个数据量是不会触发统计信息更新的，而此时ID=55的值超出了直方图中的RANG_HI_KY的最大值50，也就是说直方图中没有统计这些新插入的数据，那这种情形称作升序键问题（ascending key problem）。在更统计信息新前就对这些数据运行查询，就会发生此类问题。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DECLARE @Index INT =1;
+WHILE @Index &lt;= 50
+BEGIN
+ INSERT INTO TEST_ESTIMATED_ROW
+ VALUES(55, 'id is 50');
+ SET @Index+=1;
+END
+GO</code></pre>
+<p>那么再来看看下面SQL的预估行数（Estimated Number of Rows），如下所示：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DBCC FREEPROCCACHE;
+GO
+DBCC DROPCLEANBUFFERS;
+GO
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID = 55;
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>那么预估行数（Estimated Number of Rows）为39.37 是怎么计算来的呢？其实这个问题就是http://www.cnblogs.com/wy123/p/6770258.html这篇博客里面提出的问题，先前++C++他在群里面讨论了一下。</p>
+<p>Optimizing Your Query Plans with the SQL Server 2014 Cardinality Estimator里面介绍，这种是基数估计的计算公式为 [All density] * [Rows Sampled] 。但是实际测试发现这个例子并不是如此，那么我们先来亲自测试一下白皮书文档里面的例子（注意，数据库实例是SQL Server 2014，AdventureWorks2012的兼容级别为120）,看看文档里面的例子是否正确。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT [SalesOrderID], [OrderDate] 
+FROM Sales.[SalesOrderHeader]
+WHERE [OrderDate] = '2005-07-01 00:00:00.000';
+SELECT [s].[object_id],
+  [s].[name],
+  [s].[auto_created]
+FROM sys.[stats] AS s
+INNER JOIN sys.[stats_columns] AS [sc]
+  ON [s].[stats_id] = [sc].[stats_id] AND
+   [s].[object_id] = [sc].[object_id]
+WHERE [s].[object_id] = OBJECT_ID('Sales.SalesOrderHeader') AND
+  COL_NAME([s].[object_id], [sc].[column_id]) = 'OrderDate';</code></pre>
+<p>可以看到OrderDate的统计信息为_WA_Sys_00000003_4B7734FF</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>DBCC SHOW_STATISTICS(&#39;Sales.SalesOrderHeader&#39;, _WA_Sys_00000003_4B7734FF);</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>从上可以看到最后统计信息更新时，采集的RANGE_HI_KEY的最大值为2008-07-31 00:00:00，那么我们插入50条记录，此时这个数据量并不会触发统计信息更新。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+INSERT INTO Sales.[SalesOrderHeader] ( [RevisionNumber], [OrderDate],
+           [DueDate], [ShipDate], [Status],
+           [OnlineOrderFlag],
+           [PurchaseOrderNumber],
+           [AccountNumber], [CustomerID],
+           [SalesPersonID], [TerritoryID],
+           [BillToAddressID], [ShipToAddressID],
+           [ShipMethodID], [CreditCardID],
+           [CreditCardApprovalCode],
+           [CurrencyRateID], [SubTotal],
+           [TaxAmt], [Freight], [Comment] )
+VALUES ( 3, '2014-02-02 00:00:00.000', '5/1/2014', '4/1/2014', 5, 0, 'SO43659', 'PO522145787',29825, 279, 5, 985, 985, 5, 21, 'Vi84182', NULL, 250.00,
+25.00, 10.00, '' );
+GO 50 -- INSERT 50 rows, representing very recent data, with a current OrderDate value</code></pre>
+<p>然后我们开启SQL跟踪标志9481,你会发现下面SQL的预估行数为1。因为此时优化器采用老的基数估计。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT [SalesOrderID], [OrderDate] 
+FROM Sales.[SalesOrderHeader]
+WHERE [OrderDate] = '2014-02-02 00:00:00.000'
+OPTION (QUERYTRACEON 9481); -- CardinalityEstimationModelVersion 70</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>取消SQL跟踪标志时，数据库使用新的基数估计时，预估函数变为了27.9938</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DBCC FREEPROCCACHE;
+GO
+DBCC DROPCLEANBUFFERS;
+GO
+SELECT [SalesOrderID], [OrderDate] 
+FROM Sales.[SalesOrderHeader]
+WHERE [OrderDate] = '2014-02-02 00:00:00.000'</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>代码如下：</p>
+<pre>
+<code>
+31465 *0.0008896797 ~=27.9937717605 ~= 27.9938 （四舍五入）</code></pre>
+<p>白皮书里的例子确实是如此，但是最上面那个例子，不清楚预估行数是如何计算的，尽管做了一些推测，但是在其它例子中始终不能验证。不知是这个白皮书有误还是SQL Server的基数估计做了调整， 还是说基数估计（CE)的算法远远不止这么简单？我在这个问题上纠结了两天，依然没有搞清楚！在测试、推测过程中，我发现一个新的问题：当表里面新增了数据，那么之前的测试列子结果是否还是一样呢？答案是不一样了。如下所示：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT * FROM dbo.TEST_ESTIMATED_ROW WHERE ID = 10;
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>预估函数从100变为了103.333， 这个是怎么计算来的呢？ 个人推测是这样得来的（如下所示）。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT 1550*(100.0/1500) --~= 103.332300 </code></pre>
+<p>也就是说升序键问题（ascending key problem）也会影响预估函数。上面都是简单SQL的预估行数（Estimated Number of Rows）的推演、实际情况中，SQL要比这个复杂得多，那么在复杂情况下，例如多个过滤谓词的情况下，基数估计又是怎样预估行数的呢？由于前面例子构造的比较简单，不适合后面的演示，那么我们就用Optimizing Your Query Plans with the SQL Server 2014 Cardinality Estimator里的例子来简单演示一下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+USE [AdventureWorks2012];
+GO
+SELECT  [AddressID],
+  [AddressLine1],
+  [AddressLine2]
+FROM Person.[Address]
+WHERE [StateProvinceID] = 9 AND
+   [City] = N'Burbank' AND
+   [PostalCode] = N'91502'
+OPTION (QUERYTRACEON 9481); -- CardinalityEstimationModelVersion 70
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>如下所示，过滤谓词[StateProvinceID]、[City]、 [PostalCode]对应的统计信息分别为IX_Address_StateProvinceID、_WA_Sys_00000004_164452B1、_WA_Sys_00000006_164452B1。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT [s].[object_id],
+    [s].[name],
+    [s].[auto_created],
+    COL_NAME([s].[object_id], [sc].[column_id]) AS [col_name]
+FROM  sys.[stats] AS s
+INNER JOIN sys.[stats_columns] AS [sc]
+    ON [s].[stats_id] = [sc].[stats_id] AND
+      [s].[object_id] = [sc].[object_id]
+WHERE  [s].[object_id] = OBJECT_ID('Person.Address');
+
+</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>代码如下：</p>
+<pre>
+<code>
+DBCC SHOW_STATISTICS ('Person.Address', _WA_Sys_00000004_164452B1); -- City</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT 196.0/19614 ~= 0.0099928
+DBCC SHOW_STATISTICS ('Person.Address', IX_Address_StateProvinceID); -- StateProvinceID</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT 4564.0/19614 ~= 0.2326909
+DBCC SHOW_STATISTICS ('Person.Address', _WA_Sys_00000006_164452B1); -- PostalCode</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT 194.0/19614 ~= 0.0098908 --记录</code></pre>
+<p>从SQL Server 7 ~ SQL Server 2012， 如果查询条件中，两个或多个谓词使用AND联结，那么各个谓词的选择率Si的乘积将作为查询预估函数的选择率</p>
+<p>代码如下：</p>
+<pre>
+<code>
+(S1 * S2 * S3....*Sn)
+(S1 * S2 * S3....*Sn) *（Rows Sampled）
+ 
+SELECT 0.0098908 * -- PostalCode predicate selectivity
+    0.0099928 * -- City predicate selectivity
+    0.2326909 * -- StateProvinceID predicate selectivity
+    19614;   -- Table cardinality</code></pre>
+<p>其计算结果为0.451091024458953138624 ，它低于1行。所以查询优化器使用估计的最小行数 (1)。下面看看SQL Server 2014中新的基数估计是如何计算预估行数的。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT  [AddressID],
+  [AddressLine1],
+  [AddressLine2]
+FROM Person.[Address]
+WHERE [StateProvinceID] = 9 AND
+   [City] = N'Burbank' AND
+   [PostalCode] = N'91502'
+GO</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>那么新的基数估计（SQL Server 2014）的预估行数（Estimated Number of Rows）13.4692是怎么计算来的呢？ 其实它们是选择率使用下面这样一个公式，其中p0 &lt; p1 &lt; p2 &lt; p3 &lt; p4</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT 0.0098908        * -- PostalCode predicate selectivity
+    SQRT(0.0099928)     * -- City predicate selectivity
+    SQRT(SQRT(0.2326909))  * -- StateProvinceID predicate selectivity
+    19614; -- Table cardinality</code></pre>
+<p>计算结果为13.4690212669225 ~= 13.4692 是否还是有一些差别呢？你使用下面SQL对比，就会发现，其实原因是小数点后精确位数和四舍五入导致的。具体我也不知道计算估计精确位数。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>那么OR Selectivity又是如何计算的，我们先来看看老的基数估计是是如何计算的，如下例子所示：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+USE [AdventureWorks2012];
+GO
+SELECT  [AddressID],
+     [AddressLine1],
+     [AddressLine2]
+FROM Person.[Address]
+WHERE ([StateProvinceID] = 9 OR
+   [City] = N'Burbank' )AND
+   [PostalCode] = N'91502'
+OPTION (QUERYTRACEON 9481); -- CardinalityEstimationModelVersion 70</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>代码如下：</p>
+<pre>
+<code>
+0.0098908 -- PostalCode predicate selectivity
+0.0099928 -- City predicate selectivity
+0.2326909 -- StateProvinceID predicate selectivity</code></pre>
+<p>计算公式：(S1 + S2) &ndash; (S1 * S2) ，那么(S1 + S2) &ndash; (S1 * S2) 计算的值为</p>
+<p>代码如下：</p>
+<pre>
+<code>
+(0.0099928 + 0.2326909) - (0.0099928 * 0.2326909) ~= 0.24035846637448 </code></pre>
+<p>然后和AND操作，我们执行SQL Server 2014以前的AND的选择性是这样计算的S1 * S2</p>
+<p>代码如下：</p>
+<pre>
+<code>
+0.0098908 * ((0.0099928 + 0.2326909) - (0.0099928 * 0.2326909)) ~= 0.002377337519216706784</code></pre>
+<p>最后的计算结果如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+0.002377337519216706784 *19614 ~= 46.629098101916486861376 ~= 46.6296 （注意这个误差是因为精确小数位数和四舍五入造成的） </code></pre>
+<p>那么我们再来看看SQL Server 2014下OR Selectivity的计算公式</p>
+<p>代码如下：</p>
+<pre>
+<code>
+USE [AdventureWorks2012];
+GO
+SELECT  [AddressID],
+     [AddressLine1],
+     [AddressLine2]
+FROM Person.[Address]
+WHERE ([StateProvinceID] = 9 OR
+   [City] = N'Burbank' )AND
+   [PostalCode] = N'91502'</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p>那么这个预估行数（Estimated Number of Rows）是怎么算出来的呢？ Paul White 的博客介绍，是通过下面这样计算来的。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+0.0098908 -- PostalCode predicate selectivity
+0.0099928 -- City predicate selectivity
+0.2326909 -- StateProvinceID predicate selectivity </code></pre>
+<p>A OR B = NOT （( NOT A) AND (NOT B)) 就是说A OR B 和 NOT （( NOT A) AND (NOT B)) 是等价的。</p>
+<p>那么就可以这么推算，最后的预估行数（Estimated Number of Rows）计算结果为94.3525， 跟结果94.3515有细微差别（这个是因为浮点数精度和四舍五入造成的）</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT 1- (1- 0.2326909)*SQRT(( 1-0.0099928)) ~= 0.236534308898679
+SELECT 0.009891 *SQRT(1- (1- 0.2326909)*SQRT(( 1-0.0099928)) )*19614 ~= 94.3525070823501 ~= 94.3515</code></pre>
+<p>上面是关于SQL Server中的基数估计（CE)如何计算预估行数的一些初步的探讨和认识，纠结我的问题到目前还没有弄清楚。虽然有点遗憾，但是在测试过程，发现去探究这些规律是一件非常有意思的事情.</p>
+<p>以上所述是小编给大家介绍的SQL Server中关于基数估计计算预估行数的一些方法探讨，希望对大家有所帮助，如果大家有任何疑问请给我留言，小编会及时回复大家的。在此也非常感谢大家对512笔记网站的支持！</p>
+
+<p>注：关于SQL Server基数估计计算预估行数的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2669.html'>SQL Server中bigint转int带符号时报错问题解决示例</a><a>下一篇</a><a href='/mysql/biji/2671.html'>SQL Server建库、建表、建约束的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>探讨java深拷贝_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="本文将讨论以下4个问题<br />
+<br />
+<br />
+    1. java Cloneable接口实现深拷贝<br />
+<br />
+    2. java 序列化实现深拷贝<br />
+<br />
+    3. 号称最快的深拷贝二方库cloning源码分析<br />
+<br />
+    4. 几种拷贝方式速度" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">探讨java深拷贝</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>本文将讨论以下4个问题<br />
+<br />
+<br />
+    1. java Cloneable接口实现深拷贝<br />
+<br />
+    2. java 序列化实现深拷贝<br />
+<br />
+    3. 号称最快的深拷贝二方库cloning源码分析<br />
+<br />
+    4. 几种拷贝方式速度</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>本文将讨论以下4个问题<br />
+</p>
+<p>&nbsp;&nbsp;&nbsp; 1. java Cloneable接口实现深拷贝<br />
+&nbsp;&nbsp;&nbsp; 2. java 序列化实现深拷贝<br />
+&nbsp;&nbsp;&nbsp; 3. 号称最快的深拷贝二方库cloning源码分析<br />
+&nbsp;&nbsp;&nbsp; 4. 几种拷贝方式速度的比较<br />
+</p>
+<p>深拷贝的概念本文就不说了。在C++中实现深拷贝一般情况下重载赋值操作符 “=” 来实现同一个类的对象间的深拷贝，所以很自然的在java中我们也同样可以定义一个copy函数，在函数内部为对象的每一个属性作赋值操作。这种方式简单自然，但存在一个致命性的问题：如果有一天在类中新增加了一个需要深拷贝的属性，那么相应的copy函数也得进行修改，这种方法给类的可扩展性带来了极大的不方便。怎么解决这种问题，且看接下来的1、2、3章节的实现方式和4节的速度测试。<br />
+<strong>1. java Cloneable接口实现深拷贝</strong><br />
+这种方式，需要类实现Colneable接口 clone 函数，在clone函数中调用super.clone。这种方式的深拷贝同样会带来另一个问题，如果类中有其他类的对象作为属性，则其他的类也需要重载并实现Cloneable接口。来一个例子，在下例中ComplexDO中包含了SimpleDO对象，要实现ComplexDO深拷贝，则需要先实现SimpleDO的clone接口：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class SimpleDO implements Cloneable, Serializable {
+    private int x = 1;
+    private String s = "simpleDO";
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+      SimpleDO newClass = (SimpleDO)super.clone();
+      return newClass;
+    }
+  }
+
+  public class ComplexDO implements Cloneable, Serializable {
+    private int x = 1;
+    private String s = "complex";
+    private Integer a = 123;
+    private Integer b = 1234;
+    private Integer c = 1334455;
+    private String s2 = "hehehe";
+    private String s3 = "hahahaha";
+    private Long id = 1233245L;
+    private ArrayList&lt;SimpleDO&gt; l = new ArrayList&lt;SimpleDO&gt;();
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+      ComplexDO newClass = (ComplexDO) super.clone();
+      newClass.l = new ArrayList&lt;SimpleDO&gt;();
+      for (SimpleDO simple : this.l) {
+        newClass.l.add((SimpleDO) simple.clone());
+      }
+      return newClass;
+    }
+  }
+
+</pre>
+</div>
+<p>需要注意的是很多文章说String类型的对象赋值操作符是深拷贝，但是其实在java中使用赋值操作符的都属于浅拷贝，但为什么这么明显的错误这么多的文章会非要说这个是深拷贝呢？我的理解是String、类型的属性都是基本类型，而且提供的方法只要是设计到内部数据的变动都会new一个新的对象出来。所以一个String的操作不会影响到其原先指向的内存。所以一般说String等基础类的赋值操作为深拷贝。<br />
+由于这个原因，在使用String字符串拼接的时候，需要开辟新的内存，所以很多人建议用StringBuilder来代替String来做拼接，因为StringBuilder只有在内置的char数组范围不够的时候才重新申请更大的内存(对于现代JVM，会对代码调优，String+String会被优化成StringBuilder.append的相类似的指令)。与拼接相对的裁剪，在String有个subString函数，当使用subString函数时，新String的内部char数组和原String是否相同？这个比较有意思，感兴趣的可以对比看看JDK1.6和JKD1.7的实现。<br />
+<strong>2. java 序列化实现深拷贝<br />
+</strong>这种方式的原理是利用java序列化，将一个对象序列化成二进制字节流，然后对该字节流反序列化赋值给一个对象。代码示例：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+  public Object seirCopy(Object src) {
+    try {
+      ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+      ObjectOutputStream out = new ObjectOutputStream(byteOut);
+      out.writeObject(src);
+
+      ByteArrayInputStream byteIn = new ByteArrayInputStream(byteOut.toByteArray());
+      ObjectInputStream in = new ObjectInputStream(byteIn);
+      Object dest = in.readObject();
+      return dest;
+    } catch (Exception e) {
+      //do some error handler
+      return null;
+    }
+ }
+
+</pre>
+</div>
+<p>当然，也可以选用json等序列化的库来完成序列化，这种方式有效的规避了Cloneabel接口的可扩展缺点，一个函数就可以基本上适用于所有的类.缺点是相对内存拷贝，序列化需要先将对象转换成二进制字节流，然后反序列化将该二进制字节流重新拷贝到一块对象内存，相对慢点。<br />
+<strong>3. 号称最快的深拷贝二方库cloning源码分析<br />
+</strong>在源码中，核心的处理逻辑在Cloner类中，<br />
+分两条递归链路：<br />
+</p>
+<ul>
+<li><strong><span style="color: #333333">（1）deepClone-&gt;cloneInternal-&gt;fastClone-&gt;cloneInternal</span></strong></li>
+<li><strong><span style="color: #333333">（2）deepClone-&gt;cloneInternal-&gt;cloneObject-&gt;cloneInternal</span></strong><br />
+</li>
+</ul>
+<p>在（1）中fastClone完成的是继承自IfastCloner接口类的对象，即都是些集合操作的拷贝；<br />
+在（2）中cloneObject完成的是通过反射机制拿到普通对象的每一个属性，然后对使用Objenesis新生成对象的属性赋值。<br />
+这种方式可扩展性强，不仅可以依靠其现有的代码完成深拷贝，还可以自己定义一些克隆的方式和不需要克隆的类型，灵活性强。<br />
+<strong>4. 几种拷贝方式速度的比较<br />
+</strong>上述3中模式都可以完成深拷贝，那种拷贝的方式速度最快是我们所关心的。<br />
+先上测试代码：<br />
+&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+  public void testCloneComplex() throws CloneNotSupportedException {
+    final int copyCount = 1;
+    List&lt;ComplexDO&gt; complexDOList = new ArrayList&lt;ComplexDO&gt;(copyCount * 3);
+    final ComplexDO complex = new ComplexDO();
+
+    //调用二方库
+    long start = System.currentTimeMillis();
+    for(int i = 0; i &lt; copyCount; ++i) {
+      final ComplexDO deepClone = cloner.deepClone(complex);
+      complexDOList.add(deepClone);
+    }
+    long end = System.currentTimeMillis();
+    System.out.println("deepClone cost time=" + (end-start));
+
+    //调用Cloneable接口实现的clone函数
+    start = System.currentTimeMillis();
+    for(int i = 0; i &lt; copyCount; ++i) {
+      final ComplexDO interfaceClone = (ComplexDO) complex.clone();
+      complexDOList.add(interfaceClone);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("interfaceClone cost time=" + (end-start));
+
+    //序列化与反序列化生成新对象
+    start = System.currentTimeMillis();
+    for(int i = 0; i &lt; copyCount; ++i) {
+      final ComplexDO seirClone = seirCopy(complex);
+      complexDOList.add(seirClone);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("seirClone cost time=" + (end-start));
+  }
+
+
+</pre>
+</div>
+<p style="text-align: center"></p>
+<p>运行结果的单位为毫秒（此数据忽略不计算java热点和可能的gc）。</p>
+<p>从这个表可以得出结论：<br />
+</p>
+<p>1、实现Cloneable接口的拷贝是最快的，因为他只涉及到了内存拷贝，但是如果涉及的属性为普通对象比较多的时候写起来麻烦点<br />
+2、序列化/反序列化拷贝最慢<br />
+3、使用cloning库，由于使用了递归和反射机制相对Cloneable接口实现的拷贝要慢，但比序列化方式要快。</p>
+<p>以上就是本文的全部内容，希望对大家的学习有所帮助。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/82534.html'>PHP文件上传之多文件上传的实现思路</a><a>下一篇</a><a href='/php/biji/82536.html'>解决Eclipse创建android项目无法正常预览布局文件问题的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

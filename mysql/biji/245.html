@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL优化教程之in与range查询的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL优化教程之in与range查询的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言
+
+《高" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL优化教程之in与range查询的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:14:28                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL优化教程之in与range查询的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言
+
+《高</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL优化教程之in与range查询的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h3>前言</h3>
+<p></p>
+<p>《高性能MySQL》里面提及用in这种方式可以有效的替代一定的range查询，提升查询效率， 因为在一条索引里面，range字段后面的部分是不生效的（ps.需要考虑 ICP） 。MySQL优化器将in这种方式转化成 n*m 种组合进行查询，最终将返回值合并，有点类似union但是更高效。</p>
+<p>MySQL在 IN() 组合条件过多的时候会发生很多问题。查询优化可能需要花很多时间，并消耗大量内存。新版本MySQL在组合数超过一定的数量就不进行计划评估了，这可能导致MySQL不能很好的利用索引。</p>
+<p>这里的 一定数 在MySQL5.6.5以及以后的版本中是由eq_range_index_dive_limit这个参数控制 。默认设置是10，一直到5.7以后的版本默认修改为200，当然可以手动设置的。5.6手册说明如下：</p>
+<blockquote>
+<p>The eq_range_index_dive_limit system variable enables you to configure the number of values at which the optimizer switches from one row estimation strategy to the other. To disable use of statistics and always use index dives, set eq_range_index_dive_limit to 0. To permit use of index dives for comparisons of up to N equality ranges, set eq_range_index_dive_limit to N + 1. eq_range_index_dive_limit is available as of MySQL 5.6.5. Before 5.6.5, the optimizer uses index dives, which is equivalent to eq_range_index_dive_limit=0.</p></blockquote>
+<p>换言之，</p>
+<p>eq_range_index_dive_limit = 0 只能使用index dive</p>
+<p>0 &lt; eq_range_index_dive_limit &lt;= N 使用index statistics</p>
+<p>eq_range_index_dive_limit &gt; N 只能使用index dive</p>
+<p>在MySQL5.7版本中将默认值从10修改成200目的是为了尽可能的保证范围等值运算（IN()）执行计划尽量精准，因为IN()list的数量很多时候都是超过10的。</p>
+<p>在MySQL的官方手册上有这么一句话:</p>
+<blockquote>
+<p>the optimizer can estimate the row count for each range using dives into the index or index statistics.</p></blockquote>
+<p>大意:</p>
+<blockquote>
+<p>优化器预估每个范围段－－如&quot;a IN (10, 20, 30)&quot; 视为等值比较, 括3个范围段实则简化为3个单值,分别是10,20,30－－中包括的元组数,用范围段来表示是因为 MySQL 的&quot;range&quot;扫描方式多数做的是范围扫描，此处单值可视为范围段的特例;</p></blockquote>
+<p></p>
+<h3>估计方法有2种:</h3>
+<p></p>
+<ol>
+	<li>dive到index中即利用索引完成元组数的估算,简称index dive;</li>
+	<li>index statistics:使用索引的统计数值,进行估算;</li>
+</ol>
+<p>对比这两种方式</p>
+<ol>
+	<li>index dive: 速度慢,但能得到精确的值（MySQL的实现是数索引对应的索引项个数，所以精确）</li>
+	<li>index statistics: 速度快,但得到的值未必精确</li>
+</ol>
+<p>简单说，**选项 eq_range_index_dive_limit 的值设定了 IN列表中的条件个数上线，超过设定值时，会将执行计划从 index dive 变成 index statistics **。</p>
+<p>为什么要区分这2种方式呢?</p>
+<ol>
+	<li>查询优化器会使用代价估算模型计算每个计划的代价,选择其中代价最小的</li>
+	<li>单表扫描时,需要计算代价;所以单表的索引扫描也需要计算代价</li>
+	<li>单表的计算公式通常是: 代价 = 元组数 * IO平均值</li>
+	<li>所以不管是哪种扫描方式,都需要计算元组数</li>
+	<li>当遇到&ldquo;a IN (10, 20, 30)&rdquo;这样的表达式的时候，发现a列存在索引，则需要看这个索引可以扫描到的元组数由多少而计算其索引扫描代价，所以就用到了本文提到的&ldquo;index dive&rdquo;、&ldquo;index statistics&rdquo;这2种方式。</li>
+</ol>
+<p></p>
+<h3>讨论主题</h3>
+<p></p>
+<ol>
+	<li>range查询与索引使用</li>
+	<li>eq_range_index_dive_limit的说明</li>
+</ol>
+<p></p>
+<h3>range查询与索引使用</h3>
+<p></p>
+<p>SQL如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT * FROM pre_forum_post WHERE tid=7932552 AND invisible IN('0','-2') ORDER BY dateline DESC LIMIT 10;
+
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<p>索引如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+PRIMARY(tid,position),
+pid(pid),
+fid(tid),
+displayorder(tid,invisible,dateline)
+first(tid,first)
+new_auth(authorid,invisible,tid)
+idx_dt(dateline)
+mul_test(tid,invisible,dateline,pid)
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<p>看下执行计划：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+root@localhost 16:08:27 [ultrax]&gt; explain SELECT * FROM pre_forum_post WHERE tid=7932552 AND `invisible` IN('0','-2') 
+ -&gt; ORDER BY dateline DESC LIMIT 10;
++----+-------------+----------------+-------+-------------------------------------------+--------------+---------+------+------+---------------------------------------+
+| id | select_type | table | type | possible_keys  | key | key_len | ref | rows | Extra   |
++----+-------------+----------------+-------+-------------------------------------------+--------------+---------+------+------+---------------------------------------+
+| 1 | SIMPLE | pre_forum_post | range | PRIMARY,displayorder,first,mul_test,idx_1 | displayorder | 4 | NULL | 54 | Using index condition; Using filesort | 
++----+-------------+----------------+-------+-------------------------------------------+--------------+---------+------+------+---------------------------------------+
+1 row in set (0.00 sec)
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<p>MySQL优化器认为这是一个range查询，那么(tid,invisible,dateline)这条索引中，dateline字段肯定用不上了，也就是说这个SQL最后的排序肯定会生成一个临时结果集，然后再结果集里面完成排序，而不是直接在索引中直接完成排序动作，于是我们尝试增加了一条索引。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+root@localhost 16:09:06 [ultrax]&gt; alter table pre_forum_post add index idx_1 (tid,dateline); 
+Query OK, 20374596 rows affected, 0 warning (600.23 sec)
+Records: 0 Duplicates: 0 Warnings: 0
+root@localhost 16:20:22 [ultrax]&gt; explain SELECT * FROM pre_forum_post force index (idx_1) WHERE tid=7932552 AND `invisible` IN('0','-2') ORDER BY dateline DESC LIMIT 10;
++----+-------------+----------------+------+---------------+-------+---------+-------+--------+-------------+
+| id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra |
++----+-------------+----------------+------+---------------+-------+---------+-------+--------+-------------+
+| 1 | SIMPLE | pre_forum_post | ref | idx_1 | idx_1 | 3 | const | 120646 | Using where | 
++----+-------------+----------------+------+---------------+-------+---------+-------+--------+-------------+
+1 row in set (0.00 sec)
+root@localhost 16:22:06 [ultrax]&gt; SELECT sql_no_cache * FROM pre_forum_post WHERE tid=7932552 AND `invisible` IN('0','-2') ORDER BY dateline DESC LIMIT 10;
+...
+10 rows in set (0.40 sec)
+root@localhost 16:23:55 [ultrax]&gt; SELECT sql_no_cache * FROM pre_forum_post force index (idx_1) WHERE tid=7932552 AND `invisible` IN('0','-2') ORDER BY dateline DESC LIMIT 10;
+...
+10 rows in set (0.00 sec)
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<p>实验证明效果是极好的，其实不难理解，上面我们就说了in()在MySQL优化器里面是以多种组合方式来检索数据的，如果加了一个排序或者分组那势必只能在临时结果集上操作，也就是说索引里面即使包含了排序或者分组的字段依然是没用的。唯一不满的是MySQL优化器的选择依然不够靠谱。</p>
+<blockquote>
+<p>总结下：在MySQL查询里面使用in()，除了要注意in()list的数量以及eq_range_index_dive_limit的值以外（具体见下），还要注意如果SQL包含排序/分组/去重等等就需要注意索引的使用。</p></blockquote>
+<p></p>
+<h3>eq_range_index_dive_limit的说明</h3>
+<p></p>
+<p>还是上面的案例，为什么idx_1无法直接使用？需要使用hint强制只用这个索引呢？这里我们首先看下eq_range_index_dive_limit的值。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+root@localhost 22:38:05 [ultrax]&gt; show variables like 'eq_range_index_dive_limit';
++---------------------------+-------+
+| Variable_name | Value |
++---------------------------+-------+
+| eq_range_index_dive_limit | 2 | 
++---------------------------+-------+
+1 row in set (0.00 sec)
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<p>根据我们上面说的这种情况0 &lt; eq_range_index_dive_limit &lt;= N使用index statistics，那么接下来我们用OPTIMIZER_TRACE来一看究竟。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+{
+ "index": "displayorder",
+ "ranges": [
+ "7932552 &lt;= tid &lt;= 7932552 AND -2 &lt;= invisible &lt;= -2",
+ "7932552 &lt;= tid &lt;= 7932552 AND 0 &lt;= invisible &lt;= 0"
+ ],
+ "index_dives_for_eq_ranges": false,
+ "rowid_ordered": false,
+ "using_mrr": false,
+ "index_only": false,
+ "rows": 54,
+ "cost": 66.81,
+ "chosen": true
+}
+// index dive为false，最终chosen是true
+...
+{
+ "index": "idx_1",
+ "ranges": [
+ "7932552 &lt;= tid &lt;= 7932552"
+ ],
+ "index_dives_for_eq_ranges": true,
+ "rowid_ordered": false,
+ "using_mrr": false,
+ "index_only": false,
+ "rows": 120646,
+ "cost": 144776,
+ "chosen": false,
+ "cause": "cost"
+}
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<p>我们可以看到displayorder索引的cost是66.81，而idx_1的cost是120646，而最终MySQL优化器选择了displayorder这条索引。那么如果我们把eq_range_index_dive_limit设置&gt;N是不是应该就会使用index dive计算方式，得到更准确的执行计划呢？</p>
+<p>代码如下：</p>
+<pre>
+<code>
+root@localhost 22:52:52 [ultrax]&gt; set eq_range_index_dive_limit = 3;
+Query OK, 0 rows affected (0.00 sec)
+root@localhost 22:55:38 [ultrax]&gt; explain SELECT * FROM pre_forum_post WHERE tid=7932552 AND `invisible` IN('0','-2') ORDER BY dateline DESC LIMIT 10;
++----+-------------+----------------+------+-------------------------------------------+-------+---------+-------+--------+-------------+
+| id | select_type | table | type | possible_keys  | key | key_len | ref | rows | Extra |
++----+-------------+----------------+------+-------------------------------------------+-------+---------+-------+--------+-------------+
+| 1 | SIMPLE | pre_forum_post | ref | PRIMARY,displayorder,first,mul_test,idx_1 | idx_1 | 3 | const | 120646 | Using where | 
++----+-------------+----------------+------+-------------------------------------------+-------+---------+-------+--------+-------------+
+1 row in set (0.00 sec)
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<p>optimize_trace结果如下</p>
+<p>代码如下：</p>
+<pre>
+<code>
+{
+ "index": "displayorder",
+ "ranges": [
+ "7932552 &lt;= tid &lt;= 7932552 AND -2 &lt;= invisible &lt;= -2",
+ "7932552 &lt;= tid &lt;= 7932552 AND 0 &lt;= invisible &lt;= 0"
+ ],
+ "index_dives_for_eq_ranges": true,
+ "rowid_ordered": false,
+ "using_mrr": false,
+ "index_only": false,
+ "rows": 188193,
+ "cost": 225834,
+ "chosen": true
+}
+...
+{
+ "index": "idx_1",
+ "ranges": [
+ "7932552 &lt;= tid &lt;= 7932552"
+ ],
+ "index_dives_for_eq_ranges": true,
+ "rowid_ordered": false,
+ "using_mrr": false,
+ "index_only": false,
+ "rows": 120646,
+ "cost": 144776,
+ "chosen": true
+}
+...
+ "cost_for_plan": 144775,
+ "rows_for_plan": 120646,
+ "chosen": true
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<p>在备选索引选择中两条索引都被选择，在最后的逻辑优化中选在了代价最小的索引也就是idx_1 以上就是在等值范围查询中eq_range_index_dive_limit的值怎么影响MySQL优化器计算开销，从而影响索引的选择。另外我们可以通过profiling来看看优化器的统计耗时：</p>
+<p></p>
+<h3>index dive</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
++----------------------+----------+
+| Status | Duration |
++----------------------+----------+
+| starting | 0.000048 | 
+| checking permissions | 0.000004 | 
+| Opening tables | 0.000015 | 
+| init  | 0.000044 | 
+| System lock | 0.000009 | 
+| optimizing | 0.000014 | 
+| statistics | 0.032089 | 
+| preparing | 0.000022 | 
+| Sorting result | 0.000003 | 
+| executing | 0.000003 | 
+| Sending data | 0.000101 | 
+| end  | 0.000004 | 
+| query end | 0.000002 | 
+| closing tables | 0.000009 | 
+| freeing items | 0.000013 | 
+| cleaning up | 0.000012 | 
++----------------------+----------+
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<p></p>
+<h3>index statistics</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
++----------------------+----------+
+| Status | Duration |
++----------------------+----------+
+| starting | 0.000045 | 
+| checking permissions | 0.000003 | 
+| Opening tables | 0.000014 | 
+| init  | 0.000040 | 
+| System lock | 0.000008 | 
+| optimizing | 0.000014 | 
+| statistics | 0.000086 | 
+| preparing | 0.000016 | 
+| Sorting result | 0.000002 | 
+| executing | 0.000002 | 
+| Sending data | 0.000016 | 
+| Creating sort index | 0.412123 | 
+| end  | 0.000012 | 
+| query end | 0.000004 | 
+| closing tables | 0.000013 | 
+| freeing items | 0.000023 | 
+| cleaning up | 0.000015 | 
++----------------------+----------+
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<p>可以看到当eq_range_index_dive_limit加大使用index dive时，优化器统计耗时明显比ndex statistics方式来的长，但最终它使用了作出了更合理的执行计划。统计耗时0.032089s vs .000086s，但是SQL执行耗时却是约0.03s vs 0.41s。</p>
+<p></p>
+<h3>附：</h3>
+<p></p>
+<p>如何使用optimize_trace</p>
+<p>代码如下：</p>
+<pre>
+<code>
+set optimizer_trace='enabled=on';
+
+select * from information_schema.optimizer_trace\G
+
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<blockquote>
+<p></p>
+<h3>注：</h3>optimizer_trace建议只在session模式下开启调试即可
+<p></p></blockquote>
+<p>如何使用profile</p>
+<p>代码如下：</p>
+<pre>
+<code>
+set profiling=ON;
+执行sql;
+show profiles;
+show profile for query 2;
+show profile block io,cpu for query 2;
+</code></pre>
+<p>SQL优化教程之in与range查询</p>
+<p>另外还可以看到memory,swaps,context switches,source 等信息</p>
+<p>到此这篇关于SQL优化教程之in与range查询的文章就介绍到这了,更多相关SQL优化之in与range查询内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于SQL优化教程之in与range查询的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/244.html'>MySQL InnoDB 锁的相关总结的解决办法</a><a>下一篇</a><a href='/mysql/biji/246.html'>MySQL并行复制的深入分析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

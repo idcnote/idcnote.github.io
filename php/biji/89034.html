@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>在SQL Server中实现最短路径搜索的解决方法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="开始这是去年的问题了，今天在整理邮件的时候才发现这个问题，感觉顶有意思的，特记录下来。<br />
+在表RelationGraph中，有三个字段（ID,Node,RelatedNode）,其中Node和RelatedNode两个字段" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">在SQL Server中实现最短路径搜索的解决方法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>开始这是去年的问题了，今天在整理邮件的时候才发现这个问题，感觉顶有意思的，特记录下来。<br />
+在表RelationGraph中，有三个字段（ID,Node,RelatedNode）,其中Node和RelatedNode两个字段</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><P><STRONG>开始<BR></STRONG><BR>这是去年的问题了，今天在整理邮件的时候才发现这个问题，感觉顶有意思的，特记录下来。</P>
+<P>在表RelationGraph中，有三个字段（ID,Node,RelatedNode）,其中Node和RelatedNode两个字段描述两个节点的连接关系；现在要求，找出从节点"p"至节点"j"，最短路径（即经过的节点最少）。</P>
+<P></P>
+<P>图1.<br><br><STRONG>解析：<br><br></STRONG>了能够更好的描述表RelationGraph中字段Node和 RelatedNode的关系，我在这里特意使用一个图形来描述，<BR>如图2. </P>
+<P><STRONG></STRONG></P>
+<P>图2.</P>
+<P>在图2，可清晰的看出各个节点直接如何相连，也可以清楚的看出节点"p"至节点"j"的的几种可能路径。</P>
+<P><STRONG></STRONG></P>
+<P>从上面可以看出第2种可能路径，经过的节点最少。</P>
+<P>为了解决开始的问题，我参考了两种方法，</P>
+<P>第1方法是，</P>
+<P>参考单源最短路径算法：<SPAN style="COLOR: black"><SPAN style="BACKGROUND-COLOR: white; FONT-FAMILY: Arial">Dijkstra(</SPAN><SPAN style="COLOR: #136ec2"><SPAN style="BACKGROUND-COLOR: white; FONT-FAMILY: 宋体; COLOR: #000000">迪杰斯特拉</SPAN><SPAN style="COLOR: black"><SPAN style="BACKGROUND-COLOR: white; FONT-FAMILY: Arial">)</SPAN><SPAN style="BACKGROUND-COLOR: white; FONT-FAMILY: 宋体">算法，主要特点是以起始点为中心向外层层扩展，直到扩展到终点为止。</SPAN></SPAN></SPAN></SPAN></P>
+<P><STRONG><BR></STRONG>图3.</P>
+<P>第2方法是，</P>
+<P>针对第1种方法的改进，就是采用多源点方法，这里就是以节点"p"和节点"j"为中心向外层扩展，直到两圆外切点，如图4. ：</P>
+<P></P>
+<P>图4.<BR><STRONG><BR>实现：<BR></STRONG><BR>在接下来，我就描述在SQL Server中，如何实现。当然我这里采用的前面说的第2种方法，以"P"和"J"为始点像中心外层层扩展。</P>
+<P>这里提供有表RelactionGraph的create& Insert数据的脚本：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="61979" class="copybut" id="copybut61979" onclick="doCopy('code61979')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code61979"><BR>use TestDB&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>go </P>
+<P>if object_id('RelactionGraph') Is not null drop table RelactionGraph </P>
+<P>create table RelactionGraph(ID int identity,Item nvarchar(50),RelactionItem nvarchar(20),constraint PK_RelactionGraph primary key(ID)) </P>
+<P>go </P>
+<P>create nonclustered index IX_RelactionGraph_Item on RelactionGraph(Item) include(RelactionItem) </P>
+<P>create nonclustered index IX_RelactionGraph_RelactionItem on RelactionGraph(RelactionItem) include(Item) </P>
+<P>go </P>
+<P>insert into RelactionGraph (Item, RelactionItem ) values </P>
+<P>&nbsp;&nbsp;&nbsp; ('a','b'),('a','c'),('a','d'),('a','e'), </P>
+<P>&nbsp;&nbsp;&nbsp; ('b','f'),('b','g'),('b','h'), </P>
+<P>&nbsp;&nbsp;&nbsp; ('c','i'),('c','j'), </P>
+<P>&nbsp;&nbsp;&nbsp; ('f','k'),('f','l'), </P>
+<P>&nbsp;&nbsp;&nbsp; ('k','o'),('k','p'), </P>
+<P>&nbsp;&nbsp;&nbsp; ('o','i'),('o','l') </P>
+<P>go<BR></div><BR>编写一个存储过程up_GetPath<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="53693" class="copybut" id="copybut53693" onclick="doCopy('code53693')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code53693"><BR>use TestDB <BR>go <BR>--Procedure: <BR>if object_id('up_GetPath') Is not null <BR>&nbsp;&nbsp;&nbsp; Drop proc up_GetPath <BR>go <BR>create proc up_GetPath <BR>( <BR>&nbsp;&nbsp;&nbsp; @Node nvarchar(50), <BR>&nbsp;&nbsp;&nbsp; @RelatedNode nvarchar(50) <BR>) <BR>As <BR>set nocount on <br><br>declare <BR>&nbsp;&nbsp;&nbsp; @level smallint =1, --当前搜索的深度 <BR>&nbsp;&nbsp;&nbsp; @MaxLevel smallint=100, --最大可搜索深度 <BR>&nbsp;&nbsp;&nbsp; @Node_WhileFlag bit=1, --以@Node作为中心进行搜索时候，作为能否循环搜索的标记 <BR>&nbsp;&nbsp;&nbsp; @RelatedNode_WhileFlag bit=1 --以@RelatedNode作为中心进行搜索时候，作为能否循环搜索的标记 <br><br>--如果直接找到两个Node存在直接关系就直接返回 <BR>if Exists(select 1 from RelationGraph where (Node=@Node And RelatedNode=@RelatedNode) or (Node=@RelatedNode And RelatedNode=@Node) ) or @Node=@RelatedNode <BR>begin <BR>&nbsp;&nbsp;&nbsp; select convert(nvarchar(2000),@Node + ' --&gt; '+ @RelatedNode) As RelationGraphPath,convert(smallint,0) As StopCount <BR>&nbsp;&nbsp;&nbsp; return <BR>end <br><br>-- <br><br>if object_id('tempdb..#1') Is not null Drop Table #1 --临时表#1，存储的是以@Node作为中心向外扩展的各节点数据 <BR>if object_id('tempdb..#2') Is not null Drop Table #2 --临时表#2，存储的是以@RelatedNode作为中心向外扩展的各节点数据 <br><br>create table #1( <BR>&nbsp;&nbsp;&nbsp; Node nvarchar(50),--相对源点 <BR>&nbsp;&nbsp;&nbsp; RelatedNode nvarchar(50), --相对目标 <BR>&nbsp;&nbsp;&nbsp; Level smallint --深度 <BR>&nbsp;&nbsp;&nbsp; ) <br><br>create table #2(Node nvarchar(50),RelatedNode nvarchar(50),Level smallint) <br><br>insert into #1 ( Node, RelatedNode, Level ) <BR>&nbsp;&nbsp;&nbsp; select Node, RelatedNode, @level from RelationGraph a where a.Node =@Node union --正向：以@Node作为源查询 <BR>&nbsp;&nbsp;&nbsp; select RelatedNode, Node, @level from RelationGraph a where a.RelatedNode = @Node --反向：以@Node作为目标进行查询 <BR>set @Node_WhileFlag=sign(@@rowcount) <br><br>insert into #2 ( Node, RelatedNode, Level ) <BR>&nbsp;&nbsp;&nbsp; select Node, RelatedNode, @level from RelationGraph a where a.Node =@RelatedNode union --正向：以@RelatedNode作为源查询 <BR>&nbsp;&nbsp;&nbsp; select RelatedNode, Node, @level from RelationGraph a where a.RelatedNode = @RelatedNode --反向：以@RelatedNode作为目标进行查询 <BR>set @RelatedNode_WhileFlag=sign(@@rowcount) <br><br>--如果在表RelationGraph中找不到@Node 或 @RelatedNode 数据，就直接跳过后面的While过程 <BR>if not exists(select 1 from #1) or not exists(select 1 from #2) <BR>begin <BR>&nbsp;&nbsp;&nbsp; goto While_Out <BR>end <br><br>&nbsp;<BR>while not exists(select 1 from #1 a inner join #2 b on b.RelatedNode=a.RelatedNode) --判断是否出现切点 <BR>&nbsp;&nbsp;&nbsp;&nbsp; and (@Node_WhileFlag|@RelatedNode_WhileFlag)&gt;0 --判断是否能搜索 <BR>&nbsp;&nbsp;&nbsp;&nbsp; And @level&lt;@MaxLevel --控制深度 <BR>begin <BR>&nbsp;&nbsp;&nbsp; if @Node_WhileFlag &gt;0 <BR>&nbsp;&nbsp;&nbsp; begin&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; insert into #1 ( Node, RelatedNode, Level ) <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --正向 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; select a.Node,a.RelatedNode,@level+1 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From RelationGraph a <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; where exists(select 1 from #1 where RelatedNode=a.Node And Level=@level) And <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Not exists(select 1 from #1 where Node=a.Node)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; union <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --反向 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; select a.RelatedNode,a.Node,@level+1 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From RelationGraph a <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; where exists(select 1 from #1 where RelatedNode=a.RelatedNode And Level=@level) And <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Not exists(select 1 from #1 where Node=a.RelatedNode) <br><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; set @Node_WhileFlag=sign(@@rowcount) <br><br>&nbsp;&nbsp;&nbsp; end <br><br>&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; if @RelatedNode_WhileFlag &gt;0 <BR>&nbsp;&nbsp;&nbsp; begin&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; insert into #2 ( Node, RelatedNode, Level ) <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --正向 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; select a.Node,a.RelatedNode,@level+1 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From RelationGraph a <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; where exists(select 1 from #2 where RelatedNode=a.Node And Level=@level) And <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Not exists(select 1 from #2 where Node=a.Node) <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; union <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --反向 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; select a.RelatedNode,a.Node,@level+1 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; From RelationGraph a <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; where exists(select 1 from #2 where RelatedNode=a.RelatedNode And Level=@level) And <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Not exists(select 1 from #2 where Node=a.RelatedNode) <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; set @RelatedNode_WhileFlag=sign(@@rowcount) <BR>&nbsp;&nbsp;&nbsp; end <br><br>&nbsp;&nbsp;&nbsp; select @level+=1 <BR>end <br><br>While_Out: <br><br>--下面是构造返回的结果路径 <BR>if object_id('tempdb..#Path1') Is not null Drop Table #Path1 <BR>if object_id('tempdb..#Path2') Is not null Drop Table #Path2 <br><br>;with cte_path1 As <BR>( <BR>select a.Node,a.RelatedNode,Level,convert(nvarchar(2000),a.Node+' -&gt; '+a.RelatedNode) As RelationGraphPath,Convert(smallint,1) As PathLevel From #1 a where exists(select 1 from #2 where RelatedNode=a.RelatedNode) <BR>union all <BR>select b.Node,a.RelatedNode,b.Level,convert(nvarchar(2000),b.Node+' -&gt; '+a.RelationGraphPath) As RelationGraphPath ,Convert(smallint,a.PathLevel+1) As PathLevel <BR>&nbsp;&nbsp;&nbsp; from cte_path1 a <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; inner join #1 b on b.RelatedNode=a.Node <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; and b.Level=a.Level-1 <BR>) <BR>select * Into #Path1 from cte_path1 <br><br>;with cte_path2 As <BR>( <BR>select a.Node,a.RelatedNode,Level,convert(nvarchar(2000),a.Node) As RelationGraphPath,Convert(smallint,1) As PathLevel From #2 a where exists(select 1 from #1 where RelatedNode=a.RelatedNode) <BR>union all <BR>select b.Node,a.RelatedNode,b.Level,convert(nvarchar(2000),a.RelationGraphPath+' -&gt; '+b.Node) As RelationGraphPath ,Convert(smallint,a.PathLevel+1) <BR>&nbsp;&nbsp;&nbsp; from cte_path2 a <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; inner join #2 b on b.RelatedNode=a.Node <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; and b.Level=a.Level-1 <BR>) <BR>select * Into #Path2 from cte_path2 <br><br>;with cte_result As <BR>( <BR>select a.RelationGraphPath+' -&gt; '+b.RelationGraphPath As RelationGraphPath,a.PathLevel+b.PathLevel -1 As StopCount,rank() over(order by a.PathLevel+b.PathLevel) As Result_row <BR>&nbsp;&nbsp;&nbsp; From #Path1 a <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; inner join #Path2 b on b.RelatedNode=a.RelatedNode <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; and b.Level=1 <BR>&nbsp;&nbsp;&nbsp; where a.Level=1 <BR>)&nbsp;&nbsp;&nbsp;&nbsp; <BR>select distinct RelationGraphPath,StopCount From cte_result where Result_row=1 <BR>go<BR></div><BR>上面的存储过程，主要分为两大部分，第1部分是实现如何搜索，第2部分实现如何构造返回结果。其中第1部分的代码根据前面的方法2，通过@Node 和 @RelatedNode 两个节点向外层搜索，每次搜索返回的节点都保存至临时表#1和#2，再判断临时表#1和#2有没有出现切点，如果出现就说明已找到最短的路径（经过多节点数最少），否则就继续循环搜索，直到循环至最大的搜索深度（@MaxLevel smallint=100）或找到切点。要是到100层都没搜索到切点，将放弃搜索。这里使用最大可搜索深度@MaxLevel，目的是控制由于数据量大可能会导致性能差，因为在这里数据量与搜索性能成反比。代码中还说到一个正向和反向搜索，主要是相对Node 和 RelatedNode来说，它们两者互为参照对象，进行向外搜索使用。 </P>
+<P>下面是存储过程的执行：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="31667" class="copybut" id="copybut31667" onclick="doCopy('code31667')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code31667"><BR>use TestDB </P>
+<P>go </P>
+<P>exec dbo.up_GetPath </P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; @Node = 'p', </P>
+<P>@RelatedNode = 'j' </P>
+<P>go<BR></div></P>
+<P></P>
+<P>你可以根据需要来，赋予@Node 和 @RelatedNode不同的值。<br><br><STRONG>拓展：<br><br></STRONG>前面的例子，可扩展至城市的公交路线，提供两个站点，搜索经过这两个站点最少站点公交路线；可以扩展至社区的人际关系的搜索，如一个人与另一个人想认识，那么他们直接要经过多少个人才可以。除了人与人直接有直接的朋友、亲戚关联，还可以通过人与物有关联找到人与人关联，如几个作家通过出版一个本，那么就说明这几个人可以通过某一本书的作者列表中找到他们存在共同出版书籍的关联，这为搜索两个人认识路径提供参考。这问题可能会非常大复杂，但可以这样的扩展。<br><br><STRONG>小结：<BR></STRONG><BR>这里只是找两个节点的所有路径中，节点数最少的路径，在实际的应用中，可能会碰到比这里更复杂的情况。在其他的环境或场景可能会带有长度，时间，多节点，多作用域等一些信息。无论如何，一般都要参考一些原理，算法来实现。</P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/89033.html'>在CentOS系统下安装Puppet和Puppet Foreman的教程</a><a>下一篇</a><a href='/php/biji/89035.html'>C++ 简单实现MFC ListControl 点击列头排序</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

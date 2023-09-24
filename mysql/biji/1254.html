@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL limit 优化，百万至千万级快速分页 复合索引的引用并应用于轻量级框架_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL limit 优化，百万至千万级快速分页 复合索引的引用并应用于轻量级框架，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL limit 优化，百万至千万级快速分页 复合索引的引用并应用于轻量级框架</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:24:00                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL limit 优化，百万至千万级快速分页 复合索引的引用并应用于轻量级框架，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL limit 优化，百万至千万级快速分页 复合索引的引用并应用于轻量级框架，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>MySql 这个数据库绝对是适合dba级的高手去玩的，一般做一点1万篇新闻的小型系统怎么写都可以，用xx框架可以实现快速开发。可是数据量到了10万，百万至千万，他的性能还能那么高吗？一点小小的失误，可能造成整个系统的改写，甚至更本系统无法正常运行！好了，不那么多废话了。用事实说话，看例子：数据表 collect ( id, title ,info ,vtype) 就这4个字段，其中 title 用定长，info 用text, id是逐渐，vtype是tinyint，vtype是索引。这是一个基本的新闻系统的简单模型。现在往里面填充数据，填充10万篇新闻。最后collect 为 10万条记录，数据库表占用硬盘1.6G。OK ,看下面这条sql语句：select id,title from collect limit 1000,10; 很快；基本上0.01秒就OK，再看下面的select id,title from collect limit 90000,10; 从9万条开始分页，结果？8-9秒完成，my god 哪出问题了？？？？其实要优化这条数据，网上找得到答案。看下面一条语句:select id from collect order by id limit 90000,10; 很快，0.04秒就OK。为什么？因为用了id主键做索引当然快。网上的改法是：select id,title from collect where id&gt;=(select id from collect order by idlimit 90000,1) limit 10;这就是用了id做索引的结果。可是问题复杂那么一点点，就完了。看下面的语句select id from collect where vtype=1 order by id limit 90000,10;很慢，用了8-9秒！到了这里我相信很多人会和我一样，有崩溃感觉！vtype 做了索引了啊？怎么会慢呢？vtype做了索引是不错，你直接 select id fromcollect where vtype=1 limit 1000,10;是很快的，基本上0.05秒，可是提高90倍，从9万开始，那就是0.05*90=4.5秒的速度了。和测试结果8-9秒到了一个数量级。从这里开始有人提出了分表的思路，这个和discuz论坛是一样的思路。思路如下：建一个索引表： t (id,title,vtype) 并设置成定长，然后做分页，分页出结果再到 collect 里面去找info 。是否可行呢？实验下就知道了。10万条记录到 t(id,title,vtype) 里，数据表大小20M左右。用select id from t where vtype=1 order by id limit 90000,10;很快了。基本上0.1-0.2秒可以跑完。为什么会这样呢？我猜想是因为collect 数据太多，所以分页要跑很长的路。limit完全和数据表的大小有关的。其实这样做还是全表扫描，只是因为数据量小，只有10万才快。OK， 来个疯狂的实验，加到100万条，测试性能。加了10倍的数据，马上t表就到了200多M，而且是定长。还是刚才的查询语句，时间是0.1-0.2秒完成！分表性能没问题？错！因为我们的limit还是9万，所以快。给个大的，90万开始select id from t where vtype=1 order by id limit 900000,10; 看看结果，时间是1-2秒！why ?? 分表了时间还是这么长，非常之郁闷！有人说定长会提高limit的性能，开始我也以为，因为一条记录的长度是固定的，mysql应该可以算出90万的位置才对啊？ 可是我们高估了mysql 的智能，他不是商务数据库，事实证明定长和非定长对limit影响不大？ 怪不得有人说discuz到了100万条记录就会很慢，我相信这是真的，这个和数据库设计有关！
+<p><strong>难道MySQL 无法突破100万的限制吗？？？到了100万的分页就真的到了极限？？？</strong></p>
+<p><strong>答案是： NO !!!!为什么突破不了100万是因为不会设计mysql造成的。下面介绍非分表法，来个疯狂的测试！一张表搞定100万记录，并且10G数据库，如何快速分页！</strong></p>
+<p>好了，我们的测试又回到 collect表，开始测试结论是：30万数据，用分表法可行，超过30万他的速度会慢道你无法忍受！当然如果用分表+我这种方法，那是绝对完美的。但是用了我这种方法后，不用分表也可以完美解决！</p>
+<p>答案就是：复合索引！ 有一次设计mysql索引的时候，无意中发现索引名字可以任取，可以选择几个字段进来，这有什么用呢？开始的select id fromcollect order by id limit 90000,10; 这么快就是因为走了索引，可是如果加了where 就不走索引了。抱着试试看的想法加了search(vtype,id) 这样的索引。然后测试select id from collect where vtype=1 limit 90000,10; 非常快！0.04秒完成！</p>
+<p>再测试: select id ,title from collect where vtype=1 limit 90000,10;非常遗憾，8-9秒，没走search索引！再测试：search(id,vtype)，还是select id 这个语句，也非常遗憾，0.5秒。<strong>综上：如果对于有where 条件，又想走索引用limit的，必须设计一个索引，将where放第一位，limit用到的主键放第2位，而且只能select 主键！</strong></p>
+<p>完美解决了分页问题了。可以快速返回id就有希望优化limit ， 按这样的逻辑，百万级的limit 应该在0.0x秒就可以分完。看来mysql语句的优化和索引时非常重要的！好了，回到原题，如何将上面的研究成功快速应用于开发呢？如果用复合查询，我的轻量级框架就没的用了。分页字符串还得自己写，那多麻烦？这里再看一个例子，思路就出来了：select * from collect where id in (9000,12,50,7000); 竟然 0秒就可以查完！mygod ，mysql 的索引竟然对于in语句同样有效！看来网上说in无法用索引是错误的！有了这个结论，就可以很简单的应用于轻量级框架了：代码如下：</p>
+<p>代码如下:</p>
+<pre>
+<code> 
+$db=dblink(); 
+$db-&gt;pagesize=20; 
+$sql=&quot;select id from collect where vtype=$vtype&quot;; 
+$db-&gt;execute($sql); 
+$strpage=$db-&gt;strpage(); 
+//将分页字符串保存在临时变量，方便输出 
+while($rs=$db-&gt;fetch_array()){ 
+$strid.=$rs[&#39;id&#39;].&#39;,&#39;; 
+} 
+$strid=substr($strid,0,strlen($strid)-1); 
+//构造出id字符串 
+$db-&gt;pagesize=0; 
+//很关键，在不注销类的情况下，将分页清空，这样只需要用一次数据库连接，不需要再开； 
+$db-&gt;execute(&quot;select 
+id,title,url,sTime,gTime,vtype,tag from collect where id in ($strid)&quot;); 
+&lt;?php while($rs=$db-&gt;fetch_array()): ?&gt; 
+&lt;tr&gt; 
+&lt;td&gt;&amp;nbsp;&lt;?php echo $rs[&#39;id&#39;];?&gt;&lt;/td&gt; 
+&lt;td&gt;&amp;nbsp;&lt;?php echo $rs[&#39;url&#39;];?&gt;&lt;/td&gt; 
+&lt;td&gt;&amp;nbsp;&lt;?php echo $rs[&#39;sTime&#39;];?&gt;&lt;/td&gt; 
+&lt;td&gt;&amp;nbsp;&lt;?php echo $rs[&#39;gTime&#39;];?&gt;&lt;/td&gt; 
+&lt;td&gt;&amp;nbsp;&lt;?php echo $rs[&#39;vtype&#39;];?&gt;&lt;/td&gt; 
+&lt;td&gt;&amp;nbsp;&lt;a href=&quot;?act=show&amp;id=&lt;?php echo $rs[&#39;id&#39;];?&gt;&quot; 
+target=&quot;_blank&quot;&gt;&lt;?php echo $rs[&#39;title&#39;];?&gt;&lt;/a&gt;&lt;/td&gt; 
+&lt;td&gt;&amp;nbsp;&lt;?php echo 
+$rs[&#39;tag&#39;];?&gt;&lt;/td&gt; 
+&lt;/tr&gt; 
+&lt;?php endwhile; 
+?&gt; 
+&lt;/table&gt; 
+&lt;?php 
+echo $strpage; 
+?&gt; 
+</code></pre>通过简单的变换，其实思路很简单：1）通过优化索引，找出id，并拼成 &quot;123,90000,12000&quot; 这样的字符串。2）第2次查询找出结果。小小的索引+一点点的改动就使mysql 可以支持百万甚至千万级的高效分页！通过这里的例子，我反思了一点：对于大型系统，PHP千万不能用框架，尤其是那种连sql语句都看不到的框架！因为开始对于我的轻量级框架都差点崩溃！只适合小型应用的快速开发，对于ERP,OA，大型网站，数据层包括逻辑层的东西都不能用框架。如果程序员失去了对sql语句的把控，那项目的风险将会成几何级数增加！尤其是用mysql的时候，mysql 一定需要专业的dba 才可以发挥他的最佳性能。一个索引所造成的性能差别可能是上千倍！PS:经过实际测试，到了100万的数据，160万数据，15G表，190M索引，就算走索引，limit都得0.49秒。所以分页最好别让别人看到10万条以后的数据，要不然会很慢！就算用索引。经过这样的优化，mysql到了百万级分页是个极限！但有这样的成绩已经很不错，如果你是用sqlserver肯定卡死！而160万的数据用id in (str) 很快，基本还是0秒。如果这样，千万级的数据，mysql应该也很容易应付。
+<p></p>
+
+<p>注：关于MySQL limit 优化，百万至千万级快速分页 复合索引的引用并应用于轻量级框架的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1253.html'>MySQL服务1067错误多种解决方案分享</a><a>下一篇</a><a href='/mysql/biji/1255.html'>深入MySQL字符集设置 图文版</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

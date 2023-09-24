@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>mysql的分区技术详细介绍_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="一、概述<br />
+当 MySQL的总记录数超过了100万后，会出现性能的大幅度下降吗？答案是肯定的，但是，性能下降&gt;的比率不一而同，要看系统的架构、应用程序、还有&gt;包括索引、服务器硬件等多种" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">mysql的分区技术详细介绍</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>一、概述<br />
+当 MySQL的总记录数超过了100万后，会出现性能的大幅度下降吗？答案是肯定的，但是，性能下降&gt;的比率不一而同，要看系统的架构、应用程序、还有&gt;包括索引、服务器硬件等多种</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>一、概述</strong></p>
+<p>当 MySQL的总记录数超过了100万后，会出现性能的大幅度下降吗？答案是肯定的，但是，性能下降&gt;的比率不一而同，要看系统的架构、应用程序、还有&gt;包括索引、服务器硬件等多种因素而定。当有网友问我这个问题的时候，我最常见的回答&gt;就是：分表，可以根据id区间或者时间先后顺序等多种规则来分表。分表很容易，然而由此所带来的应用程序甚至是架构方面的改动工作却不&gt;容小觑，还包括将来的扩展性等。</p>
+<p>在以前，一种解决方案就是使用 MERGE<br />
+类型，这是一个非常方便的做饭。架构和程序基本上不用做改动，不过，它的缺点是显见的：</p>
+<p>1.只能在相同结构的 MyISAM 表上使用<br />
+2.无法享受到 MyISAM 的全部功能，例如无法在 MERGE 类型上执行 FULLTEXT 搜索<br />
+3.它需要使用更多的文件描述符<br />
+4.读取索引更慢</p>
+<p>这个时候，MySQL 5.1 中新增的分区(Partition)功能的优势也就很明显了：</p>
+<p>1.与单个磁盘或文件系统分区相比，可以存储更多的数据<br />
+2.很容易就能删除不用或者过时的数据<br />
+3.一些查询可以得到极大的优化<br />
+4.涉及到 SUM()/COUNT() 等聚合函数时，可以并行进行<br />
+5.IO吞吐量更大</p>
+<p>分区允许可以设置为任意大小的规则，跨文件系统分配单个表的多个部分。实际上，表的不同部分在不同的位置被存储为单独的表。</p>
+<p>分区应该注意的事项：</p>
+<p>1、 做分区时，要么不定义主键，要么把分区字段加入到主键中。<br />
+2、 分区字段不能为NULL，要不然怎么确定分区范围呢，所以尽量NOT NULL</p>
+<p><strong>二、分区的类型</strong></p>
+<p>1.RANGE 分区：基于属于一个给定连续区间的列值，把多行分配给分区。<br />
+2.LIST 分区：类似于按RANGE分区，区别在于LIST分区是基于列值匹配一个离散值集合中的某个值来进行选择。<br />
+2.HASH分区：基于用户定义的表达式的返回值来进行选择的分区，该表达式使用将要插入到表中的这些行的列值进行计算。这个函数可以包&gt;含MySQL中有效的、产生非负整数值的任何表达式。<br />
+3.KEY分区：类似于按HASH分区，区别在于KEY分区只支持计算一列或多列，且MySQL服务器提供其自身的哈希函数。必须有一列或多列包含&gt;整数值。</p>
+<p>可以通过使用SHOW VARIABLES命令来确定MySQL是否支持分区，例如：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="47983" class="copybut" id="copybut47983" onclick="doCopy('code47983')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code47983"><br />
+mysql&gt; SHOW VARIABLES LIKE '%partition%';<br />
++-----------------------+-------+<br />
+| Variable_name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Value |<br />
++-----------------------+-------+<br />
+| have_partition_engine | YES&nbsp;&nbsp; |<br />
++-----------------------+-------+<br />
+1 row in set (0.00 sec)<br />
+</div></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="47983" class="copybut" id="copybut47983" onclick="doCopy('code47983')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code47983"><br />
+mysql&gt; SHOW VARIABLES LIKE '%partition%';<br />
++-----------------------+-------+<br />
+| Variable_name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Value |<br />
++-----------------------+-------+<br />
+| have_partition_engine | YES&nbsp;&nbsp; |<br />
++-----------------------+-------+<br />
+1 row in set (0.00 sec)<br />
+</div></p>
+<p><strong>1、range分区<br />
+</strong><div class="codetitle"><span><a style="CURSOR: pointer" data="17671" class="copybut" id="copybut17671" onclick="doCopy('code17671')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code17671"><br />
+　create table t_range( <br />
+　　id int(11), <br />
+　　money int(11) unsigned not null, <br />
+　　date datetime <br />
+　　)partition by range(year(date))( <br />
+　　partition p2007 values less than (2008), <br />
+　　partition p2008 values less than (2009), <br />
+　　partition p2009 values less than (2010) <br />
+　　partition p2010 values less than maxvalue <br />
+　　)；<br />
+</div></p>
+<p><strong>2.list分区<br />
+</strong><div class="codetitle"><span><a style="CURSOR: pointer" data="57192" class="copybut" id="copybut57192" onclick="doCopy('code57192')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code57192"><br />
+create table t_list( <br />
+　　a int(11), <br />
+　　b int(11) <br />
+　　)(partition by list (b) <br />
+　　partition p0 values in (1,3,5,7,9), <br />
+　　partition p1 values in (2,4,6,8,0) <br />
+　　);<br />
+</div></p>
+<p>对于innodb和myisam引擎，一条语句插入多条记录的时候，如果中间有值不能插入，innodb会全部回滚，myisam在错误值之前的数据可以插入到表中。对于innodb和myisam引擎，一条语句插入多条记录的时候，如果中间有值不能插入，innodb会全部回滚，myisam在错误值之前的数据可以插入到表中。</p>
+<p><strong>3.hash分区</strong></p>
+<p>hash分区的目的是将数据均匀的分布到预先定义的各个分区中，保证各分区的数据量大致一致。<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="38629" class="copybut" id="copybut38629" onclick="doCopy('code38629')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code38629"><br />
+create table t_hash( <br />
+　　a int(11), <br />
+　　b datetime <br />
+　　)partition by hash (YEAR(b) <br />
+　　partitions 4;<br />
+</div><br />
+　　hash的分区函数页需要返回一个整数值。partitions子句中的值是一个非负整数，不加的partitions子句的话，默认为分区数为1。</p>
+<p><strong>4.key分区</strong></p>
+<p>key分区和hash分区相似，不同在于hash分区是用户自定义函数进行分区，key分区使用mysql数据库提供的函数进行分区，NDB cluster使用MD5函数来分区，对于其他存储引擎mysql使用内部的hash函数，这些函数基于password()一样的算法。<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="20876" class="copybut" id="copybut20876" onclick="doCopy('code20876')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code20876"><br />
+create table t_key( <br />
+　　a int(11), <br />
+　　b datetime) <br />
+　　partition by key (b) <br />
+　　partitions 4;<br />
+</div></p>
+<p><strong>5。columns分区</strong></p>
+<p>上面的RANGE、LIST、HASH、KEY四种分区中，分区的条件必须是整形，如果不是整形需要通过函数将其转换为整形。</p>
+<p>　　mysql-5.5开始支持COLUMNS分区，可视为RANGE和LIST分区的进化，COLUMNS分区可以直接使用非整形数据进行分区。COLUMNS分区支持以下数据类型：<br />
+　　所有整形，如INT SMALLINT TINYINT BIGINT。FLOAT和DECIMAL则不支持。<br />
+　　日期类型，如DATE和DATETIME。其余日期类型不支持。<br />
+　　字符串类型，如CHAR、VARCHAR、BINARY和VARBINARY。BLOB和TEXT类型不支持。<br />
+　　COLUMNS可以使用多个列进行分区。</p>
+<p><strong>新增分区<br />
+</strong><div class="codetitle"><span><a style="CURSOR: pointer" data="47579" class="copybut" id="copybut47579" onclick="doCopy('code47579')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code47579"><br />
+mysql&gt; ALTER TABLE sale_data</p>
+<p>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp; ADD PARTITION (PARTITION p201010 VALUES LESS THAN (201011));</p>
+<p>Query OK, 0 rows affected (0.36 sec)</p>
+<p>Records: 0&nbsp; Duplicates: 0&nbsp; Warnings: 0<br />
+</div><br />
+<strong>删除分区<br />
+</strong><div class="codetitle"><span><a style="CURSOR: pointer" data="67469" class="copybut" id="copybut67469" onclick="doCopy('code67469')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code67469"><br />
+--当删除了一个分区，也同时删除了该分区中所有的数据。</p>
+<p>mysql&gt; ALTER TABLE sale_data DROP PARTITION p201010;</p>
+<p>Query OK, 0 rows affected (0.22 sec)</p>
+<p>Records: 0&nbsp; Duplicates: 0&nbsp; Warnings: 0<br />
+</div></p>
+<p><strong>分区的合并</strong></p>
+<p>下面的SQL，将p201001 - p201009 合并为3个分区p2010Q1 - p2010Q3<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="34357" class="copybut" id="copybut34357" onclick="doCopy('code34357')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code34357"><br />
+mysql&gt; ALTER TABLE sale_data</p>
+<p>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp; REORGANIZE PARTITION p201001,p201002,p201003,</p>
+<p>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; p201004,p201005,p201006,</p>
+<p>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; p201007,p201008,p201009 INTO</p>
+<p>&nbsp;&nbsp;&nbsp; -&gt; (</p>
+<p>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp; PARTITION p2010Q1 VALUES LESS THAN (201004),</p>
+<p>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp; PARTITION p2010Q2 VALUES LESS THAN (201007),</p>
+<p>&nbsp;&nbsp;&nbsp; -&gt;&nbsp;&nbsp; PARTITION p2010Q3 VALUES LESS THAN (201010)</p>
+<p>&nbsp;&nbsp;&nbsp; -&gt; );</p>
+<p>Query OK, 0 rows affected (1.14 sec)</p>
+<p>Records: 0&nbsp; Duplicates: 0&nbsp; Warnings: 0<br />
+</div></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/96185.html'>Win8.1卸载程序后控制面板的残留项目如何清除</a><a>下一篇</a><a href='/php/biji/96187.html'>MySQL数据库操作常用命令小结</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

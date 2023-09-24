@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server 阻塞与等待(SQL)的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server 阻塞与等待(SQL)的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+
+前言
+
+应用系统承" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server 阻塞与等待(SQL)的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:33:15                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server 阻塞与等待(SQL)的简单示例，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+
+前言
+
+应用系统承</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server 阻塞与等待(SQL)的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p></p>
+<h3>前言</h3>
+<p></p>
+<p>应用系统承载着大量的业务，随之而来的是复杂的业务逻辑，在数据库上的表现就是有着大量的不同种类的SQL语句。</p>
+<p>SQL语句执行的快慢又与阻塞等待有着密不可分的原因。</p>
+<p>系统慢可能有很多种原因，硬件资源不足，语句不优化，结构设计不合理，缺少必要的运维方式。所有的这些问题都可以在阻塞与等待中看出端倪，发现并解决问题。</p>
+<p>今天这篇我们主要讲述怎么样发现并解决系统的阻塞和等待。</p>
+<p></p>
+<h3>场景描述</h3>
+<p></p>
+<p>您的系统是否有这样的问题？</p>
+<ol>
+	<li>系统运行缓慢，很多功能需要几十秒才能呈现结果，用户体验极差，领导们不断施压，作为系统的负责人，只知道系统慢又不知道慢在哪里？我们迟迟不能解决问题，领导已经对我们怨声载道了或者已经慢习惯了，不再反馈了。</li>
+	<li>系统的功能运行缓慢，在生产环境中语句运行时间很长，但是在测试环境或者单独拿出这条语句运行的却很快？这好像不科学呀？</li>
+	<li>我对数据有较多的了解，我能查出系统的等待，但是我不知道这些等待意味着什么，百度的答案五花八门解决不了我的问题。</li>
+	<li>我能找到等待，也能解决这部分等待，但只是通过一些脚本，不能全面了解现状，只能东一锤子西一棒子的游击战。</li>
+	<li>我是专家问题我都能解决，但不能给领导一个直观的展现。</li>
+</ol>
+<p></p>
+<h3>系统等待简介</h3>
+<p></p>
+<p>一个好的SQL语句就好比一辆时速180的好车，好的系统硬件（CPU，内存，磁盘）就好比平坦宽阔的马路。看似好车配好路，一定可以开的很快了！其实还忽略了一点！当你驾驶一辆法拉利跑在北京宽阔的三环上，就算你是老炮中的&ldquo;三环十二少&ldquo;，早高峰你能开到多少? 北京的早高峰！北京的早高峰！</p>
+<p>这个例子就引出了系统阻塞和等待的概念，红灯（硬件等待，如IO等待），这就是正常的等待。另外一辆车在你前面不走了或开的很慢，那么你也只能等待（也可以说成你被他阻塞了）！</p>
+<p>一张图告诉你系统的主要等待类型及解决思路：</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>问题诊断</h3>
+<p></p>
+<p>任何问题的诊断都要从全局的角度考虑，最忌讳的就是看到一个指标高就冒然定位问题，然后以偏概全的去分析问题。</p>
+<p>一个问题点可能涉及到很多部分，所以我们首先要从全局的角度定位系统问题，阻塞也是一样，到底系统中存在哪些类型的阻塞，哪些是主因，哪些是关联原因，哪些是次要的。</p>
+<p></p>
+<h3>全局定位阻塞与等待　</h3>　
+<p></p>
+<p>首先我们要关心数据库中有哪些等待类型</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>注：这部分呈现的是系统中的等待情况，和使用脚本类似，已经排除了不必要关心的类型，同时对等待情况进行归类统计。</h3>
+<p></p>
+<p></p>
+<h3>横坐标：等待类型</h3>
+<p></p>
+<p></p>
+<h3>纵坐标：收集时间段内出现的次数</h3>
+<p></p>
+<p>知道了等到类型，我们要了解这些类型中，哪种占用了大量的时间：</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>注：各种等待类型所等待的时间也是排查的主要方向，结合等待类型与等待时间，我们能了解到：系统中有哪些等待，哪些等待比较严重，哪个最严重。</h3>
+<p></p>
+<p></p>
+<h3>横坐标：等待类型</h3>
+<p></p>
+<p></p>
+<h3>纵坐标：平均等待时间</h3>
+<p></p>
+<p>了解了主要的等待类型和时间，我们还要分析一下：什么数据库来的？哪些程序来的？什么用户请求导致的？什么时间阻塞最严重？</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>具体语句看等待</h3>
+<p></p>
+<p>系统的整体等待情况了然于心，下面我们改看看具体哪些语句造成的等待，这也是解决问题的重要分析步骤。</p>
+<p>哪些语类句等待最频繁</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>注：这里我们可以根据等待次数、等待时间、消耗的各种资源排序，来多维度分析阻塞的语句类型</h3>
+<p></p>
+<p>语句具体的等待情况时怎样的呢？我们可以通过【原始视图】查看具体语句在执行过程中的真实阻塞情况</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>注：在阻塞的详细视图中我们可以清晰的看到语句的阻塞树，并且可以看到阻塞的语句、时间、资源已经阻塞等待的类型</h3>
+<p></p>
+<p></p>
+<h3>阻塞树：本例中【会话68】被【会话66】阻塞，而【会话66】又被【会话104】阻塞，这样3个会话就构成了一个阻塞链也叫阻塞树</h3>
+<p></p>
+<p></p>
+<h3>诊断结论</h3>
+<p></p>
+<p>通过全局定位，语句类型分析，到具体的语句执行阻塞状态，根据阻塞类型、次数、时间、连接程序、资源消耗等多种维度综合分析，我们可以清楚的看出数据库中的阻塞问题。</p>
+<p>本例中系统主要的阻塞类型为CXPACKET和LCK_M_U，阻塞时间很长，主要的阻塞产生时间为上午十一点左右，主要的阻塞语句是一条update 和一个复杂的select查询等信息。</p>
+<p></p>
+<h3>问题解决</h3>
+<p></p>
+<p>首先下面的这张图已经简单的说明了系统对应的等待需要怎么样的解决思路。　　</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>注：根据不同的情况降低阻塞的办法主要有：调整服务器、实例、数据库配置参数（如：调整并行度），更改隔离级别（如：快照读，nolock等），优化语句（如：添加索引，优化写法等）</h3>
+<p></p>
+<p>本例中主要的CXPACKET是因为实例并行度参数配置不佳而导致，LCK_M_U主要是一条update被一个批处理的另一条update阻塞锁导致，优化update这类更新语句主要是保证update语句最优化，执行时间尽量缩短，另外高并发下的update比较常见的解决办法是使用索引利用key锁取代表锁以提高并发，可能被更新的表只有几十条记录，添加索引与不加索引的并发效率差别也会很大。另外程序的设计也是非常重要的，各种奥秘各位看官只能在实际环境中慢慢体会了，而使用SQL专家云工具的主要目的在于全面的定位问题，图表统计等形式清晰的展现问题，并根据工具提供的解决方案快速解决问题。</p>
+<p>以上就是本文的全部内容，希望本文的内容对大家的学习或者工作能带来一定的帮助，同时也希望多多支持512笔记！</p>
+
+<p>注：关于SQL Server 阻塞与等待(SQL)的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1991.html'>MySQL的udf编程之非阻塞超时重传</a><a>下一篇</a><a href='/mysql/biji/1993.html'>SQL SERVER 9003错误解决示例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

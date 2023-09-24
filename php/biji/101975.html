@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>详解Java多线程编程中互斥锁ReentrantLock类的用法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="0.关于互斥锁<br />
+所谓互斥锁, 指的是一次最多只能有一个线程持有的锁. 在jdk1.5之前, 我们通常使用synchronized机制控制多个线程对共享资源的访问. 而现在, Lock提供了比synch" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">详解Java多线程编程中互斥锁ReentrantLock类的用法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>0.关于互斥锁<br />
+所谓互斥锁, 指的是一次最多只能有一个线程持有的锁. 在jdk1.5之前, 我们通常使用synchronized机制控制多个线程对共享资源的访问. 而现在, Lock提供了比synch</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>0.关于互斥锁</strong></p>
+<p>所谓互斥锁, 指的是一次最多只能有一个线程持有的锁. 在jdk1.5之前, 我们通常使用synchronized机制控制多个线程对共享资源的访问. 而现在, Lock提供了比synchronized机制更广泛的锁定操作, Lock和synchronized机制的主要区别:<br />
+synchronized机制提供了对与每个对象相关的隐式监视器锁的访问, 并强制所有锁获取和释放均要出现在一个块结构中, 当获取了多个锁时, 它们必须以相反的顺序释放. synchronized机制对锁的释放是隐式的, 只要线程运行的代码超出了synchronized语句块范围, 锁就会被释放. 而Lock机制必须显式的调用Lock对象的unlock()方法才能释放锁, 这为获取锁和释放锁不出现在同一个块结构中, 以及以更自由的顺序释放锁提供了可能。</p>
+<p><strong>1. ReentrantLock介绍<br />
+</strong>ReentrantLock是一个可重入的互斥锁，又被称为“独占锁”。<br />
+顾名思义，ReentrantLock锁在同一个时间点只能被一个线程锁持有；而可重入的意思是，ReentrantLock锁，可以被单个线程多次获取。<br />
+ReentrantLock分为“公平锁”和“非公平锁”。它们的区别体现在获取锁的机制上是否公平。“锁”是为了保护竞争资源，防止多个线程同时操作线程而出错，ReentrantLock在同一个时间点只能被一个线程获取(当某线程获取到“锁”时，其它线程就必须等待)；ReentraantLock是通过一个FIFO的等待队列来管理获取该锁所有线程的。在“公平锁”的机制下，线程依次排队获取锁；而“非公平锁”在锁是可获取状态时，不管自己是不是在队列的开头都会获取锁。</p>
+<p>ReentrantLock函数列表<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+// 创建一个 ReentrantLock ，默认是“非公平锁”。
+ReentrantLock()
+// 创建策略是fair的 ReentrantLock。fair为true表示是公平锁，fair为false表示是非公平锁。
+ReentrantLock(boolean fair)
+
+// 查询当前线程保持此锁的次数。
+int getHoldCount()
+// 返回目前拥有此锁的线程，如果此锁不被任何线程拥有，则返回 null。
+protected Thread getOwner()
+// 返回一个 collection，它包含可能正等待获取此锁的线程。
+protected Collection&lt;Thread&gt; getQueuedThreads()
+// 返回正等待获取此锁的线程估计数。
+int getQueueLength()
+// 返回一个 collection，它包含可能正在等待与此锁相关给定条件的那些线程。
+protected Collection&lt;Thread&gt; getWaitingThreads(Condition condition)
+// 返回等待与此锁相关的给定条件的线程估计数。
+int getWaitQueueLength(Condition condition)
+// 查询给定线程是否正在等待获取此锁。
+boolean hasQueuedThread(Thread thread)
+// 查询是否有些线程正在等待获取此锁。
+boolean hasQueuedThreads()
+// 查询是否有些线程正在等待与此锁有关的给定条件。
+boolean hasWaiters(Condition condition)
+// 如果是“公平锁”返回true，否则返回false。
+boolean isFair()
+// 查询当前线程是否保持此锁。
+boolean isHeldByCurrentThread()
+// 查询此锁是否由任意线程保持。
+boolean isLocked()
+// 获取锁。
+void lock()
+// 如果当前线程未被中断，则获取锁。
+void lockInterruptibly()
+// 返回用来与此 Lock 实例一起使用的 Condition 实例。
+Condition newCondition()
+// 仅在调用时锁未被另一个线程保持的情况下，才获取该锁。
+boolean tryLock()
+// 如果锁在给定等待时间内没有被另一个线程保持，且当前线程未被中断，则获取该锁。
+boolean tryLock(long timeout, TimeUnit unit)
+// 试图释放此锁。
+void unlock()
+
+</pre>
+</div>
+<p><strong>2. ReentrantLock示例<br />
+</strong>通过对比“示例1”和“示例2”,我们能够清晰的认识lock和unlock的作用<br />
+<strong>2.1 示例1<br />
+</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+// LockTest1.java
+// 仓库
+class Depot { 
+ private int size;  // 仓库的实际数量
+ private Lock lock;  // 独占锁
+
+ public Depot() {
+  this.size = 0;
+  this.lock = new ReentrantLock();
+ }
+
+ public void produce(int val) {
+  lock.lock();
+  try {
+   size += val;
+   System.out.printf("%s produce(%d) --&gt; size=%d\n", 
+     Thread.currentThread().getName(), val, size);
+  } finally {
+   lock.unlock();
+  }
+ }
+
+ public void consume(int val) {
+  lock.lock();
+  try {
+   size -= val;
+   System.out.printf("%s consume(%d) &lt;-- size=%d\n", 
+     Thread.currentThread().getName(), val, size);
+  } finally {
+   lock.unlock();
+  }
+ }
+}; 
+
+// 生产者
+class Producer {
+ private Depot depot;
+
+ public Producer(Depot depot) {
+  this.depot = depot;
+ }
+
+ // 消费产品：新建一个线程向仓库中生产产品。
+ public void produce(final int val) {
+  new Thread() {
+   public void run() {
+    depot.produce(val);
+   }
+  }.start();
+ }
+}
+
+// 消费者
+class Customer {
+ private Depot depot;
+
+ public Customer(Depot depot) {
+  this.depot = depot;
+ }
+
+ // 消费产品：新建一个线程从仓库中消费产品。
+ public void consume(final int val) {
+  new Thread() {
+   public void run() {
+    depot.consume(val);
+   }
+  }.start();
+ }
+}
+
+public class LockTest1 { 
+ public static void main(String[] args) { 
+  Depot mDepot = new Depot();
+  Producer mPro = new Producer(mDepot);
+  Customer mCus = new Customer(mDepot);
+
+  mPro.produce(60);
+  mPro.produce(120);
+  mCus.consume(90);
+  mCus.consume(150);
+  mPro.produce(110);
+ }
+}
+
+</pre>
+</div>
+<p>运行结果：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+Thread-0 produce(60) --&gt; size=60
+Thread-1 produce(120) --&gt; size=180
+Thread-3 consume(150) &lt;-- size=30
+Thread-2 consume(90) &lt;-- size=-60
+Thread-4 produce(110) --&gt; size=50
+</pre>
+</div>
+<p>结果分析：<br />
+(1) Depot 是个仓库。通过produce()能往仓库中生产货物，通过consume()能消费仓库中的货物。通过独占锁lock实现对仓库的互斥访问：在操作(生产/消费)仓库中货品前，会先通过lock()锁住仓库，操作完之后再通过unlock()解锁。<br />
+(2) Producer是生产者类。调用Producer中的produce()函数可以新建一个线程往仓库中生产产品。<br />
+(3) Customer是消费者类。调用Customer中的consume()函数可以新建一个线程消费仓库中的产品。<br />
+(4) 在主线程main中，我们会新建1个生产者mPro，同时新建1个消费者mCus。它们分别向仓库中生产/消费产品。<br />
+根据main中的生产/消费数量，仓库最终剩余的产品应该是50。运行结果是符合我们预期的！<br />
+这个模型存在两个问题：<br />
+(1) 现实中，仓库的容量不可能为负数。但是，此模型中的仓库容量可以为负数，这与现实相矛盾！<br />
+(2) 现实中，仓库的容量是有限制的。但是，此模型中的容量确实没有限制的！<br />
+这两个问题，我们稍微会讲到如何解决。现在，先看个简单的示例2；通过对比“示例1”和“示例2”,我们能更清晰的认识lock(),unlock()的用途。</p>
+<p><strong>2.2 示例2<br />
+</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+// LockTest2.java
+// 仓库
+class Depot { 
+  private int size;    // 仓库的实际数量
+  private Lock lock;    // 独占锁
+
+  public Depot() {
+    this.size = 0;
+    this.lock = new ReentrantLock();
+  }
+
+  public void produce(int val) {
+//    lock.lock();
+//    try {
+      size += val;
+      System.out.printf("%s produce(%d) --&gt; size=%d\n", 
+          Thread.currentThread().getName(), val, size);
+//    } catch (InterruptedException e) {
+//    } finally {
+//      lock.unlock();
+//    }
+  }
+
+  public void consume(int val) {
+//    lock.lock();
+//    try {
+      size -= val;
+      System.out.printf("%s consume(%d) &lt;-- size=%d\n", 
+          Thread.currentThread().getName(), val, size);
+//    } finally {
+//      lock.unlock();
+//    }
+  }
+};
+
+// 生产者
+class Producer {
+  private Depot depot;
+
+  public Producer(Depot depot) {
+    this.depot = depot;
+  }
+
+  // 消费产品：新建一个线程向仓库中生产产品。
+  public void produce(final int val) {
+    new Thread() {
+      public void run() {
+        depot.produce(val);
+      }
+    }.start();
+  }
+}
+
+// 消费者
+class Customer {
+  private Depot depot;
+
+  public Customer(Depot depot) {
+    this.depot = depot;
+  }
+
+  // 消费产品：新建一个线程从仓库中消费产品。
+  public void consume(final int val) {
+    new Thread() {
+      public void run() {
+        depot.consume(val);
+      }
+    }.start();
+  }
+}
+
+public class LockTest2 { 
+  public static void main(String[] args) { 
+    Depot mDepot = new Depot();
+    Producer mPro = new Producer(mDepot);
+    Customer mCus = new Customer(mDepot);
+
+    mPro.produce(60);
+    mPro.produce(120);
+    mCus.consume(90);
+    mCus.consume(150);
+    mPro.produce(110);
+  }
+}
+
+
+</pre>
+</div>
+<p>(某一次)运行结果：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+Thread-0 produce(60) --&gt; size=-60
+Thread-4 produce(110) --&gt; size=50
+Thread-2 consume(90) &lt;-- size=-60
+Thread-1 produce(120) --&gt; size=-60
+Thread-3 consume(150) &lt;-- size=-60
+</pre>
+</div>
+<p>结果说明：<br />
+“示例2”在“示例1”的基础上去掉了lock锁。在“示例2”中，仓库中最终剩余的产品是-60，而不是我们期望的50。原因是我们没有实现对仓库的互斥访问。</p>
+<p><strong>2.3 示例3<br />
+</strong>在“示例3”中，我们通过Condition去解决“示例1”中的两个问题：“仓库的容量不可能为负数”以及“仓库的容量是有限制的”。<br />
+解决该问题是通过Condition。Condition是需要和Lock联合使用的：通过Condition中的await()方法，能让线程阻塞[类似于wait()]；通过Condition的signal()方法，能让唤醒线程[类似于notify()]。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
+
+// LockTest3.java
+// 仓库
+class Depot {
+  private int capacity;  // 仓库的容量
+  private int size;    // 仓库的实际数量
+  private Lock lock;    // 独占锁
+  private Condition fullCondtion;      // 生产条件
+  private Condition emptyCondtion;    // 消费条件
+
+  public Depot(int capacity) {
+    this.capacity = capacity;
+    this.size = 0;
+    this.lock = new ReentrantLock();
+    this.fullCondtion = lock.newCondition();
+    this.emptyCondtion = lock.newCondition();
+  }
+
+  public void produce(int val) {
+    lock.lock();
+    try {
+       // left 表示“想要生产的数量”(有可能生产量太多，需多此生产)
+      int left = val;
+      while (left &gt; 0) {
+        // 库存已满时，等待“消费者”消费产品。
+        while (size &gt;= capacity)
+          fullCondtion.await();
+        // 获取“实际生产的数量”(即库存中新增的数量)
+        // 如果“库存”+“想要生产的数量”&gt;“总的容量”，则“实际增量”=“总的容量”-“当前容量”。(此时填满仓库)
+        // 否则“实际增量”=“想要生产的数量”
+        int inc = (size+left)&gt;capacity &#63; (capacity-size) : left;
+        size += inc;
+        left -= inc;
+        System.out.printf("%s produce(%3d) --&gt; left=%3d, inc=%3d, size=%3d\n", 
+            Thread.currentThread().getName(), val, left, inc, size);
+        // 通知“消费者”可以消费了。
+        emptyCondtion.signal();
+      }
+    } catch (InterruptedException e) {
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  public void consume(int val) {
+    lock.lock();
+    try {
+      // left 表示“客户要消费数量”(有可能消费量太大，库存不够，需多此消费)
+      int left = val;
+      while (left &gt; 0) {
+        // 库存为0时，等待“生产者”生产产品。
+        while (size &lt;= 0)
+          emptyCondtion.await();
+        // 获取“实际消费的数量”(即库存中实际减少的数量)
+        // 如果“库存”&lt;“客户要消费的数量”，则“实际消费量”=“库存”；
+        // 否则，“实际消费量”=“客户要消费的数量”。
+        int dec = (size&lt;left) &#63; size : left;
+        size -= dec;
+        left -= dec;
+        System.out.printf("%s consume(%3d) &lt;-- left=%3d, dec=%3d, size=%3d\n", 
+            Thread.currentThread().getName(), val, left, dec, size);
+        fullCondtion.signal();
+      }
+    } catch (InterruptedException e) {
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  public String toString() {
+    return "capacity:"+capacity+", actual size:"+size;
+  }
+};
+
+// 生产者
+class Producer {
+  private Depot depot;
+
+  public Producer(Depot depot) {
+    this.depot = depot;
+  }
+
+  // 消费产品：新建一个线程向仓库中生产产品。
+  public void produce(final int val) {
+    new Thread() {
+      public void run() {
+        depot.produce(val);
+      }
+    }.start();
+  }
+}
+
+// 消费者
+class Customer {
+  private Depot depot;
+
+  public Customer(Depot depot) {
+    this.depot = depot;
+  }
+
+  // 消费产品：新建一个线程从仓库中消费产品。
+  public void consume(final int val) {
+    new Thread() {
+      public void run() {
+        depot.consume(val);
+      }
+    }.start();
+  }
+}
+
+public class LockTest3 { 
+  public static void main(String[] args) { 
+    Depot mDepot = new Depot(100);
+    Producer mPro = new Producer(mDepot);
+    Customer mCus = new Customer(mDepot);
+
+    mPro.produce(60);
+    mPro.produce(120);
+    mCus.consume(90);
+    mCus.consume(150);
+    mPro.produce(110);
+  }
+}
+
+</pre>
+</div>
+<p>(某一次)运行结果：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+Thread-0 produce( 60) --&gt; left= 0, inc= 60, size= 60
+Thread-1 produce(120) --&gt; left= 80, inc= 40, size=100
+Thread-2 consume( 90) &lt;-- left= 0, dec= 90, size= 10
+Thread-3 consume(150) &lt;-- left=140, dec= 10, size= 0
+Thread-4 produce(110) --&gt; left= 10, inc=100, size=100
+Thread-3 consume(150) &lt;-- left= 40, dec=100, size= 0
+Thread-4 produce(110) --&gt; left= 0, inc= 10, size= 10
+Thread-3 consume(150) &lt;-- left= 30, dec= 10, size= 0
+Thread-1 produce(120) --&gt; left= 0, inc= 80, size= 80
+Thread-3 consume(150) &lt;-- left= 0, dec= 30, size= 50</pre>
+</div>
+<p></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/101974.html'>推荐 21 款优秀的高性能 Node.js 开发框架</a><a>下一篇</a><a href='/php/biji/101976.html'>Java连接Vmware中的redis</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

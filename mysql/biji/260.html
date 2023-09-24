@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL 8.0新特性之隐藏字段的实现方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL 8.0新特性之隐藏字段的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言
+MySQL" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL 8.0新特性之隐藏字段的实现方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:14:36                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL 8.0新特性之隐藏字段的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言
+MySQL</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL 8.0新特性之隐藏字段的实现方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h3>前言</h3>
+<p>MySQL 8.0.23 版本增加了一个新的功能：隐藏字段（Invisible Column），也称为不可见字段。本文给大家介绍一下 MySQL 隐藏字段的相关概念和具体实现。</p>
+<h3>基本概念</h3>
+<p>隐藏字段需要在查询中进行显式引用，否则对查询而言是不可见的。MySQL 8.0.23 开始支持隐藏字段，在此之前所有的字段都是可见字段。</p>
+<p>考虑以下应用场景，假如一个应用程序使用SELECT *语句访问某个表，并且必需持续不断地进行查询，即使我们为该表增加了一个该应用不需要的新字段时也要求能够正常工作。对于SELECT *查询，星号（*）代表了表中除隐藏字段之外的所有字段，因此我们可以将新加的字段定义为隐藏字段。该隐藏字段对于SELECT *查询是不可见的，因此应用能够继续运行。如果新版本的应用程序需要使用该字段，可以在查询中显式指定。</p>
+<p>PS：不推荐使用SELECT *语句查询数据，应该明确指定需要返回的字段。</p>
+<h3>隐藏字段与 DDL 语句</h3>
+<p>默认情况下创建的字段属于可见字段。如果想要显式指定字段的可见性，可以在CREATE TABLE或者ALTER TABLE语句中为字段的定义指定VISIBLE 或者 INVISIBLE 关键字。例如：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+CREATE TABLE t1 (
+ i INT,
+ j DATE INVISIBLE
+) ENGINE = InnoDB;
+ALTER TABLE t1 ADD COLUMN k INT INVISIBLE;
+</code></pre>
+<p>MySQL 8.0新特性之隐藏字段的深入讲解</p>
+<p>如果想要修改某个字段的可见性，同样可以使用 VISIBLE 或者 INVISIBLE 关键字。例如：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+ALTER TABLE t1 CHANGE COLUMN j j DATE VISIBLE;
+ALTER TABLE t1 MODIFY COLUMN j DATE INVISIBLE;
+ALTER TABLE t1 ALTER COLUMN j SET VISIBLE;
+</code></pre>
+<p>MySQL 8.0新特性之隐藏字段的深入讲解</p>
+<p>使用隐藏字段时，需要注意以下事项：</p>
+<ul>
+	<li>一个表至少需要一个可见字段。如果将所有字段都设置为隐藏字段，将会返回错误。</li>
+	<li>隐藏字段支持常见的字段属性：NULL、NOT NULL 以及 AUTO_INCREMENT 等等。</li>
+	<li>计算列（Generated column）可以是隐藏字段。</li>
+	<li>索引可以使用隐藏字段，包括 PRIMARY KEY 和 UNIQUE 索引。虽然一个表至少需要一个可见字段，但是索引定义中可以不包含任何可见字段。</li>
+	<li>删除某个表中的隐藏字段时，同时会从相关索引中删除该字段。</li>
+	<li>外键约束可以基于隐藏字段进行定义，同时外键约束也可以引用隐藏字段。</li>
+	<li>CHECK 约束可以基于隐藏字段进行定义。插入或者更新数据时，如果违反了隐藏字段上的 CHECK 约束将会返回错误。</li>
+</ul>
+<p>如果使用CREATE TABLE ... LIKE语句复制表结构，将会复制原表中的隐藏字段，而且它们在新表中仍然是隐藏字段。如果使用CREATE TABLE ... SELECT语句复制表，不会包含隐藏字段，除非显式指定了隐藏字段。尽管如此，即使包含了原表中的隐藏字段，新表中的这些字段将会变成可见字段。例如：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; CREATE TABLE t1 (col1 INT, col2 INT INVISIBLE);
+mysql&gt; CREATE TABLE t2 AS SELECT col1, col2 FROM t1;
+mysql&gt; SHOW CREATE TABLE t2\G
+*************************** 1. row ***************************
+  Table: t2
+Create Table: CREATE TABLE `t2` (
+ `col1` int DEFAULT NULL,
+ `col2` int DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+</code></pre>
+<p>MySQL 8.0新特性之隐藏字段的深入讲解</p>
+<p>如果想要保留这些字段的隐藏属性，可以在 CREATE TABLE 之后为它们指定隐藏属性。例如：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; CREATE TABLE t1 (col1 INT, col2 INT INVISIBLE);
+mysql&gt; CREATE TABLE t2 (col2 INT INVISIBLE) AS SELECT col1, col2 FROM t1;
+mysql&gt; SHOW CREATE TABLE t2\G
+*************************** 1. row ***************************
+  Table: t2
+Create Table: CREATE TABLE `t2` (
+ `col1` int DEFAULT NULL,
+ `col2` int DEFAULT NULL /*!80023 INVISIBLE */
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+</code></pre>
+<p>MySQL 8.0新特性之隐藏字段的深入讲解</p>
+<p>视图可以引用隐藏字段，需要在定义中显式指定这些字段。在视图定义之后修改字段的可见性不会影响视图。</p>
+<h3>隐藏字段与 DML 语句</h3>
+<p>对于 SELECT 语句，除非在查询列表中显式指定了隐藏字段，否则查询结构中不会包含隐藏字段。查询列表中的 * 和 tbl_name.* 不会包含隐藏字段。自然连接不会包含隐藏字段。</p>
+<p>对于以下语句：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; CREATE TABLE t1 (col1 INT, col2 INT INVISIBLE);
+mysql&gt; INSERT INTO t1 (col1, col2) VALUES(1, 2), (3, 4);
+
+mysql&gt; SELECT * FROM t1;
++------+
+| col1 |
++------+
+| 1 |
+| 3 |
++------+
+
+mysql&gt; SELECT col1, col2 FROM t1;
++------+------+
+| col1 | col2 |
++------+------+
+| 1 | 2 |
+| 3 | 4 |
++------+------+
+</code></pre>
+<p>MySQL 8.0新特性之隐藏字段的深入讲解</p>
+<p>第一个 SELECT 语句没有引用隐藏字段 col2（* 不包含隐藏字段），因此查询结果中没有返回 col2 字段。第二个 SELECT 语句显式指定了 col2 字段，因此查询结果返回了该字段。</p>
+<p>对于查询语句，如果没有为隐藏字段指定数据，使用隐式默认值规则进行赋值。</p>
+<p>对于 INSERT 语句（包括 REPLACE 语句的数据插入），如果没有指定字段列表、指定空白列表或者没有在字段列表中指定隐藏字段时，使用隐式默认值赋值。例如：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+CREATE TABLE t1 (col1 INT, col2 INT INVISIBLE);
+INSERT INTO t1 VALUES(...);
+INSERT INTO t1 () VALUES(...);
+INSERT INTO t1 (col1) VALUES(...);
+</code></pre>
+<p>MySQL 8.0新特性之隐藏字段的深入讲解</p>
+<p>对于前两个 INSERT 语句，VALUES() 列表必须为每个可见字段和隐藏字段提供一个数值。对于第三个 INSERT 语句，VALUES() 列表必须为每个指定的字段提供一个数值。</p>
+<p>对于 LOAD DATA 和 LOAD XML 语句，如果没有指定字段列表或者没有在字段列表中指定隐藏字段时，使用隐式默认值赋值。输入数据中不能包含隐藏字段的值。</p>
+<p>如果想要为上面的语句提供一个非默认的数据，可以在字段列表中显式指定隐藏字段并且在 VALUES() 列表中指定一个数值。</p>
+<p>INSERT INTO &hellip; SELECT * 和 REPLACE INTO &hellip; SELECT * 不会包含隐藏字段，因为 * 不会返回隐藏字段。此时同样会使用隐式默认值规则进行赋值。</p>
+<p>基于 PRIMARY KEY 或者 UNIQUE 索引执行插入或者忽略插入、替换或者修改数据的语句中，MySQL 对隐藏字段的处理方式和可见字段相同：隐藏字段同样会用于键值的比较。准确来说，如果某个新的数据行和已有数据行的唯一键字段值相同，无论索引字段是否可见，都会使用以下处理方式：</p>
+<ul>
+	<li>如果指定了 IGNORE 修饰符，INSERT、LOAD DATA 以及 LOAD XML 都会忽略新的数据行。</li>
+	<li>REPLACE 使用新的数据行替换原有的数据行。如果指定了 REPLACE 修饰符，LOAD DATA 和 LOAD XML 也是如此。</li>
+	<li>INSERT &hellip; ON DUPLICATE KEY UPDATE 更新原有的数据行。</li>
+</ul>
+<p>如果想要使用 UPDATE 语句更新隐藏字段，像可见字段一样显式进行赋值即可。</p>
+<h3>隐藏字段相关的元数据</h3>
+<p>我们可以通过 INFORMATION_SCHEMA.COLUMNS 系统表的 EXTRA 字段或者 SHOW COLUMNS 命令查看字段的可见属性。例如：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; SELECT TABLE_NAME, COLUMN_NAME, EXTRA
+  FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 't1';
++------------+-------------+-----------+
+| TABLE_NAME | COLUMN_NAME | EXTRA  |
++------------+-------------+-----------+
+| t1   | i   |   |
+| t1   | j   |   |
+| t1   | k   | INVISIBLE |
++------------+-------------+-----------+
+</code></pre>
+<p>MySQL 8.0新特性之隐藏字段的深入讲解</p>
+<p>默认情况下字段是可见的，此时 EXTRA 字段为空。对于隐藏字段，EXTRA 显式为 INVISIBLE。</p>
+<p>SHOW CREATE TABLE 命令可以显式表中的隐藏字段，字段定义中包含一个基于版本的注释，其中包含了一个 INVISIBLE 关键字：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; SHOW CREATE TABLE t1\G
+*************************** 1. row ***************************
+  Table: t1
+Create Table: CREATE TABLE `t1` (
+ `i` int DEFAULT NULL,
+ `j` int DEFAULT NULL,
+ `k` int DEFAULT NULL /*!80023 INVISIBLE */
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+</code></pre>
+<p>MySQL 8.0新特性之隐藏字段的深入讲解</p>
+<p>mysqldump 和 mysqlpump 使用 SHOW CREATE TABLE 命令，因此它们导出的表定义中包含可隐藏字段。同时，它们在导出的数据中包含了隐藏字段的值。如果将导出文件加载到不支持的隐藏字段的低版本 MySQL 中，将会忽略基于版本的注释信息，从而将隐藏字段作为可见字段使用。</p>
+<h3>隐藏字段与二进制日志</h3>
+<p>对于二进制日志中的事件，MySQL 使用以下方式处理隐藏字段：</p>
+<ul>
+	<li>创建表的事件中包含了隐藏字段的 INVISIBLE 属性。</li>
+	<li>数据行事件中的隐藏字段和可见字段处理方式相同。它们会根据系统变量 binlog_row_image 的设置进行处理。</li>
+	<li>当数据行事件被应用时，隐藏字段和可见字段处理方式相同。其中，使用的算法和索引基于系统变量 slave_rows_search_algorithms 的设置进行选择。</li>
+	<li>计算写入集（writeset）时隐藏字段和可见字段处理方式相同。写入集中包含了基于隐藏字段定义的索引。</li>
+	<li>mysqlbinlog 命令中包含了字段元数据中的可见属性。</li>
+</ul>
+<h3>总结</h3>
+<p>到此这篇关于MySQL 8.0新特性之隐藏字段的文章就介绍到这了,更多相关MySQL8.0隐藏字段内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL 8.0新特性之隐藏字段的实现方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/259.html'>在IntelliJ IDEA中使用Java连接MySQL数据库的实现方法</a><a>下一篇</a><a href='/mysql/biji/261.html'>MySQL 索引设计与优化的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

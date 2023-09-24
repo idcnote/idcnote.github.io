@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Nginx访问控制与参数调优[linux入门]_IDC笔记</title>
+    <meta name="keywords" content=",Linux常用命令" />
+    <meta name="description" content="Nginx作为高性能web服务器深受广大开发者喜爱。为了安全我们要做好Nginx访问控制，比如允许和禁止某个IP访问、禁止访问某个目录、反爬虫等。同时可以适当调优配置使Nginx性能" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+            <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> Linux命令大全            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/linux/1.html">Linux常用命令(手册)大全</a></li><li><a href="/linux/linux/2.html">Linux命令格式</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 系统管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/system/3.html">Linux ls命令:显示指定工作目录下的内容</a></li><li><a href="/linux/system/4.html">Linux pwd命令:显示当前工作目录</a></li><li><a href="/linux/system/5.html">Linux cd命令:切换工作目录</a></li><li><a href="/linux/system/6.html">Linux date命令:显示或设置系统时间</a></li><li><a href="/linux/system/7.html">Linux su命令:切换用户</a></li><li><a href="/linux/system/9.html">Linux man命令:查看帮助信息</a></li><li><a href="/linux/system/8.html">Linux clear命令:清除屏幕</a></li><li><a href="/linux/system/11.html">Linux whoami命令:显示目前登录用户名</a></li><li><a href="/linux/system/10.html">Linux who命令:显示目前登录用户信息</a></li><li><a href="/linux/system/13.html">Linux ps命令:显示进程状态</a></li><li><a href="/linux/system/12.html">Linux free命令:显示系统内存状态</a></li><li><a href="/linux/system/15.html">Linux help命令:显示帮助信息</a></li><li><a href="/linux/system/14.html">Linux top命令:查看系统活跃进程</a></li><li><a href="/linux/system/18.html">Linux shutdown命令:关机或重启</a></li><li><a href="/linux/system/17.html">Linux halt命令:关闭系统</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 文件管理与编辑命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/file/27.html">Linux mkdir命令:创建目录</a></li><li><a href="/linux/file/29.html">Linux cat命令:连接文件并打印到标准输出设备上</a></li><li><a href="/linux/file/28.html">Linux more命令:显示文本文件内容</a></li><li><a href="/linux/file/30.html">Linux grep命令:检索文件内容</a></li><li><a href="/linux/file/31.html">Linux rm命令:删除文件或目录</a></li><li><a href="/linux/file/32.html">Linux touch命令:修改文件的时间</a></li><li><a href="/linux/file/34.html">Linux cp命令:复制文件或目录</a></li><li><a href="/linux/file/33.html">Linux ln命令:创建链接</a></li><li><a href="/linux/file/35.html">Linux find命令:查找文件</a></li><li><a href="/linux/file/37.html">Linux mv命令:移动或重命名文件或目录</a></li><li><a href="/linux/file/36.html">Linux split命令:分割文件</a></li><li><a href="/linux/file/40.html">Linux head命令:查看文件前几行</a></li><li><a href="/linux/file/39.html">Linux less命令:分页显示文件内容</a></li><li><a href="/linux/file/38.html">Linux vi/vim命令:文本编辑器</a></li><li><a href="/linux/file/42.html">Linux wc命令:统计字节数、字数、行数</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 压缩与解压命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/compression/55.html">Linux unzip命令:解压文件或目录</a></li><li><a href="/linux/compression/54.html">Linux zip命令:压缩文件或目录</a></li><li><a href="/linux/compression/56.html">Linux tar命令:归档工具</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 磁盘管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/disk/57.html">Linux df命令:显示磁盘空间使用情况</a></li><li><a href="/linux/disk/59.html">Linux quota命令:显示磁盘已使用的空间与限制</a></li><li><a href="/linux/disk/58.html">Linux mount命令:挂载文件系统</a></li><li><a href="/linux/disk/62.html">Linux ip命令:执行网络管理任务</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 网络设置与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/network/61.html">Linux netstat命令:显示网络状态</a></li><li><a href="/linux/network/60.html">Linux ifconfig命令:配置或显示网络接口信息</a></li><li><a href="/linux/network/63.html">Linux ping命令:测试主机间网络连通性</a></li><li><a href="/linux/network/65.html">Linux finger命令:查找并显示用户信息</a></li><li><a href="/linux/network/64.html">Linux wall命令:发送广播</a></li><li><a href="/linux/network/67.html">Linux rlogin命令:远端登入</a></li><li><a href="/linux/network/66.html">Linux rcp命令:远程文件复制</a></li>        </ul>
+    </li>
+        <li>
+        <a href="/linux/biji/" class="waves-effect">
+            <i class="icon-share"></i>
+            <span>Linux笔记
+                <span class="float-right menu-arrow">
+                <i class="mdi mdi-chevron-right"></i>
+                </span>
+            </span>
+        </a>
+    </li>
+    </ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+</div>
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="page-title-box">
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <h1 class="page-title">Nginx访问控制与参数调优[linux入门]</h1>
+                    </div>
+                </div>
+                <!-- end row -->
+            </div>
+            <!-- end page-title -->
+            <!-- START ROW -->
+            <div class="panel panel-forbid">
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+                <div class="panel-content">
+                <span>Nginx作为高性能web服务器深受广大开发者喜爱。为了安全我们要做好Nginx访问控制，比如允许和禁止某个IP访问、禁止访问某个目录、反爬虫等。同时可以适当调优配置使Nginx性能</span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+                <div class="panel-content">
+                <span><p>Nginx作为高性能web服务器深受广大开发者喜爱。为了安全我们要做好Nginx访问控制，比如允许和禁止某个IP访问、禁止访问某个目录、反爬虫等。同时可以适当调优配置使Nginx性能更加强悍。</p><h4>Nginx全局变量</h4><p>Nginx中有很多的全局变量，可以通过<code>$变量名</code>来使用。下面列举一些常用的全局变量：</p><p>变量说明<br>boxClass需要执行动画的元素的<br></p><p>变量说明<br><br></p><pre><code>$args请求中的参数，如www.123.com/1.php?a=1&amp;b=2的$args就是a=1&amp;b=2
+$content_lengthHTTP请求信息里的”Content-Length”
+$conten_typeHTTP请求信息里的”Content-Type”
+$document_rootnginx虚拟主机配置文件中的root参数对应的值
+$document_uri当前请求中不包含指令的URI，如www.123.com/1.php?a=1&amp;b=2的$document_uri就是1.php,不包含后面的参数
+$host主机头，也就是域名
+$http_user_agent客户端的详细信息，也就是浏览器的标识，用curl -A可以指定
+$http_cookie客户端的cookie信息
+$limit_rate如果nginx服务器使用limit_rate配置了显示网络速率，则会显示，如果没有设置， 则显示0
+$remote_addr客户端的公网ip
+$remote_port客户端的port
+$remote_user如果nginx有配置认证，该变量代表客户端认证的用户名
+$request_body_file做反向代理时发给后端服务器的本地资源的名称
+$request_method请求资源的方式，GET/PUT/DELETE等
+$request_filename当前请求的资源文件的路径名称，相当于是$document_root/$document_uri的组合
+$request_uri请求的链接，包括$document_uri和$args
+$scheme请求的协议，如ftp,http,https
+$server_protocol客户端请求资源使用的协议的版本，如HTTP/1.0，HTTP/1.1，HTTP/2.0等
+$server_addr服务器IP地址
+$server_name服务器的主机名
+$server_port服务器的端口号
+$uri和$document_uri相同
+$http_referer客户端请求时的referer，通俗讲就是该请求是通过哪个链接跳过来的，用curl -e可以指定<br></code></pre><h4>Nginx location</h4><p>location作用</p><p>location指令的作用是根据用户请求的URI来执行不同的应用。即根据用户请求的网站地址URL进行匹配，匹配成功就进行相应的操作。</p><p>语法</p><p>location的语法规则：<code>location [=|~|~*|^~] /uri/ { … }</code><br>location匹配的变量是<code>$uri</code><br>关于几种字符的说明</p><p>字符描述<br>=表示精准匹配<br>~表示区分大小写的正则匹配<br>~*表示不区分大小写的正则匹配<br>^~表示uri以指定字符或字符串开头<br>/通用匹配，任何请求都会匹配到<br></p><p>规则优先级</p><p><code>= 高于 ^~ 高于 ~* 等于 ~ 高于 /</code></p><p><strong>示例1</strong></p><pre><code>location = <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"/12.jpg"</span> { ... }
+如：
+www.xxx.com/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">12</span>.jpg 匹配
+www.xxx.com/abc/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">12</span>.jpg 不匹配
+
+location ^~ <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"/abc/"</span> { ... }
+如：
+www.xxx.com/abc/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">123</span>.html 匹配
+www.xxx.com/a/abc/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">123</span>.jpg 不匹配
+
+location ~ <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"png"</span> { ... }
+如：
+www.xxx.com/aaa/bbb/ccc/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">123</span>.png 匹配
+www.xxx.com/aaa/png/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">123</span>.html 匹配
+
+location ~* <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"png"</span> { ... }
+如：
+www.xxx.com/aaa/bbb/ccc/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">123</span>.PNG 匹配
+www.xxx.com/aaa/png/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">123</span>.html 匹配
+
+
+location /admin/ { ... }
+如：
+www.xxx.com/admin/aaa/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">1</span>.php 匹配
+www.xxx.com/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">123</span>/admin/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">1</span>.php 不匹配
+</code></pre><p>注意：<br>有些资料上介绍location支持不匹配 !~如：<code>&nbsp;location !~ "png"{ ... }</code><br>这是错误的，<code>location</code>不支持<code>&nbsp;!~</code><br>如果有这样的需求，可以通过if(<code>location优先级小于if&nbsp;</code>)来实现，如：&nbsp;<code>if ($uri !~ "png") { ... }</code></p><h4>访问控制</h4><p>web2.0时代，很多网站都是以用户为中心，网站允许用户发布内容到服务器。由于为用户开放了上传功能，因此有很大的安全风险，比如黑客上传木马程序等等。因此，访问控制就很有必要配置了。</p><p>deny与allow</p><p>字面上很容易理解就是拒绝和允许。<br>Nginx的<code>deny</code>和<code>allow</code>指令是由ngx_http_access_module模块提供，Nginx安装默认内置了该模块。</p><p><strong>语法</strong><br>语法：<code>allow/deny address | CIDR | unix: | all</code></p><p>它表示，允许/拒绝某个ip或者一个ip段访问.如果指定<code>unix:</code>,那将允许socket的访问。<br>注意：unix在1.5.1中新加入的功能。<br>在nginx中，allow和deny的规则是按顺序执行的。</p><p><strong>示例1</strong>：</p><pre><code><span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">location</span> /
+{
+    <span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">allow</span> <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">192.168.0.0</span>/<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">24</span>;
+    <span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">allow</span> <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">127.0.0.1</span>;
+    <span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">deny</span> all;
+}
+</code></pre><p>说明：这段配置值允许192.168.0.0/24网段和127.0.0.1的请求，其他来源IP全部拒绝。</p><p><strong>示例2：</strong></p><pre><code><span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">location</span> <span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">~ "admin"</span>
+{
+    <span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">allow</span> <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">192.168.30.7</span>;
+    <span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">deny</span> all
+}
+</code></pre><p>说明：访问的uri中包含admin的请求，只允许192.168.30.7这个IP的请求。</p><p>基于location的访问控制</p><p>日常上，访问控制基本是配合location来做配置的，直接例子吧。<br><strong>示例1：</strong></p><pre><code><span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">location</span> /blog/
+{
+    <span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">deny</span> all;
+}
+</code></pre><p>说明：针对/blog/目录，全部禁止访问，这里的<code>deny all;</code>可以改为<code>return 403;</code>.<br><strong>示例2</strong></p><pre><code><span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">location</span> <span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">~ ".bak|.ht"</span>
+{
+    <span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">return</span> <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">403</span>;
+}
+</code></pre><p>说明：访问的uri中包含<code>.bak</code>字样的或者包含<code>.ht</code>的直接返回403状态码。</p><p>测试链接举例：</p><ul><li>www.xxx.com/abc.bak</li><li>www.xxx.com/blog/123/.htalskdjf</li></ul><p>如果用户输入的URL是上面其中之一都会返回403。<br><strong>示例3</strong></p><pre><code>location ~ (data<span class="hljs-params" style="margin: 0px; padding: 0px;">|cache|</span>tmp<span class="hljs-params" style="margin: 0px; padding: 0px;">|image|</span>attachment).*.php$
+{
+    deny all;
+}
+</code></pre><p>说明：请求的uri中包含<code>data、cache、tmp、image、attachment</code>并且以<code>.php</code>结尾的，全部禁止访问。</p><p>测试链接举例：</p><ul><li>www.xxxxxx.com/aming/cache/1.php</li><li>www.xxxxxxx.com/image/123.phps</li><li>www.xxxxxx.com/aming/datas/1.php</li></ul><p>基于$document_uri的访问控制</p><p>前面介绍了内置变量$document_uri含义是当前请求中不包含指令的URI。<br>如www.123.com/1.php?a=1&amp;b=2的$document_uri就是1.php,不包含后面的参数。<br>我们可以针对这个变量做访问控制。<br><strong>示例1</strong></p><pre><code><span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">if</span> ($document_uri ~ <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"/admin/"</span>)
+{
+    <span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">return</span> <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">403</span>;
+}
+</code></pre><p>说明：当请求的uri中包含/admin/时，直接返回403.</p><p>注意：<code>if</code>结构中不支持使用<code>allow</code>和<code>deny。</code></p><p>测试链接：</p><pre><code><span class="hljs-bullet" style="margin: 0px; padding: 0px; color: rgb(153, 0, 115);">1. </span>www.xxxxx.com/123/admin/1.html 匹配
+<span class="hljs-bullet" style="margin: 0px; padding: 0px; color: rgb(153, 0, 115);">2. </span>www.xxxxx.com/admin123/1.html  不匹配
+<span class="hljs-bullet" style="margin: 0px; padding: 0px; color: rgb(153, 0, 115);">3. </span>www.xxxxx.com/admin.php  不匹配
+</code></pre><p><strong>示例2</strong></p><pre><code><span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">if</span> (<span class="hljs-variable" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">$document_uri</span> = /admin.php)
+{
+    <span class="hljs-built_in" style="margin: 0px; padding: 0px; color: rgb(0, 134, 179);">return</span> 403;
+}
+</code></pre><p>说明：请求的uri为/admin.php时返回403状态码。</p><p>测试链接：</p><pre><code><span class="hljs-bullet" style="margin: 0px; padding: 0px; color: rgb(153, 0, 115);">1. </span>www.xxxxx.com/admin.php # 匹配
+<span class="hljs-bullet" style="margin: 0px; padding: 0px; color: rgb(153, 0, 115);">2. </span>www.xxxxx.com/123/admin.php # 不匹配
+</code></pre><p><strong>示例3</strong></p><pre><code><span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">if</span> ($document_uri ~ <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"/data/|/cache/.*.php$"</span>)
+{
+    <span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">return</span> <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">403</span>;
+}
+</code></pre><p>说明：请求的uri包含data或者cache目录，并且是php时，返回403状态码。</p><p>测试链接：</p><pre><code><span class="hljs-bullet" style="margin: 0px; padding: 0px; color: rgb(153, 0, 115);">1. </span>www.xxxxx.com/data/123.php  # 匹配
+<span class="hljs-bullet" style="margin: 0px; padding: 0px; color: rgb(153, 0, 115);">2. </span>www.xxxxx.com/cache1/123.php # 不匹配
+</code></pre><p>基于$request_uri访问控制</p><p>$request_uri比$docuemnt_uri多了请求的参数。主要是针对请求的uri中的参数进行控制。<br><strong>示例</strong></p><pre><code><span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">if</span> ($request_uri ~ <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"gid=d{9,12}"</span>)
+{
+    <span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">return</span> <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">403</span>;
+}
+</code></pre><p>说明：<code>d{9,12}</code>是正则表达式，表示9到12个数字，例如<code>gid=1234567890</code>就符号要求。</p><p>测试链接：</p><pre><code><span class="hljs-bullet" style="margin: 0px; padding: 0px; color: rgb(153, 0, 115);">1. </span>www.xxxxx.com/index.php?gid=1234567890&amp;pid=111  匹配
+<span class="hljs-bullet" style="margin: 0px; padding: 0px; color: rgb(153, 0, 115);">2. </span>www.xxxxx.com/gid=123  不匹配
+</code></pre><p>背景知识：<br>曾经有一个客户的网站cc攻击，对方发起太多类似这样的请求：/read-123405150-1-1.html<br>实际上，这样的请求并不是正常的请求，网站会抛出一个页面，提示帖子不存在。<br>所以，可以直接针对这样的请求，return 403状态码。</p><p>基于$http_user_agent的访问控制(反爬虫)</p><p>user_agent可以简单理解成浏览器标识，包括一些蜘蛛爬虫都可以通过user_agent来辨识。假如观察访问日志，发现一些搜索引擎的蜘蛛对网站访问特别频繁，它们并不友好。为了减少服务器的压力，其实可以把除<code>主流</code>搜索引擎蜘蛛外的其他蜘蛛爬虫全部封掉。<br><strong>示例</strong></p><pre><code><span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">if</span> ($user_agent ~ <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"YisouSpider|MJ12bot/v1.4.2|YoudaoBot|Tomato"</span>)
+{
+    <span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">return</span> <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">403</span>;
+}
+</code></pre><p>说明：user_agent包含以上关键词的请求，全部返回403状态码。</p><p>测试：</p><pre><code><span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">1</span>. curl -A <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"123YisouSpider1.0"</span>
+<span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">2</span>. curl -A <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"MJ12bot/v1.4.1"</span>
+</code></pre><p>基于$http_referer的访问控制</p><p>$http_referer除了可以实现防盗链的功能外，还可以做一些特殊的需求。<br><strong>比如：</strong></p><blockquote>网站被黑挂马，搜索引擎收录的网页是有问题的，当通过搜索引擎点击到网站时，却显示一个博彩网站。<br>由于查找木马需要时间，不能马上解决，为了不影响用户体验，可以针对此类请求做一个特殊操作。<br>比如，可以把从百度访问的链接直接返回404状态码，或者返回一段html代码。</blockquote><p><strong>示例</strong></p><pre><code><span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">if</span> ($http_referer ~ <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"baidu.com"</span>)
+{
+    <span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">return</span> <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">404</span>;
+}
+</code></pre><p>或者</p><pre><code>if ($http_referer ~ "baidu.com")
+{
+    return 200 "<span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;<span class="hljs-name" style="margin: 0px; padding: 0px;">html</span>&gt;</span><span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;<span class="hljs-name" style="margin: 0px; padding: 0px;">script</span>&gt;</span><span class="javascript" style="margin: 0px; padding: 0px;"><span class="hljs-built_in" style="margin: 0px; padding: 0px; color: rgb(0, 134, 179);">window</span>.location.href=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"//$host$request_uri"</span>;</span><span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;/<span class="hljs-name" style="margin: 0px; padding: 0px;">script</span>&gt;</span><span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;/<span class="hljs-name" style="margin: 0px; padding: 0px;">html</span>&gt;</span>";
+}
+</code></pre><h4>Nginx参数优化</h4><p>Nginx作为高性能web服务器，即使不特意调整配置参数也可以处理大量的并发请求。当然，配置调优会使Nginx性能更加强悍，配置参数需要结合服务器硬件性能等做参考。</p><p>本站之前有文章专门介绍了Nginx优化：Nginx配置优化解读，下面再来复习一下：</p><p>worker进程优化</p><p><strong>worker_processes num;</strong></p><pre><code>该参数表示启动几个工作进程，建议和本机CPU核数保持一致，每一核CPU处理一个进程，num表示数字。
+</code></pre><p><strong>worker_rlimit_nofile</strong></p><pre><code>它表示Nginx最大可用的文件描述符个数，需要配合系统的最大描述符，建议设置为102400。
+还需要在系统里执行ulimit -n 102400才可以。
+也可以直接修改配置文件/etc/security/limits.conf修改
+增加：
+<span class="hljs-meta" style="margin: 0px; padding: 0px; color: rgb(153, 153, 153); font-weight: bold;">#</span><span class="bash" style="margin: 0px; padding: 0px;">* soft nofile 655350 (去掉前面的<span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">#)</span></span>
+<span class="hljs-meta" style="margin: 0px; padding: 0px; color: rgb(153, 153, 153); font-weight: bold;">#</span><span class="bash" style="margin: 0px; padding: 0px;">* hard nofile 655350 (去掉前面的<span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">#)</span></span>
+</code></pre><p><strong>worker_connections</strong></p><pre><code>该参数用来配置每个Nginx worker进程最大处理的连接数,
+这个参数也决定了该Nginx服务器最多能处理多少客户端请求（worker_processes * worker_connections)
+建议把该参数设置为10240，不建议太大。
+</code></pre><p>http/tcp连接数优化</p><p><strong>use epoll</strong></p><pre><code>使用epoll模式的事件驱动模型，该模型为Linux系统下最优方式。
+</code></pre><p><strong>multi_accept on</strong></p><pre><code>使每个worker进程可以同时处理多个客户端请求。
+</code></pre><p><strong>sendfile on</strong></p><pre><code>使用内核的FD文件传输功能，可以减少user mode和kernel mode的切换，从而提升服务器性能。
+</code></pre><p><strong>tcp_nopush on</strong></p><pre><code>当tcp_nopush设置为on时，会调用tcp_cork方法进行数据传输。
+使用该方法会产生这样的效果：当应用程序产生数据时，
+内核不会立马封装包，而是当数据量积累到一定量时才会封装，然后传输。
+</code></pre><p><strong>tcp_nodelay on</strong></p><pre><code>不缓存data-sends（关闭 Nagle 算法），这个能够提高高频发送小数据报文的实时性。
+</code></pre><p>(关于Nagle算法)</p><blockquote>【假如需要频繁的发送一些小包数据，比如说1个字节，以IPv4为例的话，则每个包都要附带40字节的头，<br>也就是说，总计41个字节的数据里，其中只有1个字节是我们需要的数据。<br>为了解决这个问题，出现了Nagle算法。<br>它规定：如果包的大小满足MSS，那么可以立即发送，否则数据会被放到缓冲区，等到已经发送的包被确认了之后才能继续发送。<br>通过这样的规定，可以降低网络里小包的数量，从而提升网络性能。</blockquote><p><strong>keepalive_timeout</strong></p><pre><code>定义长连接的超时时间，建议30s，太短或者太长都不一定合适，当然，最好是根据业务自身的情况来动态地调整该参数。
+</code></pre><p><strong>keepalive_requests</strong></p><pre><code>定义当客户端和服务端处于长连接的情况下，每个客户端最多可以请求多少次，可以设置很大，比如50000.
+</code></pre><p><strong>reset_timeout_connection on</strong></p><pre><code>设置为on的话，当客户端不再向服务端发送请求时，允许服务端关闭该连接。
+</code></pre><p><strong>client_body_timeout</strong></p><pre><code>客户端如果在该指定时间内没有加载完body数据，则断开连接，单位是秒，默认60，可以设置为10。</code></pre><p><strong>send_timeout</strong></p><pre><code>这个超时时间是发送响应的超时时间，即Nginx服务器向客户端发送了数据包，但客户端一直没有去接收这个数据包。
+如果某个连接超过send_timeout定义的超时时间，那么Nginx将会关闭这个连接。单位是秒，可以设置为3。
+</code></pre><p>压缩</p><p>对于纯文本的内容，Nginx是可以使用<code>gzip</code>压缩的。使用压缩技术可以减少对带宽的消耗。<br>由<code>ngx_http_gzip_module</code>模块支持</p><p>配置如下：</p><pre><code>gzip on; <span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">//</span>开启gzip功能
+gzip_min_length <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">1024</span>; <span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">//</span>设置请求资源超过该数值才进行压缩，单位字节
+gzip_buffers <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">16</span> <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">8</span>k; <span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">//</span>设置压缩使用的buffer大小，第一个数字为数量，第二个为每个buffer的大小
+gzip_comp_level <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">6</span>; <span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">//</span>设置压缩级别，范围<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">1</span>-<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">9</span>,<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">9</span>压缩级别最高，也最耗费CPU资源
+gzip_types text/plain application/x-javascript text/css application/xml image/jpeg image/gif image/png; <span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">//</span>指定哪些类型的文件需要压缩
+gzip_disable <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"MSIE 6."</span>; <span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">//</span>IE6浏览器不启用压缩
+</code></pre><p>测试：</p><pre><code><span class="hljs-attribute" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">curl</span> -I -H <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"Accept-Encoding: gzip, deflate"</span> /d/file/p/20221029/1.css
+</code></pre><p>日志</p><ul><li>错误日志级别调高，比如crit级别，尽量少记录无关紧要的日志。</li><li>对于访问日志，如果不要求记录日志，可以关闭，</li><li>静态资源的访问日志关闭</li></ul><p>静态文件过期</p><p>对于静态文件，需要设置一个过期时间，这样可以让这些资源缓存到客户端浏览器，<br>在缓存未失效前，客户端不再向服务期请求相同的资源，从而节省带宽和资源消耗。</p><p>配置示例如下：</p><pre><code>location ~* ^.+.(gif<span class="hljs-params" style="margin: 0px; padding: 0px;">|jpg|</span>png<span class="hljs-params" style="margin: 0px; padding: 0px;">|css|</span>js)$                                      
+{
+    expires <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">1</span>d; <span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">//</span><span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">1</span>d表示<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">1</span>天，也可以用<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">24</span>h表示一天。
+}
+</code></pre>
+                    
+                                                                                                        
+                                                </div>
+                                                <!-- .entry-wrapper --></span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+                <div class="panel-content">
+                <span>[!--zhushi--]</span>                                     
+                </div>
+
+            </div>
+
+            <!-- END ROW -->
+            <div class="newsPage">
+                <div class="newsPageTurn">
+                    <span><a>上一篇</a><a href='/linux/biji/184.html'>【linux命令】linux命令df</a><a>下一篇</a><a href='/linux/biji/186.html'>【linux命令】[网摘]我是如何学习 Linux 的</a></span>
+                </div>
+            </div>
+        </div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+                <li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<!-- container-fluid -->
+    </div>
+<!-- content -->
+    <footer class="footer">
+    © 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    </footer>
+</div>
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

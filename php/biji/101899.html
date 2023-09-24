@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>由ArrayList来深入理解Java中的fail-fast机制_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="1. fail-fast简介<br />
+<br />
+“快速失败”也就是fail-fast，它是Java集合的一种错误检测机制。某个线程在对collection进行迭代时，不允许其他线程对该collection进行结构上的修改。<br />
+<br />
+例" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">由ArrayList来深入理解Java中的fail-fast机制</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>1. fail-fast简介<br />
+<br />
+“快速失败”也就是fail-fast，它是Java集合的一种错误检测机制。某个线程在对collection进行迭代时，不允许其他线程对该collection进行结构上的修改。<br />
+<br />
+例</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>1. fail-fast简介<br />
+</strong>“快速失败”也就是fail-fast，它是Java集合的一种错误检测机制。某个线程在对collection进行迭代时，不允许其他线程对该collection进行结构上的修改。<br />
+例如：假设存在两个线程（线程1、线程2），线程1通过Iterator在遍历集合A中的元素，在某个时候线程2修改了集合A的结构（是结构上面的修改，而不是简单的修改集合元素的内容），那么这个时候程序就会抛出 ConcurrentModificationException 异常，从而产生fail-fast。<br />
+迭代器的快速失败行为无法得到保证，它不能保证一定会出现该错误，因此，ConcurrentModificationException应该仅用于检测 bug。<br />
+Java.util包中的所有集合类都是快速失败的，而java.util.concurrent包中的集合类都是安全失败的；<br />
+快速失败的迭代器抛出ConcurrentModificationException，而安全失败的迭代器从不抛出这个异常。</p>
+<p><br />
+<strong>2 fail-fast示例<br />
+</strong>示例代码：(FastFailTest.java)<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+import java.util.*;
+import java.util.concurrent.*;
+
+/*
+ * @desc java集合中Fast-Fail的测试程序。
+ *
+ * fast-fail事件产生的条件：当多个线程对Collection进行操作时，若其中某一个线程通过iterator去遍历集合时，该集合的内容被其他线程所改变；则会抛出ConcurrentModificationException异常。
+ * fast-fail解决办法：通过util.concurrent集合包下的相应类去处理，则不会产生fast-fail事件。
+ *
+ * 本例中，分别测试ArrayList和CopyOnWriteArrayList这两种情况。ArrayList会产生fast-fail事件，而CopyOnWriteArrayList不会产生fast-fail事件。
+ * (01) 使用ArrayList时，会产生fast-fail事件，抛出ConcurrentModificationException异常；定义如下：
+ *   private static List&lt;String&gt; list = new ArrayList&lt;String&gt;();
+ * (02) 使用时CopyOnWriteArrayList，不会产生fast-fail事件；定义如下：
+ *   private static List&lt;String&gt; list = new CopyOnWriteArrayList&lt;String&gt;();
+ *
+ * @author skywang
+ */
+public class FastFailTest {
+
+ private static List&lt;String&gt; list = new ArrayList&lt;String&gt;();
+ //private static List&lt;String&gt; list = new CopyOnWriteArrayList&lt;String&gt;();
+ public static void main(String[] args) {
+
+  // 同时启动两个线程对list进行操作！
+  new ThreadOne().start();
+  new ThreadTwo().start();
+ }
+
+ private static void printAll() {
+  System.out.println("");
+
+  String value = null;
+  Iterator iter = list.iterator();
+  while(iter.hasNext()) {
+   value = (String)iter.next();
+   System.out.print(value+", ");
+  }
+ }
+
+ /**
+  * 向list中依次添加0,1,2,3,4,5，每添加一个数之后，就通过printAll()遍历整个list
+  */
+ private static class ThreadOne extends Thread {
+  public void run() {
+   int i = 0;
+   while (i&lt;6) {
+    list.add(String.valueOf(i));
+    printAll();
+    i++;
+   }
+  }
+ }
+
+ /**
+  * 向list中依次添加10,11,12,13,14,15，每添加一个数之后，就通过printAll()遍历整个list
+  */
+ private static class ThreadTwo extends Thread {
+  public void run() {
+   int i = 10;
+   while (i&lt;16) {
+    list.add(String.valueOf(i));
+    printAll();
+    i++;
+   }
+  }
+ }
+
+}
+
+</pre>
+</div>
+<p>运行结果<br />
+运行该代码，抛出异常java.util.ConcurrentModificationException！即，产生fail-fast事件！<br />
+结果说明<br />
+(01) FastFailTest中通过 new ThreadOne().start() 和 new ThreadTwo().start() 同时启动两个线程去操作list。<br />
+ThreadOne线程：向list中依次添加0,1,2,3,4,5。每添加一个数之后，就通过printAll()遍历整个list。<br />
+ThreadTwo线程：向list中依次添加10,11,12,13,14,15。每添加一个数之后，就通过printAll()遍历整个list。<br />
+(02) 当某一个线程遍历list的过程中，list的内容被另外一个线程所改变了；就会抛出ConcurrentModificationException异常，产生fail-fast事件。</p>
+<p><strong>3. fail-fast解决办法<br />
+</strong>fail-fast机制，是一种错误检测机制。它只能被用来检测错误，因为JDK并不保证fail-fast机制一定会发生。若在多线程环境下使用fail-fast机制的集合，建议使用“java.util.concurrent包下的类”去取代“java.util包下的类”。<br />
+所以，本例中只需要将ArrayList替换成java.util.concurrent包下对应的类即可。 即，将代码<br />
+private static List&lt;String&gt; list = new ArrayList&lt;String&gt;();<br />
+替换为<br />
+private static List&lt;String&gt; list = new CopyOnWriteArrayList&lt;String&gt;();<br />
+则可以解决该办法。</p>
+<p><strong>4. fail-fast原理<br />
+</strong>产生fail-fast事件，是通过抛出ConcurrentModificationException异常来触发的。<br />
+那么，ArrayList是如何抛出ConcurrentModificationException异常的呢&#63;<br />
+我们知道，ConcurrentModificationException是在操作Iterator时抛出的异常。我们先看看Iterator的源码。ArrayList的Iterator是在父类AbstractList.java中实现的。代码如下：<br />
+package java.util;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public abstract class AbstractList&lt;E&gt; extends AbstractCollection&lt;E&gt; implements List&lt;E&gt; {
+
+ ...
+
+ // AbstractList中唯一的属性
+ // 用来记录List修改的次数：每修改一次(添加/删除等操作)，将modCount+1
+ protected transient int modCount = 0;
+
+ // 返回List对应迭代器。实际上，是返回Itr对象。
+ public Iterator&lt;E&gt; iterator() {
+  return new Itr();
+ }
+
+ // Itr是Iterator(迭代器)的实现类
+ private class Itr implements Iterator&lt;E&gt; {
+  int cursor = 0;
+
+  int lastRet = -1;
+
+  // 修改数的记录值。
+  // 每次新建Itr()对象时，都会保存新建该对象时对应的modCount；
+  // 以后每次遍历List中的元素的时候，都会比较expectedModCount和modCount是否相等；
+  // 若不相等，则抛出ConcurrentModificationException异常，产生fail-fast事件。
+  int expectedModCount = modCount;
+
+  public boolean hasNext() {
+   return cursor != size();
+  }
+
+  public E next() {
+   // 获取下一个元素之前，都会判断“新建Itr对象时保存的modCount”和“当前的modCount”是否相等；
+   // 若不相等，则抛出ConcurrentModificationException异常，产生fail-fast事件。
+   checkForComodification();
+   try {
+    E next = get(cursor);
+    lastRet = cursor++;
+    return next;
+   } catch (IndexOutOfBoundsException e) {
+    checkForComodification();
+    throw new NoSuchElementException();
+   }
+  }
+
+  public void remove() {
+   if (lastRet == -1)
+    throw new IllegalStateException();
+   checkForComodification();
+
+   try {
+    AbstractList.this.remove(lastRet);
+    if (lastRet &lt; cursor)
+     cursor--;
+    lastRet = -1;
+    expectedModCount = modCount;
+   } catch (IndexOutOfBoundsException e) {
+    throw new ConcurrentModificationException();
+   }
+  }
+
+  final void checkForComodification() {
+   if (modCount != expectedModCount)
+    throw new ConcurrentModificationException();
+  }
+ }
+
+ ...
+}
+
+</pre>
+</div>
+<p>从中，我们可以发现在调用 next() 和 remove()时，都会执行 checkForComodification()。若 “modCount 不等于 expectedModCount”，则抛出ConcurrentModificationException异常，产生fail-fast事件。<br />
+要搞明白 fail-fast机制，我们就要需要理解什么时候“modCount 不等于 expectedModCount”！<br />
+从Itr类中，我们知道 expectedModCount 在创建Itr对象时，被赋值为 modCount。通过Itr，我们知道：expectedModCount不可能被修改为不等于 modCount。所以，需要考证的就是modCount何时会被修改。<br />
+接下来，我们查看ArrayList的源码，来看看modCount是如何被修改的。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package java.util;
+
+public class ArrayList&lt;E&gt; extends AbstractList&lt;E&gt;
+  implements List&lt;E&gt;, RandomAccess, Cloneable, java.io.Serializable
+{
+
+ ...
+
+ // list中容量变化时，对应的同步函数
+ public void ensureCapacity(int minCapacity) {
+  modCount++;
+  int oldCapacity = elementData.length;
+  if (minCapacity &gt; oldCapacity) {
+   Object oldData[] = elementData;
+   int newCapacity = (oldCapacity * 3)/2 + 1;
+   if (newCapacity &lt; minCapacity)
+    newCapacity = minCapacity;
+   // minCapacity is usually close to size, so this is a win:
+   elementData = Arrays.copyOf(elementData, newCapacity);
+  }
+ }
+
+
+ // 添加元素到队列最后
+ public boolean add(E e) {
+  // 修改modCount
+  ensureCapacity(size + 1); // Increments modCount!!
+  elementData[size++] = e;
+  return true;
+ }
+
+
+ // 添加元素到指定的位置
+ public void add(int index, E element) {
+  if (index &gt; size || index &lt; 0)
+   throw new IndexOutOfBoundsException(
+   "Index: "+index+", Size: "+size);
+
+  // 修改modCount
+  ensureCapacity(size+1); // Increments modCount!!
+  System.arraycopy(elementData, index, elementData, index + 1,
+    size - index);
+  elementData[index] = element;
+  size++;
+ }
+
+ // 添加集合
+ public boolean addAll(Collection&lt;&#63; extends E&gt; c) {
+  Object[] a = c.toArray();
+  int numNew = a.length;
+  // 修改modCount
+  ensureCapacity(size + numNew); // Increments modCount
+  System.arraycopy(a, 0, elementData, size, numNew);
+  size += numNew;
+  return numNew != 0;
+ }
+
+
+ // 删除指定位置的元素 
+ public E remove(int index) {
+  RangeCheck(index);
+
+  // 修改modCount
+  modCount++;
+  E oldValue = (E) elementData[index];
+
+  int numMoved = size - index - 1;
+  if (numMoved &gt; 0)
+   System.arraycopy(elementData, index+1, elementData, index, numMoved);
+  elementData[--size] = null; // Let gc do its work
+
+  return oldValue;
+ }
+
+
+ // 快速删除指定位置的元素 
+ private void fastRemove(int index) {
+
+  // 修改modCount
+  modCount++;
+  int numMoved = size - index - 1;
+  if (numMoved &gt; 0)
+   System.arraycopy(elementData, index+1, elementData, index,
+        numMoved);
+  elementData[--size] = null; // Let gc do its work
+ }
+
+ // 清空集合
+ public void clear() {
+  // 修改modCount
+  modCount++;
+
+  // Let gc do its work
+  for (int i = 0; i &lt; size; i++)
+   elementData[i] = null;
+
+  size = 0;
+ }
+
+ ...
+}
+
+</pre>
+</div>
+<p>从中，我们发现：无论是add()、remove()，还是clear()，只要涉及到修改集合中的元素个数时，都会改变modCount的值。<br />
+接下来，我们再系统的梳理一下fail-fast是怎么产生的。步骤如下：<br />
+(01) 新建了一个ArrayList，名称为arrayList。<br />
+(02) 向arrayList中添加内容。<br />
+(03) 新建一个“线程a”，并在“线程a”中通过Iterator反复的读取arrayList的值。<br />
+(04) 新建一个“线程b”，在“线程b”中删除arrayList中的一个“节点A”。<br />
+(05) 这时，就会产生有趣的事件了。<br />
+在某一时刻，“线程a”创建了arrayList的Iterator。此时“节点A”仍然存在于arrayList中，创建arrayList时，expectedModCount = modCount(假设它们此时的值为N)。<br />
+在“线程a”在遍历arrayList过程中的某一时刻，“线程b”执行了，并且“线程b”删除了arrayList中的“节点A”。“线程b”执行remove()进行删除操作时，在remove()中执行了“modCount++”，此时modCount变成了N+1！<br />
+“线程a”接着遍历，当它执行到next()函数时，调用checkForComodification()比较“expectedModCount”和“modCount”的大小；而“expectedModCount=N”，“modCount=N+1”,这样，便抛出ConcurrentModificationException异常，产生fail-fast事件。<br />
+至此，我们就完全了解了fail-fast是如何产生的！<br />
+即，当多个线程对同一个集合进行操作的时候，某线程访问集合的过程中，该集合的内容被其他线程所改变(即其它线程通过add、remove、clear等方法，改变了modCount的值)；这时，就会抛出ConcurrentModificationException异常，产生fail-fast事件。</p>
+<p><strong>5. 解决fail-fast的原理<br />
+</strong>上面，说明了“解决fail-fast机制的办法”，也知道了“fail-fast产生的根本原因”。接下来，我们再进一步谈谈java.util.concurrent包中是如何解决fail-fast事件的。<br />
+还是以和ArrayList对应的CopyOnWriteArrayList进行说明。我们先看看CopyOnWriteArrayList的源码：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package java.util.concurrent;
+import java.util.*;
+import java.util.concurrent.locks.*;
+import sun.misc.Unsafe;
+
+public class CopyOnWriteArrayList&lt;E&gt;
+ implements List&lt;E&gt;, RandomAccess, Cloneable, java.io.Serializable {
+
+ ...
+
+ // 返回集合对应的迭代器
+ public Iterator&lt;E&gt; iterator() {
+  return new集合类中的fast-fail实现方式都差不多，我们以最简单的ArrayList为例吧。protected transient int modCount = 0;记录的是我们对ArrayList修改的次数，比如我们调用 add(),remove()等改变数据的操作时，会将modCount++。protected transient int modCount = 0;记录的是我们对ArrayList修改的次数，比如我们调用 add(),remove()等改变数据的操作时，会将modCount++。 COWIterator&lt;E&gt;(getArray(), 0);
+ }
+
+ ...
+
+ private static class COWIterator&lt;E&gt; implements ListIterator&lt;E&gt; {
+  private final Object[] snapshot;
+
+  private int cursor;
+
+  private COWIterator(Object[] elements, int initialCursor) {
+   cursor = initialCursor;
+   // 新建COWIterator时，将集合中的元素保存到一个新的拷贝数组中。
+   // 这样，当原始集合的数据改变，拷贝数据中的值也不会变化。
+   snapshot = elements;
+  }
+
+  public boolean hasNext() {
+   return cursor &lt; snapshot.length;
+  }
+
+  public boolean hasPrevious() {
+   return cursor &gt; 0;
+  }
+
+  public E next() {
+   if (! hasNext())
+    throw new NoSuchElementException();
+   return (E) snapshot[cursor++];
+  }
+
+  public E previous() {
+   if (! hasPrevious())
+    throw new NoSuchElementException();
+   return (E) snapshot[--cursor];
+  }
+
+  public int nextIndex() {
+   return cursor;
+  }
+
+  public int previousIndex() {
+   return cursor-1;
+  }
+
+  public void remove() {
+   throw new UnsupportedOperationException();
+  }
+
+  public void set(E e) {
+   throw new UnsupportedOperationException();
+  }
+
+  public void add(E e) {
+   throw new UnsupportedOperationException();
+  }
+ }
+
+ ...
+
+}
+
+</pre>
+</div>
+<p>从中，我们可以看出:<br />
+(01) 和ArrayList继承于AbstractList不同，CopyOnWriteArrayList没有继承于AbstractList，它仅仅只是实现了List接口。<br />
+(02) ArrayList的iterator()函数返回的Iterator是在AbstractList中实现的；而CopyOnWriteArrayList是自己实现Iterator。<br />
+(03) ArrayList的Iterator实现类中调用next()时，会“调用checkForComodification()比较‘expectedModCount'和‘modCount'的大小”；但是，CopyOnWriteArrayList的Iterator实现类中，没有所谓的checkForComodification()，更不会抛出ConcurrentModificationException异常！</p>
+<p><strong>6. 总结<br />
+</strong>由于HashMap（ArrayList）并不是线程安全的,因此如果在使用迭代器的过程中有其他线程修改了map(这里的修改是指结构上的修改,并非指单纯修改集合内容的元素)，那么将要抛出ConcurrentModificationException 即为fail-fast策略&nbsp;&nbsp;&nbsp; <br />
+主要通过modCount域来实现,保证线程之间的可见性,modCount即为修改次数,对于HashMap（ArrayList）内容的修改就会增加这个值， 那么在迭代器的初始化过程中就会将这个值赋值给迭代器的expectedModCount<br />
+但是fail-fast行为并不能保证,因此依赖于此异常的程序的做法是错误的</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/101898.html'>JQuery.get提交页面不跳转的解决方法</a><a>下一篇</a><a href='/php/biji/101900.html'>WEB前端设计师常用工具集锦</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

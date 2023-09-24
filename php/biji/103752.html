@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Java线程池框架核心代码解析_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="前言<br />
+<br />
+多线程编程中，为每个任务分配一个线程是不现实的，线程创建的开销和资源消耗都是很高的。线程池应运而生，成为我们管理线程的利器。Java 通过Executor接口，提供了一种标准" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Java线程池框架核心代码解析</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>前言<br />
+<br />
+多线程编程中，为每个任务分配一个线程是不现实的，线程创建的开销和资源消耗都是很高的。线程池应运而生，成为我们管理线程的利器。Java 通过Executor接口，提供了一种标准</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>前言<br />
+</strong>多线程编程中，为每个任务分配一个线程是不现实的，线程创建的开销和资源消耗都是很高的。线程池应运而生，成为我们管理线程的利器。Java 通过Executor接口，提供了一种标准的方法将任务的提交过程和执行过程解耦开来，并用Runnable表示任务。<br />
+下面，我们来分析一下 Java 线程池框架的实现ThreadPoolExecutor。<br />
+下面的分析基于JDK1.7</p>
+<p><strong>生命周期<br />
+<span style="color: #333333">ThreadPoolExecutor</span></strong>中，使用CAPACITY的高3位来表示运行状态，分别是：<br />
+&nbsp;1.RUNNING：接收新任务，并且处理任务队列中的任务<br />
+&nbsp;2.SHUTDOWN：不接收新任务，但是处理任务队列的任务<br />
+&nbsp;3.STOP：不接收新任务，不出来任务队列，同时中断所有进行中的任务<br />
+&nbsp;4.TIDYING：所有任务已经被终止，工作线程数量为 0，到达该状态会执行terminated()<br />
+&nbsp;5.TERMINATED：terminated()执行完毕&nbsp;</p>
+<p style="text-align: center"><br />
+</p>
+<p style="text-align: center"><span style="font-size: xx-small"><strong>状态转换图</strong></span><br />
+</p>
+<p>ThreadPoolExecutor中用原子类来表示状态位<br />
+<span style="color: #3366ff">private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0)); </span></p>
+<p><strong>线程池模型<br />
+</strong>核心参数<br />
+<strong><span style="color: #800000">&nbsp;corePoolSize：</span></strong>最小存活的工作线程数量（如果设置allowCoreThreadTimeOut，那么该值为 0）<br />
+<strong><span style="color: #800000">&nbsp;maximumPoolSize：</span></strong>最大的线程数量，受限于CAPACITY<br />
+&nbsp;<span style="color: #800000"><strong>keepAliveTime：</strong></span>对应线程的存活时间，时间单位由TimeUnit指定<br />
+<span style="color: #800000"><strong>&nbsp;workQueue：</strong></span>工作队列，存储待执行的任务<br />
+&nbsp;<span style="color: #800000"><strong>RejectExecutionHandler：</strong></span>拒绝策略，线程池满后会触发<br />
+线程池的最大容量：CAPACITY中的前三位用作标志位，也就是说工作线程的最大容量为(2^29)-1<br />
+四种模型<br />
+<span style="color: #800000"><strong>&nbsp;CachedThreadPool：</strong></span>一个可缓存的线程池，如果线程池的当前规模超过了处理需求时，那么将回收空闲的线程，当需求增加时，则可以添加新的线程，线程池的规模不存在任何的限制。<br />
+<span style="color: #800000"><strong>&nbsp;FixedThreadPool：</strong></span>一个固定大小的线程池，提交一个任务时就创建一个线程，直到达到线程池的最大数量，这时线程池的大小将不再变化。<br />
+<span style="color: #800000"><strong>&nbsp;SingleThreadPool：</strong></span>一个单线程的线程池，它只有一个工作线程来执行任务，可以确保按照任务在队列中的顺序来串行执行，如果这个线程异常结束将创建一个新的线程来执行任务。<br />
+<span style="color: #800000"><strong>&nbsp;ScheduledThreadPool：</strong></span>一个固定大小的线程池，并且以延迟或者定时的方式来执行任务，类似于Timer。<br />
+</p>
+<p><strong>执行任务 execute<br />
+</strong>核心逻辑：<br />
+&nbsp;1.当前线程数量 &lt; corePoolSize，直接开启新的核心线程执行任务addWorker(command, true)<br />
+&nbsp;2.当前线程数量 &gt;= corePoolSize，且任务加入工作队列成功</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1).检查线程池当前状态是否处于RUNNING<br />
+&nbsp;&nbsp;&nbsp;&nbsp; 2).如果否，则拒绝该任务<br />
+&nbsp;&nbsp;&nbsp;&nbsp; 3).如果是，判断当前线程数量是否为 0，如果为 0，就增加一个工作线程。&nbsp;<br />
+3.开启普通线程执行任务addWorker(command, false)，开启失败就拒绝该任务<br />
+从上面的分析可以总结出线程池运行的四个阶段：<br />
+&nbsp;1).poolSize &lt; corePoolSize 且队列为空，此时会新建线程来处理提交的任务<br />
+&nbsp;2).poolSize == corePoolSize，此时提交的任务进入工作队列，工作线程从队列中获取任务执行，此时队列不为空且未满。<br />
+&nbsp;3).poolSize == corePoolSize，并且队列已满，此时也会新建线程来处理提交的任务，但是poolSize &lt; maxPoolSize<br />
+&nbsp;4).poolSize == maxPoolSize，并且队列已满，此时会触发拒绝策略<br />
+</p>
+<p><strong>拒绝策略</strong>&nbsp;<br />
+前面我们提到任务无法执行会被拒绝，RejectedExecutionHandler是处理被拒绝任务的接口。下面是四种拒绝策略。<br />
+&nbsp;<span style="color: #800000"><strong>AbortPolicy：</strong></span>默认策略，终止任务，抛出RejectedException<br />
+&nbsp;<span style="color: #800000"><strong>CallerRunsPolicy：</strong></span>在调用者线程执行当前任务，不抛异常<br />
+<span style="color: #800000"><strong>&nbsp;DiscardPolicy：</strong></span> 抛弃策略，直接丢弃任务，不抛异常<br />
+&nbsp;<span style="color: #800000"><strong>Di</strong></span><span style="color: #800000"><strong>scardOldersPolicy：</strong></span>抛弃最老的任务，执行当前任务，不抛异常<br />
+</p>
+<p><strong>线程池中的 Worker</strong><br />
+Worker继承了AbstractQueuedSynchronizer和Runnable，前者给Worker提供锁的功能，后者执行工作线程的主要方法runWorker(Worker w)（从任务队列捞任务执行）。Worker 引用存在workers集合里面，用mainLock守护。<br />
+<span style="color: #3366ff">&nbsp;private final ReentrantLock mainLock = new ReentrantLock();<br />
+&nbsp;private final HashSet&lt;Worker&gt; workers = new HashSet&lt;Worker&gt;(); <br />
+</span><span style="color: #333333"><strong>核心函数 runWorker<br />
+</strong></span>&nbsp;下面是简化的逻辑，注意：每个工作线程的run都执行下面的函数<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ final void runWorker(Worker w) {
+ Thread wt = Thread.currentThread();
+ Runnable task = w.firstTask;
+ w.firstTask = null;
+ while (task != null || (task = getTask()) != null) {
+  w.lock();
+  beforeExecute(wt, task);
+  task.run();
+  afterExecute(task, thrown);
+  w.unlock();
+ }
+ processWorkerExit(w, completedAbruptly);
+} </pre>
+</div>
+<p>&nbsp;1.从getTask()中获取任务<br />
+&nbsp;2.锁住 worker<br />
+&nbsp;3.执行beforeExecute(wt, task)，这是ThreadPoolExecutor提供给子类的扩展方法<br />
+&nbsp;4.运行任务，如果该worker有配置了首次任务，则先执行首次任务且只执行一次。<br />
+&nbsp;5.执行afterExecute(task, thrown);<br />
+&nbsp;6.解锁 worker<br />
+&nbsp;7.如果获取到的任务为 null，关闭 worker<br />
+</p>
+<p><strong>获取任务 getTask<br />
+</strong>&nbsp;线程池内部的任务队列是一个阻塞队列，具体实现在构造时传入。<br />
+<span style="color: #3366ff">&nbsp;private final BlockingQueue&lt;Runnable&gt; workQueue; <br />
+</span>getTask()从任务队列中获取任务，支持阻塞和超时等待任务，四种情况会导致返回null，让worker关闭。<br />
+&nbsp;1.现有的线程数量超过最大线程数量<br />
+&nbsp;2.线程池处于STOP状态<br />
+&nbsp;3.线程池处于SHUTDOWN状态且工作队列为空<br />
+&nbsp;4.线程等待任务超时，且线程数量超过保留线程数量&nbsp;<br />
+<span style="color: #800000"><strong>核心逻辑：</strong></span>根据timed在阻塞队列上超时等待或者阻塞等待任务，等待任务超时会导致工作线程被关闭。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ timed = allowCoreThreadTimeOut || wc &gt; corePoolSize;
+Runnable r = timed &#63;
+ workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
+ workQueue.take(); 
+</pre>
+</div>
+<p>在以下两种情况下等待任务会超时：<br />
+&nbsp;1.允许核心线程等待超时，即allowCoreThreadTimeOut(true)<br />
+&nbsp;2.当前线程是普通线程，此时wc &gt; corePoolSize<br />
+&nbsp;工作队列使用的是BlockingQueue，这里就不展开了，后面再写一篇详细的分析。<br />
+</p>
+<p><strong>总结<br />
+</strong>&nbsp;ThreadPoolExecutor基于生产者-消费者模式，提交任务的操作相当于生产者，执行任务的线程相当于消费者。<br />
+&nbsp;Executors提供了四种基于ThreadPoolExecutor构造线程池模型的方法，除此之外，我们还可以直接继承ThreadPoolExecutor，重写beforeExecute和afterExecute方法来定制线程池任务执行过程。<br />
+&nbsp;使用有界队列还是无界队列需要根据具体情况考虑，工作队列的大小和线程的数量也是需要好好考虑的。<br />
+&nbsp;拒绝策略推荐使用CallerRunsPolicy，该策略不会抛弃任务，也不会抛出异常，而是将任务回退到调用者线程中执行。<br />
+</p>
+<p>以上就是本文的全部内容，希望对大家的学习有所帮助，也希望大家多多支持phpstudy。<br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/103751.html'>JSP中一些JSTL核心标签用法总结</a><a>下一篇</a><a href='/php/biji/103753.html'>Linux硬盘问题的八种解决技巧</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

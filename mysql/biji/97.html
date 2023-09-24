@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL 数据库隔离级别与MVCC的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL 数据库隔离级别与MVCC的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	一" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL 数据库隔离级别与MVCC的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:13:08                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL 数据库隔离级别与MVCC的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	一</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL 数据库隔离级别与MVCC的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<div id="navCategory">
+<h5 class="catalogue">目录</h5>
+<ul class="first_class_ul">
+	<li>一、隔离级别
+	<ul class="second_class_ul">
+		<li>READ UNCOMMITED（读未提交）</li>
+		<li>READ COMMITED（提交读/不可重复读）</li>
+		<li>REPEATED READ（可重复读）</li>
+		<li>SERIALIZABLE （可串行化）</li>
+	</ul></li>
+	<li>二、MVCC
+	<ul class="second_class_ul">
+	</ul></li>
+</ul>
+<p>Mysql是我们日常生产与学习中最常接触到的数据库之一，今天讲一讲在Mysql（或者说其他类似的数据库）中存在的隔离级别以及用来提高效率的多版本并发控制（MVCC）。</p>
+<p class="maodian"></p>
+<h2>一、隔离级别</h2>
+<p>首先我们需要提到一个概念：事务。什么是事务？事务就是完成一个基础操作的一系列操作语句的一个集合。例如我要将200元从账户A转移到账户B，那么我可能会进行一下的操作：a.验证账户A中的余额是否大于200元。b.将账户A中的余额减200元。c.将账户B中的余额加200元。我们就将上面的abc三个操作成为一个事务。这时，我们会注意到我们所说的一个事务有可能是由多条语句组合而成的，而事务又存在原子性，即事务的执行过程中是不能被打断的，这就带来一个问题，如果在这三步执行过程中有另外的语句插入进来执行，是否会对结果产生影响，因为此时破坏了事务的原子性。而这种插入的情况在并发的环境下是十分常见的。因此，我们（或者说是数据库引擎）就需要在一个事务的执行过程中对它进行&ldquo;保护&rdquo;，即保证外界的其他事务的语句不能随意的插进正在执行的事务语句之中，来保证事务的正常执行。这时候我们很容易的会想到&ldquo;加锁&rdquo;这个方法。这其实是一种很笼统的说法，因为加锁虽然能够保证事务的正常执行，但是却会带来较大的额外开销，因此合适的时候选择合适的加锁方式对查找效率的影响就非常大。而&ldquo;锁&rdquo;得严不严，就区分除了集中不同的隔离级别。</p>
+<p class="maodian"></p>
+<h3>READ UNCOMMITED（读未提交）</h3>
+<p>这种隔离界别下，读取数据的时候不受任何影响。即你甚至可以读取一个正在被其他事务修改的数据，想读就读，想改就改。这当然开销很小，但是会带来许多的问题，比如&ldquo;脏读&rdquo;。即读取到了正在修改但是却还没有提交的数据，这就会造成数据读取的错误。从性能上来说，READ UNCOMMITED不会比其他级别好太多，但是却带来了非常多的麻烦的问题，因此在实际中很少使用这个个立即被。</p>
+<p class="maodian"></p>
+<h3>READ COMMITED（提交读/不可重复读）</h3>
+<p>这个级别在READ UNCOMMITED的基础上添加了一些规定，是一些数据库的默认隔离级别。它与READ UNCOMMITED的区别在于，它规定读取的时候读到的数据只能是提交后的数据。举个例子，数据a在上一次提交之后的值是1，这时候有一个线程进来对a进行修改，将a修改为2，但是此时并未提交事务（COMMIT），在这种情况下，READ UNCOMMITED级别下读取到的a的值就是当前的2，但是READ COMMITED级别下读取到的还是上一次提交之后的值，即a为1，必须到修改线程将a的值变为2这个事务提交之后读取到的a的值才是2。这个级别所带来的问题就是不可重复读。即上一个时间读取到的a的值是1，但是随着修改线程对事务的提交，a的值变为了2，这时候读到的值就是2了，即执行两次相同的读取操作得到的值却不一样。不可重复读同脏读的区别在于，脏读是一个事务读取了另一未完成的事务执行过程中的数据，而不可重复读是一个事务执行过程中，另一事务提交并修改了当前事务正在读取的数据。</p>
+<p class="maodian"></p>
+<h3>REPEATED READ（可重复读）</h3>
+<p>REPEATED READ在READ COMMITED的基础上又添加了一些约束性的规则，它也是MySQL数据库的默认隔离级别。简单来说就是在一个事务的执行期间禁止其他事务对相应的数据进行修改，这就彻底使得一个事务的执行过程中所查询到的数据一定是一致的，即解决了脏读和不可重复读的问题，但是却带来了新的问题，即&ldquo;幻读&rdquo;。&ldquo;幻读&rdquo;指的是在一个事务执行过程中虽然禁止了对相应数据的修改，但是其他的事务依然可以插入数据，这时候第一个事务就会发现会&ldquo;莫名其妙&rdquo;多出来一些数据，像是出现了幻觉似的。幻读和不可重复读都是读取了另一条已经提交的事务（这点同脏读不同），所不同的是不可重复读查询的都是同一个数据项，而幻读针对的是一批数据整体（比如数据的个数）。</p>
+<p class="maodian"></p>
+<h3>SERIALIZABLE （可串行化）</h3>
+<p>这是最严格的一个隔离级别。它通过强制事务串行执行，避免了幻读的问题。但是这种隔离级别的开销极大，一般也不常使用。</p>
+<p>各种隔离级别与可能的问题关系如下：</p>
+<p></p>
+<table>
+	<thead>
+		<tr>
+			<th>隔离级别</th>
+			<th>脏读</th>
+			<th>不可重复读</th>
+			<th>幻读</th>
+			<th>加锁</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>READ UNCOMMITED</td>
+			<td>YES</td>
+			<td>YES</td>
+			<td>YES</td>
+			<td>NO</td>
+		</tr>
+		<tr>
+			<td>READ COMMITED</td>
+			<td>NO</td>
+			<td>YES</td>
+			<td>YES</td>
+			<td>NO</td>
+		</tr>
+		<tr>
+			<td>REPEATED READ</td>
+			<td>NO</td>
+			<td>NO</td>
+			<td>YES</td>
+			<td>NO</td>
+		</tr>
+		<tr>
+			<td>SERIALIZABLE</td>
+			<td>NO</td>
+			<td>NO</td>
+			<td>NO</td>
+			<td>YES</td>
+		</tr>
+	</tbody>
+</table>
+<p class="maodian"></p>
+<h2>二、MVCC</h2>
+<p>试想一下，如果每次SQL操作为了保证数据的一致性与准确性，都需要加一个行级锁的话，非常可靠，但是带来的系统开销与查找效率的下降也是非常明显的，因此MVCC就是为了解决这种矛盾而产生的。首先MVCC会在表中的每一行记录后面保存两个隐藏的列，一个保存行的创建时间，一个保存行的过期（删除）时间。这个时间值并不是真的时间，而是一个系统版本号。事务开始的时刻的系统版本号作为事务的版本号，用来和查询到的每行记录的版本号进行比较。</p>
+<ul>
+	<li>INSERT：为新插入的每一行保存当前的系统版本号作为行版本号。</li>
+	<li>DELETE：为删除的每一行保存当前的系统版本号最为行删除版本号。</li>
+	<li>UPDATE：更新其实应该理解为插入一条新的数据，并删除原来数据的过程，即为新插入的数据保存当前的系统版本号作为行版本号，并为删除的数据保存当前的系统版本号作为删除版本号。</li>
+	<li>SELECT：只查询满足下列条件的行：</li>
+</ul>
+<p style="margin-left: 80px">a.行版本号小于等于事务版本号b.删除版本号未定义或者大于事务版本号</p>
+<p>保存了这两个版本号之后绝大多数的操作都可以在不加锁的情况下进行正确的操作，保证了性能和效率。值得注意的是MVCC只在READ COMMITED和REPEATABLE READ两个隔离级别下工作。</p>
+<p>以上就是详解MySQL 数据库隔离级别与MVCC的详细内容，更多关于MySQL 数据库隔离级别与MVCC的资料请关注512笔记其它相关文章！</p></div>
+
+<p>注：关于MySQL 数据库隔离级别与MVCC的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/96.html'>MySQL中Binlog3种格式的深入分析</a><a>下一篇</a><a href='/mysql/biji/98.html'>Django连接本地MySQL数据库(pycharm)的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

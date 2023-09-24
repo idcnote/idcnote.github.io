@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>JAVA虚拟机详细介绍——JVM优化_java教程_IDC笔记</title>
+    <meta name="keywords" content=",java教程" />
+    <meta name="description" content="还以这个图为例，从.java到.class是编译过程，从.class到机器码是解释过程。下面对其进行分别优化。在优化过程中，对编译阶段的优化主要是对前端编译器的优化，在运行阶段的优化，主" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java入门			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/start/184.html">第一个Java程序</a></li><li><a href="/java/start/185.html">如何运行Java程序</a></li><li><a href="/java/start/186.html">Java标识符与关键字</a></li><li><a href="/java/start/187.html">Java注释</a></li><li><a href="/java/start/188.html">Java常量</a></li><li><a href="/java/start/189.html">Java基本数据类型</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java运算符和表达式			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/operators/190.html">Java运算符和表达式</a></li><li><a href="/java/operators/191.html">Java算数运算符实例讲解</a></li><li><a href="/java/operators/192.html">Java关系运算符实例讲解</a></li><li><a href="/java/operators/193.html">Java逻辑运算符实例讲解</a></li><li><a href="/java/operators/194.html">Java位运算符实例讲解</a></li><li><a href="/java/operators/195.html">Java赋值运算符实例讲解</a></li><li><a href="/java/operators/196.html">Java条件运算符实例讲解</a></li><li><a href="/java/operators/197.html">Java instanceof运算符实例讲解</a></li><li><a href="/java/operators/198.html">Java运算符的优先级和结合性</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java流程控制			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/control/200.html">Java if条件分支语句</a></li><li><a href="/java/control/199.html">Java语句</a></li><li><a href="/java/control/201.html">Java switch开关语句</a></li><li><a href="/java/control/203.html">Java while循环语句</a></li><li><a href="/java/control/202.html">Java for循环语句</a></li><li><a href="/java/control/205.html">Java break语句</a></li><li><a href="/java/control/204.html">Java do-while循环语句</a></li><li><a href="/java/control/206.html">Java continue语句</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/objects/209.html">Java方法</a></li><li><a href="/java/objects/208.html">Java成员变量</a></li><li><a href="/java/objects/207.html">Java类</a></li><li><a href="/java/objects/211.html">Java创建对象</a></li><li><a href="/java/objects/210.html">Java类的构造方法</a></li><li><a href="/java/objects/213.html">Java对象的引用和实体</a></li><li><a href="/java/objects/212.html">Java使用对象</a></li><li><a href="/java/objects/216.html">Java实例变量和类变量</a></li><li><a href="/java/objects/215.html">Java参数传值</a></li><li><a href="/java/objects/214.html">Java类与程序的基本结构</a></li><li><a href="/java/objects/217.html">Java实例方法和类方法</a></li><li><a href="/java/objects/218.html">Java方法重载</a></li><li><a href="/java/objects/222.html">Java访问权限</a></li><li><a href="/java/objects/221.html">Java import语句</a></li><li><a href="/java/objects/220.html">Java包</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java子类与继承			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java接口与实现			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java内部类与异常类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java常用实用类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+	    <a href="/java/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>JAVA笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">JAVA虚拟机详细介绍——JVM优化</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>还以这个图为例，从.java到.class是编译过程，从.class到机器码是解释过程。下面对其进行分别优化。在优化过程中，对编译阶段的优化主要是对前端编译器的优化，在运行阶段的优化，主</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>还以这个图为例，从.java到.class是编译过程，从.class到机器码是解释过程。下面对其进行分别优化。在优化过程中，对编译阶段的优化主要是对前端编译器的优化，在运行阶段的优化，主要是对即时编译器的优化。</p>
+<p><img alt="2019062117255488.png" src="/d/file/p/20221028/1566634208300414.png" title="1566634208300414.png" /></p>
+<p><span style="font-size: 24px;"><strong>编译器优化</strong></span></p>
+<p><span style="background-color: rgb(255, 255, 255); color: rgb(79, 79, 79); font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; font-variant-ligatures: common-ligatures; font-size: 14px;">编译过程</span></p>
+<p><span style="background-color: rgb(255, 255, 255); color: rgb(79, 79, 79); font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; font-variant-ligatures: common-ligatures; font-size: 14px;"><img alt="20190621172714334.jpg" src="/d/file/p/20221028/1566634264326862.jpg" title="1566634264326862.jpg" /></span></p>
+<p><span style="background-color: rgb(255, 255, 255); color: rgb(79, 79, 79); font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; font-variant-ligatures: common-ligatures; font-size: 14px;">以上为javac的编译过程图，以下为javac编译过程的主体代码。</span></p>
+<p><img alt="20190621174151194.jpg" src="/d/file/p/20221028/1566634344189480.jpg" title="1566634344189480.jpg" /></p>
+<p>下面对其步骤进行详细解读<br />1、解析与填充符号表</p>
+<p>词法分析</p>
+<p>将源代码的字符流转变为标记（Token）集合，标记是编译过程中的最小元素，如a，=，b，int。</p>
+<p>语法分析</p>
+<p>根据Token序列构造抽象语法树。以后编译器基本不会再对源码文件进行操作了，后续的操作都是建立在抽象语法树上。抽象语法树是一种用来描述程序代码语法结构的树形表示方式，节点代表代码中的一个语法结构，例如修饰符，返回值等。</p>
+<p>填充符号表</p>
+<p>符号表是由一组符号地址和符号信息构成的表格，用于编译的不同阶段。如在语义分析中，用于语义检查和产生中间代码；在目标代码生成阶段，用于地址分配的依据。</p>
+<p><strong>2、注解处理器</strong><br />这部分是插入式注解处理器在编译期间对注解进行处理的过程。其可以对语法树进行修改，一旦进行了修改，编译器将回到上面的第一步进行重新处理，每一次循环称为一个Round，也就是上图中的回环过程。</p>
+<p><strong>3、语义分析与字节码生成</strong><br />在经过语法分析后，生成的语法树是一个结构正确的源程序的抽象，但无法保证源程序是符合逻辑的。语义分析的任务是对结构上正确的源程序进行上下文有关性质的审查。比如下面代码中的错误只能在语义分析阶段检查出来。</p>
+<pre class="brush:php;toolbar:false">
+boolean a=false;
+char b=2;
+int c=a+b</pre>
+<p>此阶段包括如下4个步骤：</p>
+<p><strong>标注检查</strong></p>
+<p>变量使用前是否已被声明、变量与赋值之间的数据类型是否能够匹配等。还有一个常量折叠，即把a=1+2变为a=3。所以在代码中的a=1+2和a=3并不会增加程序运行期cpu指令的运算量。</p>
+<p><strong>数据及控制流分析</strong></p>
+<p>检查程序局部变量在使用前是否有赋值，方法的每条路径是否都有返回值，是否所有的受查异常都被正确处理了等问题。在类加载时也有一个数据及控制流分析，其目的基本是一致的，但校验的范围不同，有些校验项只有在编译期或运行期才能运行。</p>
+<p><strong>解语法糖</strong></p>
+<p>语法糖是在计算机语言中添加某种语法，其对语言的功能没有影响，但是能提高程序的可读性。语法糖包括泛型，自动拆装箱等。虚拟机运行时不支持这些语法，它们在编译阶段还原回基础语法结构。这个过程称为解语法糖。</p>
+<p><strong>字节码生成</strong></p>
+<p>将之前步骤生成的信息（语法树、符号表）转化成字节码写到磁盘中，然后添加和转换了少量的代码。如把字符串的加操作替换为StringBuffer或StringBuilder的append()操作。</p>
+<p>至此，Class文件生成了。</p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><strong><span style="font-size: 24px;">语法糖</span></strong></p>
+<p>语法糖是java中添加某种语法，对语言的功能没有影响，但是可以增加程序的可读性。包括泛型、内部类、枚举类等。</p>
+<p>1、泛型与类型擦除<br />泛型可用于类、接口和方法的创建中，用于对放入集合元素的类型的约束。泛型只在程序源码中存在，在编译阶段有解语法糖的步骤，所以在.Class文件中，已经变为了原来的原生类型了。这个过程叫做类型擦除。<br />泛型擦除前：</p>
+<pre class="brush:php;toolbar:false">
+public static void main(String[] args){
+    Map&lt;String,String&gt; map=new HashMap&lt;&gt;();
+    map.put(&quot;姓名&quot;,&quot;小明&quot;);
+    map.put(&quot;性别&quot;,&quot;男&quot;);
+    sout(map.get(&quot;姓名&quot;));
+    sout(map.get(&quot;性别&quot;));
+}</pre>
+<p>泛型擦除后：</p>
+<pre class="brush:php;toolbar:false">
+public static void main(String[] args){
+    Map map=new HashMap();
+    map.put(&quot;姓名&quot;,&quot;小明&quot;);
+    map.put(&quot;性别&quot;,&quot;男&quot;);
+    sout((String)map.get(&quot;姓名&quot;));
+    sout((String)map.get(&quot;性别&quot;));
+}</pre>
+<p>所以ArrayList和ArrayList在运行期时是同一个类。</p>
+<p>2、自动拆装箱、循环遍历<br />这些是java中使用最多的语法糖。编译前：</p>
+<pre class="brush:php;toolbar:false">
+public static void main(String[] args){
+      List&lt;Integer&gt; list=Arrays.asList(1,2,3,4);
+      int sum=0;
+      for(int i:list){
+              sum +=i;
+      }
+      System.out.println(sum);
+}</pre>
+<p>编译后：</p>
+<pre class="brush:php;toolbar:false">
+public static void main(String[] args){
+      List list=Arrays.asList(new Integer[] {
+                Integer.valueOf(1),
+                Integer.valueOf(2),
+                Integer.valueOf(3),
+                Integer.valueOf(4)})；
+      int sum=0;
+      for(Iterator localIterator=list.iterator();localIterator.hasNext();){
+                   int i=((Integer)localIterator.next()).intValue();
+                   sum +=i;
+      }
+      System.out.println(sum);
+}</pre>
+<p>可见，自动拆装箱在编译后被转化为了对应的包装和还原方法，如Integer.valueOf()和Integer.intValue()。<br />遍历循环则把代码还原为了迭代器的实现。</p>
+<p>3、条件编译<br />根据布尔常量值的真假，编译器会把分支中不成立的代码块消除掉。</p>
+<pre class="brush:php;toolbar:false">
+public static void main(String[] args){
+      if(true){
+            sout(&quot;block 1&quot;);
+      }else{
+           sout(&quot;block 2&quot;);
+     }
+}</pre>
+<p>编译后，代码变为：</p>
+<pre class="brush:php;toolbar:false">
+public static void main(String[] args){
+     sout(&quot;block 1&quot;);
+}</pre>
+<p><strong><span style="font-size: 24px;">运行期优化</span></strong></p>
+<p>一般情况下，我们将.java编译成.class，.class再解释成机器码。但是也有特殊的情况。有些代码调用比较频繁，比如某个方法或代码块的运行特别频繁，为了提高程序的执行效率，在运行时，虚拟机会把这个代码直接编译成机器码，并进行各种层次的优化。这样的代码称为热点代码。完成这个任务的编译器被称为即时编译器。但是其并不是虚拟机必需的部分。</p>
+<p><img alt="20190621173045527.png" src="/d/file/p/20221028/1566635083996390.png" title="1566635083996390.png" /></p>
+<p><span style="background-color: rgb(255, 255, 255); color: rgb(79, 79, 79); font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; font-size: 24px; font-variant-ligatures: common-ligatures;">即时编译器的概述</span></p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><strong><span style="font-size: 14px;">（1）为什么虚拟机要使用解释器和编译器并存的架构？</span></strong></p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);">&nbsp;</p>
+<p>虚拟机里包含着解释器和编译器。当程序需要迅速启动和执行的时候，解释器可以首先发挥作用，省去编译的时间，立即执行。在程序运行后，随着时间的推移，编译器逐渐发挥作用，把越来越多的代码编译成本地代码之后，可以获取更高的执行效率。</p>
+<p>当程序运行环境中内存资源限制较大，可以使用解释执行节约内存，反之可以使用编译来提升效率。</p>
+<p><strong>（2）为什么虚拟机要实现两个不同的即时编译器？</strong></p>
+<p>虚拟机中内置了两个即时编译器，分别为Client Compiler和Server Compiler，又称为C1和C2。</p>
+<p>默认只使用其中的一个，至于选择哪个，取决于虚拟机会根据自身版本和宿主机器的硬件性能自动选择运行模式。用户也可以使用&ldquo;-client&rdquo;、&ldquo;-server&rdquo;进行指定。</p>
+<p><strong>（3）程序何时使用解释器执行？何时使用编译器执行？</strong></p>
+<p>虚拟机有一个分层编译策略。</p>
+<p>第0层：程序解释执行，解释器不开启性能监控功能，可触发第1层编译</p>
+<p>第1层：也称为C1编译，将字节码编译为本地代码，进行简单、可靠的优化，如有必要将加入性能监控的逻辑。</p>
+<p>第2层：也称为C2编译，将字节码编译为本地代码，但是会启用一些编译耗时较长的优化，甚至会根据性能监控信息进行一些不可靠的激进优化。</p>
+<p><strong>（4）哪些程序代码会被编译为本地代码？如何编译为本地代码？</strong></p>
+<p>热点代码包括如下两类，其均把整个方法作为编译对象。</p>
+<p>a、被多次调用的方法</p>
+<p>b、被多次执行的循环体</p>
+<p>热点探测是用来判断一段代码是否为热点代码，其方式有两种：</p>
+<p>a、基于采样</p>
+<p>b、基于计数器。HotSpot使用的是这种。它为每个方法准备了两类计数器：统计方法被调用次数的方法调用计数器和统计一个方法中循环体代码执行次数的回边计数器。</p>
+<p><strong>（5）如何从外部观察及时编译器的编译过程和编译结果？</strong></p>
+<p>可以使用 -xx:+PrintCompilation 查看哪些方法被即时编译器编译了。</p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><strong>优化技术有哪些？</strong></p>
+<p>虚拟机的即时编译器在生成代码时，采用了如下的代码优化技术。</p>
+<p><strong>（1）公共子表达式消除</strong></p>
+<p>如果一个表达式E已经计算过了，那如果再次出现E时就不会再对它进行计算。比如：</p>
+<pre class="brush:php;toolbar:false">
+int d=(a*b)*12+c+(c+b*a)</pre>
+<p>如果这段代码交给javac编译器，则不会进行任何优化。如果交给即时编译器，会被进行如下步骤的优化：</p>
+<p>第一步：消除公共子表达式</p>
+<pre class="brush:php;toolbar:false">
+int d=E*12+c+(c+E)</pre>
+<p>第二步：代数化简：</p>
+<pre class="brush:php;toolbar:false">
+int d=E*13+c*2</pre>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><strong><span style="font-size: 14px;">（2）数组边界检查消除</span></strong></p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><span style="font-size: 14px;">数组边界检查是什么？<br />如果有一个数组foo[]，在java语言中访问数组元素foo[i]的时候，系统将会自动进行上下界的范围检查，检查i是否满足0&le;i&le;foo.length这个条件。</span></p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><span style="font-size: 14px;">那怎么进行消除呢？<br />a、把运行期检查提到编译期完成。如foo[3]，只要在编译期根据数据流分析来确定foo.length的值，并判断下标&ldquo;3&rdquo;没有越界，执行的时候就不用判断了。<br />b、隐式异常处理。这种思路通常用于空指针检查和算符运算中除数为零的情况。</span></p>
+<pre class="brush:php;toolbar:false">
+if(foo!=null){
+  return foo.value;
+}else{
+  throw new NullPointException();
+}</pre>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><span style="font-size: 14px;">被隐式异常处理优化后，变为如下代码：</span></p>
+<pre class="brush:php;toolbar:false">
+try{
+  return foo.value;
+}catch(segment_fault){
+  uncommon_trap();
+}</pre>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><span style="font-size: 14px;">除了数组边界检查消除，还有自动装箱消除、安全点消除、消除反射等。</span></p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><strong><span style="font-size: 14px;">（3）方法内联</span></strong></p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><span style="font-size: 14px;">把目标方法的代码&ldquo;复制&rdquo;到发起调用的方法之中，避免发生真实的方法调用。</span></p>
+<pre class="brush:php;toolbar:false">
+public int add(int x1, int x2, int x3, int x4) {  
+        return add1(x1, x2) + add1(x3, x4);  
+ }  
+
+public int add1(int x1, int x2) {  
+        return x1 + x2;  
+    }</pre>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 24px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 32px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><span style="font-size: 14px;">运行一段时间后JVM会把add1方法去掉，并把代码翻译成：</span></p>
+<pre class="brush:php;toolbar:false">
+public int add(int x1, int x2, int x3, int x4) {  
+        return x1 + x2 + x3 + x4;  
+}</pre>
+<p>（4）逃逸分析</p>
+<p>当一个对象在方法中被定义后，它可能被外部方法所引用，比如作为调用参数传递到其它方法中，这称为方法逃逸。同理，如果被外部线程访问到，它就称为线程逃逸。</p>
+<p>对变量进行相应分析就叫做逃逸分析。如果能证明别的方法或线程无法通过任何途径访问到这个对象，则可以为这个变量进行一些优化。</p>
+<p>优化的手段有栈上分配、同步消除、标量替换等。以同步消除为例，如果逃逸分析能够确定一个变量不会逃逸出线程，即无法被其它线程访问到，那对这个变量实施的同步措施就可以消除掉了。</p>
+<p>以上内容便是关于JAVA虚拟机中JVM优化的全部介绍，更多相关问题请访问PHP中文网：JAVA视频教程</p><!-- .entry-wrapper --></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span>[!--zhushi--]</span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/java/biji/270.html'>java如何初始化数组</a><a>下一篇</a><a href='/java/biji/272.html'>java判断对象是否是数组</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

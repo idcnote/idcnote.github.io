@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>redis优化系列（二）Redis主从原理、主从常用配置等_IDC笔记</title>
+    <meta name="keywords" content=",Linux常用命令" />
+    <meta name="description" content="该系列博文之上一篇：传送门 走你一、主从复制原理主从复制过程大体可以分为3个阶段：连接建立阶段（即准备阶段）、数据同步阶段、命令传播阶段。在从节点执行 slaveof 命令后，复制" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+            <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> Linux命令大全            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/linux/1.html">Linux常用命令(手册)大全</a></li><li><a href="/linux/linux/2.html">Linux命令格式</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 系统管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/system/3.html">Linux ls命令:显示指定工作目录下的内容</a></li><li><a href="/linux/system/4.html">Linux pwd命令:显示当前工作目录</a></li><li><a href="/linux/system/5.html">Linux cd命令:切换工作目录</a></li><li><a href="/linux/system/6.html">Linux date命令:显示或设置系统时间</a></li><li><a href="/linux/system/7.html">Linux su命令:切换用户</a></li><li><a href="/linux/system/9.html">Linux man命令:查看帮助信息</a></li><li><a href="/linux/system/8.html">Linux clear命令:清除屏幕</a></li><li><a href="/linux/system/11.html">Linux whoami命令:显示目前登录用户名</a></li><li><a href="/linux/system/10.html">Linux who命令:显示目前登录用户信息</a></li><li><a href="/linux/system/13.html">Linux ps命令:显示进程状态</a></li><li><a href="/linux/system/12.html">Linux free命令:显示系统内存状态</a></li><li><a href="/linux/system/15.html">Linux help命令:显示帮助信息</a></li><li><a href="/linux/system/14.html">Linux top命令:查看系统活跃进程</a></li><li><a href="/linux/system/18.html">Linux shutdown命令:关机或重启</a></li><li><a href="/linux/system/17.html">Linux halt命令:关闭系统</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 文件管理与编辑命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/file/27.html">Linux mkdir命令:创建目录</a></li><li><a href="/linux/file/29.html">Linux cat命令:连接文件并打印到标准输出设备上</a></li><li><a href="/linux/file/28.html">Linux more命令:显示文本文件内容</a></li><li><a href="/linux/file/30.html">Linux grep命令:检索文件内容</a></li><li><a href="/linux/file/31.html">Linux rm命令:删除文件或目录</a></li><li><a href="/linux/file/32.html">Linux touch命令:修改文件的时间</a></li><li><a href="/linux/file/34.html">Linux cp命令:复制文件或目录</a></li><li><a href="/linux/file/33.html">Linux ln命令:创建链接</a></li><li><a href="/linux/file/35.html">Linux find命令:查找文件</a></li><li><a href="/linux/file/37.html">Linux mv命令:移动或重命名文件或目录</a></li><li><a href="/linux/file/36.html">Linux split命令:分割文件</a></li><li><a href="/linux/file/40.html">Linux head命令:查看文件前几行</a></li><li><a href="/linux/file/39.html">Linux less命令:分页显示文件内容</a></li><li><a href="/linux/file/38.html">Linux vi/vim命令:文本编辑器</a></li><li><a href="/linux/file/42.html">Linux wc命令:统计字节数、字数、行数</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 压缩与解压命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/compression/55.html">Linux unzip命令:解压文件或目录</a></li><li><a href="/linux/compression/54.html">Linux zip命令:压缩文件或目录</a></li><li><a href="/linux/compression/56.html">Linux tar命令:归档工具</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 磁盘管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/disk/57.html">Linux df命令:显示磁盘空间使用情况</a></li><li><a href="/linux/disk/59.html">Linux quota命令:显示磁盘已使用的空间与限制</a></li><li><a href="/linux/disk/58.html">Linux mount命令:挂载文件系统</a></li><li><a href="/linux/disk/62.html">Linux ip命令:执行网络管理任务</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 网络设置与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/network/61.html">Linux netstat命令:显示网络状态</a></li><li><a href="/linux/network/60.html">Linux ifconfig命令:配置或显示网络接口信息</a></li><li><a href="/linux/network/63.html">Linux ping命令:测试主机间网络连通性</a></li><li><a href="/linux/network/65.html">Linux finger命令:查找并显示用户信息</a></li><li><a href="/linux/network/64.html">Linux wall命令:发送广播</a></li><li><a href="/linux/network/67.html">Linux rlogin命令:远端登入</a></li><li><a href="/linux/network/66.html">Linux rcp命令:远程文件复制</a></li>        </ul>
+    </li>
+        <li>
+        <a href="/linux/biji/" class="waves-effect">
+            <i class="icon-share"></i>
+            <span>Linux笔记
+                <span class="float-right menu-arrow">
+                <i class="mdi mdi-chevron-right"></i>
+                </span>
+            </span>
+        </a>
+    </li>
+    </ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+</div>
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="page-title-box">
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <h1 class="page-title">redis优化系列（二）Redis主从原理、主从常用配置等</h1>
+                    </div>
+                </div>
+                <!-- end row -->
+            </div>
+            <!-- end page-title -->
+            <!-- START ROW -->
+            <div class="panel panel-forbid">
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+                <div class="panel-content">
+                <span>该系列博文之上一篇：传送门 走你一、主从复制原理主从复制过程大体可以分为3个阶段：连接建立阶段（即准备阶段）、数据同步阶段、命令传播阶段。在从节点执行 slaveof 命令后，复制</span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+                <div class="panel-content">
+                <span><p>该系列博文之上一篇：传送门 走你</p><h2>一、主从复制原理</h2><p>主从复制过程大体可以分为3个阶段：连接建立阶段（即准备阶段）、数据同步阶段、命令传播阶段。</p><p>在从节点执行 slaveof 命令后，复制过程便开始运作，下面图示大概可以看到，从图中可以看出复制过程大致分为6个过程</p><p><img src="/d/file/p/20221029/1565675036847327.jpg" title="1565675036847327.jpg" _src="/d/file/p/20221029/1565675036847327.jpg" alt="123.jpg"/></p><p>主从配置之后的日志记录也可以看出这个流程（看主redis或从redis日志都可以）：</p><pre class="brush:bash;toolbar:false">vi&nbsp;/var/log/redis/redis.log</pre><p><img src="/d/file/p/20221029/1565680114323942.png" title="1565680114323942.png" _src="/d/file/p/20221029/1565680114323942.png" alt="r1.png"/></p><p><br/></p><p><strong>1）保存主节点（master）信息：</strong></p><p>&nbsp;&nbsp;&nbsp;&nbsp;执行 slaveof 后 Redis 会打印如下日志：</p><p><img src="/d/file/p/20221029/1565679997600202.png" title="1565679997600202.png" _src="/d/file/p/20221029/1565679997600202.png" alt="r2.png"/></p><p><br/></p><p><strong>2）从节点（slave）底层内部通过每秒运行的定时任务维护复制相关逻辑，当定时任务发现存在新的主节点后，会尝试与该节点建立网络连接</strong></p><p><br/></p><p>从节点与主节点建立网络连接示例图：</p><p><img src="/d/file/p/20221029/1565680217880278.png" title="1565680217880278.png" _src="/d/file/p/20221029/1565680217880278.png" alt="r3.png"/></p><p><br/></p><p>从节点会建立一个 socket 套接字，从节点建立了一个端口为51234的套接字，专门用于接受主节点发送的复制命令。从节点连接成功后打印如下日志：</p><p><img src="/d/file/p/20221029/1565680324601642.png" title="1565680324601642.png" _src="/d/file/p/20221029/1565680324601642.png" alt="r4.png"/></p><p>如果从节点无法建立连接，定时任务会无限重试直到连接成功或者手动执行 slaveof no one 取消复制（断开主从）</p><p>注：对一个从redis节点服务器执行命令 slaveof no one 将使得这个从redis节点服务器关闭复制功能，并从 从redis节点服务器转变回主redis节点服务器，原来同步所得的数据集不会被丢弃。</p><p><br/></p><p>关于连接失败，可以在从节点执行 info replication 查看 master_link_down_since_seconds 指标，它会记录与主节点连接失败的系统时间。从节点连接主节点失败时也会每秒打印如下日志，方便发现问题：</p><p>&nbsp;&nbsp;&nbsp;&nbsp;# Error condition on socket for SYNC: {socket_error_reason}</p><p><br/></p><p><strong>3）发送 ping 命令</strong></p><p>&nbsp;&nbsp;&nbsp;&nbsp;连接建立成功后从节点发送 ping 请求进行首次通信，ping 请求主要目的如下：<strong><br/></strong></p><p>①、检测主从之间网络套接字是否可用。</p><p>②、检测主节点当前是否可接受处理命令。</p><p>③、如果发送 ping 命令后，从节点没有收到主节点的 pong 回复或者超时，比如网络超时或者主节点正在阻塞无法响应命令，从节点会断开复制连接，下次定时任务会发起重连。</p><p><img src="/d/file/p/20221029/1565680899200397.png" title="1565680899200397.png" _src="/d/file/p/20221029/1565680899200397.png" alt="r5.png"/></p><p><img src="/d/file/p/20221029/1565680961165984.jpg" title="1565680961165984.jpg" _src="/d/file/p/20221029/1565680961165984.jpg" alt="r6.jpg"/></p><p></p><p>从节点发送的 ping 命令成功返回，Redis 打印如下日志，并继续后续复制流程：</p><p><img src="/d/file/p/20221029/1565681022459477.png" title="1565681022459477.png" _src="/d/file/p/20221029/1565681022459477.png" alt="r7.png"/></p><p><br/></p><p><strong>4）权限验证。</strong>如果主节点设置了 requirepass 参数，则需要密码验证，从节点必须配置 masterauth 参数保证与主节点相同的密码才能通过验证；如果验证失败复制将终止，从节点重新发起复制流程。</p><p><br/></p><p><strong>5）同步数据集。</strong>主从复制连接正常通信后，对于首次建立复制的场景，主节点会把持有的数据全部发送给从节点，这部分操作是耗时最长的步骤。</p><p><strong><br/></strong></p><p><strong>6）命令持续复制。</strong>当主节点把当前的数据同步给从节点后，便完成了复制的建立流程。接下来主节点会持续地把写命令发送给从节点，保证主从数据一致性。</p><p><strong><img src="/d/file/p/20221029/1565681187354885.png" title="1565681187354885.png" _src="/d/file/p/20221029/1565681187354885.png" alt="r8.png"/></strong></p><p><br/></p><p>可参考以下书籍（需付费购买）：</p><p>https://gitbook.cn/gitchat/geekbook/5af939544b544674331bce2e<br/></p><p><br/></p><p>关于主从原理也可参考以下文章：</p><p>https://juejin.im/entry/5b39c05df265da596e4cf399<br/></p><h2>二、全量复制和部分复制</h2><h3>2.1 相关概念<br/></h3><p><strong>全量复制</strong>：用于初次复制或其它无法进行部分复制的情况，将主节点中的所有数据都发送给从节点，是一个非常重型的操作，当数据量较大时，会对主从节点和网络造成很大的开销</p><p><br/></p><p><strong>部分复制</strong>：用于处理在主从复制中因网络闪断等原因造成的数据丢失场景，当从节点再次连上主节点后，（如果条件允许，后面会说到具体那些条件需要被满足），主节点会补发丢失数据给从节点。因为补发的数据远远小于全量数据，可以有效避免全量复制的过高开销，需要注意的是，如果网络中断时间过长，造成主节点没有能够完整地保存中断期间执行的写命令，则无法进行部分复制，仍使用全量复制</p><p><br/></p><p><strong>复制偏移量</strong>：参与复制的主从节点都会维护自身复制偏移量。主节点（master）在处理完写入命令后，会把命令的字节长度做累加记录，统计信息在 info replication 中的 master_repl_offset 指标中：</p><p>提醒：记得进入redis客户端执行该命令</p><pre class="brush:bash;toolbar:false">#在从节点的redis中执行以下命令
+redis-cli
+info&nbsp;replication</pre><p>截图如下：</p><p><img src="/d/file/p/20221029/1565685507479843.png" title="1565685507479843.png" _src="/d/file/p/20221029/1565685507479843.png" alt="r9.png"/></p><p><br/></p><p>从节点（slave）每秒钟上报自身的复制偏移量给主节点，因此主节点也会保存从节点的复制偏移量，统计指标如下：</p><p><span style="white-space: normal;">再次提醒：记得进入redis客户端执行&nbsp;<span style="white-space: normal;">info replication&nbsp;</span>命令</span></p><p><span style="white-space: normal;"></span></p><pre class="brush:bash;toolbar:false">#在主节点的redis中执行以下命令
+redis-cli
+info&nbsp;replication</pre><p><span style="white-space: normal;"></span><span style="white-space: normal;">截图如下：</span></p><p><span style="white-space: normal;"><img src="/d/file/p/20221029/1565685967173946.png" title="1565685967173946.png" _src="/d/file/p/20221029/1565685967173946.png" alt="r10.png"/></span></p><p><span style="white-space: normal;">从节点在接收到主节点发送的命令后，也会累加记录自身的偏移量。统计信息在 info replication 中的 slave_repl_offset 中</span></p><p><br/></p><p><strong>复制积压缓冲区</strong>：复制积压缓冲区是保存在主节点上的一个固定长度的队列，默认大小为1MB（可以调整大小，具体调整多大看各自需求业务来调整），当主节点有连接的从节点（slave）时被创建，这时主节点（master）响应写命令时，不但会把命令发送给从节点，还会写入复制积压缓冲区。</p><p><br/></p><p>在命令传播阶段（也可以说是 同步数据阶段），主节点除了将写命令发送给从节点，还会发送一份给复制积压缓冲区，作为写命令的备份；除了存储写命令，复制积压缓冲区中还存储了其中的每个字节对应的复制偏移量(offset) 。由于复制积压缓冲区定长而且先进先出，所以它保存的是主节点最近执行的写命令；时间较早的写命令会被挤出缓冲区。</p><p><img src="/d/file/p/20221029/1565686304304314.jpg" title="1565686304304314.jpg" _src="/d/file/p/20221029/1565686304304314.jpg" alt="r11.jpg"/></p><p><br/></p><h3>2.2 Redis全量复制的过程如下图所示：</h3><p><img src="/d/file/p/20221029/1565686367837348.png" title="1565686367837348.png" _src="/d/file/p/20221029/1565686367837348.png" alt="r12.png"/></p><p>如上图所示：<br/></p><p>1、Redis 内部会发出一个同步命令，刚开始是 Psync 命令，Psync ? -1表示要求 master 主机同步数据</p><p>2、主机会向从机发送 runid 和 offset，因为 slave 并没有对应的 offset，所以是全量复制</p><p>3、从机 slave 会保存 主机 master 的基本信息 save masterInfo</p><p>4、主节点收到全量复制的命令后，执行 bgsave 命令（异步执行），在后台生成RDB文件（快照文件），并使用一个缓冲区（称为复制缓冲区）记录从现在开始执行的所有写命令</p><p>5、主机发送 RDB 文件给从机</p><p>6、主机发送缓冲区数据到从机</p><p>7、刷新旧的数据，从节点在载入主节点的数据之前要先将老数据清除</p><p>8、加载 RDB 文件将数据库状态更新至主节点执行bgsave时的数据库状态和缓冲区数据的加载。</p><p><br/></p><p><strong>全量复制开销，主要有以下几项：</strong></p><p>1、bgsave 时间</p><p>2、RDB 文件网络传输时间</p><p>3、从节点清空数据的时间</p><p>4、从节点加载 RDB 的时间</p><p>注：生成一个几GB 十几GB的RDB快照文件 大概是需要2-5分钟的样子<br/></p><p><br/></p><h3>2.3 部分复制（又称 增量复制）</h3><p>部分复制是 Redis 2.8 以后出现的，之所以要加入部分复制，是因为全量复制会产生很多问题，比如像上面的时间开销大、无法隔离等问题， Redis 希望能够在 master 出现抖动（相当于断开连接）的时候，可以有一些机制将复制的损失降低到最低。</p><p><br/></p><p>部分复制的过程如下图所示：</p><p><img src="/d/file/p/20221029/1565690217663879.png" title="1565690217663879.png" _src="/d/file/p/20221029/1565690217663879.png" alt="r13.png"/></p><p>如上图所示：<br/></p><p>1、如果网络抖动（连接断开 connection lost）</p><p>2、主机 master 还是会写 replbackbuffer（复制缓冲区）</p><p>3、从机 slave 会继续尝试连接主机</p><p>4、从机 slave 会把自己当前 runid 和偏移量传输给主机 master，并且执行 pysnc 命令同步</p><p>5、如果 master 发现从节点的偏移量是在缓冲区的范围内，就会返回 continue（在指的是继续复制的意思） 命令，如果从节点的偏移量不在缓冲区的范围之内，就不会进行部分复制操作了，这样就意味着它会执行全量复制，所以我们要尽量避免这种情况的发生。</p><p>6、同步了 offset 的部分数据，所以部分复制的基础就是偏移量 offset</p><p><br/></p><p><strong>正常情况下redis是如何决定是全量复制还是部分复制？</strong></p><p>从节点将offset（偏移量）发送给主节点后，主节点根据offset（偏移量）和缓冲区大小决定能否执行部分复制；</p><p>如果offset偏移量之后的数据，仍然都在复制积压缓冲区里，则执行部分复制；</p><p>如果offset偏移量之后的数据已不在复制积压缓冲区中（数据已被挤出），则执行全量复制；</p><p><br/></p><p><strong>缓冲区大小调节：</strong></p><p>由于缓冲区长度固定且有限，因此可以备份的写命令也有限，当主从节点offset的差距过大超过缓冲区长度时，将无法执行部分复制，只能执行全量复制。反过来说，为了提高网络中断时部分复制执行的概率，可以根据需要增大复制积压缓冲区的大小(通过配置repl-backlog-size)来设置；例如如果网络中断的平均时间是60s，而主节点平均每秒产生的写命令(特定协议格式)所占的字节数为100KB，则复制积压缓冲区的平均需求为6MB，保险起见，可以设置为12MB，来保证绝大多数断线情况都可以使用部分复制。</p><p><br/></p><p><strong>服务器运行ID(runid)：</strong></p><p>每个Redis节点(无论主从)，在启动时都会自动生成一个随机ID(每次启动都不一样)，由40个随机的十六进制字符组成；runid用来唯一识别一个Redis节点。 通过info server命令，可以查看节点的runid：<strong><br/></strong></p><p><img src="/d/file/p/20221029/1565691068952252.png" title="1565691068952252.png" _src="/d/file/p/20221029/1565691068952252.png" alt="r14.png"/></p><p><br/></p><p><br/></p><p>主从节点初次复制时，主节点将自己的runid发送给从节点，从节点将这个runid保存起来；当断线重连时，从节点会将这个runid发送给主节点；主节点根据runid判断能否进行部分复制：</p><p>&nbsp;&nbsp;&nbsp;&nbsp;如果从节点保存的runid与主节点现在的runid相同，说明主从节点之前同步过，主节点会继续尝试使用部分复制（到底能不能部分复制还要看offset和复制积压缓冲区的情况）</p><p>&nbsp;&nbsp;&nbsp;&nbsp;如果从节点保存的runid与主节点现在的runid不同，说明从节点在断线前同步的Redis节点并不是当前的主节点，只能进行全量复制。</p><h2 style="white-space: normal;">三、主从复制的常用相关配置</h2><p style="white-space: normal;"><strong>1、从redis节点配置：</strong></p><p style="white-space: normal;"><br/></p><p style="white-space: normal;">①、slaveof &lt;masterip&gt; &lt;masterport&gt;</p><p style="white-space: normal;">slave实例需要配置该项，指向master的（ip, port）</p><p style="white-space: normal;"><br/></p><p style="white-space: normal;">②、masterauth&nbsp; &lt;master-password&gt;</p><p style="white-space: normal;">如果master实例启用了密码保护，则该配置项需填master的启动密码，若master未启用密码，该配置项需要注释掉</p><p style="white-space: normal;"><br/></p><p style="white-space: normal;">③、slave-serve-stale-data</p><p style="white-space: normal;">指定slave与master连接中断时的动作。默认为yes，表明slave会继续应答来自client的请求，但这些数据可能已经过期（因为连接中断导致无法从master同步）。若配置为no，则slave除正常应答&quot;INFO&quot;和&quot;SLAVEOF&quot;命令外，其余来自客户端的请求命令均会得到&quot;SYNC with master in progress&quot;的应答，直到该slave与master的连接重建成功或该slave被提升为master</p><p style="white-space: normal;"><br/></p><p style="white-space: normal;">④、slave-read-only</p><p style="white-space: normal;">指定slave是否只读，默认为yes。若配置为no，这表示slave是可写的，但写的内容在主从同步完成后会被删掉</p><p style="white-space: normal;"><br/></p><p style="white-space: normal;">⑤、repl-disable-tcp-nodelay</p><p style="white-space: normal;">指定向slave同步数据时，是否禁用socket的NO_DELAY选项。若配置为yes，则禁用NO_DELAY，则TCP协议栈会合并小包统一发送，这样可以减少主从节点间的包数量并节省带宽，但会增加数据同步到slave的时间。若配置为no，表明启用NO_DELAY，则TCP协议栈不会延迟小包的发送时机，这样数据同步的延时会减少，但需要更大的带宽。通常情况下，应该配置为no以降低同步延时，但在主从节点间网络负载已经很高的情况下，可以配置为yes</p><p style="white-space: normal;">注：主从节点进行数据传输是基于tcp协议进行传输的</p><p style="white-space: normal;"><br/></p><p style="white-space: normal;">⑥、slave-priority</p><p style="white-space: normal;">指定slave的优先级。在不只1个slave存在的部署环境下，当master宕机时，Redis Sentinel会将priority值最小的slave提升为master。需要注意的是，若该配置项为0，则对应的slave永远不会被Redis Sentinel自动提升为master</p><p><br/></p>					
+                                                                                                        
+                                                </div>
+                                                <!-- .entry-wrapper --></span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+                <div class="panel-content">
+                <span>[!--zhushi--]</span>                                     
+                </div>
+
+            </div>
+
+            <!-- END ROW -->
+            <div class="newsPage">
+                <div class="newsPageTurn">
+                    <span><a>上一篇</a><a href='/linux/biji/175.html'>【linux命令】linux命令find</a><a>下一篇</a><a href='/linux/biji/177.html'>【linux命令】[原创]编译php 5.5报错：configure: error: Don&#8217;t know how to define struct flock on this syste</a></span>
+                </div>
+            </div>
+        </div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+                <li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<!-- container-fluid -->
+    </div>
+<!-- content -->
+    <footer class="footer">
+    © 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    </footer>
+</div>
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

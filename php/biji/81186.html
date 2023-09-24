@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>在PHP程序中使用Rust扩展的方法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content=" C或PHP中的Rust<br />
+我的基本出发点就是写一些可以编译的Rust代码到一个库里面，并写为它一些C的头文件，在C中为被调用的PHP做一个拓展。虽然并不是很简单，但是很有趣。<br />
+<br />
+Rust FFI（f" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">在PHP程序中使用Rust扩展的方法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span> C或PHP中的Rust<br />
+我的基本出发点就是写一些可以编译的Rust代码到一个库里面，并写为它一些C的头文件，在C中为被调用的PHP做一个拓展。虽然并不是很简单，但是很有趣。<br />
+<br />
+Rust FFI（f</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>&nbsp;C或PHP中的Rust</strong></p>
+<p>我的基本出发点就是写一些可以编译的Rust代码到一个库里面，并写为它一些C的头文件，在C中为被调用的PHP做一个拓展。虽然并不是很简单，但是很有趣。<br />
+Rust FFI（foreign function interface）</p>
+<p>我所做的第一件事情就是摆弄Rust与C连接的Rust的外部函数接口。我曾用简单的方法（hello_from_rust）写过一个灵活的库，伴有单一的声明（a pointer to a C char, otherwise known as a string），如下是输入后输出的“Hello from Rust”。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+// hello_from_rust.rs
+#![crate_type = "staticlib"]
+ 
+#![feature(libc)]
+extern crate libc;
+use std::ffi::CStr;
+ 
+#[no_mangle]
+pub extern "C" fn hello_from_rust(name: *const libc::c_char) {
+ let buf_name = unsafe { CStr::from_ptr(name).to_bytes() };
+ let str_name = String::from_utf8(buf_name.to_vec()).unwrap();
+ let c_name = format!("Hello from Rust, {}", str_name);
+ println!("{}", c_name);
+}
+</pre>
+</div>
+<p>我从C（或其它！）中调用的Rust库拆分它。这有一个接下来会怎样的很好的解释。</p>
+<p>编译它会得到.a的一个文件，libhello_from_rust.a。这是一个静态的库，包含它自己所有的依赖关系，而且我们在编译一个C程序的时候链接它，这让我们能做后续的事情。注意：在我们编译后会得到如下输出：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+note: link against the following native artifacts when linking against this static library
+note: the order and any duplication can be significant on some platforms, and so may need to be preserved
+note: library: Systemnote: library: pthread
+note: library: c
+note: library: m
+</pre>
+</div>
+<p>这就是Rust编译器在我们不使用这个依赖的时候所告诉我们需要链接什么。</p>
+<p><strong>从C中调用Rust</strong></p>
+<p>既然我们有了一个库，不得不做两件事来保证它从C中可调用。首先，我们需要为它创建一个C的头文件，hello_from_rust.h。然后在我们编译的时候链接到它。</p>
+<p>下面是头文件：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+// hello_from_rust.h
+#ifndef __HELLO
+#define __HELLO
+ 
+void hello_from_rust(const char *name);
+ 
+#endif
+</pre>
+</div>
+<p>这是一个相当基础的头文件，仅仅为了一个简单的函数提供签名/定义。接着我们需要写一个C程序并使用它。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+// hello.c
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include "hello_from_rust.h"
+ 
+int main(int argc, char *argv[]) {
+ hello_from_rust("Jared!");
+}
+</pre>
+</div>
+<p>我们通过运行一下代码来编译它：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+gcc -Wall -o hello_c hello.c -L /Users/jmcfarland/code/rust/php-hello-rust -lhello_from_rust -lSystem -lpthread -lc -lm
+</pre>
+</div>
+<p>注意在末尾的-lSystem -lpthread -lc -lm告诉gcc不要链接那些“本地的古董”，为了当编译我们的Rust库时Rust编译器可以提供出来。</p>
+<p>经运行下面的代码我们可以得到一个二进制的文件：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+$ ./hello_c
+Hello from Rust, Jared!
+</pre>
+</div>
+<p>漂亮！我们刚才从C中调用了Rust库。现在我们需要理解Rust库是如何进入一个PHP扩展的。</p>
+<p><br />
+<strong>从 php 中调用 c</strong></p>
+<p>该部分花了我一些时间来弄明白，在这个世界上，该文档在 php 扩展中并不是最好的。最好的部分是来自绑定一个脚本 ext_skel 的 php 源（大多数代表“扩展骨架”）即生成大多数你需要的样板代码。&nbsp; 你可以通过下载来开始，和未配额的 php 源，把代码写进 php 目录并且运行：</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+ $ cd ext/
+$ ./ext_skel --extname=hello_from_rust
+
+</pre>
+</div>
+<p>&nbsp; 这将生成需要创建 php 扩展的基本骨架。现在，移动你处处想局部地保持你的扩展的文件夹。并且移动你的</p>
+<ul>
+<li>&nbsp;&nbsp;&nbsp; .rust 源</li>
+<li>&nbsp;&nbsp;&nbsp; .rust库</li>
+<li>&nbsp;&nbsp;&nbsp; .c header</li>
+</ul>
+<p>进入同一个目录。因此，现在你应该看看像这样的一个目录：</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+ .
+├── CREDITS
+├── EXPERIMENTAL
+├── config.m4
+├── config.w32
+├── hello_from_rust.c
+├── hello_from_rust.h
+├── hello_from_rust.php
+├── hello_from_rust.rs
+├── libhello_from_rust.a
+├── php_hello_from_rust.h
+└── tests
+ └── 001.phpt
+
+</pre>
+</div>
+<p><strong>一个目录，11个文件</strong></p>
+<p>你可以在 php docs 在上面看到关于这些文件很好的描述。建立一个扩展的文件。我们将通过编辑 config.m4 来开始吧。</p>
+<p>不解释，下面就是我的成果：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+PHP_ARG_WITH(hello_from_rust, for hello_from_rust support,
+[ --with-hello_from_rust    Include hello_from_rust support])
+ 
+if test "$PHP_HELLO_FROM_RUST" != "no"; then
+ PHP_SUBST(HELLO_FROM_RUST_SHARED_LIBADD)
+ 
+ PHP_ADD_LIBRARY_WITH_PATH(hello_from_rust, ., HELLO_FROM_RUST_SHARED_LIBADD)
+ 
+ PHP_NEW_EXTENSION(hello_from_rust, hello_from_rust.c, $ext_shared)
+fi
+</pre>
+</div>
+<p>正如我所理解的那样，这些是基本的宏命令。但是有关这些宏命令的文档是相当糟糕的（比如：google"PHP_ADD_LIBRARY_WITH_PATH"并没有出现PHP团队所写的结果）。我偶然这个PHP_ADD_LIBRARY_PATH宏命令在有些人所谈论的在一个PHP拓展里链接一个静态库的先前的线程里。在评论中其它的推荐使用的宏命令是在我运行ext_skel后产生的。</p>
+<p>既然我们进行了配置设置，我们需要从PHP脚本中实际地调用库。为此我们得修改自动生成的文件，hello_from_rust.c。首先我们添加hello_from_rust.h头文件到包含命令中。然后我们要修改confirm_hello_from_rust_compiled的定义方法。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+#include "hello_from_rust.h"
+ 
+// a bunch of comments and code removed...
+ 
+PHP_FUNCTION(confirm_hello_from_rust_compiled)
+{
+ char *arg = NULL;
+ int arg_len, len;
+ char *strg;
+ 
+ if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &arg, &arg_len) == FAILURE) {
+  return;
+ }
+ 
+ hello_from_rust("Jared (from PHP!!)!");
+ 
+ len = spprintf(&strg, 0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "hello_from_rust", arg);
+ RETURN_STRINGL(strg, len, 0);
+}
+</pre>
+</div>
+<p>注意：我添加了hello_from_rust("Jared (fromPHP!!)!");。</p>
+<p><br />
+现在，我们可以试着建立我们的扩展：</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+$ phpize
+$ ./configure
+$ sudo make install
+
+</pre>
+</div>
+<p>就是它，生成我们的元配置，运行生成的配置命令，然后安装该扩展。安装时，我必须亲自使用sudo，因为我的用户并不拥有安装目录的 php 扩展。</p>
+<p>现在，我们可以运行它啦！</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+$ php hello_from_rust.php
+Functions available in the test extension:
+confirm_hello_from_rust_compiled
+
+Hello from Rust, Jared (from PHP!!)!
+Congratulations! You have successfully modified ext/hello_from_rust/config.m4. Module hello_from_rust is now compiled into PHP.
+Segmentation fault: 11
+
+</pre>
+</div>
+<p>还不错，php 已进入我们的 c 扩展，看到我们的应用方法列表并且调用。接着，c 扩展已进入我们的 rust 库，开始打印我们的字符串。那很有趣！但是......那段错误的结局发生了什么？</p>
+<p>正如我所提到的，这里是使用了 Rust 相关的 println! 宏，但是我没有对它做进一步的调试。如果我们从我们的 Rust 库中删除并返回一个 char* 替代，段错误就会消失。</p>
+<p>这里是 Rust 的代码：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="38325" class="copybut" id="copybut38325" onclick="doCopy('code38325')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code38325"> <br />
+#![crate_type = "staticlib"]<br />
+&nbsp;<br />
+#![feature(libc)]<br />
+extern crate libc;<br />
+use std::ffi::{CStr, CString};<br />
+&nbsp;<br />
+#[no_mangle]<br />
+pub extern "C" fn hello_from_rust(name: *const libc::c_char) -&gt; *const libc::c_char {<br />
+&nbsp;&nbsp;&nbsp; let buf_name = unsafe { CStr::from_ptr(name).to_bytes() };<br />
+&nbsp;&nbsp;&nbsp; let str_name = String::from_utf8(buf_name.to_vec()).unwrap();<br />
+&nbsp;&nbsp;&nbsp; let c_name&nbsp;&nbsp; = format!("Hello from Rust, {}", str_name);<br />
+&nbsp;<br />
+&nbsp;&nbsp;&nbsp; CString::new(c_name).unwrap().as_ptr()<br />
+}</div></p>
+<p>并变更 C 头文件：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+#ifndef __HELLO
+#define __HELLO
+ 
+const char * hello_from_rust(const char *name);
+ 
+#endif
+</pre>
+</div>
+<p>还要变更 C 扩展文件：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+PHP_FUNCTION(confirm_hello_from_rust_compiled)
+{
+ char *arg = NULL;
+ int arg_len, len;
+ char *strg;
+ 
+ if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &arg, &arg_len) == FAILURE) {
+  return;
+ }
+ 
+ char *str;
+ str = hello_from_rust("Jared (from PHP!!)!");
+ printf("%s\n", str);
+ 
+ len = spprintf(&strg, 0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "hello_from_rust", arg);
+ RETURN_STRINGL(strg, len, 0);
+}
+</pre>
+</div>
+<p><strong>无用的微基准</strong></p>
+<p>那么为什么你还要这样做？我还真的没有在现实世界里使用过这个。但是我真的认为斐波那契序列算法就是一个好的例子来说明一个PHP拓展如何很基本。通常是直截了当（在Ruby中）：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+def fib(at) do
+ if (at == 1 || at == 0)
+  return at
+ else
+  return fib(at - 1) + fib(at - 2)
+ end
+end
+</pre>
+</div>
+<p>而且可以通过不使用递归来改善这不好的性能：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+def fib(at) do
+ if (at == 1 || at == 0)
+  return at
+ elsif (val = @cache[at]).present&#63;
+  return val 
+ end
+ 
+ total = 1
+ parent = 1
+ gp  = 1
+ 
+ (1..at).each do |i|
+  total = parent + gp
+  gp  = parent
+  parent = total
+ end
+ 
+ return total
+end
+</pre>
+</div>
+<p>那么我们围绕它来写两个例子，一个在PHP中，一个在Rust中。看看哪个更快。下面是PHP版：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+def fib(at) do
+ if (at == 1 || at == 0)
+  return at
+ elsif (val = @cache[at]).present&#63;
+  return val 
+ end
+ 
+ total = 1
+ parent = 1
+ gp  = 1
+ 
+ (1..at).each do |i|
+  total = parent + gp
+  gp  = parent
+  parent = total
+ end
+ 
+ return total
+end
+</pre>
+</div>
+<p>这是它的运行结果：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+$ time php php_fib.php
+ 
+real 0m2.046s
+user 0m1.823s
+sys 0m0.207s
+</pre>
+</div>
+<p>现在我们来做Rust版。下面是库资源：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="30039" class="copybut" id="copybut30039" onclick="doCopy('code30039')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code30039"><br />
+#![crate_type = "staticlib"]<br />
+&nbsp;<br />
+fn fib(at: usize) -&gt; usize {<br />
+&nbsp;&nbsp;&nbsp; if at == 0 {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 0;<br />
+&nbsp;&nbsp;&nbsp; } else if at == 1 {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 1;<br />
+&nbsp;&nbsp;&nbsp; }<br />
+&nbsp;<br />
+&nbsp;&nbsp;&nbsp; let mut total&nbsp; = 1;<br />
+&nbsp;&nbsp;&nbsp; let mut parent = 1;<br />
+&nbsp;&nbsp;&nbsp; let mut gp&nbsp;&nbsp;&nbsp;&nbsp; = 0;<br />
+&nbsp;&nbsp;&nbsp; for _ in 1 .. at {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; total&nbsp; = parent + gp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; gp&nbsp;&nbsp;&nbsp;&nbsp; = parent;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; parent = total;<br />
+&nbsp;&nbsp;&nbsp; }<br />
+&nbsp;<br />
+&nbsp;&nbsp;&nbsp; return total;<br />
+}<br />
+&nbsp;<br />
+#[no_mangle]<br />
+pub extern "C" fn rust_fib(at: usize) -&gt; usize {<br />
+&nbsp;&nbsp;&nbsp; fib(at)<br />
+}</div></p>
+<p>注意，我编译的库rustc - O rust_lib.rs使编译器优化（因为我们是这里的标准）。这里是C扩展源（相关摘录）：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+PHP_FUNCTION(confirm_rust_fib_compiled)
+{
+ long number;
+ 
+ if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &number) == FAILURE) {
+  return;
+ }
+ 
+ RETURN_LONG(rust_fib(number));
+}
+</pre>
+</div>
+<p>运行ＰＨＰ脚本：<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+&lt;&#63;php
+$br = (php_sapi_name() == "cli")&#63; "":"&lt;br&gt;";
+ 
+if(!extension_loaded('rust_fib')) {
+ dl('rust_fib.' . PHP_SHLIB_SUFFIX);
+}
+ 
+for ($i = 0; $i &lt; 100000; $i ++) {
+ confirm_rust_fib_compiled(92);
+}
+&#63;&gt;
+</pre>
+</div>
+<p>这就是它的运行结果：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+$ time php rust_fib.php
+ 
+real 0m0.586s
+user 0m0.342s
+sys 0m0.221s
+</pre>
+</div>
+<p>你可以看见它比前者快了三倍！完美的Rust微基准！<br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/81185.html'>CSS background属性(背景属性)详解</a><a>下一篇</a><a href='/php/biji/81187.html'>最简单的SD卡文件遍历Android程序</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

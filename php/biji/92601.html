@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Oracle数据完整性和锁机制简析_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="本课内容属于Oracle高级课程范畴，内容略微偏向理论性，但是与数据库程序开发和管理、优化密切相关；另外本课的部分内容在前面章节已经涉及，请注意理论联系实际。事务 <br />
+<br />
+<br />
+事务(Tra" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Oracle数据完整性和锁机制简析</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>本课内容属于Oracle高级课程范畴，内容略微偏向理论性，但是与数据库程序开发和管理、优化密切相关；另外本课的部分内容在前面章节已经涉及，请注意理论联系实际。事务 <br />
+<br />
+<br />
+事务(Tra</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><P>本课内容属于Oracle高级课程范畴，内容略微偏向理论性，但是与数据库程序开发和管理、优化密切相关；另外本课的部分内容在前面章节已经涉及，请注意理论联系实际。</P><SPAN class=bold style="FONT-WEIGHT: bold">事务 </SPAN>
+<P></P>
+<P></P>
+<P>事务(Transaction)从 <STRONG>通讯</STRONG>的角度看：是用户定义的数据库操作序列，这些操作要么全做、要么全不做，是不可分割的一个工作单元。事务控制语句称为TCL，一般包括Commit和Rollback。</P>
+<P>事务不是程序，事务和程序分属两个概念。在RDBMS中，一个事务可以有一条SQL语句、一组SQL语句或者整个程序；一个应用程序又通常包含多个事务。</P>
+<P>事务是恢复和并发控制的基本单元。</P>
+<P>
+<P><SPAN class=bold style="FONT-WEIGHT: bold">显式事务和隐式事务</SPAN></P>
+<P>
+<P>begin</P>
+<P>insert into classes_2(bjbh,bjmc,bjms,bzr,ssxb,bjrs,bz)</P>
+<P>values ('888','测试班级','测试班级','肖丰斌','003','38','');</P>
+<P><SPAN style="TEXT-DECORATION: underline">commit/rollback;</SPAN></P>
+<P>end ;</P>
+<P>
+<P>insert into classes_2(bjbh,bjmc,bjms,bzr,ssxb,bjrs,bz)</P>
+<P>values ('888','测试班级','测试班级','肖丰斌','003','38','');</P>
+<P><SPAN style="TEXT-DECORATION: underline">commit/rollback;</SPAN></P>
+<P></P>
+<P><STRONG>事务的ACID特性和结束方式</STRONG></P>
+<P></P>
+<P>
+<P><STRONG>事务的ACID特性和结束方式</STRONG></P>
+<P>
+<P><STRONG>破坏事务ACID特性的因素包括：</STRONG></P>
+<P>1.多个事务并行运行时，不同事务的操作交叉执行</P>
+<P>2.事务在运行过程中被强行终止</P>
+<P><STRONG>事务的结束方式包括：</STRONG></P>
+<P> </P>
+<P><SPAN class=bold style="FONT-WEIGHT: bold">并行性和一致性</SPAN></P>
+<P>并行性和一致性是针对多用户、多事务，而非单用户、单事务数据库环境的，其含义是在多用户、多事务环境下，针对同一张数据库表的数据存在同时更新（含Update和Insert、Delete）的情况。</P>
+<P>并行性意味着多用户能够同时访问数据；</P>
+<P>一致性意味着每个用户看到的数据是一致的。</P>
+<P>为保证数据的一致性，一般采用了事务隔离机制（事务隔离模型），又称为事务串行化，用来保证事务尽量按照串行的方式执行。</P>
+<P>
+<P>执行并行事务要防止三种情况：</P>
+<P><STRONG>1.脏读</STRONG>：事务读取了另外一个没有提交的事务的数据(脏数据)；</P>
+<P><STRONG>2.非重复读</STRONG>：事务重新读取了以前读取的数据，结果发现另外一个已经提交的事务已经修改了那些数据；</P>
+<P>3. <STRONG>幻影读</STRONG>：一个事务重新执行，返回满足条件的行集数据，结果发现另外一个已经提交的事务插入了满足条件的其他行的数据。</P>
+<P><STRONG>隔离层</STRONG><STRONG>未提交的读模式</STRONG><STRONG>提交的读模式</STRONG><STRONG>重复读模式</STRONG><STRONG>串行化模式</STRONG>脏读可能不可能不可能不可能非重复读可能可能不可能不可能幻影读可能可能可能不可能 </P>
+<P>
+<P><STRONG>并行性适用的情况</STRONG></P>
+<P><STRONG>前提条件</STRONG>是必须是多CPU的服务器上执行，此时并行性的好处才能显示出来，单CPU服务器上实验并行性反而会降低性能。 </P>
+<P></P>
+<P></P>
+<P>
+<P>&#8226;处理对大表(至少100万行记录以上)的大数据量查询</P>
+<P>&#8226;处理连接非常大的表查询</P>
+<P>&#8226;处理建立大索引、大容量数据装载、汇总计算</P>
+<P>&#8226;处理Oracle对象间大量数据拷贝等作业</P>
+<P>&#8226;处理在SMP(对称多处理器)或MPP(大规模并行处理)群和聚合(多机器同时访问同一组磁盘和主数据库)的机器上的查询</P>
+<P>&#8226;处理存放在分布于不同磁盘的多个数据文件中的数据查询</P>
+<P>&#8226;处理需要大量辅助内存的查询，如Group by、Order By等</P>
+<P><STRONG>语句级读一致性和事务级读一致性</STRONG></P>
+<P><STRONG><BR></STRONG></P>
+<P> </P>
+<P></P>
+<P></P>
+<P> </P>
+<P></P>
+<P></P>
+<P> </P>
+<P></P>
+<P></P>
+<P></P>
+<P></P>
+<P></P>
+<P></P>
+<P>
+<P><SPAN class=bold style="FONT-WEIGHT: bold">Oracle锁</SPAN></P>
+<P><SPAN class=bold style="FONT-WEIGHT: bold"><BR></SPAN></P>
+<P><STRONG>什么是数据库锁</STRONG></P>
+<P></P>
+<P>
+<P>锁是用于防止在访问相同的资源(包括用户对象、系统对象、内存、Oralce数据字典中的共享数据结构，最常见的是数据库表Table对象)时 ，事务之间的有害性 交互（存、取）的一种机制。</P>
+<P>不同类型的锁，代表了当前用户是允许还是阻止其它用户对相同资源的同时存取，从而确保不破坏系统数据的完整性、一致性和并行性。</P>
+<P>加锁是实现数据库并发控制的一个非常重要的技术。当事务在对某个数据对象进行操作前，先向系统发出请求，对其加锁。加锁后事务就对该数据对象有了一定的控制，在该事务释放锁之前，其他的事务不能对此数据对象进行更新操作。</P>
+<P>
+<P><STRONG>两种锁机制</STRONG></P>
+<P>
+<P><STRONG>共享锁（Share Lock）：</STRONG>即S锁，是通过对数据存取的高并行性来实现的。加了共享锁的数据库对象可以被其它事务读取，但是不能被其它事务修改。</P>
+<P><STRONG>独占锁（Exclusive Lock）：</STRONG>即X锁，又称排它锁，是用来防止同时共享相同资源的锁。加了独占锁的数据库对象不能被其它事务读取和修改。</P>
+<P>
+<P>&#8226;锁在事务保持期间是被保持的，用来防止包括脏读、丢失更新和破坏性DLL等交互行为。对一个事务中SQL语句所做的修改只有在该事务提交或回滚后才能被其它事务所使用。</P>
+<P>&#8226;Commit或Rollback执行后，事务所使用的锁被释放。</P>
+<P>
+<P><STRONG>死锁</STRONG></P>
+<P><STRONG></STRONG></P>
+<P></P>
+<P><STRONG>锁的类型</STRONG></P>
+<P>
+<P>1.数据锁(DML锁)。</P>
+<P>用来保证并行访问数据的完整性。能够防止同步冲突的DML和DDL操作的破坏性 交互。是Oracle中主要的锁，又包括表级锁（TM锁）和行级锁（TX锁、也称为事务锁）。</P>
+<P>(1).TM锁</P>
+<P></P>
+<P></P>
+<P></P>
+<P></P>
+<P></P>
+<P>1.数据锁(DML锁) 。</P>
+<P>(2).TX锁及DML锁工作机制</P>
+<P>TX锁是Transaction eXclusive Lock行级排它锁，对一条记录加上TX锁后，其他用户不能修改、删除该记录。</P>
+<P>
+<P>&#8226;当Oracle 执行DML语句时，系统自动在所要操作的表上申请TM类型的锁。当TM锁获得后，系统再自动申请TX类型的锁，并将实际锁定的数据行的锁标志位进行置位。 这样在事务加锁前检查TX锁相容性时就不用再逐行检查锁标志，而只需检查TM锁模式的相容性即可，大大提高了系统的效率。TM锁包括了SS、SX、S、X 等多种模式，在数据库中用0－6来表示。不同的SQL操作产生不同类型的TM锁。</P>
+<P>
+<P>1.数据锁(DML锁)</P>
+<P>(2).TX锁及DML锁工作机制</P>
+<P>&#8226;在数据行上只有X锁（排他锁）。在 Oracle数据库中，当一个事务首次发起一个DML语句时就获得一个TX锁，该锁保持到事务被提交或回滚。当两个或多个会话在表的同一条记录上执行 DML语句时，第一个会话在该条记录上加锁，其他的会话处于等待状态。当第一个会话提交后，TX锁被释放，其他会话才可以加锁。</P>
+<P>&#8226;当Oracle数据库发生TX锁等待时，如果不及时处理常常会引起Oracle数据库挂起，或导致死锁的发生，产生ORA-60的错误。这些现象都会对实际应用产生极大的危害，如长时间未响应、大量事务失败等。</P>
+<P>2.字典锁(DDL锁)</P>
+<P>当 <STRONG>DDL</STRONG>命令发出时，Oracle会自动在被处理的对象上添加DDL锁定，从而防止对象被其他用户所修改。当DDL命令结束以后，则释放DDL锁定。DDL锁定不能显式的被请求，只有当对象结构被修改或者被引用时，才会在对象上添加DDL锁定。比如创建或者编译 <STRONG>存储过程</STRONG>时会对引用的对象添加DDL锁定。在创建视图时，也会对引用的表添加DDL锁定等。</P>
+<P>在执行DDL命令之前，Oracle会自动添加一个隐式提交命令，然后执行具体的DDL命令，在DDL命令执行结束之后，还会自动添加一个隐式提交命令。实际上，Oracle在执行DDL命令时，都会将其转换为对数据字典表的DML操作。比如我们发出创建表的DDL命令时，Oracle会</P>
+<P>
+<P>2.字典锁(DDL锁)</P>
+<P>将表的名称插入数据字典表tab$里，同 时将表里的列名以及列的类型插入col$表里等。因此，在DDL命令中需要添加隐式的提交命令，从而提交那些对数据字典表的DML操作。即使DDL命令失 败，它也会发出提交命令。DDL锁包括三种类型：</P>
+<P>
+<P>
+<P>&#8226;排他的DDL锁定(Exclusive DDL Lock) <BR>大部分的DDL操作都会在被操作的对象上添加排他的DDL锁定，从而防止在DDL命令执行期间，对象被其他用户所修改。当对象上添加了排他的DDL锁定以后，该对象上不能再添加任何其他的DDL锁定。如果是对表进行DDL命令，则其他进程也不能修改表里的数据。</P>
+<P>2.字典锁(DDL锁)</P>
+<P>&#8226;共享的DDL锁定(Shared DDL Lock ) <BR>用来保护被DDL的对象不被其他用户进程所更新，但是允许其他进程在对象上添加共享的DDL锁定。如果是对表进行DDL命令，则其他进程可以同时修改表里 的数据。比如我们发出create view命令创建视图时，在视图的所引用的表(这种表也叫基表)上添加的就是共享的DDL命令。也就是说，在创建视图时，其他用户不能修改 <STRONG>基表</STRONG>的结构，但 是可以更新基表里的数据。</P>
+<P>3.内部锁</P>
+<P>内部锁保护内部数据库结构，如数据文件，对用户是不可见的。</P>
+<P>2.字典锁(DDL锁)</P>
+<P>&#8226;可打破的解析锁定(Breakable Parsed Lock)</P>
+<P>在shared pool里缓存的SQL游标或者PL/SQL程序代码都会获得引用对象上的解析锁定。如果我们发出DDL命令修改了某个对象的结构时，该对象相关的、位于 shared pool里的解析锁定就被打破，从而导致引用了该对象的SQL游标或者PL/SQL程序代码全都失效。下次再次执行相同的SQL语句时，需要重新解析，这 也就是所谓的SQL语句的reload了。可打破的解析锁定不会阻止其他的DDL锁定，如果发生与解析锁定相冲突的DDL锁定，则解析锁定也会被打破</P>
+<P>
+<P><STRONG>死锁的解决</STRONG></P>
+<P>1.查找锁</P>
+<P> </P>
+<P></P>
+<P></P>
+<P></P>
+<P>3.Kill 操作系统进程</P>
+<P>Orakill 实例名 操作系统进程ID</P>
+<P>Orakill oralearn 2444</P>
+<P>其中oralearn是数据库sid,244是第二步查出spid</P>
+<P></P>
+<P><SPAN class=bold style="FONT-WEIGHT: bold">数据完整性</SPAN></P>
+<P>常用的数据完整性约束规则包括：</P>
+<P>1.NOT NULL</P>
+<P>2.唯一关键字</P>
+<P>3.主关键字</P>
+<P>4.外键</P>
+<P>5.检查项Check</P>
+<P><EM>由于本部分内容再前面的章节中已经穿插讲解，本处不再赘述</EM></P>
+<P></P>
+<P><SPAN class=bold style="FONT-WEIGHT: bold">要点及习题</SPAN></P>
+<P>习题</P>
+<P>1.什么是事务，请解释什么是显式事务和隐式事务。</P>
+<P>2.事务具有哪四个特性？并行性 事务主要使用的情况是什么，请举出四种情况。</P>
+<P>3.事务级读一致性包括那三种类型，并列表说明其相同点和不同点。</P>
+<P>4.什么是数据库锁，包括那两种大的类型？TM锁又包括那些类型？</P>
+<P>5.将表级锁和行级锁结合起来，举例解释数据锁的工作机制。</P>
+<P>6.什么是死锁？死锁解决的步骤是什么？</P>
+<P>7.为什么数据库设计不推荐大量使用外键来确保数据完整性？</P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/92600.html'>深入解析Linux系统中的SELinux访问控制功能</a><a>下一篇</a><a href='/php/biji/92602.html'>常用HTML meta 标签属性(网站兼容与优化需要)</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

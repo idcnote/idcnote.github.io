@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Android检测Cursor泄漏的原理以及使用方法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="简介： 本文介绍如何在 Android 检测 Cursor 泄漏的原理以及使用方法，还指出几种常见的出错示例。有一些泄漏在代码中难以察觉，但程序长时间运行后必然会出现异常。同时该方法同" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Android检测Cursor泄漏的原理以及使用方法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>简介： 本文介绍如何在 Android 检测 Cursor 泄漏的原理以及使用方法，还指出几种常见的出错示例。有一些泄漏在代码中难以察觉，但程序长时间运行后必然会出现异常。同时该方法同</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><STRONG>简介</STRONG>： <BR>本文介绍如何在 Android 检测 Cursor 泄漏的原理以及使用方法，还指出几种常见的出错示例。有一些泄漏在代码中难以察觉，但程序长时间运行后必然会出现异常。同时该方法同样适合于其他需要检测资源泄露的情况。<br><br>最近发现某蔬菜手机连接程序在查询媒体存储（MediaProvider）数据库时出现严重 Cursor 泄漏现象，运行一段时间后会导致系统中所有使用到该数据库的程序无法使用。另外在工作中也常发现有些应用有 Cursor 泄漏现象，由于需要长时间运行才会出现异常，所以有的此类 bug 很长时间都没被发现。 <br><br>但是一旦 Cursor 泄漏累计到一定数目（通常为数百个）必然会出现无法查询数据库的情况，只有等数据库服务所在进程死掉重启才能恢复正常。通常的出错信息如下，指出某 pid 的程序打开了 866 个 Cursor 没有关闭，导致了 exception： <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="96326" class="copybut" id="copybut96326" onclick="doCopy('code96326')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code96326"> <BR>3634 3644 E JavaBinder: *** Uncaught remote exception! (Exceptions are not yet supported across processes.) <BR>3634 3644 E JavaBinder: android.database.CursorWindowAllocationException: Cursor window allocation of 2048 kb failed. # Open Cursors=866 (# cursors opened by pid 1565=866) <BR>3634 3644 E JavaBinder: at android.database.CursorWindow.(CursorWindow.java:104) <BR>3634 3644 E JavaBinder: at android.database.AbstractWindowedCursor.clearOrCreateWindow(AbstractWindowedCursor.java:198) <BR>3634 3644 E JavaBinder: at android.database.sqlite.SQLiteCursor.fillWindow(SQLiteCursor.java:147) <BR>3634 3644 E JavaBinder: at android.database.sqlite.SQLiteCursor.getCount(SQLiteCursor.java:141) <BR>3634 3644 E JavaBinder: at android.database.CursorToBulkCursorAdaptor.getBulkCursorDescriptor(CursorToBulkCursorAdaptor.java:143) <BR>3634 3644 E JavaBinder: at android.content.ContentProviderNative.onTransact(ContentProviderNative.java:118) <BR>3634 3644 E JavaBinder: at android.os.Binder.execTransact(Binder.java:367) <BR>3634 3644 E JavaBinder: at dalvik.system.NativeStart.run(Native Method) <BR></div> <BR><STRONG>1. Cursor 检测原理</STRONG> <BR>在 Cursor 对象被 JVM 回收运行到 finalize() 方法的时候，检测 close() 方法有没有被调用，此办法在 ContentResolver 里面也得到应用。简化后的示例代码如下： <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="88040" class="copybut" id="copybut88040" onclick="doCopy('code88040')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code88040"> <BR>import android.database.Cursor; <BR>import android.database.CursorWrapper; <BR>import android.util.Log; <BR>public class TestCursor extends CursorWrapper { <BR>private static final String TAG = "TestCursor"; <BR>private boolean mIsClosed = false; <BR>private Throwable mTrace; <BR>public TestCursor(Cursor c) { <BR>super(c); <BR>mTrace = new Throwable("Explicit termination method 'close()' not called"); <BR>} <BR>@Override <BR>public void close() { <BR>mIsClosed = true; <BR>} <BR>@Override <BR>public void finalize() throws Throwable { <BR>try { <BR>if (mIsClosed != true) { <BR>Log.e(TAG, "Cursor leaks", mTrace); <BR>} <BR>} finally { <BR>super.finalize(); <BR>} <BR>} <BR>} <BR></div> <BR>然后查询的时候，把 TestCursor 作为查询结果返回给 APP： <BR>1 return new TestCursor(cursor); // cursor 是普通查询得到的结果，例如从 ContentProvider.query() <BR>该方法同样适合于所有需要检测显式释放资源方法没有被调用的情形，是一种通用方法。但在 finalize() 方法里检测需要注意 <BR><STRONG>优点</STRONG>：准确。因为该资源在 Cursor 对象被回收时仍没被释放，肯定是发生了资源泄露。 <BR><STRONG>缺点</STRONG>：依赖于 finalize() 方法，也就依赖于 JVM 的垃圾回收策略。例如某 APP 现在有 10 个 Cursor 对象泄露，并且这 10 个对象已经不再被任何引用指向处于可回收状态，但是 JVM 可能并不会马上回收（时间不可预测），如果你现在检查不能够发现问题。另外，在某些情况下就算对象被回收 finalize() 可能也不会执行，也就是不能保证检测出所有问题。关于 finalize() 更多信息可以参考《Effective Java 2nd Edition》的 Item 7： Avoid Finalizers <br><br><STRONG>2. 使用方法</STRONG> <BR>对于 APP 开发人员 <BR>从 GINGERBREAD 开始 Android 就提供了 StrictMode 工具协助开发人员检查是否不小心地做了一些不该有的操作。使用方法是在 Activity 里面设置 StrictMode，下面的例子是打开了检查泄漏的 SQLite 对象以及 Closeable 对象（普通 Cursor/FileInputStream 等）的功能，发现有违规情况则记录 log 并使程序强行退出。 <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="66014" class="copybut" id="copybut66014" onclick="doCopy('code66014')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code66014"> <BR>import android.os.StrictMode; <BR>public class TestActivity extends Activity { <BR>private static final boolean DEVELOPER_MODE = true; <BR>public void onCreate() { <BR>if (DEVELOPER_MODE) { <BR>StrictMode.setVMPolicy(new StrictMode.VMPolicy.Builder() <BR>.detectLeakedSqlLiteObjects() <BR>.detectLeakedClosableObjects() <BR>.penaltyLog() <BR>.penaltyDeath() <BR>.build()); <BR>} <BR>super.onCreate(); <BR>} <BR>} <BR></div> <BR>对于 framework 开发人员 <BR>如果是通过 ContentProvider 提供数据库数据，在 ContentResolver 里面已有 CloseGuard 类实行类似检测，但需要自行打开（上例也是打开 CloseGuard）： <BR>1 CloseGuard.setEnabled(true);更值得推荐的办法是按照本文第一节中的检测原理，在 ContentResolver 内部类 CursorWrapperInner 里面加入。其他需要检测类似于资源泄漏的，同样可以使用该检测原理。 <br><br><STRONG>3. 容易出错的地方 <BR></STRONG>忘记调用 close() 这种低级错误没什么好说的，这种应该也占不小的比例。下面说说不太明显的例子。 <BR>提前返回 <BR>有时候粗心会犯这种错误，在 close() 调用之前就 return 了，特别是函数比较大逻辑比较复杂时更容易犯错。这种情况可以通过把 close() 放在 finally 代码块解决 <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="5535" class="copybut" id="copybut5535" onclick="doCopy('code5535')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code5535"> <BR>private void method() { <BR>Cursor cursor = query(); // 假设 query() 是一个查询数据库返回 Cursor 结果的函数 <BR>if (flag == false) { // ！！提前返回 <BR>return; <BR>} <BR>cursor.close(); <BR>} <BR></div> <BR><STRONG>类的成员变量</STRONG> <BR>假设类里面有一个在类全局有效的成员变量，在方法 A 获取了查询结果，后面在其他地方又获取了一次查询结果，那么第二次查询的时候就应该先把前面一个 Cursor 对象关闭。 <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="86972" class="copybut" id="copybut86972" onclick="doCopy('code86972')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code86972"> <BR>public class TestCursor { <BR>private Cursor mCursor; <BR>private void methodA() { <BR>mCursor = query(); <BR>} <BR>private void methodB() { <BR>// ！！必须先关闭上一个 cursor 对象 <BR>mCursor = query(); <BR>} <BR>} <BR></div> <BR>注意：曾经遇到过有人对 mCursor 感到疑惑，明明是同一个变量为什么还需要先关闭？首先 mCursor 是一个 Cursor 对象的引用，在 methodA 时 mCursor 指向了 query() 返回的一个 Cursor 对象 1；在 methodB() 时它又指向了返回的另外一个 Cursor 对象 2。在指向 Cursor 对象 2 之前必须先关闭 Cursor 对象 1，否则就出现了 Cursor 对象 1 在 finalize() 之前没有调用 close() 的情况。 <BR><STRONG>异常处理 <BR></STRONG>打开和关闭 Cursor 之间的代码出现 exception，导致没有跑到关闭的地方： <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="69219" class="copybut" id="copybut69219" onclick="doCopy('code69219')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code69219"> <BR>try { <BR>Cursor cursor = query(); <BR>// 中间省略某些出现异常的代码 <BR>cursor.close(); <BR>} catch (Exception e) { <BR>// ！！出现异常没跑到 cursor.close() <BR>} <BR></div> <BR>这种情况应该把 close() 放到 finally 代码块里面： <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="95922" class="copybut" id="copybut95922" onclick="doCopy('code95922')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code95922"> <BR>Cursor cursor = null; <BR>try { <BR>cursor = query(); <BR>// 中间省略某些出现异常的代码 <BR>} catch (Exception e) { <BR>// 出现异常 <BR>} finally { <BR>if (cursor != null) <BR>cursor.close(); <BR>} <BR></div>&nbsp;<BR><STRONG>4. 总结思考</STRONG> <BR>在 finalize() 里面检测是可行的，且基本可以满足需要。针对 finalize() 执行时间不确定以及可能不执行的问题，可以通过记录目前打开没关闭的 Cursor 数量来部分解决，超过一定数目发出警告，两种手段相结合。 <br><br>还有没有其他检测办法呢？有，在 Cursor 构造方法以及 close() 方法添加 log，运行一段时间后检查 log 看哪个地方没有关闭。简化代码如下： <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="15812" class="copybut" id="copybut15812" onclick="doCopy('code15812')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code15812"> <BR>import android.database.Cursor; <BR>import android.database.CursorWrapper; <BR>import android.util.Log; <BR>public class TestCursor extends CursorWrapper { <BR>private static final String TAG = "TestCursor"; <BR>private Throwable mTrace; <BR>public TestCursor(Cursor c) { <BR>super(c); <BR>mTrace = new Throwable("cusor opened here"); <BR>Log.d(TAG, "Cursor " + this.hashCode() + " opened, stacktrace is: ", mTrace); <BR>} <BR>@Override <BR>public void close() { <BR>mIsClosed = true; <BR>Log.d(TAG, "Cursor " + this.hashCode() + " closed."); <BR>} <BR>} <BR></div> <BR>检查时看某个 hashCode() 的 Cursor 有没有调用过 close() 方法，没有的话说明资源有泄露。这种方法优点是同样准确，且更可靠。缺点是需要检查大量 log，且打开/关闭的地方可能相距较远，如果不写个小脚本分析人工看的话会比较痛苦；另外必须 APP 完全退出后才能检查，因为后台运行时某些 Cursor 还在正常使用。
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/89359.html'>使用PHP编写的SVN类</a><a>下一篇</a><a href='/php/biji/89361.html'>SQLSERVER数据库备份后无法还原的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

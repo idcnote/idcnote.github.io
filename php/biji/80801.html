@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Oracle并行操作之并行查询实例解析_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="Oracle数据库的并行操作特性，其本质上就是强行榨取除数据库服务器空闲资源（主要是CPU资源），对一些高负荷大数据量数据进行分治处理。并行操作是一种非确定性的优化策略，在选择的" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Oracle并行操作之并行查询实例解析</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>Oracle数据库的并行操作特性，其本质上就是强行榨取除数据库服务器空闲资源（主要是CPU资源），对一些高负荷大数据量数据进行分治处理。并行操作是一种非确定性的优化策略，在选择的</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>Oracle数据库的并行操作特性，其本质上就是强行榨取除数据库服务器空闲资源（主要是CPU资源），对一些高负荷大数据量数据进行分治处理。并行操作是一种非确定性的优化策略，在选择的时候需要小心对待。目前，使用并行操作特性的主要有下面几个方面：</p>
+<p>Parallel Query：并行查询，使用多个操作系统级别的Server Process来同时完成一个SQL查询；<br />
+Parallel DML：并行DML操作。类似于Parallel Query。当要对大数据量表进行DML操作，如insert、update和delete的时候，可以考虑使用；<br />
+Parallel DDL：并行DDL操作。如进行大容量数据表构建、索引rebuild等操作；<br />
+Parallel Recovery，并行恢复。当数据库实例崩溃重新启动，或者进行存储介质恢复的时候，可以启动并行恢复技术。从而达到减少恢复时间的目的；<br />
+Procedural Parallel，过程代码并行化。对我们编写的代码片段、存储过程或者函数，可以实现执行的并行化，从而加快执行效率；<br />
+&nbsp;<br />
+<strong>1、并行查询Parallel Query<br />
+</strong>&nbsp;<br />
+Oracle数据库的并行查询是比较基础的技术，也是OLAP和Oracle Data Warehouse经常使用的一种并行技术。同本系列前面一直强调的要素相同，在确定使用并行技术之前，要确定软硬件的一些先决条件：<br />
+&nbsp;<br />
+任务task必要条件。备选进行并行操作的任务task必须是一个大任务作业，比如，长时间的查询。任务时间通常可以以分钟、小时进行计数。只有这样的任务和需要，才值得让我们冒险使用并行操作方案；<br />
+资源闲置条件。只有在数据库服务器资源存在闲置的时候，才可以考虑进行并行处理。如果经常性的繁忙，贸然使用并行只能加剧资源的争用。</p>
+<p>并行操作最大的风险在于并行争用引起的效率不升反降。所以，要在确定两个前提之后，再进行并行规划处理。</p>
+<p><strong>2、环境准备</strong></p>
+<p>首先，准备实验环境。由于笔者使用的一般家用PC虚拟机，所以并行度和存储量不能反映真实条件需求，见谅。</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SQL&gt; select * from v$version where rownum&lt;2;
+BANNER
+--------------------------------------------------------------------------------
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - Production
+SQL&gt; select count(*) from t;
+ COUNT(*)
+----------
+1160704</pre>
+</div>
+<p>&nbsp;<br />
+选择11gR2服务器环境，数据表T总数据量超过一百万。<br />
+&nbsp;<br />
+首先，我们观察一下不使用并行的执行情况。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+//提取出使用游标信息；
+SQL&gt; select sql_text, sql_id, version_count from v$sqlarea where sql_text like 'select count(*) from t%';
+SQL_TEXT            SQL_ID    VERSION_COUNT
+------------------------------ ------------- -------------
+select count(*) from t     2jkn7rpsbj64t       2
+SQL&gt; select * from table(dbms_xplan.display_cursor('2jkn7rpsbj64t',format =&gt; 'advanced', cursor_child_no =&gt; 0));
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+SQL_ID 2jkn7rpsbj64t, child number 0
+-------------------------------------
+select count(*) from t
+Plan hash value: 2966233522
+-------------------------------------------------------------------
+| Id | Operation     | Name | Rows | Cost (%CPU)| Time   |
+-------------------------------------------------------------------
+|  0 | SELECT STATEMENT  |   |    | 4464 (100)|     |
+|  1 | SORT AGGREGATE  |   |   1 |      |     |
+|  2 |  TABLE ACCESS FULL| T  | 1160K| 4464  (1)| 00:00:54 |
+------------------------------------------------------------------- </pre>
+</div>
+<p><br />
+该执行计划中没有使用并行特性，进行全表扫描。执行时间为54s。<br />
+&nbsp;<br />
+<strong>3、并行查询计划<br />
+</strong>&nbsp;<br />
+首先，我们设置相应的并行度。设置并行度有两种方式，一种是使用hint加在特定的SQL语句上。另一种是对大对象设置并行度属性。<br />
+&nbsp;<br />
+前者的优点是带有一定的强制性和针对性。就是指定特定的SQL语句进行并行处理。这样的优点是易于控制并行度，缺点是带有很强的强制力，当数据量偏小的时候，使用并行优势不大。而且如果是显示指定并行度，又会带来移植伸缩性差的缺点。<br />
+&nbsp;<br />
+后者通过对象的属性指定并行度。就将并行作为一种执行手段，提供给优化器进行选择。这样，CBO会根据系统中资源的情况和数据的实际，进行执行计划生成。计划中可能是并行，也可能不是并行。这样的优点是将并行与否交予优化器CBO去判断，缺点是并行的滥用风险。<br />
+&nbsp;<br />
+此处，笔者设置自动确定并行度的方式。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SQL&gt; alter table t parallel;
+Table altered
+SQL&gt; select count(*) from t;
+ COUNT(*)
+----------
+1160704</pre>
+</div>
+<p>当启动查询时，Oracle中的并行伺候进程池会根据系统中的负荷和实际因素，确定分配出的并行进程数量。此时，我们可以通过视图v$px_process来查看进程池中的连接信息。&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SQL&gt; select * from v$px_process;
+SERVER_NAME STATUS      PID SPID       SID  SERIAL#
+----------- --------- ---------- ------------------------ ---------- ----------
+P000    AVAILABLE     25 5776                
+P001    AVAILABLE     26 5778 </pre>
+</div>
+<p>注意，<strong>并行伺候进程是一种特殊的Server Process，本质上是一种可共享的slave进程</strong>。专用连接模式下，一般的Server Process与Client Process是“同生共死”的关系，终身服务于一个Client Process。而伺候slave进程是通过进程池进行管理的，一旦启动初始化，就会在一定时间内驻留在系统中，等待下次并行处理到来。<br />
+&nbsp;<br />
+此时，我们检查v$process视图，也可以找到对应的信息。</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SQL&gt; select * from v$process;
+PID SPID     PNAME USERNAME      SERIAL# PROGRAM    
+-------- ---------- ------------------------ ----- --------------- ---------- -------------------------------
+25 5776      P000 oracle         13 oracle@oracle11g (P000)   
+26 5778      P001 oracle          6 oracle@oracle11g (P001)   
+（篇幅由于原因，予以省略……）
+32 rows selected</pre>
+</div>
+<p>对应的OS中，也存在相应的真实进程伺候。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[oracle@oracle11g ~]$ ps -ef | grep oracle
+（篇幅由于原因，予以省略……）
+oracle  5700   1 0 17:29 &#63;    00:00:02 oraclewilson (LOCAL=NO)
+oracle  5723   1 0 17:33 &#63;    00:00:00 ora_smco_wilson
+oracle  5764   1 2 17:40 &#63;    00:00:05 oraclewilson (LOCAL=NO)
+oracle  5774   1 0 17:42 &#63;    00:00:00 oraclewilson (LOCAL=NO)
+oracle  5776   1 0 17:43 &#63;    00:00:00 ora_p000_wilson
+oracle  5778   1 0 17:43 &#63;    00:00:00 ora_p001_wilson
+oracle  5820   1 1 17:44 &#63;    00:00:00 ora_w000_wilson</pre>
+</div>
+<p>由于此时查询已经结束，对应的并行会话信息，已经消失不可见。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SQL&gt; select * from v$px_session;
+SADDR      SID  SERIAL#   QCSID QCSERIAL# 
+-------- ---------- ---------- ---------- ----------</pre>
+</div>
+<p>但是，如果任务的时间长，是可以捕获到对应信息的。<br />
+&nbsp;<br />
+从上面的情况看，我们执行一个并行操作时，Oracle会从伺候进程池中获取到对应的并行进程，来进行操作。当操作完成后，伺候进程还会等待一定时间，之后回收。<br />
+&nbsp;<br />
+并行操作进程的资源消耗，通过v$px_sysstat视图查看。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SQL&gt; col statistic for a30;
+SQL&gt; select * from v$px_process_sysstat;
+STATISTIC              VALUE
+------------------------------ ----------
+Servers In Use             0
+Servers Available            0
+Servers Started             2
+Servers Shutdown            2
+Servers Highwater            2
+Servers Cleaned Up           0
+Server Sessions             6
+Memory Chunks Allocated         4
+Memory Chunks Freed           0
+Memory Chunks Current          4
+Memory Chunks HWM            4
+Buffers Allocated           30
+Buffers Freed             30
+Buffers Current             0
+Buffers HWM               8
+15 rows selected</pre>
+</div>
+<p>&nbsp;<br />
+下面，我们检查一下执行计划信息。<br />
+&nbsp;<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SQL&gt; set pagesize 10000;
+SQL&gt; select * from table(dbms_xplan.display_cursor('2jkn7rpsbj64t',format =&gt; 'advanced',cursor_child
+_no =&gt; 1));
+PLAN_TABLE_OUTPUT
+----------------------------------------------------------------------------------------------------
+SQL_ID 2jkn7rpsbj64t, child number 1
+-------------------------------------
+select count(*) from t
+Plan hash value: 3126468333
+----------------------------------------------------------------------------------------------------
+| Id | Operation       | Name   | Rows | Cost (%CPU)| Time   |  TQ |IN-OUT| PQ Distrib
+----------------------------------------------------------------------------------------------------
+|  0 | SELECT STATEMENT    |     |    | 2478 (100)|     |    |   |      
+|  1 | SORT AGGREGATE    |     |   1 |      |     |    |   |      
+|  2 |  PX COORDINATOR    |     |    |      |     |    |   |      
+|  3 |  PX SEND QC (RANDOM) | :TQ10000 |   1 |      |     | Q1,00 | P-&gt;S | QC (RAND) 
+|  4 |   SORT AGGREGATE   |     |   1 |      |     | Q1,00 | PCWP |      
+|  5 |   PX BLOCK ITERATOR |     | 1160K| 2478  (1)| 00:00:30 | Q1,00 | PCWC |      
+|* 6 |    TABLE ACCESS FULL| T    | 1160K| 2478  (1)| 00:00:30 | Q1,00 | PCWP |      
+----------------------------------------------------------------------------------------------------
+Predicate Information (identified by operation id):
+---------------------------------------------------
+6 - access(:Z&gt;=:Z AND :Z&lt;=:Z)</pre>
+</div>
+<p>从执行计划的条件（6 - access(:Z&gt;=:Z AND :Z&lt;=:Z)）中，我们可以看到任务分配，之后分别进行全表扫描。最后排序计算count，合并结果的过程。<br />
+&nbsp;<br />
+<strong>4、结论<br />
+</strong>&nbsp;<br />
+Oracle Parallel Query是经常使用到的一种并行操作技术。相对于DDL、DML等类型操作，并行查询更可以作为系统功能的一个步骤来进行。<br />
+&nbsp;<br />
+进行并行查询最大的风险就是并行滥用和失控的出现。这也是Oracle一直致力解决的问题。在Oracle11gR2中，引入了Parallel Statement Queuing（PSQ）技术特性。通常，只要并行伺候池允许，Oracle会引入尽可能多的并行进程进行操作。PSQ技术的出现，就是从资源角度加入了并行控制。<br />
+&nbsp;<br />
+当系统繁忙的时候，PSQ会将一些要进行的并行操作进入等待状态，防止并行环境的恶化。当环境好转之后，等待队列中的并行语句就进入执行状态。这个特性就可以有效的防止并行滥用的出现。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/80800.html'>Linux中的VMware虚拟机开机出现滴警告音怎么办?</a><a>下一篇</a><a href='/php/biji/80802.html'>基于豆瓣API+Angular开发的web App</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

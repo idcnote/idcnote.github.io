@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>浅谈开启magic_quote_gpc后的sql注入攻击与防范_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了浅谈开启magic_quote_gpc后的sql注入攻击与防范，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！通过启用php" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">浅谈开启magic_quote_gpc后的sql注入攻击与防范</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:24:57                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了浅谈开启magic_quote_gpc后的sql注入攻击与防范，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！通过启用php</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了浅谈开启magic_quote_gpc后的sql注入攻击与防范，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>通过启用php.ini配置文件中的相关选项，就可以将大部分想利用SQL注入漏洞的骇客拒绝于门外。开启magic_quote_gpc=on之后，能实现addslshes()和stripslashes()这两个函数的功能。在PHP4.0及以上的版本中，该选项默认情况下是开启的，所以在PHP4.0及以上的版本中，就算PHP程序中的参数没有进行过滤，PHP系统也会对每一个通过GET、POST、COOKIE方式传递的变量自动转换，换句话说，输入的注入攻击代码将会全部被转换，将给攻击者带来非常大的困难。虽然如此，攻击者仍然有机会进行SQL注入攻击。。。。。。前提是，当参数为数字型的时候，且未经过Intval()函数的处理，因为经过intval()的处理之后，所有的数据就都会强制转换成数字。前面已经提到过，开启magic_quote_gpc=on之后，相当于使用addslshes()这个函数。但是数字型没有用到单引号，所以理所当然的绕过了addslshes()函数的转换了。而使用MySQL自带的char()函数或者HEX()，char()可以将参数解释为整数并且返回这些整数的ASCII码字符组成的字符串，使用十六进制表示必须在数字前加上0x。实例演示：假设我们知道管理员的用户名为admin，密码不知道。并且已经将magic_quote_gpc启用。SQL语句：$sql=&quot;select * from users where username=$name and password=&#39;$pwd&#39;&quot;;注意：变量$name没加引号此时，在地址栏中输入username=admin%23，则合成后的sql语句为：　　select * from users where username=&#39;admin\&#39; #&#39; and password=&#39;&#39;;　　这时候通过url地址栏输入的单引号(&#39;)将被加上反斜线，该sql语句将失效。　　admin转换成ASCII后是char(97,100,109,105,110)　　此时在地址栏中输入username=char(97,100,109,105,110)%23　　SQL语句就变成了：　　select * from users where username=char(97,100,109,105,110)#&#39; and password=&#39;&#39;;　　执行结果为真，就可以顺利进入后台。　　对于数字型注入攻击，必须在任何的数字型参数放入数据库之前使用intval()对参数进行强制转换成数字，从而可以断绝数字型注入漏洞的产生。　　比如：$id=intval($_GET[&lsquo;id&#39;]);　　select * from articles where id=&#39;$id&#39;;　　地址栏中输入：id=5&#39; or 1=1%23　　SQL语句将变成：select * from articles where id=&#39;5&#39;;　　而不是select * from articles where id=&#39;5&#39; or 1=1#;总结：对于每一个变量都记得加上单引号，比如where username=&#39;$name&#39;,开启magic_quote_gpc并不是绝对安全的，对于数字型注入攻击，仅仅使用addslashes()函数进行转换是不够的，还需使用intval()强制将参数转换成数字如何防止SQL注入攻击<strong>方法一：密码比对</strong>思路：首先通过用户输入的用户名去查询数据库，得到该用户名在数据库中对应的密码，再将从数据库中查询到的密码和用户提交过来的密码进行比对。代码：
+<p>代码如下:</p>
+<pre>
+<code> 
+$sql=&quot;select password from users where username=&#39;$name&#39;&quot;; 
+$res=mysql_query($sql,$conn); 
+if ($arr=mysql_fetch_assoc($res)){//如果用户名存在 
+if ($arr[&#39;password&#39;]==$pwd) {//密码比对 
+echo &quot;登录成功&quot;; 
+}else{ 
+echo &quot;密码输入有误&quot;; 
+} 
+}else { 
+echo &quot;该用户名不存在&quot;; 
+} 
+</code></pre>分析：该情况下，代码健壮了不少，即使在magic_quote_gpc=Off的情况下，也能防止SQL注入攻击。因为攻击者想成功登录的话，得绕过两道坎，第一是输入的用户名要存在，这一步可以构造一个SQL语句(&lsquo; or 1=1%23)直接绕过，但是这样子无法通过第二道坎。因为需要用户输入一个正确的密码才能通过，显然，这已经拒绝了SQL注入攻击。<strong>方法二：使用PDO的PDO::prepare()预处理操作来防止SQL注入攻击 </strong>思路：创建一个pdo对象，利用pdo的预处理操作可以防止SQL注入攻击代码：
+<p>代码如下:</p>
+<pre>
+<code> 
+$name=$_GET[&#39;username&#39;]; 
+$pwd=$_GET[&#39;password&#39;]; 
+$sql=&quot;select * from users where username=? and password=?&quot;; 
+//1.创建一个pdo对象 
+$pdo=new PDO(&quot;mysql:host=localhost;port=3306;dbname=injection&quot;,&quot;root&quot;,&quot;&quot;); 
+//2.设置编码 
+$pdo-&gt;exec(&quot;set names &#39;utf8&#39;&quot;); 
+//3.预处理$sql语句 
+$pdoStatement=$pdo-&gt;prepare($sql); 
+//4.把接收到的用户名和密码填入 
+$pdoStatement-&gt;execute(array($name,$pwd)); 
+//5.取出结果 
+$res=$pdoStatement-&gt;fetch(); 
+if(empty($res)){ 
+echo &quot;用户名或密码输入有误&quot;; 
+}else{ 
+echo &quot;登录成功&quot;; 
+} 
+</code></pre>
+
+<p>注：关于浅谈开启magic_quote_gpc后的sql注入攻击与防范的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1359.html'>MySQL安全设置图文教程</a><a>下一篇</a><a href='/mysql/biji/1361.html'>工作中常用的MySQL语句分享 不用php也可以实现的效果</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

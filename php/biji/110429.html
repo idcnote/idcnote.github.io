@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>PHP伪多线程与多进程的深入分析_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了PHP伪多线程与多进程的深入分析，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+感兴趣的小伙伴，下面一起跟随php教程的小玲来看看吧！<br />
+(伪)多线程：借助外" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/122.html"></a></li><li><a href="/php/phpbiji/123.html"></a></li><li><a href="/php/phpbiji/124.html"></a></li><li><a href="/php/phpbiji/125.html"></a></li><li><a href="/php/phpbiji/126.html"></a></li><li><a href="/php/phpbiji/127.html"></a></li><li><a href="/php/phpbiji/128.html"></a></li><li><a href="/php/phpbiji/129.html"></a></li><li><a href="/php/phpbiji/130.html"></a></li><li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">PHP伪多线程与多进程的深入分析</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了PHP伪多线程与多进程的深入分析，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+感兴趣的小伙伴，下面一起跟随php教程的小玲来看看吧！<br />
+(伪)多线程：借助外</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了PHP伪多线程与多进程的深入分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随php教程的小玲来看看吧！</p>
+<p><strong><font style="COLOR: #ff0000">(伪)多线程：借助外力</font></strong>利用WEB服务器本身的多线程来处理，从WEB服务器多次调用我们需要实现多线程的程序。<strong>QUOTE:</strong>我们知道PHP本身是不支持多线程的, 但是我们的WEB服务器是支持多线程的.也就是说可以同时让多人一起访问. 这也是我在PHP中实现多线程的基础.假设我们现在运行的是a.php这个文件. 但是我在程序中又请求WEB服务器运行另一个b.php那么这两个文件将是同时执行的.<font style="COLOR: #0000ff">(PS: 一个链接请求发送之后, WEB服务器就会执行它, 而不管客户端是否已经退出)</font>有些时候, 我们想运行的不是另一个文件, 而是本文件中的一部分代码.该怎么办呢?其实可是通过参数来控制a.php来运行哪一段程序.<strong>下面看一个例子:</strong></p>
+<p>代码如下:</p>
+<pre>
+
+<code>&lt;?php
+/*   php教程 www.512Pic.com   */
+
+function runThread(){
+&amp;nbsp;&amp;nbsp;&amp;nbsp; $fp = fsockopen('localhost', 80, $errno, $errmsg);
+&amp;nbsp;&amp;nbsp;&amp;nbsp; fputs($fp, "GET /a.php?act=brnrn");//这里的第二个参数是HTTP协议中规定的请求头，不明白的请看RFC中的定义&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; &amp;nbsp;
+&amp;nbsp;&amp;nbsp;&amp;nbsp; fclose($fp);
+}
+function a(){
+&amp;nbsp;&amp;nbsp;&amp;nbsp; $fp = fopen('result_a.log', 'w');
+&amp;nbsp;&amp;nbsp;&amp;nbsp; fputs($fp, 'Set in ' . Date('h:i:s', time()) . (double)microtime() . "rn");
+&amp;nbsp;&amp;nbsp;&amp;nbsp; fclose($fp);&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; &amp;nbsp;
+}
+function b(){
+&amp;nbsp;&amp;nbsp;&amp;nbsp; $fp = fopen('result_b.log', 'w');
+&amp;nbsp;&amp;nbsp;&amp;nbsp; fputs($fp, 'Set in ' . Date('h:i:s', time()) . (double)microtime() . "rn");
+&amp;nbsp;&amp;nbsp;&amp;nbsp; fclose($fp);&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; &amp;nbsp;
+}
+if(!isset($_GET['act'])){ $_GET['act'] = 'a';};
+if($_GET['act'] == 'a'){
+&amp;nbsp;&amp;nbsp;&amp;nbsp; runThread();
+&amp;nbsp;&amp;nbsp;&amp;nbsp; a();
+}else if($_GET['act'] == 'b'){ 
+&amp;nbsp;&amp;nbsp;&amp;nbsp; b();
+};
+?&gt;
+</code></pre>打开result_a.log 和 result_b.log 比较一下两个文件的中访问的时间. 大家会发现, 这两个的确是在不同线程中运行的.有些时间完全一样.上面只是一个简单的例子, 大家可以改进成其它形式.既然PHP中也能多线程了, 那么问题也来了, 那就是同步的问题. 我们知道 PHP本身是不支持多线程的. 所以更不会有什么像<strong>Java 中synchronize的方法了. 那我们该如何做呢.</strong>
+<p></p>
+<p><strong>1. 尽量不访问同一个资源. 以避免冲突. 但是可以同时像数据库操作. 因为数据库是支持并发操作的. 所以在多线程的PHP中</strong>不要向同一个文件中写入数据. 如果必须要写的话, 用别的方法进行同步.. 如调用 flock对文件进行加锁等. 或建立临时文件并在另外的线程中等待这个文件的消失 while(file_exits(&#39;xxx&#39;)); 这样就等于这个临时文件存在时, 表示其实线程正在操作,如果没有了这个文件, 说明其它线程已经释放了这个.</p>
+<p><strong>2. 尽量不要从runThread在执行fputs后取这个socket中读取数据. 因为要实现多线程, 需要的用非阻塞模式.</strong> 即在像fgets这样的函数时立即返回.. 所以读写数据就会出问题. 如果使用阻塞模式的话, 程序就不算是多线程了. 他要等上面的返回才执行下面的程序. 所以如果需要交换数据最后利用外面文件或数据中完成. 实在想要的话就用socket_set_nonblock($fp) 来实现.说了这么多, 倒底这个有没有实际的意义呢? 在什么时候需要这种用这种方法呢 ?答案是肯定的. 大家知道. 在一个不断读取网络资源的应用中, 网络的速度是瓶颈. 如果采多这种形式就可以同时以多个线程对不同的页面进行读取.本人做的一个能从8848、soaso这些商城网站搜索信息的程序。还有一个从阿里巴巴网站上读取商业信息和公司目录的程序也用到了此技术。 因为这两个程序都是要不断的链接它们的服务器读取信息并保存到数据库。 利用此技术正好消除了在等待响应时的瓶颈。</p>
+<p><strong><font style="COLOR: #ff0000">多进程：使用PHP的Process Control Functions(PCNTL/线程控制函数)</font></strong>只能用在Unix Like OS，Windows不可用。编译php的时候，需要加上--enable-pcntl，且推荐仅仅在CLI模式运行，不要在WEB服务器环境运行。<strong>以下为简短的测试代码：</strong></p>
+<p>代码如下:</p>
+<pre>
+
+<code>declare(ticks=1);
+$bWaitFlag = FALSE; /// 是否等待进程结束
+$intNum = 10;           /// 进程总数
+$pids = array();        ///  进程PID数组
+echo ("Start\n");
+for($i = 0; $i &lt; $intNum; $i++) {
+  $pids[$i] = pcntl_fork();/// 产生子进程，而且从当前行之下开试运行代码，而且不继承父进程的数据信息
+  if(!$pids[$i]) {
+    // 子进程进程代码段_Start
+    $str="";
+    sleep(5+$i);
+    for ($j=0;$j&lt;$i;$j++) {$str.="*";}
+    echo "$i -&gt; " . time() . " $str \n";
+    exit();
+    // 子进程进程代码段_End
+  }
+}
+if ($bWaitFlag)
+{
+  for($i = 0; $i &lt; $intNum; $i++) {
+    pcntl_waitpid($pids[$i], $status, WUNTRACED);
+    echo "wait $i -&gt; " . time() . "\n";
+  }
+}
+echo ("End\n");
+</code></pre><strong>运行结果如下：</strong>CODE:[Copy toclipboard][qiao@oicq qiao]$ phptest.phpStartEnd[qiao@oicq qiao]$ ps -aux | grep &quot;php&quot;qiao 32275 0.0 0.5 49668 6148pts/1 S 14:03 0:00/usr/local/php4/bqiao 32276 0.0 0.5 49668 6152pts/1 S 14:03 0:00/usr/local/php4/bqiao 32277 0.0 0.5 49668 6152pts/1 S 14:03 0:00/usr/local/php4/bqiao 32278 0.0 0.5 49668 6152pts/1 S 14:03 0:00/usr/local/php4/bqiao 32279 0.0 0.5 49668 6152pts/1 S 14:03 0:00/usr/local/php4/bqiao 32280 0.0 0.5 49668 6152pts/1 S 14:03 0:00 /usr/local/php4/bqiao 32281 0.0 0.5 49668 6152pts/1 S 14:03 0:00/usr/local/php4/bqiao 32282 0.0 0.5 49668 6152pts/1 S 14:03 0:00/usr/local/php4/bqiao 32283 0.0 0.5 49668 6152pts/1 S 14:03 0:00/usr/local/php4/bqiao 32284 0.0 0.5 49668 6152pts/1 S 14:03 0:00/usr/local/php4/bqiao 32286 0.0 0.0 1620 600pts/1 S 14:03 0:00 grep php[qiao@oicq qiao]$ 0 -&gt; 11335034011 -&gt; 1133503402 *2 -&gt; 1133503403 **3 -&gt; 1133503404 ***4 -&gt; 1133503405 ****5 -&gt; 1133503406 *****6 -&gt; 1133503407 ******7 -&gt; 1133503408 *******8 -&gt; 1133503409 ********9 -&gt; 1133503410 *********[qiao@oicq qiao]$<strong>如果$bWaitFlag=TURE，则结果如下：</strong>CODE:[Copy toclipboard][qiao@oicq qiao]$ phptest.phpStart0 -&gt; 1133503602wait 0 -&gt; 11335036021 -&gt; 1133503603 *wait 1 -&gt; 11335036032 -&gt; 1133503604 **wait 2 -&gt; 11335036043 -&gt; 1133503605 ***wait 3 -&gt; 11335036054 -&gt; 1133503606 ****wait 4 -&gt; 11335036065 -&gt; 1133503607 *****wait 5 -&gt; 11335036076 -&gt; 1133503608 ******wait 6 -&gt; 11335036087 -&gt; 1133503609 *******wait 7 -&gt; 11335036098 -&gt; 1133503610 ********wait 8 -&gt; 11335036109 -&gt; 1133503611 *********wait 9 -&gt; 1133503611End[qiao@oicq qiao]$从 多进程的例子可以看出，使用pcntl_fork()之后，将生成一个子进程，而且子进程运行的代码，从pcntl_fork()之后的代码开始，而子进 程不继承父进程的数据信息(实际上是把父进程的数据做了一个全新的拷贝)，因而使用if(!$pids[$i]) 来控制子进程实际运行的代码段。更详细的研究出于时间关系，暂时没有进行，你可以参考我给出的手册的链接。
+<p></p>
+<p><strong>[文章二] 尝试php命令行脚本多进程并发执行</strong>除了fork, cli下的并发方式还有一种,看我的例子:php不支持多线程，但是我们可以把问题转换成&ldquo;多进程&rdquo;来解决。由于php中的pcntl_fork只有unix平台才可以使用，所以本文尝试使用popen来替代。<strong>下面是一个例子：</strong>被并行调用的子程序代码：</p>
+<p>代码如下:</p>
+<pre>
+
+<code>&lt;?php
+/*   php教程 www.512Pic.com   */
+
+if($argc==1){
+&amp;nbsp;&amp;nbsp;&amp;nbsp; echo("argv\n");
+}
+$arg = $argv[1];
+for($i=0; $i&lt;10; $i++)
+{
+&amp;nbsp;&amp;nbsp;&amp;nbsp; echo($i.".1.".time()." exec $arg \n");
+&amp;nbsp;&amp;nbsp;&amp;nbsp; if($arg=='php2'){
+&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; sleep(1);
+&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; echo($i.".2.".time()." exec $arg \n");
+&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; sleep(1);
+&amp;nbsp;&amp;nbsp;&amp;nbsp; }else{
+&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; sleep(1);
+&amp;nbsp;&amp;nbsp;&amp;nbsp; }
+}
+?&gt;
+</code></pre>主调用者程序，由他调用子进程，同时并发的收集子程序的输出
+<p>代码如下:</p>
+<pre>
+
+<code>error_reporting(E_ALL);
+$handle1 = popen('php sub.php php1', 'r');
+$handle2 = popen('php sub.php php2', 'r');
+$handle3 = popen('php sub.php php3', 'r');
+echo "'$handle1'; " . gettype($handle1) . "\n";
+echo "'$handle2'; " . gettype($handle2) . "\n";
+echo "'$handle3'; " . gettype($handle3) . "\n";
+//sleep(20);
+while(!feof($handle1) || !feof($handle2) || !feof($handle3) )
+{
+$read = fgets($handle1);
+echo $read;
+$read = fgets($handle2);
+echo $read;
+$read = fgets($handle3);
+echo $read;
+}
+pclose($handle1);
+pclose($handle2);
+pclose($handle3);
+</code></pre>下面是我机器上的输出：C:\my_hunter&gt;php exec.php&#39;Resource id #4&#39;; resource&#39;Resource id #5&#39;; resource&#39;Resource id #6&#39;; resource0.1.1147935331 exec php10.1.1147935331 exec php20.1.1147935331 exec php31.1.1147935332 exec php10.2.1147935332 exec php21.1.1147935332 exec php32.1.1147935333 exec php11.1.1147935333 exec php22.1.1147935333 exec php33.1.1147935334 exec php11.2.1147935334 exec php23.1.1147935334 exec php34.1.1147935335 exec php12.1.1147935335 exec php24.1.1147935335 exec php35.1.1147935336 exec php12.2.1147935336 exec php25.1.1147935336 exec php36.1.1147935337 exec php13.1.1147935337 exec php26.1.1147935337 exec php37.1.1147935338 exec php13.2.1147935338 exec php27.1.1147935338 exec php38.1.1147935339 exec php14.1.1147935339 exec php28.1.1147935339 exec php39.1.1147935340 exec php14.2.1147935340 exec php29.1.1147935340 exec php35.1.1147935341 exec php25.2.1147935342 exec php26.1.1147935343 exec php26.2.1147935344 exec php27.1.1147935345 exec php27.2.1147935346 exec php28.1.1147935347 exec php28.2.1147935348 exec php29.1.1147935349 exec php29.2.1147935350 exec php2<strong><font style="COLOR: #ff0000">**总结：**</font></strong>**主程序循环等待子进程， 通过fgets或fread 把子进程的输出获取出来 ， 从时间戳上看，的确实现了并发执行。**-----------------------------------------------<strong>以后的改进：</strong>* popen打开的句柄是单向的，如果需要向子进程交互，可以使用proc_open* 使用数组和子函数代替while(!feof($handle1)|| !feof($handle2) || !feof($handle3) )这种龌龊的写法* 用fread一次把子进程已经产生的输出取完，而不是每次一行。一个并发执行shell任务的调度者,本程序读取一个任务文件,把里面的每行命令并发执行, 可以设置同时存在的子进程数目:
+<p>代码如下:</p>
+<pre>
+
+<code>/*
+   主任务管理器
+   并发的执行子任务列表
+*/
+include("../common/conf.php");
+include("../common/function.php");
+//开启的进程数
+$exec_number = 40 ;
+/***** main ********/
+if($argc==1){
+    echo("argv\n");
+}
+$taskfile = $argv[1];
+//tasklist
+$tasklist = file($taskfile);
+$tasklist_len = count($tasklist);
+$tasklist_pos = 0;
+$handle_list = array();
+while(1)
+{
+    //子进程列表有空闲,则填充补齐子进程列表
+    if($exec_number &gt; count($handle_list) &amp;&amp;
+            $tasklist_pos &lt; $tasklist_len)
+    {
+        for($i=$tasklist_pos; $i&lt;$tasklist_len; )
+        {
+            $command = $tasklist[$i] ;
+            $handle_list[] = popen($command , "r" );
+            tolog("begin task \t ".$tasklist[$i]);
+            $i++;
+            if($exec_number == count($handle_list)) break;
+        }
+        $tasklist_pos = $i;
+    }
+    //如果子进程列表空，退出
+    if(0 == count($handle_list))
+    {
+        break;
+    }
+    //检查子进程列表的输出，把停掉的子进程关闭并记录下来
+    $end_handle_keys = array();
+    foreach($handle_list as $key =&gt; $handle)
+    {
+        //$str = fgets($handle, 65536);
+        $str = fread($handle, 65536);
+        echo($str);
+        if(feof($handle))
+        {
+            $end_handle_keys[] = $key;
+            pclose($handle);
+        }
+    }
+    //踢出停掉的子进程
+    foreach($end_handle_keys as $key)
+    {
+        unset($handle_list[$key]);
+        //var_dump($handle_list);
+        //exit;
+    }
+}
+tolog("\n\n*******************end**********************\n\n", "" ,  true);
+</code></pre><strong>附加一段Socket多进程接收的代码：</strong>
+<p>代码如下:</p>
+<pre>
+
+<code>do {
+ if (($msgsock = socket_accept($sock)) &lt; 0) {
+  echo "socket_accept() failed: reason: " . socket_strerror($msgsock) . "\n";
+  break;
+ }
+ $pid = pcntl_fork();
+ if ($pid == -1) {
+  die('could not fork');
+ } else if (!$pid) {
+  .....
+  socket_write($msgsock, $msg, strlen($msg));
+  do {
+   ......
+  } while (true);
+   socket_close($msgsock);
+ }
+} while (true);
+</code></pre>
+<p></p>
+
+<p>注：关于PHP伪多线程与多进程的深入分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/110405.html'>php获取url与物理路径的实现方法</a><a>下一篇</a><a href='/php/biji/110430.html'>windows环境php配置memcache具体步骤的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>PostgreSQL教程(三)：表的继承和分区表详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="一、表的继承：<br />
+    这个概念对于很多已经熟悉其他数据库编程的开发人员而言会多少有些陌生，然而它的实现方式和设计原理却是简单易懂，现在就让我们从一个简单的例子开始吧。<br />
+<br />
+" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">PostgreSQL教程(三)：表的继承和分区表详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>一、表的继承：<br />
+    这个概念对于很多已经熟悉其他数据库编程的开发人员而言会多少有些陌生，然而它的实现方式和设计原理却是简单易懂，现在就让我们从一个简单的例子开始吧。<br />
+<br />
+</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>一、表的继承：</strong></p>
+<p>&nbsp;&nbsp;&nbsp; 这个概念对于很多已经熟悉其他数据库编程的开发人员而言会多少有些陌生，然而它的实现方式和设计原理却是简单易懂，现在就让我们从一个简单的例子开始吧。<br />
+&nbsp;&nbsp;&nbsp; <strong>1. 第一个继承表：<br />
+</strong>&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="42156" class="copybut" id="copybut42156" onclick="doCopy('code42156')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code42156"><br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE cities (&nbsp;&nbsp; --父表<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; text,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; population float,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; altitude&nbsp;&nbsp;&nbsp;&nbsp; int<br />
+&nbsp;&nbsp;&nbsp; );<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE capitals ( --子表<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; state&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; char(2)<br />
+&nbsp;&nbsp;&nbsp; ) INHERITS (cities);<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; capitals表继承自cities表的所有属性。在PostgreSQL里，一个表可以从零个或多个其它表中继承属性，而且一个查询既可以引用父表中的所有行，也可以引用父表的所有行加上其所有子表的行，其中后者是缺省行为。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="33870" class="copybut" id="copybut33870" onclick="doCopy('code33870')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code33870"><br />
+&nbsp;&nbsp;&nbsp; MyTest=# INSERT INTO cities values('Las Vegas', 1.53, 2174);&nbsp; --插入父表<br />
+&nbsp;&nbsp;&nbsp; INSERT 0 1<br />
+&nbsp;&nbsp;&nbsp; MyTest=# INSERT INTO cities values('Mariposa',3.30,1953);&nbsp;&nbsp;&nbsp;&nbsp; --插入父表<br />
+&nbsp;&nbsp;&nbsp; INSERT 0 1<br />
+&nbsp;&nbsp;&nbsp; MyTest=# INSERT INTO capitals values('Madison',4.34,845,'WI');--插入子表<br />
+&nbsp;&nbsp;&nbsp; INSERT 0 1<br />
+&nbsp;&nbsp;&nbsp; MyTest=# SELECT name, altitude FROM cities WHERE altitude &gt; 500; --父表和子表的数据均被取出。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; name&nbsp;&nbsp;&nbsp;&nbsp; | altitude<br />
+&nbsp;&nbsp;&nbsp; -----------+----------<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Las Vegas |&nbsp;&nbsp;&nbsp;&nbsp; 2174<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Mariposa&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1953<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Madison&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 845<br />
+&nbsp;&nbsp;&nbsp; (3 rows)<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; MyTest=# SELECT name, altitude FROM capitals WHERE altitude &gt; 500; --只有子表的数据被取出。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; name&nbsp;&nbsp; | altitude<br />
+&nbsp;&nbsp;&nbsp; ---------+----------<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Madison |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 845<br />
+&nbsp;&nbsp;&nbsp; (1 row)<br />
+</div><br />
+&nbsp;&nbsp;&nbsp; 如果希望只从父表中提取数据，则需要在SQL中加入ONLY关键字，如：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="11844" class="copybut" id="copybut11844" onclick="doCopy('code11844')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code11844"><br />
+&nbsp;&nbsp;&nbsp; MyTest=# SELECT name,altitude FROM ONLY cities WHERE altitude &gt; 500;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; name&nbsp;&nbsp;&nbsp;&nbsp; | altitude<br />
+&nbsp;&nbsp;&nbsp; -----------+----------<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Las Vegas |&nbsp;&nbsp;&nbsp;&nbsp; 2174<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Mariposa&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1953<br />
+&nbsp;&nbsp;&nbsp; (2 rows)<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 上例中cities前面的"ONLY"关键字表示该查询应该只对cities进行查找而不包括继承级别低于cities的表。许多我们已经讨论过的命令--SELECT，UPDATE和DELETE--支持这个"ONLY"符号。<br />
+&nbsp;&nbsp;&nbsp; 在执行整表数据删除时，如果直接truncate父表，此时父表和其所有子表的数据均被删除，如果只是truncate子表，那么其父表的数据将不会变化，只是子表中的数据被清空。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="51365" class="copybut" id="copybut51365" onclick="doCopy('code51365')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code51365"><br />
+&nbsp;&nbsp;&nbsp; MyTest=# TRUNCATE TABLE cities;&nbsp; --父表和子表的数据均被删除。<br />
+&nbsp;&nbsp;&nbsp; TRUNCATE TABLE<br />
+&nbsp;&nbsp;&nbsp; MyTest=# SELECT * FROM capitals;<br />
+&nbsp;&nbsp;&nbsp;&nbsp; name | population | altitude | state<br />
+&nbsp;&nbsp;&nbsp; ------+------------+----------+-------<br />
+&nbsp;&nbsp;&nbsp; (0 rows)<br />
+&nbsp;&nbsp;&nbsp; </div><br />
+<strong>&nbsp;&nbsp;&nbsp; 2. 确定数据来源：</strong><br />
+&nbsp;&nbsp;&nbsp; 有时候你可能想知道某条记录来自哪个表。在每个表里我们都有一个系统隐含字段tableoid，它可以告诉你表的来源：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="32802" class="copybut" id="copybut32802" onclick="doCopy('code32802')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code32802"><br />
+&nbsp;&nbsp;&nbsp; MyTest=# SELECT tableoid, name, altitude FROM cities WHERE altitude &gt; 500;<br />
+&nbsp;&nbsp;&nbsp;&nbsp; tableoid |&nbsp;&nbsp; name&nbsp;&nbsp;&nbsp; | altitude<br />
+&nbsp;&nbsp;&nbsp; ----------+-----------+----------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 16532 | Las Vegas |&nbsp;&nbsp;&nbsp;&nbsp; 2174<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 16532 | Mariposa&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1953<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 16538 | Madison&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 845<br />
+&nbsp;&nbsp;&nbsp; (3 rows)<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 以上的结果只是给出了tableoid，仅仅通过该值，我们还是无法看出实际的表名。要完成此操作，我们就需要和系统表pg_class进行关联，以通过tableoid字段从该表中提取实际的表名，见以下查询：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="15048" class="copybut" id="copybut15048" onclick="doCopy('code15048')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code15048"><br />
+&nbsp;&nbsp;&nbsp; MyTest=# SELECT p.relname, c.name, c.altitude FROM cities c,pg_class p WHERE c.altitude &gt; 500 and c.tableoid = p.oid;<br />
+&nbsp;&nbsp;&nbsp;&nbsp; relname&nbsp; |&nbsp;&nbsp; name&nbsp;&nbsp;&nbsp; | altitude<br />
+&nbsp;&nbsp;&nbsp; ----------+-----------+----------<br />
+&nbsp;&nbsp;&nbsp;&nbsp; cities&nbsp;&nbsp;&nbsp; | Las Vegas |&nbsp;&nbsp;&nbsp;&nbsp; 2174<br />
+&nbsp;&nbsp;&nbsp;&nbsp; cities&nbsp;&nbsp;&nbsp; | Mariposa&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1953<br />
+&nbsp;&nbsp;&nbsp;&nbsp; capitals | Madison&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 845<br />
+&nbsp;&nbsp;&nbsp; (3 rows)<br />
+&nbsp;&nbsp;&nbsp; </div><br />
+<strong>&nbsp;&nbsp;&nbsp; 3. 数据插入的注意事项：</strong><br />
+&nbsp;&nbsp;&nbsp; 继承并不自动从INSERT或者COPY中向继承级别中的其它表填充数据。在我们的例子里，下面的INSERT语句不会成功：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="41752" class="copybut" id="copybut41752" onclick="doCopy('code41752')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code41752"><br />
+&nbsp;&nbsp;&nbsp; INSERT INTO cities (name, population, altitude, state) VALUES ('New York', NULL, NULL, 'NY');<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 我们可能希望数据被传递到capitals表里面去，但是这是不会发生的：INSERT总是插入明确声明的那个表。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<br />
+<strong>&nbsp;&nbsp;&nbsp; 4. 多表继承：</strong><br />
+&nbsp;&nbsp;&nbsp; 一个表可以从多个父表继承，这种情况下它拥有父表们的字段的总和。子表中任意定义的字段也会加入其中。如果同一个字段名出现在多个父表中，或者同时出现在父表和子表的定义里，那么这些字段就会被"融合"，这样在子表里面就只有一个这样的字段。要想融合，字段必须是相同的数据类型，否则就会抛出一个错误。融合的字段将会拥有它所继承的字段的所有约束。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="61642" class="copybut" id="copybut61642" onclick="doCopy('code61642')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code61642"><br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE parent1 (FirstCol integer);<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE parent2 (FirstCol integer, SecondCol varchar(20));<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE parent3 (FirstCol varchar(200)); <br />
+&nbsp;&nbsp;&nbsp; --子表child1将同时继承自parent1和parent2表，而这两个父表中均包含integer类型的FirstCol字段，因此child1可以创建成功。<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE child1 (MyCol timestamp) INHERITS (parent1,parent2);<br />
+&nbsp;&nbsp;&nbsp; --子表child2将不会创建成功，因为其两个父表中均包含FirstCol字段，但是它们的类型不相同。<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE child2 (MyCol timestamp) INHERITS (parent1,parent3);<br />
+&nbsp;&nbsp;&nbsp; --子表child3同样不会创建成功，因为它和其父表均包含FirstCol字段，但是它们的类型不相同。<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE child3 (FirstCol varchar(20)) INHERITS(parent1);<br />
+</div><br />
+<strong>&nbsp;&nbsp;&nbsp; 5. 继承和权限：</strong></p>
+<p>&nbsp;&nbsp;&nbsp; 表访问权限并不会自动继承。因此，一个试图访问父表的用户还必须具有访问它的所有子表的权限，或者使用ONLY关键字只从父表中提取数据。在向现有的继承层次添加新的子表的时候，请注意给它赋予所有权限。&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; 继承特性的一个严重的局限性是索引(包括唯一约束)和外键约束只施用于单个表，而不包括它们的继承的子表。这一点不管对引用表还是被引用表都是事实，因此在上面的例子里，如果我们声明cities.name为UNIQUE或者是一个PRIMARY KEY，那么也不会阻止capitals表拥有重复了名字的cities数据行。 并且这些重复的行缺省时在查询cities表的时候会显示出来。实际上，缺省时capitals将完全没有唯一约束，因此可能包含带有同名的多个行。你应该给capitals增加唯一约束，但是这样做也不会避免与cities的重复。类似，如果我们声明cities.name REFERENCES某些其它的表，这个约束不会自动广播到capitals。在这种条件下，你可以通过手工给capitals 增加同样的REFERENCES约束来做到这点。<br />
+&nbsp;&nbsp;&nbsp; <br />
+<strong>二、分区表：</strong></p>
+<p><strong>&nbsp;&nbsp;&nbsp; 1. 概述分区表：</strong><br />
+&nbsp;&nbsp;&nbsp; 分区的意思是把逻辑上的一个大表分割成物理上的几块儿，分区可以提供若干好处：<br />
+&nbsp;&nbsp;&nbsp; 1). 某些类型的查询性能可以得到极大提升。<br />
+&nbsp;&nbsp;&nbsp; 2). 更新的性能也可以得到提升，因为表的每块的索引要比在整个数据集上的索引要小。如果索引不能全部放在内存里，那么在索引上的读和写都会产生更多的磁盘访问。<br />
+&nbsp;&nbsp;&nbsp; 3). 批量删除可以用简单地删除某个分区来实现。<br />
+&nbsp;&nbsp;&nbsp; 4). 将很少用的数据可以移动到便宜的、慢一些地存储介质上。 <br />
+&nbsp;&nbsp;&nbsp; 假设当前的数据库并不支持分区表，而我们的应用所需处理的数据量也非常大，对于这种应用场景，我们不得不人为的将该大表按照一定的规则，手工拆分成多个小表，让每个小表包含不同区间的数据。这样一来，我们就必须在数据插入、更新、删除和查询之前，先计算本次的指令需要操作的小表。对于有些查询而言，由于查询区间可能会跨越多个小表，这样我们又不得不将多个小表的查询结果进行union操作，以合并来自多个表的数据，并最终形成一个结果集返回给客户端。可见，如果我们正在使用的数据库不支持分区表，那么在适合其应用的场景下，我们就需要做很多额外的编程工作以弥补这一缺失。然而需要说明的是，尽管功能可以勉强应付，但是性能却和分区表无法相提并论。<br />
+&nbsp;&nbsp;&nbsp; 目前PostgreSQL支持的分区形式主要为以下两种：<br />
+&nbsp;&nbsp;&nbsp; 1). 范围分区: 表被一个或者多个键字字段分区成"范围"，在这些范围之间没有重叠的数值分布到不同的分区里。比如，我们可以为特定的商业对象根据数据范围分区，或者根据标识符范围分区。<br />
+&nbsp;&nbsp;&nbsp; 2). 列表分区: 表是通过明确地列出每个分区里应该出现那些键字值实现的。</p>
+<p><strong>&nbsp;&nbsp;&nbsp; 2. 实现分区：</strong><br />
+&nbsp;&nbsp;&nbsp; 1). 创建"主表"，所有分区都从它继承。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="28529" class="copybut" id="copybut28529" onclick="doCopy('code28529')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code28529"><br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement (&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --主表<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; city_id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int&nbsp;&nbsp;&nbsp; NOT NULL,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; logdate&nbsp;&nbsp;&nbsp;&nbsp; date&nbsp; NOT NULL,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; peaktemp int,<br />
+&nbsp;&nbsp;&nbsp; );&nbsp; <br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 2). 创建几个"子"表，每个都从主表上继承。通常，这些"子"表将不会再增加任何字段。我们将把子表称作分区，尽管它们就是普通的PostgreSQL表。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="27866" class="copybut" id="copybut27866" onclick="doCopy('code27866')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code27866"><br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_yy04mm02 ( ) INHERITS (measurement);<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_yy04mm03 ( ) INHERITS (measurement);<br />
+&nbsp;&nbsp;&nbsp; ...<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_yy05mm11 ( ) INHERITS (measurement);<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_yy05mm12 ( ) INHERITS (measurement);<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_yy06mm01 ( ) INHERITS (measurement);<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 上面创建的子表，均已年、月的形式进行范围划分，不同年月的数据将归属到不同的子表内。这样的实现方式对于清空分区数据而言将极为方便和高效，即直接执行DROP TABLE语句删除相应的子表，之后在根据实际的应用考虑是否重建该子表(分区)。相比于直接DROP子表，PostgreSQL还提供了另外一种更为方便的方式来管理子表：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="3299" class="copybut" id="copybut3299" onclick="doCopy('code3299')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code3299"><br />
+&nbsp;&nbsp;&nbsp; ALTER TABLE measurement_yy06mm01 NO INHERIT measurement;<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 和直接DROP相比，该方式仅仅是使子表脱离了原有的主表，而存储在子表中的数据仍然可以得到访问，因为此时该表已经被还原成一个普通的数据表了。这样对于数据库的DBA来说，就可以在此时对该表进行必要的维护操作，如数据清理、归档等，在完成诸多例行性的操作之后，就可以考虑是直接删除该表(DROP TABLE)，还是先清空该表的数据(TRUNCATE TABLE)，之后再让该表重新继承主表，如：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="77000" class="copybut" id="copybut77000" onclick="doCopy('code77000')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code77000"><br />
+&nbsp;&nbsp;&nbsp; ALTER TABLE measurement_yy06mm01 INHERIT measurement;<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 3). 给分区表增加约束，定义每个分区允许的健值。同时需要注意的是，定义的约束要确保在不同的分区里不会有相同的键值。因此，我们需要将上面"子"表的定义修改为以下形式：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="29339" class="copybut" id="copybut29339" onclick="doCopy('code29339')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code29339"><br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_yy04mm02 (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHECK ( logdate &gt;= DATE '2004-02-01' AND logdate &lt; DATE '2004-03-01')<br />
+&nbsp;&nbsp;&nbsp; ) INHERITS (measurement);<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_yy04mm03 (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHECK (logdate &gt;= DATE '2004-03-01' AND logdate &lt; DATE '2004-04-01')<br />
+&nbsp;&nbsp;&nbsp; ) INHERITS (measurement);<br />
+&nbsp;&nbsp;&nbsp; ...<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_yy05mm11 (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHECK (logdate &gt;= DATE '2005-11-01' AND logdate &lt; DATE '2005-12-01')<br />
+&nbsp;&nbsp;&nbsp; ) INHERITS (measurement);<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_yy05mm12 (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHECK (logdate &gt;= DATE '2005-12-01' AND logdate &lt; DATE '2006-01-01')<br />
+&nbsp;&nbsp;&nbsp; ) INHERITS (measurement);<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_yy06mm01 (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHECK (logdate &gt;= DATE '2006-01-01' AND logdate &lt; DATE '2006-02-01')<br />
+&nbsp;&nbsp;&nbsp; ) INHERITS (measurement);&nbsp; <br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 4). 尽可能基于键值创建索引。如果需要，我们也同样可以为子表中的其它字段创建索引。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="72323" class="copybut" id="copybut72323" onclick="doCopy('code72323')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code72323"><br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX measurement_yy04mm02_logdate ON measurement_yy04mm02 (logdate);<br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX measurement_yy04mm03_logdate ON measurement_yy04mm03 (logdate);<br />
+&nbsp;&nbsp;&nbsp; ...<br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX measurement_yy05mm11_logdate ON measurement_yy05mm11 (logdate);<br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX measurement_yy05mm12_logdate ON measurement_yy05mm12 (logdate);<br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX measurement_yy06mm01_logdate ON measurement_yy06mm01 (logdate);&nbsp; <br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 5). 定义一个规则或者触发器，把对主表的修改重定向到适当的分区表。<br />
+&nbsp;&nbsp;&nbsp; 如果数据只进入最新的分区，我们可以设置一个非常简单的规则来插入数据。我们必须每个月都重新定义这个规则，即修改重定向插入的子表名，这样它总是指向当前分区。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="96486" class="copybut" id="copybut96486" onclick="doCopy('code96486')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code96486"><br />
+&nbsp;&nbsp;&nbsp; CREATE OR REPLACE RULE measurement_current_partition AS<br />
+&nbsp;&nbsp;&nbsp; ON INSERT TO measurement<br />
+&nbsp;&nbsp;&nbsp; DO INSTEAD<br />
+&nbsp;&nbsp;&nbsp; INSERT INTO measurement_yy06mm01 VALUES (NEW.city_id, NEW.logdate, NEW.peaktemp);<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 其中NEW是关键字，表示新数据字段的集合。这里可以通过点(.)操作符来获取集合中的每一个字段。<br />
+&nbsp;&nbsp;&nbsp; 我们可能想插入数据并且想让服务器自动定位应该向哪个分区插入数据。我们可以用像下面这样的更复杂的规则集来实现这个目标。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="23998" class="copybut" id="copybut23998" onclick="doCopy('code23998')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code23998"><br />
+&nbsp;&nbsp;&nbsp; CREATE RULE measurement_insert_yy04mm02 AS<br />
+&nbsp;&nbsp;&nbsp; ON INSERT TO measurement WHERE (logdate &gt;= DATE '2004-02-01' AND logdate &lt; DATE '2004-03-01')<br />
+&nbsp;&nbsp;&nbsp; DO INSTEAD<br />
+&nbsp;&nbsp;&nbsp; INSERT INTO measurement_yy04mm02 VALUES (NEW.city_id, NEW.logdate, NEW.peaktemp);<br />
+&nbsp;&nbsp;&nbsp; ...<br />
+&nbsp;&nbsp;&nbsp; CREATE RULE measurement_insert_yy05mm12 AS<br />
+&nbsp;&nbsp;&nbsp; ON INSERT TO measurement WHERE (logdate &gt;= DATE '2005-12-01' AND logdate &lt; DATE '2006-01-01')<br />
+&nbsp;&nbsp;&nbsp; DO INSTEAD<br />
+&nbsp;&nbsp;&nbsp; INSERT INTO measurement_yy05mm12 VALUES (NEW.city_id, NEW.logdate, NEW.peaktemp);<br />
+&nbsp;&nbsp;&nbsp; CREATE RULE measurement_insert_yy06mm01 AS<br />
+&nbsp;&nbsp;&nbsp; ON INSERT TO measurement WHERE (logdate &gt;= DATE '2006-01-01' AND logdate &lt; DATE '2006-02-01')<br />
+&nbsp;&nbsp;&nbsp; DO INSTEAD<br />
+&nbsp;&nbsp;&nbsp; INSERT INTO measurement_yy06mm01 VALUES (NEW.city_id, NEW.logdate, NEW.peaktemp); <br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 请注意每个规则里面的WHERE子句正好匹配其分区的CHECK约束。<br />
+&nbsp;&nbsp;&nbsp; 可以看出，一个复杂的分区方案可能要求相当多的DDL。在上面的例子里我们需要每个月创建一次新分区，因此写一个脚本自动生成需要的DDL是明智的。除此之外，我们还不难推断出，分区表对于新数据的批量插入操作有一定的抑制，这一点在Oracle中也同样如此。&nbsp; <br />
+&nbsp;&nbsp;&nbsp; 除了上面介绍的通过Rule的方式重定向主表的数据到各个子表，我们还可以通过触发器的方式来完成此操作，相比于基于Rule的重定向方法，基于触发器的方式可能会带来更好的插入效率，特别是针对非批量插入的情况。然而对于批量插入而言，由于Rule的额外开销是基于表的，而不是基于行的，因此效果会好于触发器方式。另一个需要注意的是，copy操作将会忽略Rules，如果我们想要通过COPY方法来插入数据，你只能将数据直接copy到正确的子表，而不是主表。这种限制对于触发器来说是不会造成任何问题的。基于Rule的重定向方式还存在另外一个问题，就是当插入的数据不在任何子表的约束中时，PostgreSQL也不会报错，而是将数据直接保留在主表中。</p>
+<p>&nbsp;&nbsp;&nbsp; 6). 添加新分区：</p>
+<p>&nbsp;&nbsp;&nbsp; 这里将介绍两种添加新分区的方式，第一种方法简单且直观，我们只是创建新的子表，同时为其定义新的检查约束，如：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="88345" class="copybut" id="copybut88345" onclick="doCopy('code88345')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code88345"><br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_y2008m02 (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHECK ( logdate &gt;= DATE '2008-02-01' AND logdate &lt; DATE '2008-03-01' )<br />
+&nbsp;&nbsp;&nbsp; ) INHERITS (measurement);<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 第二种方法的创建步骤相对繁琐，但更为灵活和实用。见以下四步：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="21862" class="copybut" id="copybut21862" onclick="doCopy('code21862')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code21862"><br />
+&nbsp;&nbsp;&nbsp; /* 创建一个独立的数据表(measurement_y2008m02)，该表在创建时以将来的主表(measurement)为模板，包含模板表的缺省值(DEFAULTS)和一致性约束(CONSTRAINTS)。*/<br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE measurement_y2008m02<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (LIKE measurement INCLUDING DEFAULTS INCLUDING CONSTRAINTS);<br />
+&nbsp;&nbsp;&nbsp; /* 为该表创建未来作为子表时需要使用的检查约束。*/<br />
+&nbsp;&nbsp;&nbsp; ALTER TABLE measurement_y2008m02 ADD CONSTRAINT y2008m02<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHECK (logdate &gt;= DATE '2008-02-01' AND logdate &lt; DATE '2008-03-01');<br />
+&nbsp;&nbsp;&nbsp; /* 导入数据到该表。下面只是给出一种导入数据的方式作为例子。在导入数据之后，如有可能，还可以做进一步的数据处理，如数据转换、过滤等。*/<br />
+&nbsp;&nbsp;&nbsp; \copy measurement_y2008m02 from 'measurement_y2008m02'<br />
+&nbsp;&nbsp;&nbsp; /* 在适当的时候，或者说在需要的时候，让该表继承主表。*/<br />
+&nbsp;&nbsp;&nbsp; ALTER TABLE measurement_y2008m02 INHERIT measurement;<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 7). 确保postgresql.conf里的配置参数constraint_exclusion是打开的。没有这个参数，查询不会按照需要进行优化。这里我们需要做的是确保该选项在配置文件中没有被注释掉。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="94754" class="copybut" id="copybut94754" onclick="doCopy('code94754')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code94754"><br />
+&nbsp;&nbsp;&nbsp; /&gt; pwd<br />
+&nbsp;&nbsp;&nbsp; /opt/PostgreSQL/9.1/data<br />
+&nbsp;&nbsp;&nbsp; /&gt; cat postgresql.conf | grep "constraint_exclusion"<br />
+&nbsp;&nbsp;&nbsp; constraint_exclusion = partition&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # on, off, or partition<br />
+</div><br />
+<strong>&nbsp;&nbsp;&nbsp; 3. 分区和约束排除：</strong><br />
+&nbsp;&nbsp;&nbsp; 约束排除(Constraint exclusion)是一种查询优化技巧，它改进了用上面方法定义的表分区的性能。比如：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="2635" class="copybut" id="copybut2635" onclick="doCopy('code2635')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code2635"><br />
+&nbsp;&nbsp;&nbsp; SET constraint_exclusion = on;<br />
+&nbsp;&nbsp;&nbsp; SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2006-01-01';<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 如果没有约束排除，上面的查询会扫描measurement表中的每一个分区。打开了约束排除之后，规划器将检查每个分区的约束然后再视图证明该分区不需要被扫描，因为它不能包含任何符合WHERE子句条件的数据行。如果规划器可以证明这个，它就把该分区从查询规划里排除出去。<br />
+&nbsp;&nbsp;&nbsp; 你可以使用EXPLAIN命令显示一个规划在constraint_exclusion打开和关闭情况下的不同。用上面方法设置的表的典型的缺省规划是：&nbsp;&nbsp;&nbsp; <br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="52433" class="copybut" id="copybut52433" onclick="doCopy('code52433')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code52433"><br />
+&nbsp;&nbsp;&nbsp; SET constraint_exclusion = off;<br />
+&nbsp;&nbsp;&nbsp; EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2006-01-01';&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; QUERY PLAN<br />
+&nbsp;&nbsp;&nbsp; -----------------------------------------------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Aggregate&nbsp; (cost=158.66..158.68 rows=1 width=0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;&nbsp; Append&nbsp; (cost=0.00..151.88 rows=2715 width=0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;&nbsp; Seq Scan on measurement&nbsp; (cost=0.00..30.38 rows=543 width=0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Filter: (logdate &gt;= '2006-01-01'::date)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;&nbsp; Seq Scan on measurement_yy04mm02 measurement&nbsp; (cost=0.00..30.38 rows=543 width=0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Filter: (logdate &gt;= '2006-01-01'::date)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;&nbsp; Seq Scan on measurement_yy04mm03 measurement&nbsp; (cost=0.00..30.38 rows=543 width=0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Filter: (logdate &gt;= '2006-01-01'::date)<br />
+&nbsp;&nbsp;&nbsp; ...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;&nbsp; Seq Scan on measurement_yy05mm12 measurement&nbsp; (cost=0.00..30.38 rows=543 width=0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Filter: (logdate &gt;= '2006-01-01'::date)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;&nbsp; Seq Scan on measurement_yy06mm01 measurement&nbsp; (cost=0.00..30.38 rows=543 width=0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Filter: (logdate &gt;= '2006-01-01'::date)</p>
+<p></div><br />
+&nbsp;&nbsp;&nbsp; 从上面的查询计划中可以看出，PostgreSQL扫描了所有分区。下面我们再看一下打开约束排除之后的查询计划：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="29598" class="copybut" id="copybut29598" onclick="doCopy('code29598')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code29598"><br />
+&nbsp;&nbsp;&nbsp; SET constraint_exclusion = on;<br />
+&nbsp;&nbsp;&nbsp; EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2006-01-01';&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; QUERY PLAN<br />
+&nbsp;&nbsp;&nbsp; -----------------------------------------------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Aggregate&nbsp; (cost=63.47..63.48 rows=1 width=0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;&nbsp; Append&nbsp; (cost=0.00..60.75 rows=1086 width=0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;&nbsp; Seq Scan on measurement&nbsp; (cost=0.00..30.38 rows=543 width=0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Filter: (logdate &gt;= '2006-01-01'::date)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -&gt;&nbsp; Seq Scan on measurement_yy06mm01 measurement&nbsp; (cost=0.00..30.38 rows=543 width=0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Filter: (logdate &gt;= '2006-01-01'::date)<br />
+</div><br />
+&nbsp;&nbsp;&nbsp; 请注意，约束排除只由CHECK约束驱动，而不会由索引驱动。<br />
+&nbsp;&nbsp;&nbsp; 目前版本的PostgreSQL中该配置的缺省值是partition，该值是介于on和off之间的一种行为方式，即规划器只会将约束排除应用于基于分区表的查询，而on设置则会为所有查询都进行约束排除，那么对于普通数据表而言，也将不得不承担由该机制而产生的额外开销。<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; 约束排除在使用时有以下几点注意事项：<br />
+&nbsp;&nbsp;&nbsp; 1). 约束排除只是在查询的WHERE子句包含约束的时候才生效。一个参数化的查询不会被优化，因为在运行时规划器不知道该参数会选择哪个分区。因此像CURRENT_DATE这样的函数必须避免。把分区键值和另外一个表的字段连接起来也不会得到优化。<br />
+&nbsp;&nbsp;&nbsp; 2). 在CHECK约束里面要避免跨数据类型的比较，因为目前规划器会无法证明这样的条件为假。比如，下面的约束会在x是整数字段的时候可用，但是在x是一个bigint的时候不能用：<br />
+&nbsp;&nbsp;&nbsp; CHECK (x = 1)<br />
+&nbsp;&nbsp;&nbsp; 对于bigint字段，我们必须使用类似下面这样的约束：<br />
+&nbsp;&nbsp;&nbsp; CHECK (x = 1::bigint)<br />
+&nbsp;&nbsp;&nbsp; 这个问题并不仅仅局限于bigint数据类型，它可能会发生在任何约束的缺省数据类型与其比较的字段的数据类型不匹配的场合。在提交的查询里的跨数据类型的比较通常是OK的，只是不能在CHECK条件里。<br />
+&nbsp;&nbsp;&nbsp; 3). 在主表上的UPDATE和DELETE命令并不执行约束排除。<br />
+&nbsp;&nbsp;&nbsp; 4). 在规划器进行约束排除时，主表上的所有分区的所有约束都将会被检查，因此，大量的分区会显著增加查询规划的时间。<br />
+&nbsp;&nbsp;&nbsp; 5). 在执行ANALYZE语句时，要为每一个分区都执行该命令，而不是仅仅对主表执行该命令。<br />
+&nbsp;</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/103452.html'>基于JQuery制作可编辑的表格特效</a><a>下一篇</a><a href='/php/biji/103454.html'>Javascript与jQuery方法的隐藏与显示</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

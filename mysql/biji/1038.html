@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Windows下实现MySQL自动备份的批处理(复制目录或MySQLdump备份)_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了Windows下实现MySQL自动备份的批处理(复制目录或MySQLdump备份)，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Windows下实现MySQL自动备份的批处理(复制目录或MySQLdump备份)</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:21:56                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了Windows下实现MySQL自动备份的批处理(复制目录或MySQLdump备份)，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了Windows下实现MySQL自动备份的批处理(复制目录或MySQLdump备份)，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>今天有个需求要在 Windows 下实现数据库自动备份，拼凑了一下解决办法。实现的特性可指定多个数据库按照 年/月/日 的方式组织备份可选的使用 WinRAR 压缩备份使用计划任务实现定时备份具体代码备份
+<p>代码如下:</p>
+<pre>
+<code> 
+@echo off &amp; setlocal ENABLEEXTENSIONS 
+
+:: ---------- 配置项 ---------- 
+
+:: 备份放置的路径，加 \ 
+set BACKUP_PATH=D:\Backup\ 
+
+:: 要备份的数据库名称，多个用空格分隔 
+set DATABASES=database1 database2 database3 
+
+:: MySQL 用户名 
+set USERNAME=root 
+
+:: MySQL 密码 
+set PASSWORD=123456 
+
+:: MySQL Bin 目录，加 \ 
+:: 如果可以直接使用 mysqldump（安装时添加 MySQL Bin 目录到了环境变量），此处留空即可 
+set MYSQL=D:\SERVER\MySQL\bin\ 
+
+:: WinRAR 自带命令行工具的可执行文件路径，长文件名注意用 Dos 长文件名书写方式 
+set WINRAR=C:\Progra~1\WinRAR\Rar.exe 
+
+:: ---------- 以下请勿修改 ---------- 
+
+set YEAR=%date:~0,4% 
+set MONTH=%date:~5,2% 
+set DAY=%date:~8,2% 
+:: 如果在 dos 下输入 time 返回的不是 24 小时制（没有 0 填充），请自行修改此处 
+set HOUR=%time:~0,2% 
+set MINUTE=%time:~3,2% 
+set SECOND=%time:~6,2% 
+
+set DIR=%BACKUP_PATH%%YEAR%\%MONTH%\%DAY%\ 
+set ADDON=%YEAR%%MONTH%%DAY%%HOUR%%MINUTE%%SECOND% 
+
+:: create dir 
+if not exist %DIR% ( 
+mkdir %DIR% 2&gt;nul 
+) 
+if not exist %DIR% ( 
+echo Backup path: %DIR% not exists, create dir failed. 
+goto exit 
+) 
+cd /d %DIR% 
+
+:: backup 
+echo Start dump databases... 
+for %%D in (%DATABASES%) do ( 
+echo Dumping database %%D ... 
+%MYSQL%mysqldump -u%USERNAME% -p%PASSWORD% %%D &gt; %%D.%ADDON%.sql 2&gt;nul 
+:: winrar 
+if exist %WINRAR% ( 
+%WINRAR% a -k -r -s -m1 -ep1 %%D.%ADDON%.rar %%D.%ADDON%.sql 2&gt;nul 
+del /F /S /Q %%D.%ADDON%.sql 2&gt;nul 
+) 
+) 
+echo Done 
+
+:exit 
+</code></pre>增加计划任务
+<p>代码如下:</p>
+<pre>
+<code> 
+@echo off 
+
+:: ------- 配置项 ------- 
+
+:: 要执行的文件名 
+set FILE=D:\cron\cron_backup.bat 
+
+:: 计划频率类型 
+set FREQUENCY=DAILY 
+
+:: 频率，与上面的计划频率类型对应 
+set MODIFIER=1 
+
+:: 该计划执行的时间（24 小时制） 
+set DATETIME=00:30:00 
+
+:: 计划的名字 
+set NAME=&quot;Backup Cron Job&quot; 
+
+:: 计划执行用户，不建议修改 
+set USER=&quot;System&quot; 
+
+:: ------- 以下请勿修改 ------- 
+
+schtasks /Create /RU %USER% /SC %FREQUENCY% /MO %MODIFIER% /ST %DATETIME% /TN %NAME% /TR %FILE% 
+pause 
+</code></pre>其中的:: 计划频率类型，可选项：:: MINUTE 分钟:: DAILY 天:: HOURLY 小时:: WEEKLY 周:: MONTHLY 月:: 频率，与上面的计划频率类型对应:: MINUTE: 1 到 1439 分钟:: HOURLY: 1 - 23 小时:: DAILY: 1 到 365 天:: WEEKLY: 1 到 52 周:: MONTHLY: 1 到 12，或 FIRST, SECOND, THIRD, FOURTH, LAST, LASTDAY使用方法将上面的两段代码分别保存为 cron_backup.bat 和 cron_backup_add.bat，并根据注释修改相关参数确定好目录之后，运行 cron_backup_add.bat 将计划任务添加到系统中。Windows Server 2003 / XP 可以通过 开始，控制面板，计划任务进入计划任务管理界面；Windows Vista / 7 可以通过 计算机，右键，管理，系统工具，任务计划程序，任务计划程序库，进入计划任务管理界面。手动运行该任务，查看备份目录来确认下备份是否成功。待改进增加删除多少天之前备份的功能
+
+<p>注：关于Windows下实现MySQL自动备份的批处理(复制目录或MySQLdump备份)的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1037.html'>MySQL数据库存储引擎和分支现状分析</a><a>下一篇</a><a href='/mysql/biji/1039.html'>MyISAM和InnoDB引擎优化分析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

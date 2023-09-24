@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL DNS反向解析导致连接超时过程分析(skip-name-resolve)_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL DNS反向解析导致连接超时过程分析(skip-name-resolve)，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL DNS反向解析导致连接超时过程分析(skip-name-resolve)</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:32:11                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL DNS反向解析导致连接超时过程分析(skip-name-resolve)，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL DNS反向解析导致连接超时过程分析(skip-name-resolve)，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>MySQL数据库收到一个网络连接后，首先拿到对方的IP地址，然后对这个IP地址进行反向DNS解析从而得到这个IP地址对应的主机名。用主机名在权限系统里面进行权限判断。反向DNS解析是耗费时间的，有可能让用户感觉起来很慢。甚至有的时候，反向解析出来的主机名并没有指向这个IP地址，这时候就无法连接成功了。可以在配置文件里面禁止MySQL进行反向DNS解析，只需在my.cnf的[mysqld]段落中加入如下行即可：skip-name-resolve (windows与linux下一样的)
+<p>设备在连接mysql时候，等待服务器的banner信息需要4s左右，影响了Mysql服务的连接速度。通过如下方式进行验证：</p>
+<p><strong>1、Telnet端口验证</strong></p>
+<p>通过设备和虚拟机（Linux系统）分别Telnet Mysql服务的端口，会出现一下现象：</p>
+<p>设备（UAG/SCANNER）： telnet后，等待Mysql的服务器端回应大概需要等10s左右。</p>
+<p>[DPtech-Developer-Shell]telnet 10.101.0.206 3308Trying 10.101.0.206...Connected to 10.101.0.206.Escape character is &#39;^]&#39;.E5.0.67-community-nt-log?Hc95虚拟机（Ubuntu）：telnet后，立即得到了Mysql服务器的返回</p>
+<p>[root]~# telnet 10.101.0.206 3308Trying 10.101.0.206...Connected to 10.101.0.206.Escape character is &#39;^]&#39;.E5.0.67-community-nt-log?D%(;1$]+,￠!Zdh`&#39;?G)6r]YConnection closed by foreign host. //这里耗时很短</p>
+<p><strong>2、通过程序进行验证</strong></p>
+<p>具体源代码见附件：验证程序源代码源代码基本上是设置了Recv超时后，建立socket连接之后接受数据，收到后计时并输出。</p>
+<p>在设备上和虚拟机中的结果分别如下：设备：</p>
+<p>[DPtech-Developer-Shell]/tcpclient_mips 10.101.0.1 3306花费时间:19553Recved 68 bytes@5.5.2-m2-community%uD3q`n)</p>
+<p>虚拟机：</p>
+<p>[root]tcp_demo# ./tcpclient 10.101.0.1 3306花费时间：10525Recved 68 bytes@5.5.2-m2-communitd~k~Y&quot;;B</p>
+<p>可以发现，设备上大约比Linux服务器多耗时9s，其中10秒钟可能是recv本身超时的时间。</p>
+<p><strong>3、通过不同操作系统进行Telnet验证</strong></p>
+<p>通过Windows系统和Linux虚拟机、设备，分别通过Telnet进行连接尝试，通过抓包分析得知，只有设备的耗时比较长，其他的耗时都比较短。抓包时发现设备中的socket建立之后，MYSQL服务器需要发送很多次的NBNS报文后，才会传输banner信息，而Linux虚拟机和Windows系统的主机在这个过程中都没有出现这个问题。查找了一些资料，关于MYSQL NBNS报文的问题：</p>
+<p><strong>Mysql论坛的提问：</strong></p>
+<p>http://forums.mysql.com/read.php?11,250982,250982#msg-250982该问题的答复http://forums.mysql.com/read.php?11,250982,254683#msg-254683从答复中来看，貌似是某些版本的问题，临时的解决方案是对Mysql服务器进行配置，不启用Named Pipes，即 命名管道 功能即可解决这个问题。后经查找相关资料得知，远程连接超时可能由于Mysql默认开启了DNS反向解析的缘故，每次连接时服务器都尝试解析连接客户端的主机名，导致时间比较长。解决方法是在服务器端的my.ini文件中，[mysqld]这个节下配置一个skip-name-resolve以关闭Mysql默认开启的DNS反向解析就可以了。再次通过设备和虚拟机或者Windows系统进行Telnet，可以发现连接超时的现象明显不存在了。</p>
+<p>另外通过自己写的C代码进行连接的时候也存在同样的问题，修改skip-name-resolve以后，实际上就可以发现该问题已经不存在了：</p>
+<p>设备：</p>
+<p>[DPtech-Developer-Shell]/tcpclient_mips 10.101.0.1 3306花费时间:10520Recved 68 bytes@5.5.2-m2-community[Z44E&gt;G)虚拟机：[root]tcp_demo# ./tcpclient 10.101.0.1 3306花费时间:10521Recved 68 bytes@5.5.2-m2-community7evE5wyx</p>
+<p>通过虚拟机Telnet连接另外一个ip 10.101.0.206时候发现速度也比较慢，消耗的时间基本上和设备中相当，可能是由于虚拟机和宿主主机之前不需要进行反向域名解析，或者说是应为系统本身就知道虚拟机IP地址（NAT模式）对应的主机名，所以不需要进行DNS反向解析，导致在虚拟机中出现了特殊情况。最后得出结论，可能这个问题实际上和设备或者虚拟机，Linux系统、Windows系统没有多大关系，主要由于服务器的反向DNS解析导致该问题。无法从客户端途径去解决，也就是说我们设备无法处理这种情形。</p>
+
+<p>注：关于MySQL DNS反向解析导致连接超时过程分析(skip-name-resolve)的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1869.html'>MySQL登录遇到ERROR 1045问题解决方法</a><a>下一篇</a><a href='/mysql/biji/1871.html'>MySQL中文乱码以及导出为sql语句和Excel问题解决方法[图文]</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

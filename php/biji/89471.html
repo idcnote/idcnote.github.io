@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>对jquery的ajax进行二次封装以及ajax缓存代理组件:AjaxCache详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="虽然jquery的较新的api已经很好用了， 但是在实际工作还是有做二次封装的必要，好处有：1，二次封装后的API更加简洁，更符合个人的使用习惯；2，可以对ajax操作做一些统一处理，比如追加随" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">对jquery的ajax进行二次封装以及ajax缓存代理组件:AjaxCache详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>虽然jquery的较新的api已经很好用了， 但是在实际工作还是有做二次封装的必要，好处有：1，二次封装后的API更加简洁，更符合个人的使用习惯；2，可以对ajax操作做一些统一处理，比如追加随</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>虽然jquery的较新的api已经很好用了， 但是在实际工作还是有做二次封装的必要，好处有：1，二次封装后的API更加简洁，更符合个人的使用习惯；2，可以对ajax操作做一些统一处理，比如追加随机数或其它参数。同时在工作中，我们还会发现，有一些ajax请求的数据，对实时性要求不高，即使我们把第一次请求到的这些数据缓存起来，然后当相同请求再次发起时直接拿之前缓存的数据返回也不会对相关功能有影响，通过这种手工的缓存控制，减少了ajax请求，多多少少也能帮助我们提高网页的性能。本文介绍我自己关于这两方面问题的做法，欢迎交流和指正。</p>
+<p><strong>点击 代码下载 </strong>（注：因为用到了ajax，所以不能在file协议下运行，必须运行在http下）</p>
+<p><span style="color: #ff0000"><strong>1. 封装jquery的ajax</strong></span></p>
+<p>其实这个部分的相关内容在之前的一篇博客引入过，只不过那里面只是引用，没有详细说明，另外ajax缓存代理组件的实现也是基于这个二次封装之后的ajax组件的，所以有必要在这里对它详细说明一下，虽然实现并不复杂（详见注释说明）：</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+define(function (require, exports, module) {
+
+  var $ = require('jquery');
+
+  //根据关键的几个参数统一创建ajax对象
+  function create(_url, _method, _data, _async, _dataType) {
+    //添加随机数
+    if (_url.indexOf('&#63;') &gt; -1) {
+      _url = _url + '&rnd=' + Math.random();
+    } else {
+      _url = _url + '&#63;rnd=' + Math.random();
+    }
+
+    //为请求添加ajax标识，方便后台区分ajax和非ajax请求
+    _url += '&_ajax=1';
+
+    //返回jquery创建的ajax对象，以便外部拿到这个对象以后可以通过
+    //.done .fail .always来添加回调
+    //这么做是为了保留jquery ajax中好用的部分
+    return $.ajax({
+      url: _url,
+      dataType: _dataType,
+      async: _async,
+      method: _method,
+      data: _data
+    });
+  }
+
+  //ajax就是本组件全局唯一的实例，它的实例方法通过后面的循环代码添加
+  //methods对象配置ajax各个实例方法的参数：
+  //name: 方法名称
+  //method: http请求方法，get or post
+  //async: 发送请求时是否异步
+  //dataType: 返回的数据类型，html or json
+  var ajax = {},
+    methods = [
+      {
+        name: 'html',
+        method: 'get',
+        async: true,
+        dataType: 'html'
+      },
+      {
+        name: 'get',
+        method: 'get',
+        async: true,
+        dataType: 'json'
+      },
+      {
+        name: 'post',
+        method: 'post',
+        async: true,
+        dataType: 'json'
+      },
+      {
+        name: 'syncGet',
+        method: 'get',
+        async: false,
+        dataType: 'json'
+      },
+      {
+        name: 'syncPost',
+        method: 'post',
+        async: false,
+        dataType: 'json'
+      }
+    ];
+
+  //由于二次封装需要对外提供的每个实例方法创建ajax的逻辑是相同的
+  //所以通过这种方式统一定义各个实例方法
+  //关键代码为下面代码中的那个立即调用的函数
+  //它返回了一个新的闭包函数作为实例方法
+  for (var i = 0, l = methods.length; i &lt; l; i++) {
+    ajax[methods[i].name] = (function (i) {
+      return function () {
+        /**
+         * 每个实例方法接收三个参数
+         * 第一个表示要请求的地址
+         * 第二个表示要提交到后台的数据，是一个object对象，如{param1: 'value1'}
+         * 第三个表示后台返回的数据类型，最最常用的就是html or json，绝大部分情况下这个参数不用传，会使用methods里面定义的dataType
+         */
+        var _url = arguments[0],
+          _data = arguments[1],
+          _dataType = arguments[2] || methods[i].dataType;
+
+        return create(_url, methods[i].method, _data, methods[i].async, _dataType);
+      }
+    })(i);
+  }
+
+  return ajax;
+});
+
+</pre>
+</div>
+<div class="cnblogs_code">这个Ajax组件主要做的事情是： <br />
+1）统一提供随机数参数和ajax请求标识； <br />
+2）对jquery的api进行了包装，对外提供的方法更加清晰明了。</div>
+<p>使用方式：</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+define(function (require, exports, module) {
+
+  var Ajax = require('mod/ajax');
+
+  //以GET方式请求html内容
+  Ajax.html('html/demo', {
+    param1: 'value1',
+    param2: 'value2'
+  }).done(function(response){
+    //请求成功的回调
+  }).fail(function(){
+    //请求失败的回调
+  }).always(function(){
+    //请求完成的回调
+  });
+
+  //以GET方式请求json数据
+  Ajax.get('api/demo', {
+    param1: 'value1',
+    param2: 'value2'
+  }).done(function(response){
+    //请求成功的回调
+  }).fail(function(){
+    //请求失败的回调
+  }).always(function(){
+    //请求完成的回调
+  });
+
+  //以POST方式请求json数据
+  Ajax.post('api/demo', {
+    param1: 'value1',
+    param2: 'value2'
+  }).done(function(response){
+    //请求成功的回调
+  }).fail(function(){
+    //请求失败的回调
+  }).always(function(){
+    //请求完成的回调
+  });
+
+  //以GET方式发送同步请求，获取json数据
+  Ajax.syncGet('api/demo', {
+    param1: 'value1',
+    param2: 'value2'
+  }).done(function(response){
+    //请求成功的回调
+  }).fail(function(){
+    //请求失败的回调
+  }).always(function(){
+    //请求完成的回调
+  });
+
+  //以POST方式发送同步请求，获取json数据
+  Ajax.syncPost('api/demo', {
+    param1: 'value1',
+    param2: 'value2'
+  }).done(function(response){
+    //请求成功的回调
+  }).fail(function(){
+    //请求失败的回调
+  }).always(function(){
+    //请求完成的回调
+  });
+
+});</pre>
+</div>
+<p>由于这个组件的每个实例方法返回的对象就是$.ajax创建的对象，所以我们完全可以照常使用.done .fail .always来添加回调，就跟直接用$.ajax没有任何区别。为什么API要设计成html, get, post, syncGet, syncPost这几个方法，而且连dataType基本都是固定的？</p>
+<p>那是因为在项目中，我们完全可以约定在异步请求的时候只能用html或json这两种dataType，其它dataType不允许，现在的web项目这两种方式已经完全够用了，至少我没有碰到过非得使用别的dataType不可的情况；而且在实际工作当中html, get, post, syncGet, syncPost这几个方法几乎能够涵盖我们需要的所有异步请求的场景，每当我们要用ajax的时候，无非考虑的就是get还是post，同步还是异步，请求的是html还是json这三个问题，通过它们就能把每个问题都解决了。当然jsonp，rest API这两种情况就另说了，这个组件不是为它们服务的，这也是它的局限性，它还是倾向于在传统的web项目中使用。</p>
+<p><span style="color: #ff0000"><strong>2. ajax缓存代理</strong></span></p>
+<p>要实现一个简单的ajax缓存代理组件，首先要清楚这个缓存代理的作用，在本文开篇说到过缓存代理的应用场景：当使用缓存代理第一个发起某个请求时，在请求成功后将数据缓存下来，然后当再次发起相同请求时直接返回之前缓存的数据，缓存代理的作用是控制何时发送请求去后台加载数据，何时不发送请求直接从缓存中读取之前加载的数据。为了实现一个简单的缓存代理，有三个问题要解决：</p>
+<p>1）代理对象必须与被代理的对象有相同的API <br />
+拿前面的Ajax组件来说，它提供有html, get , post, syncGet, syncPost方法，那么它的代理对象也必须同时具有这些方法，而且调用方式，传入参数都必须完全一致，只有这样，当我们在使用代理对象的时候，就跟在使用原组件对象没有区别。而且在缓存代理内部，在某些条件下是需要调用原组件对象发送ajax请求的，如果接口不同，调用方式不同，参数不同，如何能保证内部能够正确调用原组件对象呢？这个条件还有一个好处，就是当我们下次不想使用代理对象的时候，能够以最小的代价将代理对象替换为原组件对象。 <br />
+这一点其实是设计模式中代理模式的基本要求。</p>
+<p>2）缓存数据存储时的缓存索引问题 <br />
+也就是说我们以什么样的索引才能保证同一个请求的数据在缓存之后，下次查找时还能根据请求信息查找到呢？ajax缓存有别于其它缓存的地方在于它请求的地址可能包含可变的参数值，同一个地址如果后面的参数不同，那么对应的请求结果也就不一定相同，所以简单起见，可以考虑把请求地址跟请求参数统一作为缓存索引，这样就能对缓存进行简单管理。同时考虑到其它可变性，还应有其它的一些要求，详见后面组件实现中的注释说明。</p>
+<p>3）缓存有效时间 <br />
+虽然要实现的缓存代理很简单，但是这个问题一定是要考虑的，每个缓存代理实例，能够缓存数据的有效时间不一定相同，有的可能只缓存几分钟，有的可能缓存几十分钟，当缓存时间失效时，缓存代理就得删除原来的缓存，然后重新去加载数据才行。</p>
+<p>综合这些问题，基于第一部分的Ajax组件，最终实现的缓存代理组件AjaxCache的代码如下（有注释详解）：</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+define(function (require, exports, module) {
+
+  var $ = require('jquery');
+  var Ajax = require('mod/ajax');
+
+  //缓存列表
+  var cache = {};
+
+  /**
+   * 生成缓存索引：
+   * 由于索引是根据url和data生成的（data是一个对象，存放Ajax要提交到后台的数据）
+   * 所以要想同一个url，同样的data能够有效地使用缓存，
+   * 切勿在url和data中包含每次可变的参数值，如随机数等
+   * 比如有一个请求：
+   * url: aaa/bbb/cccc&#63;r=0.312738
+   * data: {name: 'json'}
+   * 其中url后面的r是一个随机数，每次外部发起这个请求时，r的值都会变化
+   * 由于r每次都不同，最终会导致缓存索引不相同，结果缓存就无法命中
+   * 注：随机数可放置在原始的Ajax组件内
+   *
+   * 还有：如果是同一个接口，最好在同一个页面内，统一url的路径类型，要么都是相对路径，要么都是绝对路径
+   * 否则也会导致缓存无法有效管理
+   */
+  function generateCacheKey(url, data) {
+    return url + $.param(data);
+  }
+
+  return function (opts) {
+    opts = opts || {};
+
+    var cacheInterval = opts.cacheInterval || (1000 * 60 * 60);//缓存有效时间，默认60分钟
+
+    var proxy = {};
+    for (var i in Ajax) {
+      if (Object.prototype.hasOwnProperty.call(Ajax, i)) {
+        //在proxy对象上定义Ajax组件每一个实例方法的代理
+        //注意这个立即调用的函数表达式
+        //它返回了一个闭包函数就是最终的代理方法
+        proxy[i] = (function (i) {
+          return function () {
+            var _url = arguments[0],
+              _data = arguments[1],
+              cacheKey = generateCacheKey(_url, _data),
+              cacheItem = cache[cacheKey],
+              isCacheValid = false;
+
+            if (cacheItem) {
+              var curTime = +new Date();
+              if (curTime - cacheItem.cacheStartTime &lt;= cacheInterval) {
+                //如果请求时间跟缓存开始时间的间隔在缓存有效时间范围内，就表示缓存是有效的
+                isCacheValid = true;
+              } else {
+                //否则就把缓存清掉
+                delete cache[cacheKey];
+              }
+            }
+
+            if (isCacheValid) {
+              //模拟一个异步任务来返回已经缓存的数据
+              //通过$defer延迟对象，可以保证这个模拟任务返回的对象跟原始Ajax组件调用返回的对象有相同的API
+              //这是代理的关键：代理对象与被代理的对象应该具有相同API
+              //只有这样当我们取消代理的时候，不会对那些用了代理的组件进行修改
+              var $defer = $.Deferred();
+              setTimeout(function () {
+                $defer.resolve(cacheItem.res);
+              }, 10);
+              return $.when($defer);
+            }
+
+            //缓存失效或者没有缓存的时候调用原始的Ajax组件的同名方法去后台请求数据
+            return Ajax[i].apply(Ajax, arguments).done(function (res) {
+              //在请求成功之后将结果缓存，并记录当前时间作为缓存的开始时间
+              cache[cacheKey] = {
+                res: res,
+                cacheStartTime: +new Date()
+              }
+            });
+          }
+        })(i);
+      }
+    }
+    return proxy;
+  };
+});
+</pre>
+</div>
+<p></p>
+<div class="cnblogs_code">在第一部分和本部分的实现中，最关键的都是那个立即调用的函数表达式，没有它返回的闭包，代码就会有问题，这也是闭包在循环中应用的经典问题。</div>
+<p><span style="color: #ff0000"><strong>3. 演示效果</strong></span></p>
+<p style="text-align: center">为了说明缓存代理的使用效果，我做了一个演示效果： <br />
+&nbsp;<br />
+其中的ajax.js就是第一部分的实现，ajaxCache.js就是第二部分的实现，演示页面对应代码中的html/demo.html，相关js是js/app/demo.js：</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+define(function (require, exports, module) {
+
+  var AjaxCache = require('mod/ajaxCache');
+
+  //创建代理对象
+  var Ajax = new AjaxCache({
+    cacheInterval: 10 * 1000
+  });
+
+  var count = 5;
+
+  console.log('时间点：第' + 0 + 's，定时器开始！');
+  var t = setInterval(function(){
+    if(count == 0) {
+      console.log('时间点：第' + (5 - count + 1) * 4 + 's，定时器结束！');
+      return clearInterval(t);
+    } else{
+      console.log('时间点：第' + (5 - count + 1) * 4 + 's：');
+    }
+
+    Ajax.get('../api/data.json', {
+      name: 'felix'
+    }).done(function(res){
+      if(res.code == 200) {
+        console.log(5 - count + '. data is : ' + JSON.stringify(res.data));
+      }
+    });
+
+    count --;
+  },4000);
+
+});
+</pre>
+</div>
+<p style="text-align: left"></p>
+<p style="text-align: center">在这个代码中，我创建了一个代理对象，能将ajax请求缓存10s，用一个定时器一共调用代理对象五次get方法来发送同一个请求，最终打印效果如下： <br />
+<br />
+从结果来看，整个代码执行了24s，代理发送请求的时间点分别是第4s，第8s，第12s，第16s和第20s。由于代理的缓存有效时间是10s，且第4s是第一次发送请求，所以此时肯定会发送真实的ajax请求；当第8s和第12s的代理发送同一请求时，由于距离缓存的时间只过去了4s和8s，所以缓存还是有效的，这两个时间点都没有发送实际的ajax请求；但是当第16s的请求发送时，距离第一次请求的缓存时间已经过去12s，缓存已经失效，所以代理又发送了一次真实的ajax请求，然后缓存被刷新；第20s的请求还是在最新的缓存有效时间内，所以也没有发送实际的ajax请求。最后在network中可以看到代理发送了5次请求，但是只请求了2次服务，如果把缓存有效时间延长，就能再减少请求后台的次数，这也是缓存代理对前端性能提升的关键。</p>
+<p>希望这个演示效果能够让你更加清楚地了解缓存代理的作用。</p>
+<p><span style="color: #ff0000"><strong>4. 本文总结</strong></span></p>
+<p>本文第1部分总结的实现在我自己的工作中应用很多，至少没碰到什么问题，不过也有可能是我没遇到，毕竟那个组件实现还是有不少约束的。第2部分的实现我也是刚刚应用到工作中去，正好有一个功能我考虑到有缓存的必要性，于是就写了一个较为简单的实现，虽然简单，但是已经能解决我的问题了，实际工作本来就是这样，有些东西没必要事无巨细的在事前就设计地很完美，先解决问题，然后在遇到新问题的时候再回来重构，有时也是一种更好的工作方法。下一篇博客介绍另外一个用到缓存代理的组件的实现思路，跟省市级联类似的功能，不过我想的是写成通用性更强的，能够与html结构和css尽可能分离的组件，请您继续关注。</p>
+<p>以上这篇对jquery的ajax进行二次封装以及ajax缓存代理组件:AjaxCache详解就是小编分享给大家的全部内容了，希望能给大家一个参考，也希望大家多多支持phpstudy。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/89470.html'>jQuery结合C#实现上传文件的方法</a><a>下一篇</a><a href='/php/biji/89472.html'>Win7任务栏的键盘打字图标如何找回来?</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

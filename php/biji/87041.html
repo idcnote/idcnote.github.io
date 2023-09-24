@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>浅析Java的Hibernate框架中的缓存和延迟加载机制_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="hibernate一级缓存和二级缓存的区别<br />
+<br />
+缓存是介于应用程序和物理数据源之间，其作用是为了降低应用程序对物理数据源访问的频次，从而提高了应用的运行性能。缓存内的数据是对物" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">浅析Java的Hibernate框架中的缓存和延迟加载机制</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>hibernate一级缓存和二级缓存的区别<br />
+<br />
+缓存是介于应用程序和物理数据源之间，其作用是为了降低应用程序对物理数据源访问的频次，从而提高了应用的运行性能。缓存内的数据是对物</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>hibernate一级缓存和二级缓存的区别<br />
+</strong>缓存是介于应用程序和物理数据源之间，其作用是为了降低应用程序对物理数据源访问的频次，从而提高了应用的运行性能。缓存内的数据是对物理数据源中的数据的复制，应用程序在运行时从缓存读写数据，在特定的时刻或事件会同步缓存和物理数据源的数据。 <br />
+　　缓存的介质一般是内存，所以读写速度很快。但如果缓存中存放的数据量非常大时，也会用硬盘作为缓存介质。缓存的实现不仅仅要考虑存储的介质，还要考虑到管理缓存的并发访问和缓存数据的生命周期。 <br />
+　　Hibernate的缓存包括Session的缓存和SessionFactory的缓存，其中SessionFactory的缓存又可以分为两类：内置缓存和外置缓存。Session的缓存是内置的，不能被卸载，也被称为Hibernate的第一级缓存。SessionFactory的内置缓存和Session的缓存在实现方式上比较相似，前者是SessionFactory对象的一些集合属性包含的数据，后者是指Session的一些集合属性包含的数据。SessionFactory的内置缓存中存放了映射元数据和预定义SQL语句，映射元数据是映射文件中数据的拷贝，而预定义SQL语句是在Hibernate初始化阶段根据映射元数据推导出来，SessionFactory的内置缓存是只读的，应用程序不能修改缓存中的映射元数据和预定义SQL语句，因此SessionFactory不需要进行内置缓存与映射文件的同步。SessionFactory的外置缓存是一个可配置的插件。在默认情况下，SessionFactory不会启用这个插件。外置缓存的数据是数据库数据的拷贝，外置缓存的介质可以是内存或者硬盘。SessionFactory的外置缓存也被称为Hibernate的第二级缓存。 <br />
+　　Hibernate的这两级缓存都位于持久化层，存放的都是数据库数据的拷贝，那么它们之间的区别是什么呢？为了理解二者的区别，需要深入理解持久化层的缓存的两个特性：缓存的范围和缓存的并发访问策略。 <br />
+　　持久化层的缓存的范围 <br />
+　　缓存的范围决定了缓存的生命周期以及可以被谁访问。缓存的范围分为三类。 <br />
+　　1 事务范围：缓存只能被当前事务访问。缓存的生命周期依赖于事务的生命周期，当事务结束时，缓存也就结束生命周期。在此范围下，缓存的介质是内存。事务可以是数据库事务或者应用事务，每个事务都有独自的缓存，缓存内的数据通常采用相互关联的的对象形式。 <br />
+　　2 进程范围：缓存被进程内的所有事务共享。这些事务有可能是并发访问缓存，因此必须对缓存采取必要的事务隔离机制。缓存的生命周期依赖于进程的生命周期，进程结束时，缓存也就结束了生命周期。进程范围的缓存可能会存放大量的数据，所以存放的介质可以是内存或硬盘。缓存内的数据既可以是相互关联的对象形式也可以是对象的松散数据形式。松散的对象数据形式有点类似于对象的序列化数据，但是对象分解为松散的算法比对象序列化的算法要求更快。 <br />
+　　3 集群范围：在集群环境中，缓存被一个机器或者多个机器的进程共享。缓存中的数据被复制到集群环境中的每个进程节点，进程间通过远程通信来保证缓存中的数据的一致性，缓存中的数据通常采用对象的松散数据形式。<br />
+　　对大多数应用来说，应该慎重地考虑是否需要使用集群范围的缓存，因为访问的速度不一定会比直接访问数据库数据的速度快多少。 <br />
+　　持久化层可以提供多种范围的缓存。如果在事务范围的缓存中没有查到相应的数据，还可以到进程范围或集群范围的缓存内查询，如果还是没有查到，那么只有到数据库中查询。事务范围的缓存是持久化层的第一级缓存，通常它是必需的；进程范围或集群范围的缓存是持久化层的第二级缓存，通常是可选的。 <br />
+　　持久化层的缓存的并发访问策略 <br />
+　　当多个并发的事务同时访问持久化层的缓存的相同数据时，会引起并发问题，必须采用必要的事务隔离措施。<br />
+　　在进程范围或集群范围的缓存，即第二级缓存，会出现并发问题。因此可以设定以下四种类型的并发访问策略，每一种策略对应一种事务隔离级别。 <br />
+　　事务型：仅仅在受管理环境中适用。它提供了Repeatable Read事务隔离级别。对于经常被读但很少修改的数据，可以采用这种隔离类型，因为它可以防止脏读和不可重复读这类的并发问题。 <br />
+　　读写型：提供了Read Committed事务隔离级别。仅仅在非集群的环境中适用。对于经常被读但很少修改的数据，可以采用这种隔离类型，因为它可以防止脏读这类的并发问题。 <br />
+　　非严格读写型：不保证缓存与数据库中数据的一致性。如果存在两个事务同时访问缓存中相同数据的可能，必须为该数据配置一个很短的数据过期时间，从而尽量避免脏读。对于极少被修改，并且允许偶尔脏读的数据，可以采用这种并发访问策略。 　　只读型：对于从来不会修改的数据，如参考数据，可以使用这种并发访问策略。 <br />
+　　事务型并发访问策略是事务隔离级别最高，只读型的隔离级别最低。事务隔离级别越高，并发性能就越低。 <br />
+　　什么样的数据适合存放到第二级缓存中？ <br />
+　　1、很少被修改的数据 <br />
+　　2、不是很重要的数据，允许出现偶尔并发的数据 <br />
+　　3、不会被并发访问的数据 <br />
+　　4、参考数据 <br />
+　　不适合存放到第二级缓存的数据？ <br />
+　　1、经常被修改的数据 <br />
+　　2、财务数据，绝对不允许出现并发 <br />
+　　3、与其他应用共享的数据。 <br />
+　　Hibernate的二级缓存 <br />
+　　如前所述，Hibernate提供了两级缓存，第一级是Session的缓存。由于Session对象的生命周期通常对应一个数据库事务或者一个应用事务，因此它的缓存是事务范围的缓存。第一级缓存是必需的，不允许而且事实上也无法比卸除。在第一级缓存中，持久化类的每个实例都具有唯一的OID。 <br />
+　　第二级缓存是一个可插拔的的缓存插件，它是由SessionFactory负责管理。由于SessionFactory对象的生命周期和应用程序的整个过程对应，因此第二级缓存是进程范围或者集群范围的缓存。这个缓存中存放的对象的松散数据。第二级对象有可能出现并发问题，因此需要采用适当的并发访问策略，该策略为被缓存的数据提供了事务隔离级别。缓存适配器用于把具体的缓存实现软件与Hibernate集成。第二级缓存是可选的，可以在每个类或每个集合的粒度上配置第二级缓存。 <br />
+　　Hibernate的二级缓存策略的一般过程如下： <br />
+　　1) 条件查询的时候，总是发出一条select * from table_name where …. （选择所有字段）这样的SQL语句查询数据库，一次获得所有的数据对象。 <br />
+　　2) 把获得的所有数据对象根据ID放入到第二级缓存中。 <br />
+　　3) 当Hibernate根据ID访问数据对象的时候，首先从Session一级缓存中查；查不到，如果配置了二级缓存，那么从二级缓存中查；查不到，再查询数据库，把结果按照ID放入到缓存。 <br />
+　　4) 删除、更新、增加数据的时候，同时更新缓存。 <br />
+　　Hibernate的二级缓存策略，是针对于ID查询的缓存策略，对于条件查询则毫无作用。为此，Hibernate提供了针对条件查询的Query缓存。 <br />
+　　Hibernate的Query缓存策略的过程如下： <br />
+　　1) Hibernate首先根据这些信息组成一个Query Key，Query Key包括条件查询的请求一般信息：SQL, SQL需要的参数，记录范围（起始位置rowStart，最大记录个数maxRows)，等。 <br />
+　　2) Hibernate根据这个Query Key到Query缓存中查找对应的结果列表。如果存在，那么返回这个结果列表；如果不存在，查询数据库，获取结果列表，把整个结果列表根据Query Key放入到Query缓存中。 <br />
+　　3) Query Key中的SQL涉及到一些表名，如果这些表的任何数据发生修改、删除、增加等操作，这些相关的Query Key都要从缓存中清空。</p>
+<p><strong>Hibernate延迟加载机制<br />
+</strong>延迟加载：</p>
+<p>&nbsp;&nbsp; 延迟加载机制是为了避免一些无谓的性能开销而提出来的，所谓延迟加载就是当在真正需要数据的时候，才真正执行数据加载操作。在Hibernate中提供了对实体对象的延迟加载以及对集合的延迟加载，另外在Hibernate3中还提供了对属性的延迟加载。下面我们就分别介绍这些种类的延迟加载的细节。</p>
+<p>A、实体对象的延迟加载：</p>
+<p>如果想对实体对象使用延迟加载，必须要在实体的映射配置文件中进行相应的配置，如下所示：</p>
+<div class="phpstudycode">
+<pre class="brush:xml;">
+&lt;hibernate-mapping&gt; 
+
+&lt;class name=”com.neusoft.entity.User” table=”user” lazy=”true”&gt; 
+
+  …… 
+
+&lt;/class&gt; 
+
+&lt;/hibernate-mapping&gt; 
+
+</pre>
+</div>
+<p>通过将class的lazy属性设置为true，来开启实体的延迟加载特性。如果我们运行下面的代码：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+User user=(User)session.load(User.class,”1”); </pre>
+</div>
+<p>（1）</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+System.out.println(user.getName()); </pre>
+</div>
+<p>（2）</p>
+<p>当运行到(1)处时，Hibernate并没有发起对数据的查询，如果我们此时通过一些调试工具(比如JBuilder2005的Debug工具)，观察此时user对象的内存快照，我们会惊奇的发现，此时返回的可能是User$EnhancerByCGLIB$$bede8986类型的对象，而且其属性为null,这是怎么回事？还记得前面我曾讲过session.load()方法，会返回实体对象的代理类对象，这里所返回的对象类型就是User对象的代理类对象。在Hibernate中通过使用CGLIB,来实现动态构造一个目标对象的代理类对象，并且在代理类对象中包含目标对象的所有属性和方法，而且所有属性均被赋值为null。通过调试器显示的内存快照，我们可以看出此时真正的User对象，是包含在代理对象的CGLIB$CALBACK_0.target属性中，当代码运行到（2）处时，此时调用user.getName()方法，这时通过CGLIB赋予的回调机制，实际上调用CGLIB$CALBACK_0.getName()方法，当调用该方法时，Hibernate会首先检查CGLIB$CALBACK_0.target属性是否为null，如果不为空，则调用目标对象的getName方法，如果为空，则会发起数据库查询，生成类似这样的SQL语句：select * from user where id='1';来查询数据，并构造目标对象，并且将它赋值到CGLIB$CALBACK_0.target属性中。</p>
+<p>&nbsp;&nbsp;&nbsp; 这样，通过一个中间代理对象，Hibernate实现了实体的延迟加载，只有当用户真正发起获得实体对象属性的动作时，才真正会发起数据库查询操作。所以实体的延迟加载是用通过中间代理类完成的，所以只有session.load()方法才会利用实体延迟加载，因为只有session.load()方法才会返回实体类的代理类对象。</p>
+<p>B、&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 集合类型的延迟加载：</p>
+<p>在Hibernate的延迟加载机制中，针对集合类型的应用，意义是最为重大的，因为这有可能使性能得到大幅度的提高，为此Hibernate进行了大量的努力，其中包括对JDK Collection的独立实现，我们在一对多关联中，定义的用来容纳关联对象的Set集合，并不是java.util.Set类型或其子类型，而是net.sf.hibernate.collection.Set类型，通过使用自定义集合类的实现，Hibernate实现了集合类型的延迟加载。为了对集合类型使用延迟加载，我们必须如下配置我们的实体类的关于关联的部分：</p>
+<div class="phpstudycode">
+<div class="phpstudycode">
+<pre class="brush:java;">
+&lt;hibernate-mapping&gt; 
+
+  &lt;class name=”com.neusoft.entity.User” table=”user”&gt; 
+
+….. 
+
+&lt;set name=”addresses” table=”address” lazy=”true” inverse=”true”&gt; 
+
+&lt;key column=”user_id”/&gt; 
+
+&lt;one-to-many class=”com.neusoft.entity.Arrderss”/&gt; 
+
+&lt;/set&gt; 
+
+  &lt;/class&gt; 
+
+&lt;/hibernate-mapping&gt; 
+
+</pre>
+</div>
+</div>
+<p>通过将&lt;set&gt;元素的lazy属性设置为true来开启集合类型的延迟加载特性。我们看下面的代码：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+User user=(User)session.load(User.class,”1”); 
+
+Collection addset=user.getAddresses();   
+</pre>
+</div>
+<p>&nbsp; (1)</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+Iterator it=addset.iterator();   </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (2)</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+while(it.hasNext()){ 
+
+Address address=(Address)it.next(); 
+
+System.out.println(address.getAddress()); 
+
+} 
+
+</pre>
+</div>
+<p>当程序执行到(1)处时，这时并不会发起对关联数据的查询来加载关联数据，只有运行到(2)处时，真正的数据读取操作才会开始，这时Hibernate会根据缓存中符合条件的数据索引，来查找符合条件的实体对象。</p>
+<p>这里我们引入了一个全新的概念——数据索引，下面我们首先将接一下什么是数据索引。在Hibernate中对集合类型进行缓存时，是分两部分进行缓存的，首先缓存集合中所有实体的id列表，然后缓存实体对象，这些实体对象的id列表，就是所谓的数据索引。当查找数据索引时，如果没有找到对应的数据索引，这时就会一条select SQL的执行，获得符合条件的数据，并构造实体对象集合和数据索引，然后返回实体对象的集合，并且将实体对象和数据索引纳入Hibernate的缓存之中。另一方面，如果找到对应的数据索引，则从数据索引中取出id列表，然后根据id在缓存中查找对应的实体，如果找到就从缓存中返回，如果没有找到，在发起select SQL查询。在这里我们看出了另外一个问题，这个问题可能会对性能产生影响，这就是集合类型的缓存策略。如果我们如下配置集合类型：</p>
+<div class="phpstudycode">
+<div class="phpstudycode">
+<pre class="brush:java;">
+&lt;hibernate-mapping&gt; 
+
+  &lt;class name=”com.neusoft.entity.User” table=”user”&gt; 
+
+….. 
+
+&lt;set name=”addresses” table=”address” lazy=”true” inverse=”true”&gt; 
+
+&lt;cache usage=”read-only”/&gt; 
+
+&lt;key column=”user_id”/&gt; 
+
+&lt;one-to-many class=”com.neusoft.entity.Arrderss”/&gt; 
+
+&lt;/set&gt; 
+
+  &lt;/class&gt; 
+
+&lt;/hibernate-mapping&gt; 
+
+</pre>
+</div>
+</div>
+<p>这里我们应用了&lt;cache usage=”read-only”/&gt;配置，如果采用这种策略来配置集合类型，Hibernate将只会对数据索引进行缓存，而不会对集合中的实体对象进行缓存。如上配置我们运行下面的代码：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+User user=(User)session.load(User.class,”1”); 
+
+Collection addset=user.getAddresses();   
+
+Iterator it=addset.iterator();        
+
+while(it.hasNext()){ 
+
+Address address=(Address)it.next(); 
+
+System.out.println(address.getAddress()); 
+
+} 
+
+System.out.println(“Second query……”); 
+
+User user2=(User)session.load(User.class,”1”); 
+
+Collection it2=user2.getAddresses(); 
+
+while(it2.hasNext()){ 
+
+Address address2=(Address)it2.next(); 
+
+System.out.println(address2.getAddress()); 
+
+} 
+
+</pre>
+</div>
+<p>运行这段代码，会得到类似下面的输出：</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+Select * from user where id='1'; 
+
+Select * from address where user_id='1'; 
+
+Tianjin 
+
+Dalian 
+
+Second query…… 
+
+Select * from address where id='1'; 
+
+Select * from address where id='2'; 
+
+Tianjin 
+
+Dalian 
+
+</pre>
+</div>
+<p>我们看到，当第二次执行查询时，执行了两条对address表的查询操作，为什么会这样？这是因为当第一次加载实体后，根据集合类型缓存策略的配置，只对集合数据索引进行了缓存，而并没有对集合中的实体对象进行缓存，所以在第二次再次加载实体时，Hibernate找到了对应实体的数据索引，但是根据数据索引，却无法在缓存中找到对应的实体，所以Hibernate根据找到的数据索引发起了两条select SQL的查询操作，这里造成了对性能的浪费，怎样才能避免这种情况呢？我们必须对集合类型中的实体也指定缓存策略，所以我们要如下对集合类型进行配置：</p>
+<div class="phpstudycode">
+<pre class="brush:xml;">
+&lt;hibernate-mapping&gt; 
+
+  &lt;class name=”com.neusoft.entity.User” table=”user”&gt; 
+
+….. 
+
+&lt;set name=”addresses” table=”address” lazy=”true” inverse=”true”&gt; 
+
+&lt;cache usage=”read-write”/&gt; 
+
+&lt;key column=”user_id”/&gt; 
+
+&lt;one-to-many class=”com.neusoft.entity.Arrderss”/&gt; 
+
+&lt;/set&gt; 
+
+  &lt;/class&gt; 
+
+&lt;/hibernate-mapping&gt; 
+
+</pre>
+</div>
+<p>此时Hibernate会对集合类型中的实体也进行缓存，如果根据这个配置再次运行上面的代码，将会得到类似如下的输出：</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+Select * from user where id='1'; 
+
+Select * from address where user_id='1'; 
+
+Tianjin 
+
+Dalian 
+
+Second query…… 
+
+Tianjin 
+
+Dalian 
+
+</pre>
+</div>
+<p>这时将不会再有根据数据索引进行查询的SQL语句，因为此时可以直接从缓存中获得集合类型中存放的实体对象。</p>
+<p>C、&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 属性延迟加载：</p>
+<p>&nbsp;&nbsp; 在Hibernate3中，引入了一种新的特性——属性的延迟加载，这个机制又为获取高性能查询提供了有力的工具。在前面我们讲大数据对象读取时，在User对象中有一个resume字段，该字段是一个java.sql.Clob类型，包含了用户的简历信息，当我们加载该对象时，我们不得不每一次都要加载这个字段，而不论我们是否真的需要它，而且这种大数据对象的读取本身会带来很大的性能开销。在Hibernate2中，我们只有通过我们前面讲过的面性能的粒度细分，来分解User类，来解决这个问题（请参照那一节的论述），但是在Hibernate3中，我们可以通过属性延迟加载机制，来使我们获得只有当我们真正需要操作这个字段时，才去读取这个字段数据的能力，为此我们必须如下配置我们的实体类：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+&lt;hibernate-mapping&gt; 
+
+&lt;class name=”com.neusoft.entity.User” table=”user”&gt; 
+
+…… 
+
+&lt;property name=”resume” type=”java.sql.Clob” column=”resume” lazy=”true”/&gt; 
+
+  &lt;/class&gt; 
+
+&lt;/hibernate-mapping&gt; 
+
+</pre>
+</div>
+<p>通过对&lt;property&gt;元素的lazy属性设置true来开启属性的延迟加载，在Hibernate3中为了实现属性的延迟加载，使用了类增强器来对实体类的Class文件进行强化处理，通过增强器的增强，将CGLIB的回调机制逻辑，加入实体类，这里我们可以看出属性的延迟加载，还是通过CGLIB来实现的。CGLIB是Apache的一个开源工程，这个类库可以操纵java类的字节码，根据字节码来动态构造符合要求的类对象。根据上面的配置我们运行下面的代码：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+String sql=”from User user where user.name='zx' ”; 
+
+Query query=session.createQuery(sql);  
+</pre>
+</div>
+<p>&nbsp;(1)</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+List list=query.list(); 
+
+for(int i=0;i&lt;list.size();i++){ 
+
+User user=(User)list.get(i); 
+
+System.out.println(user.getName()); 
+
+System.out.println(user.getResume()); } 
+</pre>
+</div>
+<p>&nbsp; (2)</p>
+<p>当执行到(1)处时，会生成类似如下的SQL语句：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+Select id,age,name from user where name='zx'; 
+
+</pre>
+</div>
+<p>这时Hibernate会检索User实体中所有非延迟加载属性对应的字段数据，当执行到(2)处时，会生成类似如下的SQL语句：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+Select resume from user where id='1'; 
+
+</pre>
+</div>
+<p>这时会发起对resume字段数据真正的读取操作。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/87040.html'>C#中委托的进一步理解</a><a>下一篇</a><a href='/php/biji/87042.html'>php修改文件上传限制方法汇总</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

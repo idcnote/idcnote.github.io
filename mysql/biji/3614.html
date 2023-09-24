@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server 高性能写入的一些经验总结_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server 高性能写入的一些经验总结，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！1.1.1 摘要
+在开发过" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server 高性能写入的一些经验总结</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:48:07                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server 高性能写入的一些经验总结，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！1.1.1 摘要
+在开发过</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server 高性能写入的一些经验总结，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>1.1.1 摘要
+<p>在开发过程中，我们不时会遇到系统性能瓶颈问题，而引起这一问题原因可以很多，有可能是代码不够高效、有可能是硬件或网络问题，也有可能是数据库设计的问题。</p>
+<p>本篇博文将针对一些常用的数据库性能调休方法进行介绍，而且，为了编写高效的SQL代码，我们需要掌握一些基本代码优化的技巧，所以，我们将从一些基本优化技巧进行介绍。</p><strong>本文目录</strong>代码中的问题数据库性能开销使用存储过程使用数据库事务使用SqlBulkCopy使用表参数1.1.2 正文
+<p>假设，我们要设计一个博客系统，其中包含一个用户表（User），它用来存储用户的账户名、密码、显示名称和注册日期等信息。</p>
+<p>由于时间的关系，我们已经把User表设计好了，它包括账户名、密码（注意：这里没有考虑隐私信息的加密存储）、显示名称和注册日期等，具体设计如下：</p>
+<p>代码如下:</p>
+<pre>
+<code> 
+-- ============================================= 
+-- Author: JKhuang 
+-- Create date: 7/8/2012 
+-- Description: A table stores the user information. 
+-- ============================================= 
+CREATE TABLE [dbo].[jk_users]( 
+-- This is the reference to Users table, it is primary key. 
+[ID] [bigint] IDENTITY(1,1) NOT NULL, 
+[user_login] [varchar](60) NOT NULL, 
+[user_pass] [varchar](64) NOT NULL, 
+[user_nicename] [varchar](50) NOT NULL, 
+[user_email] [varchar](100) NOT NULL, 
+[user_url] [varchar](100) NOT NULL, 
+
+-- This field get the default from function GETDATE(). 
+[user_registered] [datetime] NOT NULL CONSTRAINT [DF_jk_users_user_registered] DEFAULT (getdate()), 
+[user_activation_key] [varchar](60) NOT NULL, 
+[user_status] [int] NOT NULL CONSTRAINT [DF_jk_users_user_status] DEFAULT ((0)), 
+[display_name] [varchar](250) NOT NULL 
+) 
+</code></pre>
+<p></p>
+<p>【图片暂缺】</p>
+<p align="center">图1 Users表设计</p>
+<p>上面，我们定义了Users表，它包含账户名、密码、显示名称和注册日期等10个字段，其中，ID是一个自增的主键，user_resistered用来记录用户的注册时间，它设置了默认值GETDATE()。</p>
+<p>接下来，我们将通过客户端代码实现数据存储到Users表中，具体的代码如下：</p>
+<p>代码如下:</p>
+<pre>
+<code> 
+//// Creates a database connection. 
+var conn = new SqlConnection(ConfigurationManager.ConnectionStrings[&quot;SQLCONN1&quot;].ToString()); 
+conn.Open(); 
+
+//// This is a massive SQL injection vulnerability, 
+//// don&#39;t ever write your own SQL statements with string formatting! 
+string sql = String.Format( 
+@&quot;INSERT INTO jk_users (user_login, user_pass, user_nicename, user_email, user_status,display_name, user_url, user_activation_key) 
+VALUES (&#39;{0}&#39;, &#39;{1}&#39;, &#39;{2}&#39;, &#39;{3}&#39;, &#39;{4}&#39;, &#39;{5}&#39;, &#39;{6}&#39;, &#39;{7}&#39;)&quot;, 
+userLogin, userPass, userNicename, userEmail, userStatus, displayName, userUrl, userActivationKey); 
+var cmd = new SqlCommand(sql, conn); 
+cmd.ExecuteNonQuery(); 
+
+//// Because this call to Close() is not wrapped in a try/catch/finally clause, 
+//// it could be missed if an exception occurs above. Don&#39;t do this! 
+conn.Close(); 
+</code></pre>代码中的问题上面，我们使用再普通不过的ADO.NET方式实现数据写入功能，但大家是否发现代码存在问题或可以改进的地方呢？首先，我们在客户端代码中，创建一个数据库连接，它需要占用一定的系统资源，当操作完毕之后我们需要释放占用的系统资源，当然，我们可以手动释放资源，具体实现如下：
+<p>代码如下:</p>
+<pre>
+<code> 
+//// Creates a database connection. 
+var conn = new SqlConnection(ConfigurationManager.ConnectionStrings[&quot;SQLCONN1&quot;].ToString()); 
+conn.Open(); 
+
+//// This is a massive SQL injection vulnerability, 
+//// don&#39;t ever write your own SQL statements with string formatting! 
+string sql = String.Format( 
+@&quot;INSERT INTO jk_users (user_login, user_pass, user_nicename, user_email, user_status,display_name, user_url, user_activation_key) 
+VALUES (&#39;{0}&#39;, &#39;{1}&#39;, &#39;{2}&#39;, &#39;{3}&#39;, &#39;{4}&#39;, &#39;{5}&#39;, &#39;{6}&#39;, &#39;{7}&#39;)&quot;, 
+userLogin, userPass, userNicename, userEmail, userStatus, displayName, userUrl, userActivationKey); 
+var cmd = new SqlCommand(sql, conn); 
+cmd.ExecuteNonQuery(); 
+
+//// If throws an exception on cmd dispose. 
+cmd.Dispose(); 
+//// conn can&#39;t be disposed. 
+conn.Close(); 
+conn.Dispose(); 
+</code></pre>假如，在释放SqlCommand资源时抛出异常，那么在它后面的资源SqlConnection将得不到释放。我们仔细想想当发生异常时，可以通过try/catch捕获异常，所以无论是否发生异常都可以使用finally检查资源是否已经释放了，具体实现如下：
+<p>代码如下:</p>
+<pre>
+<code> 
+SqlCommand cmd = null; 
+SqlConnection conn = null; 
+try 
+{ 
+//// Creates a database connection. 
+conn = new SqlConnection(ConfigurationManager.ConnectionStrings[&quot;SQLCONN1&quot;].ToString()); 
+conn.Open(); 
+
+//// This is a massive SQL injection vulnerability, 
+//// don&#39;t ever write your own SQL statements with string formatting! 
+string sql = String.Format( 
+@&quot;INSERT INTO jk_users (user_login, user_pass, user_nicename, user_email, user_status,display_name, user_url, user_activation_key) 
+VALUES (&#39;{0}&#39;, &#39;{1}&#39;, &#39;{2}&#39;, &#39;{3}&#39;, &#39;{4}&#39;, &#39;{5}&#39;, &#39;{6}&#39;, &#39;{7}&#39;)&quot;, 
+userLogin, userPass, userNicename, userEmail, userStatus, displayName, userUrl, userActivationKey); 
+cmd = new SqlCommand(sql, conn); 
+cmd.ExecuteNonQuery(); 
+} 
+finally 
+{ 
+//// Regardless of whether there is an exception, 
+//// we will dispose the resource. 
+if (cmd != null) cmd.Dispose(); 
+if (conn != null) conn.Dispose(); 
+} 
+</code></pre>通过上面的finally方式处理了异常情况是很普遍的，但为了更安全释放资源，使得我们增加了finally和if语句，那么是否有更简洁的方法实现资源的安全释放呢？其实，我们可以使用using语句实现资源的释放，具体实现如下：using语句：定义一个范围，将在此范围之外释放一个或多个对象。
+<p>代码如下:</p>
+<pre>
+<code> 
+string sql = String.Format( 
+@&quot;INSERT INTO jk_users (user_login, user_pass, user_nicename, user_email, user_status,display_name, user_url, user_activation_key) 
+VALUES (&#39;{0}&#39;, &#39;{1}&#39;, &#39;{2}&#39;, &#39;{3}&#39;, &#39;{4}&#39;, &#39;{5}&#39;, &#39;{6}&#39;, &#39;{7}&#39;)&quot;, 
+userLogin, userPass, userNicename, userEmail, userStatus, displayName, userUrl, userActivationKey); 
+
+//// Creates a database connection. 
+using (var conn = new SqlConnection(ConfigurationManager.ConnectionStrings[&quot;SQLCONN1&quot;].ToString())) 
+using (var cmd = new SqlCommand(sql, conn)) 
+{ 
+//// Your code here. 
+} 
+</code></pre>上面的代码使用了using语句实现资源的释放，那么是否所有对象都可以使用using语句实现释放呢？只有类型实现了IDisposable接口并且重写Dispose()方法可以使用using语句实现资源释放，由于SqlConnection和SqlCommand实现了IDisposable接口，那么我们可以使用using语句实现资源释放和异常处理。在客户端代码中，我们使用拼接SQL语句方式实现数据写入，由于SQL语句是动态执行的，所以恶意用户可以通过拼接SQL的方式实施SQL注入攻击。对于SQL注入攻击，我们可以通过以下方式防御：&bull;正则表达校验用户输入&bull;参数化存储过程&bull;参数化SQL语句&bull;添加数据库新架构&bull;LINQ to SQL接下来，我们将通过参数化SQL语句防御SQL注入攻击，大家也可以使用其他的方法防御SQL注入攻击，具体实现代码如下：
+<p>代码如下:</p>
+<pre>
+<code> 
+//// Creates a database connection. 
+using (var conn = new SqlConnection(ConfigurationManager.ConnectionStrings[&quot;SQLCONN1&quot;].ToString())) 
+{ 
+conn.Open(); 
+string sql = string.Format( 
+@&quot;INSERT INTO jk_users (user_login, user_pass, user_nicename, user_email, 
+user_status,display_name, user_url, user_activation_key)&quot;); 
+
+using (var cmd = new SqlCommand(sql, conn)) 
+{ 
+//// Parameterized SQL to defense injection attacks 
+cmd.Parameters.Add(&quot;@user_login&quot;, userLogin); 
+cmd.Parameters.Add(&quot;@user_pass&quot;, userPass); 
+cmd.Parameters.Add(&quot;@user_nicename&quot;, userNicename); 
+cmd.Parameters.Add(&quot;@user_email&quot;, userEmail); 
+cmd.Parameters.Add(&quot;@user_status&quot;, userStatus); 
+cmd.Parameters.Add(&quot;@display_name&quot;, displayName); 
+cmd.Parameters.Add(&quot;@user_url&quot;, userUrl); 
+cmd.Parameters.Add(&quot;@user_activation_key&quot;, userActivationKey); 
+cmd.ExecuteNonQuery(); 
+} 
+} 
+</code></pre>上面通过参数化SQL语句和using语句对代码进行改进，现在代码的可读性更强了，而且也避免了SQL注入攻击和资源释放等问题。接下来，让我们简单的测试一下代码执行时间，首先我们在代码中添加方法Stopwatch.StartNew()和Stopwatch.Stop()来计算写入代码的执行时间，具体代码如下：
+<p>代码如下:</p>
+<pre>
+<code> 
+//// calc insert 10000 records consume time. 
+var sw = Stopwatch.StartNew(); 
+
+//// Creates a database connection. 
+using (var conn = new SqlConnection(ConfigurationManager.ConnectionStrings[&quot;SQLCONN2&quot;].ToString())) 
+{ 
+conn.Open(); 
+int cnt = 0; 
+while (cnt++ &lt; 10000) 
+{ 
+string sql = string.Format(@&quot;INSERT INTO jk_users 
+(user_login, user_pass, user_nicename, user_email, user_status,display_name, user_url, user_activation_key) 
+VALUES (@user_login, @user_pass, @user_nicename, @user_email, @user_status, @display_name, @user_url, @user_activation_key)&quot;); 
+
+using (var cmd = new SqlCommand(sql, conn)) 
+{ 
+//// Parameterized SQL to defense injection attacks 
+cmd.Parameters.Add(&quot;@user_login&quot;, userLogin); 
+cmd.Parameters.Add(&quot;@user_pass&quot;, userPass); 
+cmd.Parameters.Add(&quot;@user_nicename&quot;, userNicename); 
+cmd.Parameters.Add(&quot;@user_email&quot;, userEmail); 
+cmd.Parameters.Add(&quot;@user_status&quot;, userStatus); 
+cmd.Parameters.Add(&quot;@display_name&quot;, displayName); 
+cmd.Parameters.Add(&quot;@user_url&quot;, userUrl); 
+cmd.Parameters.Add(&quot;@user_activation_key&quot;, userActivationKey); 
+cmd.ExecuteNonQuery(); 
+} 
+} 
+} 
+
+sw.Stop(); 
+} 
+</code></pre>上面，我们往数据库中写入了10000条数据，执行时间为 7.136秒（我的机器很破了），这样系统性能还是可以满足许多公司的需求了。假如，用户请求量增大了，我们还能保证系统能满足需求吗？事实上，我们不应该满足于现有的系统性能，因为我们知道代码的执行效率还有很大的提升空间。接下来，将进一步介绍代码改善的方法。
+<p></p>
+<p>【图片暂缺】</p>
+<p>图2 数据写入Users表为了使数据库获得更快的写入速度，我们必须了解数据库在进行写入操作时的主要耗时。<strong>数据库性能开销</strong>连接时间当我们执行conn.Open()时，首先，必须建立物理通道（例如套接字或命名管道），必须与服务器进行初次握手，必须分析连接字符串信息，必须由服务器对连接进行身份验证，必须运行检查以便在当前事务中登记，等等这一系列操作可能需要一两秒钟时间，如果我们每次执行conn.Open()都有进行这一系列操作是很耗费时间的，为了使打开的连接成本最低，ADO.NET使用称为连接池的优化方法。连接池：减少新连接需要打开的次数，只要用户在连接上调用 Open()方法，池进程就会检查池中是否有可用的连接，如果某个池连接可用，那么将该连接返回给调用者，而不是创建新连接；应用程序在该连接上调用 Close()或Dispose() 时，池进程会将连接返回到活动连接池集中，而不是真正关闭连接，连接返回到池中之后，即可在下一个 Open 调用中重复使用。<strong>解析器的开销</strong>当我们向SQL Server传递SQL语句INSERT INTO &hellip;时，它需要对SQL语句进行解析，由于SQL Server解析器执行速度很快，所以解析时间往往是可以忽略不计，但我们仍然可以通过使用存储过程，而不是直SQL语句来减少解析器的开销。<strong>数据库连接 </strong>为了提供ACID（事务的四个特性），SQL Server必须确保所有的数据库更改是有序的。它是通过使用锁来确保该数据库插入、删除或更新操作之间不会相互冲突（关于数据库的锁请参考这里）。由于，大多数数据库都是面向多用户的环境，当我们对User表进行插入操作时，也许有成千上百的用户也在对User表进行操作，所以说，SQL Server必须确保这些操作是有序进行的。那么，当SQL Server正在做所有这些事情时，它会产生锁，以确保用户获得有意义的结果。SQL Server保证每条语句执行时，数据库是完全可预测的（例如：预测SQL执行方式）和管理锁都需要耗费一定的时间。<strong>约束处理 </strong>在插入数据时，每个约束（如：外键、默认值、SQL CHECK等）需要额外的时间来检测数据是否符合约束；由于SQL Server为了保证每个插入、更新或删除的记录都符合约束条件，所以，我们需要考虑是否应该在数据量大的表中增加约束条件。<strong>Varchar </strong>VARCHAR是数据库常用的类型，但它也可能导致意想不到的性能开销；每次我们存储可变长度的列，那么SQL Server必须做更多的内存管理；字符串可以很容易地消耗数百字节的内存的，如果我们在一个VARCHAR列中设置索引，那么SQL Server执行B-树搜索时，就需要进行O(字符串长度)次比较，然而，整数字段比较次数只受限于内存延迟和CPU频率。<strong>磁盘IO </strong>SQL Server最终会将数据写入到磁盘中，首先，SQL Server把数据写入到事务日志中，当执行备份时，事务日志会合并到永久的数据库文件中；这一系列操作由后台完成，它不会影响到数据查询的速度，但每个事物都必须拥有属于自己的磁盘空间，所以我们可以通过给事务日志和主数据文件分配独立的磁盘空间减少IO开销，当然，最好解决办法是尽可能减少事务的数量。正如大家所看到的，我们通过优化联接时间、 解析器的开销、 数据库联接、约束处理,、Varchar和磁盘IO等方法来优化数据库，接下来，我们将对前面的例子进行进一步的优化。<strong>使用存储过程</strong>前面例子中，我们把SQL代码直接Hardcode在客户端代码中，那么，数据库就需要使用解析器解析客户端中SQL语句，所以我们可以改用使用存储过程，从而，减少解析器的时间开销；更重要的一点是，由于SQL是动态执行的，所以我们修改存储过程中的SQL语句也无需重新编译和发布程序。User表中的字段user_registered设置了默认值（GETDATE()），那么我们通过消除表默认值约束来提高系统的性能，简而言之，我们需要提供字段user_registered的值。接下来，让我们省去User表中的默认值约束和增加存储过程，具体代码如下：</p>
+<p>代码如下:</p>
+<pre>
+<code> 
+-- ============================================= 
+-- Author: JKhuang 
+-- Create date: 08/16/2012 
+-- Description: Creates stored procedure to insert 
+-- data into table jk_users. 
+-- ============================================= 
+ALTER PROCEDURE [dbo].[SP_Insert_jk_users] 
+@user_login varchar(60), 
+@user_pass varchar(64), 
+@user_nicename varchar(50), 
+@user_email varchar(100), 
+@user_url varchar(100), 
+@user_activation_key varchar(60), 
+@user_status int, 
+@display_name varchar(250) 
+
+AS 
+BEGIN 
+SET NOCOUNT ON; 
+
+-- The stored procedure allows SQL server to avoid virtually all parser work 
+INSERT INTO jk_users 
+(user_login, user_pass, user_nicename, user_email, user_status,display_name, user_url, user_activation_key, user_registered) 
+VALUES (@user_login, @user_pass, @user_nicename, @user_email, @user_status, @display_name, @user_url, @user_activation_key, GETDATE()); 
+END 
+</code></pre>上面我们定义了存储过程SP_Insert_jk_users向表中插入数据，当我们重新执行代码时，发现数据插入的时间缩短为6.7401秒。【图片暂缺】
+<p></p>
+<p>图3数据写入时间<strong>使用数据库事务 </strong>想想数据是否可以延长写入到数据库中，是否可以批量地写入呢？如果允许延迟一段时间才写入到数据库中，那么我们可以使用Transaction来延迟数据写入。数据库事务是数据库管理系统执行过程中的一个逻辑单位，由一个有限的数据库操作序列构成。 SQL Server确保事务执行成功后，数据写入到数据库中，反之，事务将回滚。如果我们对数据库进行十次独立的操作，那么SQL Server就需要分配十次锁开销，但如果把这些操作都封装在一个事务中，那么SQL Server只需要分配一次锁开销。</p>
+<p>代码如下:</p>
+<pre>
+<code> 
+//// calc insert 10000 records consume time. 
+var sw = Stopwatch.StartNew(); 
+//// Creates a database connection. 
+using (var conn = new SqlConnection(ConfigurationManager.ConnectionStrings[&quot;SQLCONN2&quot;].ToString())) 
+{ 
+conn.Open(); 
+int cnt = 0; 
+SqlTransaction trans = conn.BeginTransaction(); 
+while (cnt++ &lt; 10000) 
+{ 
+using (var cmd = new SqlCommand(&quot;SP_Insert_jk_users&quot;, conn)) 
+{ 
+//// Parameterized SQL to defense injection attacks 
+cmd.CommandType = CommandType.StoredProcedure; 
+//// Uses transcation to batch insert data. 
+//// To avoid lock and connection overhead. 
+cmd.Transaction = trans; 
+cmd.Parameters.Add(&quot;@user_login&quot;, userLogin); 
+cmd.Parameters.Add(&quot;@user_pass&quot;, userPass); 
+cmd.Parameters.Add(&quot;@user_nicename&quot;, userNicename); 
+cmd.Parameters.Add(&quot;@user_email&quot;, userEmail); 
+cmd.Parameters.Add(&quot;@user_status&quot;, userStatus); 
+cmd.Parameters.Add(&quot;@display_name&quot;, displayName); 
+cmd.Parameters.Add(&quot;@user_url&quot;, userUrl); 
+cmd.Parameters.Add(&quot;@user_activation_key&quot;, userActivationKey); 
+cmd.ExecuteNonQuery(); 
+} 
+} 
+//// If no exception, commit transcation. 
+trans.Commit(); 
+} 
+sw.Stop(); 
+} 
+</code></pre>【图片暂缺】图4 数据写入时间使用SqlBulkCopy通过使用事务封装了写入操作，当我们重新运行代码，发现数据写入的速度大大提高了，只需4.5109秒，由于一个事务只需分配一次锁资源，减少了分配锁和数据库联接的耗时。当然，我们可以也使用SqlBulkCopy实现大量数据的写入操作，具体实现代码如下：
+<p>代码如下:</p>
+<pre>
+<code> 
+var sw = Stopwatch.StartNew(); 
+//// Creates a database connection. 
+using (var conn = new SqlConnection(ConfigurationManager.ConnectionStrings[&quot;SQLCONN2&quot;].ToString())) 
+{ 
+conn.Open(); 
+using (var bulkCopy = new SqlBulkCopy(conn)) 
+{ 
+//// Maping the data columns. 
+bulkCopy.ColumnMappings.Add(&quot;user_login&quot;, &quot;user_login&quot;); 
+bulkCopy.ColumnMappings.Add(&quot;user_pass&quot;, &quot;user_pass&quot;); 
+bulkCopy.ColumnMappings.Add(&quot;user_nicename&quot;, &quot;user_nicename&quot;); 
+bulkCopy.ColumnMappings.Add(&quot;user_email&quot;, &quot;user_email&quot;); 
+bulkCopy.ColumnMappings.Add(&quot;user_url&quot;, &quot;user_url&quot;); 
+bulkCopy.ColumnMappings.Add(&quot;user_registered&quot;, &quot;user_registered&quot;); 
+bulkCopy.ColumnMappings.Add(&quot;user_activation_key&quot;, &quot;user_activation_key&quot;); 
+bulkCopy.ColumnMappings.Add(&quot;user_status&quot;, &quot;user_status&quot;); 
+bulkCopy.ColumnMappings.Add(&quot;display_name&quot;, &quot;display_name&quot;); 
+bulkCopy.DestinationTableName = &quot;dbo.jk_users&quot;; 
+//// Insert data into datatable. 
+bulkCopy.WriteToServer(dataRows); 
+} 
+sw.Stop(); 
+} 
+</code></pre>【图片暂缺】
+<p></p>
+<p>图5 数据写入时间上面，我们通过事务和SqlBulkCopy实现数据批量写入数据库中，但事实上，每次我们调用cmd.ExecuteNonQuery()方法都会产生一个往返消息，从客户端应用程序到数据库中，所以我们想是否存在一种方法只发送一次消息就完成写入的操作呢？<strong>使用表参数 </strong>如果，大家使用SQL Server 2008，它提供一个新的功能表变量（Table Parameters）可以将整个表数据汇集成一个参数传递给存储过程或SQL语句。它的注意性能开销是将数据汇集成参数(O(数据量))。现在，我们修改之前的代码，在SQL Server中定义我们的表变量，具体定义如下：</p>
+<p>代码如下:</p>
+<pre>
+<code> 
+-- ============================================= 
+-- Author: JKhuang 
+-- Create date: 08/16/2012 
+-- Description: Declares a user table paramter. 
+-- ============================================= 
+CREATE TYPE jk_users_bulk_insert AS TABLE ( 
+user_login varchar(60), 
+user_pass varchar(64), 
+user_nicename varchar(50), 
+user_email varchar(100), 
+user_url varchar(100), 
+user_activation_key varchar(60), 
+user_status int, 
+display_name varchar(250) 
+) 
+</code></pre>上面，我们定义了一个表参数jk_users_bulk_insert，接着我们定义一个存储过程接受表参数jk_users_bulk_insert，具体定义如下：
+<p>代码如下:</p>
+<pre>
+<code> 
+-- ============================================= 
+-- Author: JKhuang 
+-- Create date: 08/16/2012 
+-- Description: Creates a stored procedure, receive 
+-- a jk_users_bulk_insert argument. 
+-- ============================================= 
+CREATE PROCEDURE sp_insert_jk_users 
+@usersTable jk_users_bulk_insert READONLY 
+AS 
+
+INSERT INTO jk_users (user_login, user_pass, user_nicename, user_email, user_url, 
+user_activation_key, user_status, display_name, user_registered) 
+
+SELECT user_login, user_pass, user_nicename, user_email, user_url, 
+user_activation_key, user_status, display_name, GETDATE() 
+FROM @usersTable
+</code></pre>接下我们在客户端代码中，调用存储过程并且将表作为参数方式传递给存储过程。
+<p>代码如下:</p>
+<pre>
+
+<code>var sw = Stopwatch.StartNew(); 
+using (var conn = new SqlConnection(ConfigurationManager.ConnectionStrings[&quot;SQLCONN2&quot;].ToString())) 
+{ 
+conn.Open(); 
+//// Invokes the stored procedure. 
+using (var cmd = new SqlCommand(&quot;sp_insert_jk_users&quot;, conn)) 
+{ 
+cmd.CommandType = CommandType.StoredProcedure; 
+
+//// Adding a &quot;structured&quot; parameter allows you to insert tons of data with low overhead 
+var param = new SqlParameter(&quot;@userTable&quot;, SqlDbType.Structured) { Value = dt }; 
+cmd.Parameters.Add(param); 
+cmd.ExecuteNonQuery(); 
+} 
+} 
+sw.Stop(); 
+</code></pre>现在，我们重新执行写入操作发现写入效率与SqlBulkCopy相当。<strong>1.1.3总结 </strong>本文通过博客系统用户表设计的例子，介绍我们在设计过程中容易犯的错误和代码的缺陷，例如：SQL注入、数据库资源释放等问题；进而使用一些常用的代码优化技巧对代码进行优化，并且通过分析数据库写入的性能开销（连接时间、解析器、数据库连接、约束处理、VARCHAR和磁盘IO），我们使用存储过程、数据库事务、SqlBulkCopy和表参数等方式降低数据库的开销。
+<p>[1] http://beginner-sql-tutorial.com/sql-query-tuning.htm</p>
+<p>[2] http://www.dzone.com/links/r/sql_optimization_tipsquestions.html</p>
+<p>[3] http://blackrabbitcoder.net/archive/2010/11/11/c.net-little-wonders---a-presentation.aspx</p>
+<p>[4] http://www.altdevblogaday.com/2012/05/16/sql-server-high-performance-inserts/</p>
+
+<p>注：关于SQL Server 高性能写入的一些经验总结的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3613.html'>SQL Server 找出所有非xml索引并重新整理的sql</a><a>下一篇</a><a href='/mysql/biji/3615.html'>SQL Server 存储过程优缺点用法详细说明</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

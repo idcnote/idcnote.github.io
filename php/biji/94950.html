@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Java虚拟机JVM性能优化（二）:编译器_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="本文将是JVM 性能优化系列的第二篇文章(第一篇：传送门)，Java 编译器将是本文讨论的核心内容。<br />
+本文中，作者（Eva Andreasson）首先介绍了不同种类的编译器，并对客户端编译，服务器端编" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Java虚拟机JVM性能优化（二）:编译器</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>本文将是JVM 性能优化系列的第二篇文章(第一篇：传送门)，Java 编译器将是本文讨论的核心内容。<br />
+本文中，作者（Eva Andreasson）首先介绍了不同种类的编译器，并对客户端编译，服务器端编</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>本文将是JVM 性能优化系列的第二篇文章(第一篇：传送门)，Java 编译器将是本文讨论的核心内容。</p>
+<p>本文中，作者（Eva Andreasson）首先介绍了不同种类的编译器，并对客户端编译，服务器端编译器和多层编译的运行性能进行了对比。然后，在文章的最后介绍了几种常见的JVM优化方法，如死代码消除，代码嵌入以及循环体优化。</p>
+<p>Java最引以为豪的特性“平台独立性”正是源于Java编译器。软件开发人员尽其所能写出最好的java应用程序，紧接着后台运行的编译器产生高效的基于目标平台的可执行代码。不同的编译器适用于不同的应用需求，因而也就产生不同的优化结果。因此，如果你能更好的理解编译器的工作原理、了解更多种类的编译器，那么你就能更好的优化你的Java程序。</p>
+<p>本篇文章突出强调和解释了各种Java虚拟机编译器之间的不同。同时，我也会探讨一些及时编译器（JIT）常用的优化方案。</p>
+<p><strong>什么是编译器？</strong></p>
+<p>简单来说，编译器就是以某种编程语言程序作为输入，然后以另一种可执行语言程序作为输出。Javac是最常见的一种编译器。它存在于所有的JDK里面。Javac 以java代码作为输出，将其转换成JVM可执行的代码—字节码。这些字节码存储在以.class结尾的文件中，并在java程序启动时装载到java运行时环境。</p>
+<p>字节码并不能直接被CPU读取，它还需要被翻译成当前平台所能理解的机器指令语言。JVM中还有另一个编译器负责将字节码翻译成目标平台可执行的指令。一些JVM编译器需要经过几个等级的字节码代码阶段。例如，一个编译器在将字节码翻译成机器指令之前可能还需要经历几种不同形式的中间阶段。</p>
+<p>从平台不可知论的角度出发，我们希望我们的代码能够尽可能的与平台无关。</p>
+<p>为了达到这个目的，我们在最后一个等级的翻译—从最低的字节码表示到真正的机器代码—才真正将可执行代码与一个特定平台的体系结构绑定。从最高的等级来划分，我们可以将编译器分为静态编译器和动态编译器。 我们可以根据我们的目标执行环境、我们渴望的优化结果、以及我们需要满足的资源限制条件来选择合适的编译器。在上一篇文章中我们简单的讨论了一下静态编译器和动态编译器，在接下来的部分我们将更加深入的解释它们。</p>
+<p><strong>静态编译 VS 动态编译</strong></p>
+<p>我们前面提到的javac就是一个静态编译的例子。对于静态编译器，输入代码被解释一次，输出即为程序将来被执行的形式。除非你更新源代码并（通过编译器）重新编译，否则程序的执行结果将永远不会改变：这是因为输入是一个静态的输入并且编译器是一个静态的编译器。</p>
+<p>通过静态编译，下面的程序：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="23745" class="copybut" id="copybut23745" onclick="doCopy('code23745')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code23745"><br />
+staticint add7(int x ){&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return x+7;}<br />
+</div></p>
+<p>将会转换成类似下面的字节码：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="15459" class="copybut" id="copybut15459" onclick="doCopy('code15459')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code15459"><br />
+iload0 bipush 7 iadd ireturn<br />
+</div><br />
+动态编译器动态的将一种语言编译成另外一种语言，所谓动态的是指在程序运行的时候进行编译—边运行边编译！动态编译和优化的好处就是可以处理应用程序加载时的一些变化。Java 运行时常常运行在不可预知甚至变化的环境上，因此动态编译非常适用于Java 运行时。大部分的JVM 使用动态编译器，如JIT编译器。值得注意的是，动态编译和代码优化需要使用一些额外的数据结构、线程以及CPU资源。越高级的优化器或字节码上下文分析器，消耗越多的资源。但是这些花销相对于显著的性能提升来说是微不足道的。</p>
+<p><strong>JVM种类以及Java的平台独立性</strong></p>
+<p>所有JVM的实现都有一个共同的特点就是将字节码编译成机器指令。一些JVM在加载应用程序时对代码进行解释，并通过性能计数器来找出“热”代码；另一些JVM则通过编译来实现。编译的主要问题是集中需要大量的资源，但是它也能带来更好的性能优化。</p>
+<p>如果你是一个java新手，JVM的错综复杂肯定会搞得你晕头转向。但好消息是你并不需要将它搞得特别清楚！JVM将管理代码的编译和优化，你并不需要为机器指令以及采取什么样的方式写代码才能最佳的匹配程序运行平台的体系结构而操心。</p>
+<p><strong>从java字节码到可执行</strong></p>
+<p>&nbsp;一旦将你的java代码编译成字节码，接下来的一步就是将字节码指令翻译成机器代码。这一步可以通过解释器来实现，也可以通过编译器来实现。</p>
+<p><strong>解释</strong></p>
+<p>解释是编译字节码最简单的方式。解释器以查表的形式找到每条字节码指令对应的硬件指令，然后将它发送给CPU执行。</p>
+<p>你可以将解释器想象成查字典：每一个特定的单词(字节码指令)，都有一个具体的翻译（机器代码指令）与之对应。因为解释器每读一条指令就会马上执行该指令，所以该方式无法对一组指令集进行优化。同时每调用一个字节码都要马上对其进行解释，因此解释器运行速度是相当慢得。解释器以一种非常准确的方式来执行代码，但是由于没有对输出的指令集进行优化，因此它对目标平台的处理器来说可能不是最优的结果。</p>
+<p><strong>编译</strong></p>
+<p>编译器则是将所有将要执行的代码全部装载到运行时。这样当它翻译字节码时，就可以参考全部或部分的运行时上下文。它做出的决定都是基于对代码图分析的结果。如比较不同的执行分支以及参考运行时上下文数据。</p>
+<p>在将字节码序列被翻译成机器代码指令集后，就可以基于这个机器代码指令集进行优化。优化过的指令集存储在一个叫代码缓冲区的结构中。当再次执行这些字节码时，就可以直接从这个代码缓冲区中取得优化过的代码并执行。在有些情况下编译器并不使用优化器来进行代码优化，而是使用一种新的优化序列—“性能计数”。</p>
+<p>使用代码缓存器的优点是结果集指令可以被立即执行而不再需要重新解释或编译！</p>
+<p>这可以大大的降低执行时间，尤其是对一个方法被多次调用的java应用程序。</p>
+<p><strong>优化</strong></p>
+<p>通过动态编译的引入，我们就有机会来插入性能计数器。例如，编译器插入性能计数器，每次字节码块（对应某个具体的方法）被调用时对应的计数器就加一。编译器通过这些计数器找到“热块”，从而就能确定哪些代码块的优化能对应用程序带来最大的性能提升。运行时性能分析数据能够帮助编译器在联机状态下得到更多的优化决策，从而更进一步提升代码执行效率。因为得到越多越精确的代码性能分析数据，我们就可以找到更多的可优化点从而做出更好的优化决定，例如：怎样更好的序列话指令、是否用更有效率的指令集来替代原有指令集，以及是否消除冗余的操作等。</p>
+<p><strong>例如</strong></p>
+<p>考虑下面的java代码<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="23745" class="copybut" id="copybut23745" onclick="doCopy('code23745')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code23745"><br />
+staticint add7(int x ){&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return x+7;}<br />
+</div><br />
+Javac 将静态的将它翻译成如下字节码：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="32954" class="copybut" id="copybut32954" onclick="doCopy('code32954')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code32954"><br />
+iload0</p>
+<p>bipush 7</p>
+<p>iadd</p>
+<p>ireturn<br />
+</div><br />
+当该方法被调用时，该字节码将被动态的编译成机器指令。当性能计数器（如果存在）达到指定的阀值时，该方法就可能被优化。优化后的结果可能类似下面的机器指令集：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="14391" class="copybut" id="copybut14391" onclick="doCopy('code14391')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code14391"><br />
+lea rax,[rdx+7]&nbsp; ret<br />
+</div></p>
+<p><strong>不同的编译器适用于不同的应用</strong></p>
+<p>不同的应用程序拥有不同的需求。企业服务器端应用通常需要长时间运行，所以通常希望对其进行更多的性能优化；而客户端小程序可能希望更快的响应时间和更少的资源消耗。下面让我们一起讨论三种不同的编译器以及他们的优缺点。</p>
+<p><strong>客户端编译器（Client-side compilers）</strong></p>
+<p>C1是一种大家熟知的优化编译器。当启动JVM时，添加-client参数即可启动该编译器。通过它的名字我们即可发现C1是一种客户端编译器。它非常适用于那种系统可用资源很少或要求能快速启动的客户端应用程序。C1通过使用性能计数器来进行代码优化。这是一种方式简单，且对源代码干预较少的优化方式。</p>
+<p><strong>服务器端编译器（Server-side compilers）</strong></p>
+<p>对于那种长时间运行的应用程序（例如服务器端企业级应用程序），使用客户端编译器可能远远不能够满足需求。这时我们应该选择类似C2这样的服务器端编译器。通过在JVM启动行中加入 –server 即可启动该优化器。因为大部分的服务器端应用程序通常都是长时间运行的，与那些短时间运行、轻量级的客户端应用相比，通过使用C2编译器，你将能够收集到更多的性能优化数据。因此你也将能够应用更高级的优化技术和算法。</p>
+<p>提示：预热你的服务端编译器</p>
+<p>对于服务器端的部署，编译器可能需要一些时间来优化那些“热点”代码。所以服务器端的部署常常需要一个“加热”阶段。所以当对服务器端的部署进行性能测量时，务必确保你的应用程序已经达到了稳定状态！给予编译器充足的时间进行编译将会给你的应用带来很多好处。</p>
+<p>服务器端编译器相比客户端编译器来说能够得到更多的性能调优数据，这样就可以进行更复杂的分支分析，从而找到性能更优的优化路径。拥有越多的性能分析数据就能得到更优的应用程序分析结果。当然，进行大量的性能分析也就需要更多的编译器资源。如JVM若使用C2编译器，那么它将需要使用更多的CPU周期，更大的代码缓存区等等。</p>
+<p><strong>多层编译</strong></p>
+<p>多层编译混合了客户端编译和服务器端编译。Azul第一个在他的Zing JVM中实现了多层编译。最近，这项技术已经被Oracle Java Hotspot JVM采用（Java SE7 之后）。多层编译综合了客户端和服务器端编译器的优点。客户端编译器在以下两种情况表现得比较活跃：应用启动时；当性能计数器达到较低级别的阈值时进行性能优化。客户端编译器也会插入性能计数器以及准备指令集以备接下来的高级优化—服务器端编译器—使用。多层编译是一种资源利用率很高的性能分析方式。因为它可以在低影响编译器活动时收集数据，而这些数据可以在后面更高级的优化中继续使用。这种方式与使用解释性代码分析计数器相比可以提供更多的信息。</p>
+<p>图1所描述的是解释器、客户端编译、服务器端编译、多层编译的性能比较。X轴是执行时间（时间单位），Y轴是性能（单位时间内的操作数）</p>
+<p style="text-align: center"><br />
+</p>
+<p style="text-align: center">图1.编译器性能比较</p>
+<p>相对于纯解释性代码，使用客户端编译器可以带来5到10倍的性能提升。获得性能提升的多少取决于编译器的效率、可用的优化器种类以及应用程序的设计与目标平台的吻合程度。但对应程序开发人员来讲最后一条往往可以忽略。</p>
+<p>相对于客户端编译器，服务器端编译器往往能带来30%到50%的性能提升。在大多数情况下，性能的提升往往是以资源的损耗为代价的。</p>
+<p>多层编译综合了两种编译器的优点。客户端编译有更短的启动时间以及可以进行快速优化；服务器端编译则可以在接下来的执行过程中进行更高级的优化操作。</p>
+<p><strong>一些常见的编译器优化</strong></p>
+<p>到目前为止，我们已经讨论了优化代码的意义以及怎样、何时JVM会进行代码优化。接下来我将以介绍一些编译器实际用到的优化方式来结束本文。JVM优化实际发生在字节码阶段（或者更底层的语言表示阶段），但是这里将使用java语言来说明这些优化方式。我们不可能在本节覆盖所有的JVM优化方式；当然啦，我希望通过这些介绍能激发你去学习数以百计的更高级的优化方式的兴趣并在编译器技术方面有所创新。</p>
+<p><strong>死代码消除</strong></p>
+<p>死代码消除，顾名思义就是消除那些永远不会被执行到的代码—即“死”代码。</p>
+<p>如果编译器在运行过程中发现一些多余指令，它将会将这些指令从执行指令集里面移除。例如，在列表1里面，其中一个变量在对其进行赋值操作后永远不会被用到，所有在执行阶段可以完全地忽略该赋值语句。对应到字节码级别的操作即是，永远不需要将该变量值加载到寄存器中。不用加载意味着消耗更少的cpu时间，因此也就能加快代码执行，最终导致应用程序加快—如果该加载代码每秒被调用好多次，那优化效果将更明显。</p>
+<p>列表1 用java 代码列举了一个对永远不会被使用的变量赋值的例子。</p>
+<p><br />
+列表1. 死代码<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="96637" class="copybut" id="copybut96637" onclick="doCopy('code96637')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code96637"><br />
+int timeToScaleMyApp(boolean endlessOfResources){&nbsp;&nbsp; <br />
+int reArchitect =24;&nbsp;&nbsp; <br />
+int patchByClustering =15;&nbsp;&nbsp; <br />
+int useZing =2;&nbsp;&nbsp; <br />
+if(endlessOfResources)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+return reArchitect + useZing;&nbsp;&nbsp; <br />
+else&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+return useZing;<br />
+}</div></p>
+<p>在字节码阶段，如果一个变量被加载但是永远不会被使用，编译器可以检测到并消除掉这些死代码，如列表2所示。如果永远不执行该加载操作则可以节约cpu时间从而改进程序的执行速度。</p>
+<p>列表2. 优化后的代码<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="23340" class="copybut" id="copybut23340" onclick="doCopy('code23340')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code23340"><br />
+int timeToScaleMyApp(boolean endlessOfResources){&nbsp;&nbsp; <br />
+int reArchitect =24;&nbsp;&nbsp; //unnecessary operation removed here…&nbsp;&nbsp; <br />
+int useZing =2;&nbsp;&nbsp; <br />
+if(endlessOfResources)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+return reArchitect + useZing;&nbsp;&nbsp; <br />
+else&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+return useZing;<br />
+}<br />
+</div></p>
+<p>冗余消除是一种类似移除重复指令来改进应用性能的优化方式。</p>
+<p>很多优化尝试着消除机器指令级别的跳转指令(如 x86体系结构中得JMP). 跳转指令将改变指令指针寄存器，从而转移程序执行流。这种跳转指令相对其他ASSEMBLY指令来说是一种很耗资源的命令。这就是为什么我们要减少或消除这种指令。代码嵌入就是一种很实用、很有名的消除转移指令的优化方式。因为执行跳转指令代价很高，所以将一些被频繁调用的小方法嵌入到函数体内将会带来很多益处。列表3-5证明了内嵌的好处。</p>
+<p>列表3. 调用方法<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="43230" class="copybut" id="copybut43230" onclick="doCopy('code43230')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code43230"><br />
+int whenToEvaluateZing(int y){&nbsp;&nbsp; return daysLeft(y)+ daysLeft(0)+ daysLeft(y+1);}<br />
+</div><br />
+列表4. 被调用方法<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="10118" class="copybut" id="copybut10118" onclick="doCopy('code10118')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code10118"><br />
+int daysLeft(int x){&nbsp;&nbsp; if(x ==0)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return0;&nbsp;&nbsp; else&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return x -1;}<br />
+</div><br />
+列表5. 内嵌方法<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="9455" class="copybut" id="copybut9455" onclick="doCopy('code9455')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code9455"><br />
+int whenToEvaluateZing(int y){&nbsp;&nbsp; <br />
+int temp =0;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+if(y ==0) <br />
+temp +=0;<br />
+else <br />
+temp += y -1;&nbsp;&nbsp; <br />
+if(0==0) <br />
+temp +=0;<br />
+else <br />
+temp +=0-1;&nbsp;&nbsp; <br />
+if(y+1==0) <br />
+temp +=0;<br />
+else <br />
+temp +=(y +1)-1;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+return temp;<br />
+}<br />
+</div><br />
+在列表3-5中我们可以看到，一个小方法在另一个方法体内被调用了三次，而我们想说明的是：将被调用方法直接内嵌到代码中所花费的代价将小于执行三次跳转指令所花费的代价。</p>
+<p>内嵌一个不常被调用的方法可能并不会带来太大的不同，但是如果内嵌一个所谓的“热”方法(经常被调用的方法)则可以带来很多的性能提升。内嵌后的代码常常还可以进行更进一步的优化，如列表6所示。</p>
+<p><br />
+列表6. 代码内嵌后，更进一步的优化实现<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="84888" class="copybut" id="copybut84888" onclick="doCopy('code84888')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code84888"><br />
+int whenToEvaluateZing(int y){&nbsp;&nbsp; if(y ==0)return y;&nbsp;&nbsp; elseif(y ==-1)return y -1;&nbsp;&nbsp; elsereturn y + y -1;}<br />
+</div></p>
+<p><strong>循环优化</strong></p>
+<p>循环优化在降低执行循环体所带来的额外消耗方面起着很重要的作用。这里的额外消耗指的是昂贵的跳转、大量的条件检测，非优化管道(即，一系列无实际操作、消耗额外cpu周期的指令集)。这里有很多种循环优化，接下来列举一些比较流行的循环优化：</p>
+<p>循环体合并：当两个相邻的循环体执行相同次数的循环时，编译器将试图合并这两个循环体。如果两个循环体相互之间是完全独立的，则它们还可以被同时执行(并行)。</p>
+<p>反演循环： 最基本的，你用一个do-while循环来替代一个while循环。这个do-while循环被放置在一个if语句中。这个替换将减少两次跳转操作；但增加了条件判断，因此增加了代码量。这种优化是以适当的增加资源消耗换来更有效的代码的很棒的例子—编译器对花费和收益进行衡量，在运行时动态的做出决定。</p>
+<p>重组循环体： 重组循环体，使整个循环体能全部的存储在缓存器中。</p>
+<p>展开循环体： 减少循环条件的检测次数和跳转次数。你可以把这想象成将几次迭代“内嵌”执行，而不必进行条件检测。循环体展开也会带来一定的风险，因为它可能因为影响流水线和大量的冗余指令提取而降低性能。再一次，是否展开循环体由编译器在运行时决定，如果能带来更大的性能提升则值得展开。</p>
+<p>以上就是对编译器在字节码级别（或更低级别）如何改进应用程序在目标平台执行性能的一个概述。我们所讨论的都是些常见、流行的优化方式。由于篇幅有限我们只举了一些简单的例子。我们的目的是希望通过上面简单的讨论来激起你深入研究优化的兴趣。</p>
+<p><strong>结论：反思点和重点</strong></p>
+<p>根据不同的目的，选择不同的编译器。</p>
+<p>1.解释器是将字节码翻译成机器指令的最简单形式。它的实现基于一个指令查询表。<br />
+2.编译器可以基于性能计数器进行优化，但是需要消耗一些额外的资源（代码缓存，优化线程等）。<br />
+3.客户端编译器相对于解释器可以带来5到10倍的性能提升。<br />
+4.服务器端编译器相对于客户端编译器来说可以带来30%到50%的性能提升，但需要消耗更多的资源。<br />
+5.多层编译则综合了两者的优点。使用客户端编译来获取更快的响应速度，接着使用服务器端编译器来优化那些被频繁调用的代码。</p>
+<p>这里有很多种可能的代码优化方式。编译器的一个重要工作就是分析所有可能的优化方式，然后对各种优化方式所付出的代价与最终得到的机器指令带来的性能提升进行权衡。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/94949.html'>jQuery浏览器CSS3特写兼容实例</a><a>下一篇</a><a href='/php/biji/94951.html'>让文字旋转270度的css样式</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

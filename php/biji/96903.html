@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>深入MySQL存储引擎比较的详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="MyISAM是MySQL的默认存储引擎。MyISAM不支持事务、也不支持外键，但其访问速度快，对事务完整性没有要求。 <br />
+<br />
+InnoDB存储引擎提供了具有提交、回滚和崩溃恢复能力的事务安全。但" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">深入MySQL存储引擎比较的详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>MyISAM是MySQL的默认存储引擎。MyISAM不支持事务、也不支持外键，但其访问速度快，对事务完整性没有要求。 <br />
+<br />
+InnoDB存储引擎提供了具有提交、回滚和崩溃恢复能力的事务安全。但</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span>MyISAM是MySQL的默认存储引擎。MyISAM不支持事务、也不支持外键，但其访问速度快，对事务完整性没有要求。 <br><br>InnoDB存储引擎提供了具有提交、回滚和崩溃恢复能力的事务安全。但是比起MyISAM存储引擎，InnoDB写的处理效率差一些并且会占用更多的磁盘空间以保留数据和索引。<br><br>MEMORY存储引擎使用存在内存中的内容来创建表。每个MEMORY表只实际对应一个磁盘文件。MEMORY类型的表访问非常得快，因为它的数据是放在内存中的，并且默认使用HASH索引。但是一旦服务关闭，表中的数据就会丢失掉。<br><br>
+<P>MERGE存储引擎是一组MyISAM表的组合，这些MyISAM表必须结构完全相同。MERGE表本身没有数据，对MERGE类型的表进行查询、更新、删除的操作，就是对内部的MyISAM表进行的。</P>
+<P><STRONG>MyISAM表还支持3中不同的存储格式： <BR><FONT style="COLOR: #ff0000">1 静态表 <BR>2 动态表 <BR>3 压缩表 <BR></FONT></STRONG>静态表是默认的存储格式，静态表中的字段都是非变长的字段，优点是：存储非常迅速，容易缓存，出现故障容易恢复；缺点是：占用的空间通常比动态表多。（注意： 在存储时，列的宽度不足时，用空格补足，当时在访问的时候并不会得到这些空格）<BR>动态表的字段是变长的，优点是：占用的空间相对较少，但是频繁地更新删除记录会产生碎片，需要定期改善性能，并且出现故障的时候恢复相对比较困难。 <BR>压缩表占用磁盘空间小，每个记录是被单独压缩的，所以只有非常小的访问开支。 <BR></P>
+<P>MySQL支持外键存储引擎只有InnoDB，在创建外键的时候，要求附表必须有对应的索引，子表在创建外键的时候也会自动创建对应的索引。&nbsp;<BR>InnoDB存储方式为两种：1 使用共享表空间存储 2 使用多表空间&nbsp;<br><br>MEMORY类型的存储引擎主要用于那些内容变化不频繁的代码表，或者作为统计操作的中间结果表，便于高效地堆中间结果进行分析并得到最终的统计结果。对MEMORY存储引擎的表进行更新操作要谨慎，因为数据并没有实际写入到磁盘中，所以一定要对下次重新启动服务后如何获得这些修改后的数据有所考虑。&nbsp;<br><br>MERGE用于将一系列等同的MyISAM表以逻辑方式组合在一起，并作为一个对象引用它。MERGE表的优点在于可以突破对单个MyISAM表大小的限制，通过将不同的表分布在多个磁盘上，可以有效的改善MERGE表的访问效率。&nbsp;<BR></P>
+<P>为了适应各种不同的运行环境，<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MYSQL</SPAN>提供了多种不同的存储引擎（<SPAN style="BACKGROUND-COLOR: #55ff55" class=hilite2>Storage</SPAN>&nbsp;Engine ）,在应用程序开发这个层面上，开发者可以根据不同的需求选择适合的<SPAN style="BACKGROUND-COLOR: #55ff55" class=hilite2>Storage</SPAN>&nbsp;Engine 方案，更为灵活的是，你可以根据每张表将要存储数据的特点，选择不同的<SPAN style="BACKGROUND-COLOR: #55ff55" class=hilite2>Storage</SPAN>&nbsp;Engine,也就是说，在一个<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MYSQL</SPAN>数据库中，可以混合使用多种不同的<SPAN style="BACKGROUND-COLOR: #55ff55" class=hilite2>Storage</SPAN>&nbsp;Engine<br><br>首先小瞥一下<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MySQL</SPAN>的体系结构，在最高抽象层度下，可以用Garlan & Shaw的分层结构体系来表示（左）<BR>&nbsp;<BR>其中应用层为所有RDBMS用户提供用户接口，逻辑层包括了所有核心功能的实现，物理层则负责将数据存储在硬件设备上。<br><br>图中右侧更为具体的描述了逻辑层的组成，查询处理子系统、事务管理子系统、恢复管理子系统和存储管理子系统共同组成了<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MySQL</SPAN>的逻辑层。相信<SPAN style="BACKGROUND-COLOR: #55ff55" class=hilite2>Storage</SPAN>&nbsp;Engine的位置是在<SPAN style="BACKGROUND-COLOR: #55ff55" class=hilite2>Storage</SPAN>&nbsp;Management处，既<SPAN style="BACKGROUND-COLOR: #55ff55" class=hilite2>Storage</SPAN>&nbsp;Engine属于<SPAN style="BACKGROUND-COLOR: #55ff55" class=hilite2>Storage</SPAN>&nbsp;Management子系统的一部分<br><br>为了让思路更清晰一些，下面给出一幅比较全面的体系结构图（或更确切的说是流程图，只是忽略了反馈）<BR>&nbsp;<BR>上面三幅图来自于一篇非官方（不保证百分百的正确）的<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MySQL</SPAN>体系结构的报告，与《High Performance&nbsp;<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MySQL</SPAN>》一书中给出的<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MySQL</SPAN>大体结构（下图,基本对应于Logic Layer，从第一幅图右侧可以看出<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MySQL</SPAN>&nbsp;logic layer同样遵从分层体系结构）还是比较吻合的。<BR>&nbsp;<BR>连接上图中第二层和第三层之间的接口是并不针对任何存储引擎的单一API,.大概由20个基本的类似“启动事务，返回结果集”等函数组成。存储引擎并不处理SQL，相互之间也不通信，它们的任务只是简单的响应高层传来的请求。<BR></P>
+<P></P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px"><STRONG><SPAN style="FONT-SIZE: 12px">存储引擎各自的一些特点</SPAN>&nbsp;</STRONG><br><br>上面提到的四种存储引擎都有各自适用的环境，这取决于它们独有的一些特征。主要体现在性能、事务、并发控制、参照完整性、缓存、 故障恢复，备份及回存等几个方面<br><br><BR>目前比较普及的存储引擎是MyISAM和InnoDB.而MyISAM又是绝大部分Web应用的首选。MyISAM与InnoDB的主要的不同点在于性能和事务控制上。<br><br>MyISAM是早期ISAM(Indexed Sequential Access Method,我现在用的MySQL5.0已经不支持ISAM了）的扩展实现，ISAM被设计为适合处理读频率远大于写频率这样一种情况，因此ISAM以及后来的MyISAM都没有考虑对事物的支持，排除了TPM，不需要事务记录，ISAM的查询效率相当可观，而且内存占用很少。MyISAM在继承了这类优点的同时，与时俱进的提供了大量实用的新特性和相关工具。例如考虑到并发控制，提供了表级锁，虽然MyISAM本身不支持容错，但可以通过myisamchk进行故障恢复。而且由于MyISAM是每张表使用各自独立的存储文件（MYD数据文件和MYI索引文件），使得备份及恢复十分方便（拷贝覆盖即可），而且还支持在线恢复。<br><br>所以如果你的应用是不需要事务，处理的只是基本的CRUD操作，那么MyISAM是不二选择<br><br>InnoDB被设计成适用于高并发读写的情况.使用MVCC(Multi-Version Concurrency Control)以及行级锁来提供遵从ACID的事务支持。InnoDB支持外键参照完整性，具备故障恢复能力。另外 InnoDB的性能其实还是不错的，特别是在处理大数据量的情况下,用官方的话说就是： InnoDB的CPU效率是其他基于磁盘的关系数据库存储引擎所不能比的。不过InnoDB的备份恢复要麻烦一点，除非你使用了4.1以后版本提供的Mulit-tablespace支持，因为InnoDB和MyISAM不同，他的数据文件并不是独立对应于每张表的。而是使用的共享表空间，简单的拷贝覆盖方法对他不适用，必须在停掉<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MYSQL</SPAN>后对进行数据恢复。使用Per-Table Tablespacesd，使其每张表对应一个独立的表空间文件，则情况要简单很多。<br><br>一般来说，如果需要事务支持，并且有较高的并发读写频率，InnoDB是不错的选择。要是并发读写频率不高的话，其实可以考虑BDB,但由于在MySQL5.1及其以后版本中，将不再提供BDB支持。这个选项也就没有了<br><br>至于Heap和BDB（Berkeley DB），相对来说，普及率不如前两种，但在有些情况下，还是挺适用的<br><br>Heap存储引擎就是将数据存储在内存中，由于没有磁盘I./O的等待，速度极快。但由于是内存存储引擎，所做的任何修改在服务器重启后都将消失。<br><br><STRONG><FONT style="COLOR: #ff0000">Heap挺适合做测试的时候使用<BR></FONT></STRONG><BR>BDB是<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MySQL</SPAN>第一款事务安全的存储引擎。在Berkeley DB database library的基础上建立，同样是事务安全的，但BDB的普及率显然不及InnoDB，因为大多数在<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MySQL</SPAN>中寻找支持事务的存储引擎的同时也在找支持MVCC或是行级锁定存储引擎，而BDB只支持Page-level Lock。</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">&nbsp;</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">&nbsp;</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">附上一张《High Performance&nbsp;<SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MySQL</SPAN>》 中的各存储引擎的特性表</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Attribute</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>MyISAM</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Heap</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>BDB</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>InnoDB</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Transactions</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>No</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>No</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Yes</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Yes</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Lock granularity</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Table</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Table</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Page (8 KB)</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Row</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText><SPAN style="BACKGROUND-COLOR: #55ff55" class=hilite2>Storage</SPAN></P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Split files</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>In-memory</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Single file per table</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Tablespace(s)</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Isolation levels</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>None</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>None</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Read committed</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>All</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Portable format</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Yes</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>N/A</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>No</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Yes</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Referential integrity</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>No</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>No</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>No</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Yes</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Primary key with data</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>No</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>No</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Yes</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Yes</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText><SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MySQL</SPAN>&nbsp;caches data records</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>No</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Yes</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Yes</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Yes</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>Availability</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>All versions</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>All versions</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText><SPAN style="BACKGROUND-COLOR: #ffff00" class=hilite1>MySQL</SPAN>-Max</P>
+<P style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px" class=docText>All Versions</P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/96902.html'>js动态生成Html元素实现Post操作（createElement）</a><a>下一篇</a><a href='/php/biji/96904.html'>微软build 2015大会图文直播 Spartan命名Edge</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

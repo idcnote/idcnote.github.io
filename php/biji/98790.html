@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL 百万级分页优化(Mysql千万级快速分页)_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="以下分享一点我的经验 <br />
+<br />
+一般刚开始学SQL的时候，会这样写 复制代码 代码如下: SELECT * FROM table ORDER BY id LIMIT 1000, 10;  但在数据达到百万级的时候，这样写会慢死 复" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL 百万级分页优化(Mysql千万级快速分页)</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>以下分享一点我的经验 <br />
+<br />
+一般刚开始学SQL的时候，会这样写 复制代码 代码如下: SELECT * FROM table ORDER BY id LIMIT 1000, 10;  但在数据达到百万级的时候，这样写会慢死 复</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span>以下分享一点我的经验 <br><br>一般刚开始学SQL的时候，会这样写 <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="69262" class="copybut" id="copybut69262" onclick="doCopy('code69262')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code69262"> <BR>SELECT * FROM table ORDER BY id LIMIT 1000, 10; <BR></div> <BR>但在数据达到百万级的时候，这样写会慢死 <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="60976" class="copybut" id="copybut60976" onclick="doCopy('code60976')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code60976"> <BR>SELECT * FROM table ORDER BY id LIMIT 1000000, 10; <BR></div> <BR>也许耗费几十秒 <br><br>网上很多优化的方法是这样的 <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="38950" class="copybut" id="copybut38950" onclick="doCopy('code38950')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code38950"> <BR>SELECT * FROM table WHERE id &gt;= (SELECT id FROM table LIMIT 1000000, 1) LIMIT 10; <BR></div> <BR>是的，速度提升到0.x秒了，看样子还行了 <BR>可是，还不是完美的！ <br><br>以下这句才是完美的！ <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="78471" class="copybut" id="copybut78471" onclick="doCopy('code78471')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code78471"> <BR>SELECT * FROM table WHERE id BETWEEN 1000000 AND 1000010; <BR></div> <BR>比上面那句，还要再快5至10倍 <br><br>另外，如果需要查询 id 不是连续的一段，最佳的方法就是先找出 id ，然后用 in 查询 <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="59908" class="copybut" id="copybut59908" onclick="doCopy('code59908')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code59908"> <BR>SELECT * FROM table WHERE id IN(10000, 100000, 1000000...); <BR></div> <br><br>再分享一点 <BR>查询字段一较长字符串的时候，表设计时要为该字段多加一个字段,如，存储网址的字段 <BR>查询的时候，不要直接查询字符串，效率低下，应该查诡该字串的crc32或md5 <br><br>如何优化Mysql千万级快速分页 <br><br>Limit 1,111 数据大了确实有些性能上的问题，而通过各种方法给用上where id &gt;= XX,这样用上索引的id号可能速度上快点儿。By:jack <BR>Mysql limit分页慢的解决办法（Mysql limit 优化，百万至千万条记录实现快速分页） <br><br>MySql 性能到底能有多高？用了php半年多，真正如此深入的去思考这个问题还是从前天开始。有过痛苦有过绝望，到现在充满信心！MySql 这个数据库绝对是适合dba级的高手去玩的，一般做一点1万篇新闻的小型系统怎么写都可以，用xx框架可以实现快速开发。可是数据量到了10万，百万至千 万，他的性能还能那么高吗？一点小小的失误，可能造成整个系统的改写，甚至更本系统无法正常运行！好了，不那么多废话了。用事实说话，看例子： <BR>数 据表 collect ( id, title ,info ,vtype) 就这4个字段，其中 title 用定长，info 用text, id 是逐渐，vtype是tinyint，vtype是索引。这是一个基本的新闻系统的简单模型。现在往里面填充数据，填充10万篇新闻。 <BR>最后collect 为 10万条记录，数据库表占用硬盘1.6G。OK ,看下面这条sql语句： <br><br>select id,title from collect limit 1000,10; 很快；基本上0.01秒就OK，再看下面的 <BR>select id,title from collect limit 90000,10; 从9万条开始分页，结果？ <BR>8-9秒完成，my god 哪出问题了？？？？其实要优化这条数据，网上找得到答案。看下面一条语句: <BR>select id from collect order by id limit 90000,10; 很快，0.04秒就OK。 为什么？因为用了id主键做索引当然快。网上的改法是： <BR>select id,title from collect where id&gt;=(select id from collect order by id limit 90000,1) limit 10; <BR>这就是用了id做索引的结果。可是问题复杂那么一点点，就完了。看下面的语句 <BR>select id from collect where vtype=1 order by id limit 90000,10; 很慢，用了8-9秒！ <BR>到 了这里我相信很多人会和我一样，有崩溃感觉！vtype 做了索引了啊？怎么会慢呢？vtype做了索引是不错，你直接 select id from collect where vtype=1 limit 1000,10; 是很快的，基本上0.05秒，可是提高90倍，从9万开始，那就是0.05*90=4.5秒的速度了。和测试结果8-9秒到了一个数量级。从这里开始有人 提出了分表的思路，这个和dis #cuz 论坛是一样的思路。思路如下： <BR>建一个索引表： t (id,title,vtype) 并设置成定长，然后做分页，分页出结果再到 collect 里面去找info 。 是否可行呢？实验下就知道了。 <BR>10万条记录到 t(id,title,vtype) 里，数据表大小20M左右。用 <BR>select id from t where vtype=1 order by id limit 90000,10; 很快了。基本上0.1-0.2秒可以跑完。为什么会这样呢？我猜想是因为collect 数据太多，所以分页要跑很长的路。limit 完全和数据表的大小有关的。其实这样做还是全表扫描，只是因为数据量小，只有10万才快。OK， 来个疯狂的实验，加到100万条，测试性能。 <BR>加了10倍的数据，马上t表就到了200多M，而且是定长。还是刚才的查询语句，时间是0.1-0.2秒完成！分表性能没问题？错！因为我们的limit还是9万，所以快。给个大的，90万开始 <BR>select id from t where vtype=1 order by id limit 900000,10; 看看结果，时间是1-2秒！ <BR>why ?? 分表了时间还是这么长，非常之郁闷！有人说定长会提高limit的性能，开始我也以为，因为一条记录的长度是固定的，mysql 应该可以算出90万的位置才对啊？ 可是我们高估了mysql 的智能，他不是商务数据库，事实证明定长和非定长对limit影响不大？ 怪不得有人说 discuz到了100万条记录就会很慢，我相信这是真的，这个和数据库设计有关！ <BR>难道MySQL 无法突破100万的限制吗？？？到了100万的分页就真的到了极限？？？ <BR>答案是： NO !!!! 为什么突破不了100万是因为不会设计mysql造成的。下面介绍非分表法，来个疯狂的测试！一张表搞定100万记录，并且10G 数据库，如何快速分页！ <BR>好了，我们的测试又回到 collect表，开始测试结论是： 30万数据，用分表法可行，超过30万他的速度会慢道你无法忍受！当然如果用分表+我这种方法，那是绝对完美的。但是用了我这种方法后，不用分表也可以完美解决！ <BR>答 案就是：复合索引！ 有一次设计mysql索引的时候，无意中发现索引名字可以任取，可以选择几个字段进来，这有什么用呢？开始的select id from collect order by id limit 90000,10; 这么快就是因为走了索引，可是如果加了where 就不走索引了。抱着试试看的想法加了 search(vtype,id) 这样的索引。然后测试 <BR>select id from collect where vtype=1 limit 90000,10; 非常快！0.04秒完成！ <BR>再测试: select id ,title from collect where vtype=1 limit 90000,10; 非常遗憾，8-9秒，没走search索引！ <BR>再测试：search(id,vtype)，还是select id 这个语句，也非常遗憾，0.5秒。 <BR>综上：如果对于有where 条件，又想走索引用limit的，必须设计一个索引，将where 放第一位，limit用到的主键放第2位，而且只能select 主键！ <BR>完美解决了分页问题了。可以快速返回id就有希望优化limit ， 按这样的逻辑，百万级的limit 应该在0.0x秒就可以分完。看来mysql 语句的优化和索引时非常重要的！ <BR>好了，回到原题，如何将上面的研究成功快速应用于开发呢？如果用复合查询，我的轻量级框架就没的用了。分页字符串还得自己写，那多麻烦？这里再看一个例子，思路就出来了： <BR>select * from collect where id in (9000,12,50,7000); 竟然 0秒就可以查完！ <BR>mygod ，mysql 的索引竟然对于in语句同样有效！看来网上说in无法用索引是错误的！ <BR>有了这个结论，就可以很简单的应用于轻量级框架了： <br><br>代码如下： <BR><div class="codetitle"><span><a style="CURSOR: pointer" data="42154" class="copybut" id="copybut42154" onclick="doCopy('code42154')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code42154"> <BR>$db=dblink(); <BR>$db-&gt;pagesize=20; <BR>$sql=”select id from collect where vtype=$vtype”; <BR>$db-&gt;execute($sql); <BR>$strpage=$db-&gt;strpage(); //将分页字符串保存在临时变量，方便输出 <BR>while($rs=$db-&gt;fetch_array()){ <BR>$strid.=$rs['id'].','; <BR>} <BR>$strid=substr($strid,0,strlen($strid)-1); //构造出id字符串 <BR>$db-&gt;pagesize=0; //很关键，在不注销类的情况下，将分页清空，这样只需要用一次数据库连接，不需要再开； <BR>$db-&gt;execute(“select id,title,url,sTime,gTime,vtype,tag from collect where id in ($strid)”); <BR>&lt;?php while($rs=$db-&gt;fetch_array()): ?&gt; <BR>&lt;tr&gt; <BR>&lt;td&gt;&nbsp;&lt;?php echo $rs['id'];?&gt;&lt;/td&gt; <BR>&lt;td&gt;&nbsp;&lt;?php echo $rs['url'];?&gt;&lt;/td&gt; <BR>&lt;td&gt;&nbsp;&lt;?php echo $rs['sTime'];?&gt;&lt;/td&gt; <BR>&lt;td&gt;&nbsp;&lt;?php echo $rs['gTime'];?&gt;&lt;/td&gt; <BR>&lt;td&gt;&nbsp;&lt;?php echo $rs['vtype'];?&gt;&lt;/td&gt; <BR>&lt;td&gt;&nbsp;&lt;a href=”?act=show&id=&lt;?php echo $rs['id'];?&gt;” target=”_blank”&gt;&lt;?php echo $rs['title'];?&gt;&lt;/a&gt;&lt;/td&gt; <BR>&lt;td&gt;&nbsp;&lt;?php echo $rs['tag'];?&gt;&lt;/td&gt; <BR>&lt;/tr&gt; <BR>&lt;?php endwhile; ?&gt; <BR>&lt;/table&gt; <BR>&lt;?php <BR>echo $strpage; <BR></div> <BR>通过简单的变换，其实思路很简单：1）通过优化索引，找出id，并拼成 “123,90000,12000″ 这样的字符串。2）第2次查询找出结果。 <BR>小小的索引+一点点的改动就使mysql 可以支持百万甚至千万级的高效分页！ <BR>通 过这里的例子，我反思了一点：对于大型系统，PHP千万不能用框架，尤其是那种连sql语句都看不到的框架！因为开始对于我的轻量级框架都差点崩溃！只适 合小型应用的快速开发，对于ERP,OA，大型网站，数据层包括逻辑层的东西都不能用框架。如果程序员失去了对sql语句的把控，那项目的风险将会成几何 级数增加！尤其是用mysql 的时候，mysql 一定需要专业的dba 才可以发挥他的最佳性能。一个索引所造成的性能差别可能是上千倍！ <BR>PS: 经过实际测试，到了100万的数据，160万数据，15G表，190M索引，就算走索引，limit都得0.49秒。所以分页最好别让别人
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/98789.html'>Android SQLite数据库操作代码类分享</a><a>下一篇</a><a href='/php/biji/98791.html'>C#、ASP.NET通用扩展工具类之LogicSugar</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

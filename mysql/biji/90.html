@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL 千万级数据量快速分页的实现方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL 千万级数据量快速分页的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言
+后端" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL 千万级数据量快速分页的实现方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:13:04                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL 千万级数据量快速分页的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言
+后端</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL 千万级数据量快速分页的实现方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>前言</p>
+<p>后端开发中为了防止一次性加载太多数据导致内存、磁盘IO都开销过大，经常需要分页展示，这个时候就需要用到MySQL的LIMIT关键字。但你以为LIMIT分页就万事大吉了么，Too young,too simple啊，LIMIT在数据量大的时候极可能造成的一个问题就是深度分页。</p>
+<p>案例</p>
+<p>这里我以显示电商订单详情为背景举个例子，新建表如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+CREATE TABLE `cps_user_order_detail` (
+ `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+ `user_id` varchar(32) NOT NULL DEFAULT '' COMMENT '用户ID',
+ `order_id` bigint(20) DEFAULT NULL COMMENT '订单id',
+ `sku_id` bigint(20) unsigned NOT NULL COMMENT '商品ID',
+ `order_time` datetime DEFAULT NULL COMMENT '下单时间,格式yyyy-MM-dd HH:mm:ss',
+ PRIMARY KEY (`id`),
+ KEY `idx_time_user` (`order_time`,`user_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='用户订单详情';</code></pre>
+<p>MySQL 千万级数据量如何快速分页</p>
+<p>然后手动向表里插入120W条数据。</p>
+<p>现在有个需求：分页展示用户的订单详情，按照下单时间倒序。</p>
+<p>表结构精简了，需求也简单。于是哗哗哗的写完代码，提测上线了。早期运行一切正常，可随着订单量的不断增大，发现系统越发的缓慢，还时不时报出几个 慢查询 。</p>
+<p>这个时候你就该想到是LIMIT偏移的问题了，没错，不是你的SQL不够优美，就是MySQL自身的机制。</p>
+<p>这里我就简单以两条SQL为例，如下图，分别是从100和100W的位置偏移分页，可以看到时间相差很大。这还不算其它数据运算和处理的时间，单一条SQL的查询就耗时一秒以上，在对用户提供的功能里这是不能容忍的（电商里经常要求一个接口的RT不超过200ms）。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>这里我们再看下执行计划，如下图所示：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>在此先介绍一下执行计划Extra列可能出现的值及含义：</p>
+<ol>
+	<li>Using where：表示优化器需要通过索引回表查询数据。</li>
+	<li>Using index：即覆盖索引，表示直接访问索引就足够获取到所需要的数据，不需要通过索引回表，通常是通过将待查询字段建立联合索引实现。</li>
+	<li>Using index condition：在5.6版本后加入的新特性，即大名鼎鼎的索引下推，是MySQL关于减少回表次数的重大优化。</li>
+	<li>Using filesort:文件排序，这个一般在ORDER BY时候，数据量过大，MySQL会将所有数据召回内存中排序，比较消耗资源。</li>
+</ol>
+<p>再看看上图，同样的语句，只以为偏移量不同，就造成了执行计划的千差万别（且容我小小的夸张一下）。第一条语句LIMIT 100,6type列的值是range，表示范围扫描，性能比ref差一个级别，但是也算走了索引，并且还应用了索引下推：就是说在WHERE之后的下单时间删选走了索引，并且之后的ORDER BY也是根据索引下推优化，在执行WHERE条件筛选时同步进行的（没有回表）。而第二条语句LIMIT 1000000,6压根就没走索引，type列的值是ALL，显然是全表扫描。并且Extra列字段里的Using where表示发生了回表，Using filesort表示ORDER BY时发生了文件排序。所以这里慢在了两点：一是文件排序耗时过大，二是根据条件筛选了相关的数据之后，需要根据偏移量回表获取全部值。无论是上面的哪一点，都是LIMIT偏移量过大导致的，所以实际开发环境经常遇到非统计表量级不得超过一百万的要求。</p>
+<p>优化</p>
+<p>原因分析完了，那么LIMIT深度分页在实际开发中怎么优化呢？这里少侠给两点方案。一是通过主键索引优化。什么意思呢？就是把上面的语句修改成：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT * FROM cps_user_order_detail d WHERE d.id &gt; #{maxId} AND d.order_time&gt;'2020-8-5 00:00:00' ORDER BY d.order_time LIMIT 6;</code></pre>
+<p>MySQL 千万级数据量如何快速分页</p>
+<p>如上代码所示，同样也是分页，但是有个maxId的限制条件，这个是什么意思呢，maxId就是上一页中的最大主键Id。所以采用此方式的前提：1）主键必须自增不能是UUID并且前端除了传基本分页参数pageNo,pageSize外，还必须把每次上一页的最大Id带过来，2）该方式不支持随机跳页，也就是说只能上下翻页。如下图所示是某知名电商中的实际页面。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>二是通过Elastic Search搜索引擎（基于倒排索引），实际上类似于淘宝这样的电商基本上都是把所有商品放进ES搜索引擎里的（那么海量的数据，放进MySQL是不可能的，放进Redis也不现实）。但即使用了ES搜索引擎，也还是有可能发生深度分页的问题的，这时怎么办呢？答案是通过游标scroll。关于此点这里不做深入，感兴趣的可以做研究。</p>
+<p>小结</p>
+<p>写这篇博客是因为前段时间在开发中真实经历到了，并且之前在字节面试中确实也和面试官探讨了一番。知道LIMIT的限制以及优化，在面试中能提到是加分项，不能说到MySQL优化就是建索引，调整SQL（实际上在真实开发中这两种优化方案的成效微乎其微）。毕竟MySQL优化那么牛X的话，就不会有那么多中间件产生了。我是少侠露飞，爱技术，爱分享。</p>
+<p>以上就是MySQL 千万级数据量如何快速分页的详细内容，更多关于MySQL快速分页的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL 千万级数据量快速分页的实现方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/89.html'>判断MySQL update是否会锁表的解决办法</a><a>下一篇</a><a href='/mysql/biji/91.html'>SQL写入包含有英文单引号“ &amp;#39;&amp;#39; ”失败问题的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

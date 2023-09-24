@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQLServer 2008 CDC功能实现数据变更捕获脚本_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="CDC:Change Data Capture复制代码 代码如下:--步骤：本文中以GPOSDB为例<br />
+--第一步、对目标库显式启用CDC：--在当前库使用sys.sp_cdc_enable_db。返回0（成功）或1（失败）。--注意，无法" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQLServer 2008 CDC功能实现数据变更捕获脚本</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>CDC:Change Data Capture复制代码 代码如下:--步骤：本文中以GPOSDB为例<br />
+--第一步、对目标库显式启用CDC：--在当前库使用sys.sp_cdc_enable_db。返回0（成功）或1（失败）。--注意，无法</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><P><BR>CDC:Change Data Capture<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="64861" class="copybut" id="copybut64861" onclick="doCopy('code64861')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code64861"><BR>--步骤：本文中以GPOSDB为例</P>
+<P>--第一步、对目标库显式启用CDC：<BR>--在当前库使用sys.sp_cdc_enable_db。返回0（成功）或1（失败）。<BR>--注意，无法对系统数据库和分发数据库启用该功能。且执行者需要用sysadmin角色权限。<BR>--该存储过程的作用域是整个目标库。包含元数据、DDL触发器、cdc架构和cdc用户。<BR>--使用以下代码启用：<BR>USE GPOSDB&nbsp; --要启用CDC的数据库<BR>GO<BR>EXECUTE sys.sp_cdc_enable_db;<BR>GO<BR>--在一开始直接执行时，出现了报错信息：<BR>--消息22830，级别16，状态1，过程sp_cdc_enable_db_internal，第193 行<BR>--无法更新元数据来指示已对数据库AdventureWorks 启用了变更数据捕获。<BR>--执行命令'SetCDCTracked(Value = 1)' 时失败。<BR>--返回的错误为15517: '无法作为数据库主体执行，因为主体"dbo"<BR>--不存在、无法模拟这种类型的主体，或您没有所需的权限。'。请使用此操作和错误来确定失败的原因并重新提交请求。<BR>--这里引出了另外一个知识点：错误号 15517 的错误<BR>--这种错误会在很多地方出现，如还原数据库的时候也会有可能出现。<BR>--共同点是：某个/些存储过程使用了具有WITHEXECUTE AS 的选项。<BR>--使其在当前库具有了某个架构，但是当在别的地方执行时，由于没有这个架构，所以就报错，解决方法：<BR>ALTER AUTHORIZATION ON DATABASE::[GPOSDB] TO [sa]</P>
+<P>--经过检查，uspUpdateEmployeeHireInfo这个存储过程的确有：WITH EXECUTE AS CALLER<BR>--使用sa的原因是即使sa被禁用，sa还是存在的。所以不会报错。<BR>--现在重新执行：<BR>USE GPOSDB<BR>GO<BR>EXECUTE sys.sp_cdc_enable_db;<BR>GO<BR>--启用成功，然后通过以下语句检查是否成功：<BR>SELECT <BR>is_cdc_enabled,<BR>CASE WHEN is_cdc_enabled=0 THEN 'CDC功能禁用' ELSE 'CDC功能启用' END 描述<BR>FROM&nbsp;&nbsp;&nbsp; sys.databases<BR>WHERE&nbsp;&nbsp; NAME = 'GPOSDB'</P>
+<P>--创建成功后，将自动添加CDC用户和CDC架构。<BR>--在用户和架构下面可以看到cdc用户和cdc架构</P>
+<P>--创建这两个用户、架构的原因是因为CDC要求独占方式使用这两个架构，所以要单独创建。<BR>--如果存在了非CDC功能创建的CDC用户、架构的话，则需要先删除该cdc命名的架构，才能开启。</P>
+<P>--第二步、对目标表启用CDC：<BR>--使用db_owner角色的成员执行sys.sp_cdc_enable_table为每个需要跟踪的表创建捕获实例。<BR>--然后通过sys.tables目录视图中的is_tracked_by_cdc列来判断是否创建成功。<BR>--默认情况下会对表的全部列做捕获。如果只需要对某些列做捕获，<BR>--可以使用@captured_column_list参数指定这些列。<BR>--如果要把更改表放到文件组里的话，最好创建单独的文件组（最起码与源表独立）。</P>
+<P>--如果不想控制访问角色，则@role_name必须显式设置为null。<BR>sys.sp_cdc_enable_table<BR>&nbsp;&nbsp;&nbsp; [ @source_schema = ] 'source_schema',<BR>&nbsp;&nbsp;&nbsp; [ @source_name = ] 'source_name' ,<BR>&nbsp;&nbsp;&nbsp; [ @role_name = ] 'role_name'<BR>&nbsp;&nbsp;&nbsp; [,[ @capture_instance = ] 'capture_instance' ]<BR>&nbsp;&nbsp;&nbsp; [,[ @supports_net_changes = ] supports_net_changes ]<BR>&nbsp;&nbsp;&nbsp; [,[ @index_name = ] 'index_name' ]<BR>&nbsp;&nbsp;&nbsp; [,[ @captured_column_list = ] 'captured_column_list' ]<BR>&nbsp;&nbsp;&nbsp; [,[ @filegroup_name = ] 'filegroup_name' ]<BR>&nbsp; [,[ @partition_switch = ] 'partition_switch' ]</P>
+<P>--例子：<BR>--把SYSTEMPARA 这个表开启变更捕获。<BR>USE GPOSDB<BR>GO<BR>EXEC sys.sp_cdc_enable_table @source_schema = 'DBO',<BR>&nbsp;&nbsp;&nbsp; @source_name = 'SYSTEMPARA',@role_name = NULL</P>
+<P>--然后查询是否成功：<BR>SELECT&nbsp; name ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; is_tracked_by_cdc ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CASE WHEN is_tracked_by_cdc = 0 THEN 'CDC功能禁用'<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ELSE 'CDC功能启用'<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; END 描述<BR>FROM&nbsp;&nbsp;&nbsp; sys.tables<BR>WHERE&nbsp;&nbsp; OBJECT_ID = OBJECT_ID('dbo.systempara')<BR>--对表开启以后，可以在下图中看到多了很多cdc架构开头的表：<BR>--刷新一下GPOSDB数据库，在系统表下面可以看到多了下面几张表<BR>[cdc].[DBO_SYSTEMPARA_CT]<BR>[cdc].[change_tables]<BR>[cdc].[captured_columns]<BR>[cdc].[ddl_history]<BR>[cdc].[index_columns]<BR>[cdc].[lsn_time_mapping]<BR>[dbo].[systranschemas]<BR>[dbo].[dtproperties]</P>
+<P>--启动之后，可以看到SQLServer代理里面的作业，也出现了这两个作业：<BR>[cdc.GPOSDB_capture]<BR>[cdc.GPOSDB_cleanup]</P>
+<P>--在可编程性-》函数-》表值函数里，也多了两个函数<BR>[cdc].[fn_cdc_get_all_changes_DBO_SYSTEMPARA]<BR>[cdc].[fn_cdc_get_net_changes_DBO_SYSTEMPARA]</P>
+<P>--下面列出相关的存储过程：<BR>--Sys.sp_cdc_add_job<BR>--说明及例子<BR>--Sys.sp_cdc_generate_wrapper_function<BR>--说明及例子<BR>--Sys.sp_cdc_change_job<BR>--说明及例子<BR>--Sys.sp_cdc_get_captured_columns<BR>--说明及例子<BR>--Sys.sp_cdc_cleanup_change_table<BR>--说明及例子<BR>--Sys.sp_cdc_get_ddl_history<BR>--说明及例子<BR>--Sys.sp_cdc_disable_db<BR>--说明及例子&nbsp; 建议先禁用表，再禁用库<BR>--Sys.sp_cdc_help_change_data_capture<BR>--说明及例子<BR>--Sys.sp_cdc_disable_table<BR>--说明及例子<BR>--Sys.sp_cdc_help_jobs<BR>--说明及例子<BR>--Sys.sp_cdc_drop_job<BR>--说明及例子<BR>--Sys.sp_cdc_scan<BR>--说明及例子<BR>--Sys.sp_cdc_enable_db<BR>--说明及例子<BR>--Sys.sp_cdc_start_job<BR>--说明及例子<BR>--Sys.sp_cdc_enable_table<BR>--说明及例子<BR>--Sys.sp_cdc_stop_job<BR>--说明及例子</P>
+<P>--函数：<BR>--Cdc.fn_cdc_get_all_changes_&lt;capture_instance&gt;<BR>--说明及例子<BR>--Sys.fn_cdc_has_column_changed<BR>--说明及例子<BR>--Cdc.fn_cdc_get_net_changes_&lt;capture_instance&gt;<BR>--说明及例子<BR>--Sys.fn_cdc_increment_lsn<BR>--说明及例子<BR>--Sys.fn_cdc_decrement_lsn<BR>--说明及例子<BR>--Sys.fn_cdc_is_bit_set<BR>--说明及例子<BR>--Sys.fn_cdc_get_column_ordinal<BR>--说明及例子<BR>--Sys.fn_cdc_map_lsn_to_time<BR>--说明及例子<BR>--Sys.fn_cdc_get_max_lsn<BR>--说明及例子<BR>--Sys.fn_cdc_map_time_to_lsn<BR>--说明及例子<BR>--Sys.fn_cdc_get_min_lsn<BR>--说明及例子</P>
+<P>--------------------下面开始从头到尾做一个实际案例-------------------------<BR>--下面开始从头到尾做一个实际案例</P>
+<P>--步骤一:对目标库显式启用CDC<BR>USE GPOSDB&nbsp; --要启用CDC的数据库<BR>GO<BR>EXECUTE sys.sp_cdc_enable_db;<BR>GO</P>
+<P><BR>--某些数据库可能存在一些存储过程包含有：execute as 等语句，此时会报错：</P>
+<P><BR>--文字描述：<BR>--消息22830，级别16，状态1，过程sp_cdc_enable_db_internal，第186 行<BR>--无法更新元数据来指示已对数据库AdventureWorks 启用了变更数据捕获。执行命令'SetCDCTracked(Value = 1)' 时失败。返回的错误为15517: '无法作为数据库主体执行，因为主体"dbo" 不存在、无法模拟这种类型的主体，或您没有所需的权限。'。请使用此操作和错误来确定失败的原因并重新提交请求。<BR>--消息266，级别16，状态2，过程sp_cdc_enable_db_internal，第0 行<BR>--EXECUTE 后的事务计数指示BEGIN 和COMMIT 语句的数目不匹配。上一计数= 0，当前计数= 1。<BR>--消息266，级别16，状态2，过程sp_cdc_enable_db，第0 行<BR>--EXECUTE 后的事务计数指示BEGIN 和COMMIT 语句的数目不匹配。上一计数= 0，当前计数= 1。<BR>--消息3998，级别16，状态1，第1 行<BR>--在批处理结束时检测到不可提交的事务。该事务将回滚。<BR>--如果出现这个错误，目前的解决方法是执行下面语句，原因已在开头说明，对于没有使用EXECUTE AS的库，一般不会有这样的问题：</P>
+<P><BR>ALTER AUTHORIZATION ON DATABASE::[GPOSDB] TO [sa]</P>
+<P>--现在重新执行：<BR>USE GPOSDB<BR>GO<BR>EXECUTE sys.sp_cdc_enable_db;<BR>GO<BR>--通过以下语句检查是否成功：<BR>SELECT <BR>is_cdc_enabled,<BR>CASE WHEN is_cdc_enabled=0 THEN 'CDC功能禁用' ELSE 'CDC功能启用' END 描述<BR>FROM&nbsp;&nbsp;&nbsp; sys.databases<BR>WHERE&nbsp;&nbsp; NAME = 'GPOSDB'</P>
+<P>--步骤二：对表启用CDC<BR>USE GPOSDB<BR>GO<BR>EXEC sys.sp_cdc_enable_table<BR>@source_schema = 'DBO',<BR>@source_name = 'SYSTEMPARA',<BR>@role_name = NULL,<BR>@capture_instance=DEFAULT<BR>GO</P>
+<P>--然后查询是否成功：<BR>SELECT&nbsp; name ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; is_tracked_by_cdc ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CASE WHEN is_tracked_by_cdc = 0 THEN 'CDC功能禁用'<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ELSE 'CDC功能启用'<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; END 描述<BR>FROM&nbsp;&nbsp;&nbsp; sys.tables<BR>WHERE&nbsp;&nbsp; OBJECT_ID = OBJECT_ID('dbo.systempara')</P>
+<P>--可以看到GPOSDB数据库里的系统表里新增了[cdc].[DBO_SYSTEMPARA_CT]表</P>
+<P>&nbsp;</P>
+<P>&nbsp;</P>
+<P>--步骤三：检验，下面来改动数据<BR>--先查询一下DBO_SYSTEMPARA_CT表<BR>SELECT * FROM cdc.[DBO_SYSTEMPARA_CT]</P>
+<P>--可以看到一条记录都没有，因为刚刚创建，并没有对原表systempara做任何增删改操作</P>
+<P>--向[SystemPara]表插入一条记录<BR>INSERT INTO [dbo].[SystemPara]<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ( [ParaValue] ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Name] ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Description]<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )<BR>VALUES&nbsp; ( '中国' , -- ParaValue - varchar(50)<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; '中国' , -- Name - varchar(50)<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; '中国'&nbsp; -- Description - varchar(50)<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</P>
+<P>--查询一下DBO_SYSTEMPARA_CT表，可以看到多了一条记录<BR>SELECT * FROM cdc.[DBO_SYSTEMPARA_CT]</P>
+<P><BR>--更新[SystemPara]表的一条记录<BR>UPDATE [dbo].[SystemPara] SET [ParaValue]='德国' WHERE [Description]='中国'</P>
+<P>--查询一下DBO_SYSTEMPARA_CT表，可以看到多了两条记录<BR>SELECT * FROM cdc.[DBO_SYSTEMPARA_CT]</P>
+<P>--删除[SystemPara]表的一条记录<BR>DELETE FROM&nbsp; [dbo].[SystemPara]&nbsp; WHERE [Description]='中国'</P>
+<P>--查询一下DBO_SYSTEMPARA_CT表，可以看到多了一条记录<BR>SELECT * FROM cdc.[DBO_SYSTEMPARA_CT]</P>
+<P>--现在来分析一下DBO_SYSTEMPARA_CT表<BR>--可以在联机丛书上查看：<BR>--cdc.&lt;capture_instance&gt;_CT&nbsp; <BR>--可以看到，这样命名的表，是用于记录源表做过更改操作的表。<BR>--对于insert/delete操作，会有对应的一行记录，而对于update，会有两行记录。<BR>--对于__$operation列：1 = 删除、2= 插入、3= 更新（旧值）、4= 更新（新值）<BR>--update语句的__$operation列的值是3和4，所以一条update语句对应两条记录</P>
+<P>--对于__$start_lsn列：由于更改是来源与数据库的事务日志，所以这里会保存其事务日志的开始序列号（LSN）<BR>--但是微软不检查直接查询这类表，建议使用<BR>--cdc.fn_cdc_get_all_changes_&lt;捕获实例&gt;<BR>--cdc.fn_cdc_get_net_changes_&lt;capture_instance&gt;<BR>-- 来查询</P>
+<P>----------------------------------------------------------</P>
+<P>--下文开始，来熟悉各种函数、存储过程的使用，并尝试一些不正常的操作。</P>
+<P>&nbsp;</P>
+<P>--日常使用情景：<BR>--1、查询已经开启的捕获实例：<BR>--返回所有表的变更捕获配置信息<BR>USE [GPOSDB]<BR>GO<BR>EXECUTE sys.sp_cdc_help_change_data_capture;<BR>GO</P>
+<P>&nbsp;</P>
+<P>--查看对某个实例(即表)的哪些列做了捕获监控<BR>USE [GPOSDB]<BR>GO<BR>EXEC sys.sp_cdc_get_captured_columns<BR>@capture_instance = 'systempara' -- sysname</P>
+<P>&nbsp;</P>
+<P>--也可以从下面中查找配置信息<BR>SELECT * FROM msdb.dbo.cdc_jobs</P>
+<P>&nbsp;</P>
+<P>&nbsp;</P>
+<P><BR>--2、查看当前配置使用sp_cdc_help_jobs：<BR>--从上文可以看到，启用cdc之后会自动创建了两个作业，可以先使用以下语句来查看：<BR>sp_cdc_help_jobs</P>
+<P>&nbsp;</P>
+<P>--对于一个大型的OLTP系统，由于数据更改会非常频繁，变更表中的数据会非常多，<BR>--如果存放过久（最久可以存放100年），那对数据库空间是非常大的挑战。<BR>--此时可以调整上图中cdc.AdventureWorks_cleanup 中retention（单位：分钟）。</P>
+<P>--3、修改配置：sp_cdc_change_job<BR>--显示原有配置<BR>EXEC sp_cdc_help_jobs<BR>GO<BR>--更改数据保留时间为100分钟<BR>EXECUTE sys.sp_cdc_change_job<BR>&nbsp;&nbsp;&nbsp; @job_type = N'cleanup',<BR>&nbsp;&nbsp;&nbsp; @retention=100<BR>GO</P>
+<P>--重启一下作业，以使设置生效<BR>--停用作业<BR>EXEC sys.sp_cdc_stop_job N'cleanup'<BR>GO<BR>--启用作业<BR>EXEC sys.sp_cdc_start_job N'cleanup'<BR>GO<BR>--再次查看<BR>EXEC sp_cdc_help_jobs<BR>GO<BR>--可以看到retention（单位：分钟）的值变为100了</P>
+<P>--4、停止/启用、删除/创建作业</P>
+<P>--停用作业<BR>EXEC sys.sp_cdc_stop_job N'cleanup'<BR>GO<BR>--启用作业<BR>EXEC sys.sp_cdc_start_job N'cleanup'<BR>GO</P>
+<P>--删除作业<BR>EXEC sys.sp_cdc_drop_job @job_type = N'cleanup' -- nvarchar(20)<BR>GO<BR>--查看作业<BR>EXEC sys.sp_cdc_help_jobs<BR>GO<BR>--可以看到现在只剩下一个作业了:cdc.GPOSDB_capture</P>
+<P><BR>--创建作业<BR>EXEC sys.sp_cdc_add_job<BR>&nbsp;&nbsp;&nbsp; @job_type = N'cleanup',<BR>&nbsp;&nbsp;&nbsp; @start_job = 0,<BR>&nbsp;&nbsp;&nbsp; @retention = 5760</P>
+<P>--查看作业<BR>EXEC sys.sp_cdc_help_jobs<BR>GO</P>
+<P>&nbsp;</P>
+<P>--5、DDL变更捕获：<BR>--CDC除了捕获数据变更之外，还能捕获DDL操作的变化。<BR>--前提是先要确保SQLServer 代理的启用，其实CDC功能都需要确保sql 代理正常运行<BR>--因为所有操作都通过代理中的两个作业来实现的。<BR>--现在先来对SYSTEMPARA 表修改一下，把PARAVALUE的长度加长<BR>USE [GPOSDB]<BR>GO<BR>ALTER TABLE&nbsp; [dbo].[SystemPara] ALTER COLUMN PARAVALUE VARCHAR(120) ;<BR>GO</P>
+<P>--然后查询ddl记录表<BR>SELECT&nbsp; * FROM&nbsp;&nbsp;&nbsp; cdc.ddl_history</P>
+<P><BR>--6、使用CDC的函数来获取更改<BR>--A、使用 [cdc].[fn_cdc_get_all_changes_DBO_SYSTEMPARA]<BR>--函数报告捕获实例的当前所有可用更改<BR>DECLARE @from_lsn BINARY(10) ,<BR>&nbsp;&nbsp;&nbsp; @to_lsn BINARY(10)<BR>SET @from_lsn = sys.fn_cdc_get_min_lsn('SYSTEMPARA')<BR>SET @to_lsn = sys.fn_cdc_get_max_lsn()<BR>SELECT&nbsp; *<BR>FROM&nbsp;&nbsp;&nbsp; cdc.fn_cdc_get_all_changes_DBO_SYSTEMPARA(@from_lsn, @to_lsn,N'all update old');<BR>GO</P>
+<P>&nbsp;</P>
+<P><BR>--B、获取某个时间段的更改信息：<BR>--先根据日志序列号（logsequence number ,LSN）来获取跟踪变更数据<BR>--Sys.fn_cdc_map_time_to_lsn获取变更范围内的最大、最小LSN值。可以使用<BR>Smallest greater than;<BR>smallest greater than orequal;<BR>largest less than;<BR>largest less than or equal;</P>
+<P>--如查询某个时间段插入的数据<BR>INSERT INTO [dbo].[SystemPara]<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ( [ParaValue] ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Name] ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [Description]<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )<BR>VALUES&nbsp; ( '中国' , -- ParaValue - varchar(50)<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; '中国' , -- Name - varchar(50)<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; '中国'&nbsp; -- Description - varchar(50)<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</P>
+<P>GO</P>
+<P>--检查数据<BR>--1删除<BR>--2插入<BR>--3、4更改<BR>--曾经插入过的记录就算delete了也可以查询出来<BR>DECLARE @bglsn VARBINARY(10)= sys.fn_cdc_map_time_to_lsn('smallest greater than or equal',<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; '2013-10-21 12:00:00.997')<BR>DECLARE @edlsn VARBINARY(10)= sys.fn_cdc_map_time_to_lsn('largest less than or equal',<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; GETDATE())<BR>SELECT&nbsp; *<BR>FROM&nbsp;&nbsp;&nbsp; [cdc].[DBO_SYSTEMPARA_CT]<BR>WHERE&nbsp;&nbsp; [__$operation] = 2<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AND [__$start_lsn] BETWEEN @bglsn AND @edlsn</P>
+<P>&nbsp;</P>
+<P>--C、sys.fn_cdc_map_lsn_to_time 查询变更时间：<BR>SELECT&nbsp; [__$operation] ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CASE [__$operation]<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHEN 1 THEN '删除'<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHEN 2 THEN '插入'<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHEN 3 THEN '更新（捕获的列值是执行更新操作前的值）'<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHEN 4 THEN '更新（捕获的列值是执行更新操作后的值）'<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; END [类型] ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sys.fn_cdc_map_lsn_to_time([__$start_lsn]) [更改时间] ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; *<BR>FROM&nbsp;&nbsp;&nbsp; [cdc].[DBO_SYSTEMPARA_CT]</P>
+<P>&nbsp;</P>
+<P>--D、获取LSN边界<BR>SELECT&nbsp; sys.fn_cdc_get_max_lsn() [数据库级别的最大LSN] ,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sys.fn_cdc_get_min_lsn('cdc.DBO_SYSTEMPARA_CT') [捕获实例的lsn]</P>
+<P><BR>这两个值可以用于上面提到的函数里面用于筛选数据之用。</P>
+<P><BR>----------------------------------------------------------<BR>--1. CDC的目的是什么？</P>
+<P>--CDC就是极大地方便了我们获取某个表数据更新情况的一个机制。它通过一个独立的进程，<BR>--异步读取日志文件，而不是触发器的方式工作。而且它的数据是会持久化保存到一个系统表的。<BR>--2. CDC是不是SQL Server 2008特有的功能，对别的数据库或者早期版本是否起作用？</P>
+<P>--CDC是SQL Server 2008特有的功能，而且是企业版特有的功能。开发版也有该功能，但仅用于测试场合。</P>
+<P>--3. CDC读取日志，那么如果日志被截断了会怎么样？</P>
+<P>--如果某部分日志，CDC的进程还没有读取，那么在截断日志时就会忽略这个部分,不能截断!!</P>
+<P>--捕获进程是一个独立的，它随着代理服务启动而启动。两次扫描之间间隔5分钟。</P>
+<P>--4. 系统表中的数据是否会永久存在？--不会，它会被保留3天。会有一个清理的作业，每天晚上2点进行扫描。<BR>--最后，补充一点的是，CDC功能依赖Agent服务，因为它有两个操作都是通过作业来启动的。<BR></div></P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/89028.html'>详解C#中的接口属性以及属性访问器的访问限制</a><a>下一篇</a><a href='/php/biji/89030.html'>php检测图片主要颜色的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

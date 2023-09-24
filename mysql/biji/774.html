@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL主从复制及读写分离的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL主从复制及读写分离的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言
+在企业实" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL主从复制及读写分离的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:19:23                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL主从复制及读写分离的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言
+在企业实</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL主从复制及读写分离的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h2>前言</h2>
+<p>在企业实际应用中，成熟的业务通常数据量都比较大，而单台MySQL服务器在安全性、高可用性和高并发方面都无法满足实际的需求，我们可以在多台MySQL服务器（Master-Slave）部署 主从复制来实现同步数据，再通过 读写分离来提升数据库的并发负载能力。有点类似于rsync，但是不同的是rsync是对磁盘文件做备份，而mysql主从复制是对数据库中的数据、语句做备份。</p>
+<h2>一、相关概述</h2>
+<p>主从复制：主数据库（Master）发送更新事件到从数据库（Slave），从数据库读取更新记录，并执行更新记录，使得从数据库的内容与主数据库保持一致。</p>
+<p>（一）MySQL 支持的复制类型</p>
+<ul>
+	<li>基于语句的复制（STATEMENT）。在主库上执行的 SQL 语句，在从库上执行同样的语句。MySQL 默认采用基于语句的复制，效率比较高。</li>
+	<li>基于行的复制（ROW）。把改变的内容复制过去，而不是把命令在从库上执行一遍。</li>
+	<li>混合类型的复制（MIXED）。默认采用基于语句的复制，一旦发现基于语句无法精确复制时，就会采用基于行的复制。</li>
+</ul>
+<p>（二）MySQL主从复制的工作过程</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>1.Master 服务器保存记录到二进制日志</p>
+<ul>
+	<li>MySQL主库上进行的增、删、改的数据更新，都会按顺序写入到自己的二进制日志（Binary log）当中</li>
+</ul>
+<p>2.Slave 服务器复制Master 服务器的日志</p>
+<ul>
+	<li>然后MySQL从库开始一个I/O线程连接主库，读取主库的二进制日志，备份到从服务器的==中继日志（Relay log）==当中。如果已经跟上主库，它会睡眠并等待Master 产生新的事件，I/O线程将这些事件写入中继日志</li>
+</ul>
+<p>3.Slave 服务器重放复制过来的日志</p>
+<ul>
+	<li>然后从库打开SQL线程，SQL线程读取I/O线程写入的中继日志，并且根据中继日志的内容更新从库的数据，使其与主库中的数据一致</li>
+</ul>
+<p>重点：复制过程有一个很重要的限制，即复制在 Slave 上是串行化的，也就是说Master 上的并行更新操作不能在 Slave 上并行操作</p>
+<h2>二、读写分离</h2>
+<p>（1）读写分离的概念</p>
+<p>读写分离：读写分离就是只在主服务器上写，只在从服务器上读。基本的原理是让主数据库处理事务性增、改、删操作（INSERT、UPDATE、DELETE)，而从数据库处理SELECT查询操作。数据库复制被用来把事务性操作导致的变更同步到集群中的从数据库。</p>
+<p>（2）读写分离的作用</p>
+<ul>
+	<li>因为数据库的&quot;写&quot;(写10000条数据可能要3分钟）操作是比较耗时的。但是数据库的&quot;读&quot;(读10000条数据可能只要5秒钟)。</li>
+	<li>所以读写分离，解决的是，数据库的写入，影响了查询的效率。注意：数据库不一定要读写分离，如果程序使用数据库较多时，而更新少，查询多的情况下会考虑使用。利用数据库主从同步，再通过读写分离可以分担数据库压力，提高性能</li>
+</ul>
+<p>（3）MySQL 读写分离原理</p>
+<ul>
+	<li>读写分离就是只在主服务器上写，只在从服务器上读</li>
+	<li>基本的原理是让主数据库处理事务性查询，而从数据库处理 select 查询</li>
+	<li>数据库复制被用来把主数据库上事务性查询导致的变更同步到集群中的从数据库</li>
+</ul>
+<p>（4）常见的 MySQL 读写分离</p>
+<p>1）基于程序代码内部实现</p>
+<p>1.在代码中根据 select、insert 进行路由分类，这类方法也是目前生产环境应用最广泛的。</p>
+<p>2.优缺点：</p>
+<ul>
+	<li>优点是性能较好，因为在程序代码中实现，不需要增加额外的设备为硬件开支；</li>
+	<li>缺点是需要开发人员来实现，运维人员无从下手。</li>
+</ul>
+<p>3.并不是所有的应用都适合在程序代码中实现读写分离，像一些大型复杂的Java应用，如果在程序代码中实现读写分离对代码改动就较大。</p>
+<p>2）基于中间代理层实现</p>
+<p>1.代理一般位于客户端和服务器之间，代理服务器接到客户端请求后通过判断后转发到后端数据库，有以下代表性程序：</p>
+<ul>
+	<li>MySQL-Proxy：MySQL-Proxy 为 MySQL 开源项目，通过其自带的 lua 脚本进行SQL 判断。</li>
+	<li>Atlas：是由奇虎360的Web平台部基础架构团队开发维护的一个基于MySQL协议的数据中间层项目。它是在mysql-proxy 0.8.2版本的基础上，对其进行了优化，增加了一些新的功能特性。360内部使用Atlas运行的mysql业务，每天承载的读写请求数达几十亿条。支持事物以及存储过程。</li>
+	<li>Amoeba：由陈思儒开发，作者曾就职于阿里巴巴。该程序由Java语言进行开发，阿里巴巴将其用于生产环境。但是它不支持事务和存储过程。</li>
+</ul>
+<p>2.由于使用MySQL Proxy需要写大量的Lua脚本，这些Lua脚本不是现成的，而需要自己编写，这对于并不熟悉MySQL Proxy内置变量和MySQL Protocol的人来说是非常困难的。</p>
+<p>3.Amoeba是一个非常容易使用，可移植性非常强的软件，因此它在生产环境中被广泛用于数据库的代理层。</p>
+<h2>三、MySQL主从复制实验部署</h2>
+<p>需要的相关软降包amoeba-mysql-binary-2.2.0.tar.gzjdk-6u14-linux-x64.binmysql压缩包</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>（1）主从复制实验步骤及准备</p>
+<p>实验步骤第一步：客户端client访问代理服务器amoeba第二步：代理服务器读写判断写操作：写入到主服务器第三步：主服务器将增删改写入自己二进制日志第四步：从服务器将主服务器的二进制日志同步至自己中继日志第五步：从服务器重放中继日志到数据库中读操作：直接访问从服务器最终结果：降低负载，起到负载均衡作用主机 操作系统 IP地址 所需工具/软件/安装包</p>
+<table>
+	<tbody>
+		<tr>
+			<td style="text-align: center">Amoeba CentOS7</td>
+			<td style="text-align: center">192.168.71.10</td>
+			<td style="text-align: center">jdk-6u14-linux-x64.bin、amoeba-mysql-binary-2.2.0.tar.gz</td>
+		</tr>
+		<tr>
+			<td style="text-align: center">Master CentOS7</td>
+			<td style="text-align: center">192.168.71.12</td>
+			<td style="text-align: center">ntp 、 mysql-boost-5.7.20.tar.gz</td>
+		</tr>
+		<tr>
+			<td style="text-align: center">Slave1 CentOS7</td>
+			<td style="text-align: center">192.168.71.13</td>
+			<td style="text-align: center">ntp 、ntpdate 、 mysql-boost-5.7.20.tar.gz</td>
+		</tr>
+		<tr>
+			<td style="text-align: center">Slave2 CentOS7</td>
+			<td style="text-align: center">192.168.71.14</td>
+			<td style="text-align: center">ntp 、ntpdate 、mysql-boost-5.7.20.tar.gz</td>
+		</tr>
+		<tr>
+			<td style="text-align: center">客户端 CentOS7</td>
+			<td style="text-align: center">192.168.71.15</td>
+			<td></td>
+		</tr>
+	</tbody>
+</table>
+<p>1.关闭防火墙及安全机制</p>
+<p>四台服务器都要关闭</p>
+<p>代码如下：</p>
+<pre>
+<code>
+systemctl stop firewalld
+systemctl disable firewalld
+setenforce 0</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p>2.安装时间同步服务ntp</p>
+<p>（1）主服务器</p>
+<p>代码如下：</p>
+<pre>
+<code>
+yum -y install ntp
+
+vim /etc/ntp.conf
+##---------末尾添加---------
+server 127.127.71.0           #设置本地是时钟源，注意修改网段
+fudge 127.127.71.0 stratum 8  #设置时间层级为8（限制在15内）
+
+service ntpd start
+</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>（2）两个从服务器</p>
+<p>代码如下：</p>
+<pre>
+<code>
+yum -y install ntp ntpdate
+
+service ntpd start
+
+/usr/sbin/ntpdate 192.168.71.12  #进行时间同步，指向Master服务器IP
+
+crontab -e     #设置计划任务每个半个小时同步一次时间
+*/30 * * * * /usr/sbin/ntpdate 192.168.71.12
+</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--><!---ecms -ecms 
+【图缺】
+--></p>
+<p>3.主服务器的mysql配置</p>
+<p>代码如下：</p>
+<pre>
+<code>
+vim /etc/my.cnf
+server-id = 1
+log-bin=master-bin       #添加，主服务器开启二进制日志
+log-slave-updates=true   #添加，允许从服务器更新二进制日志
+
+systemctl restart mysqld
+
+mysql -u root -p
+grant replication slave on *.* to 'myslave'@'192.168.71.%' identified by '123'; #对从服务器提权
+#grant 授权
+#replication 复制
+#允许网段为192.168.71的使用密码123对所有表库都可以复制
+
+flush privileges;
+
+show master status;
+#File 列显示日志名，Fosition 列显示偏移量
+</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>4.从服务器的mysql配置</p>
+<p>Slave1服务器：192.168.163.13Slave2服务器：192.168.163.14</p>
+<p>1）修改配置文件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+vim /etc/my.cnf
+#修改，注意id与Master的不同，两个Slave的id也要不同
+server-id = 2
+
+#添加，开启中继日志，从主服务器上同步日志文件记录到本地
+relay-log=relay-log-bin
+
+#添加，定义中继日志文件的位置和名称
+relay-log-index=slave-relay-bin.index
+
+systemctl restart mysqld
+</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p>slave1</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: left">slave2</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>2）从服务器 对数据库进行操作</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql -u root - p123
+change master to master_host='192.168.71.12',master_user='myslave',master_password='123',master_log_file='master-bin.000002',master_log_pos=306; #show master status;所输出的二进制文件和位置点一样
+     #配置同步，注意master_log_file 和master_log_pos的值要与Master查询的一致
+	 
+start slave;                     #启动同步，如有报错执行reset slave;
+show slave status\G;             #查看Slave 状态
+//确保 IO 和 SQL 线程都是Yes，代表同步正常。
+Slave_IO_Running:Yes            #负责与主机的io通信
+Slave_SQL_Running:Yes           #负责自己的slave mysql进程
+</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--><!---ecms -ecms 
+【图缺】
+--><!---ecms -ecms 
+【图缺】
+--><!---ecms -ecms 
+【图缺】
+--></p>
+<p>5.验证结果</p>
+<p>主服务器上创建一个库验，在从服务器上查看</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<h2>四、MySQL读写分离实验</h2>
+<p>Amoeba服务器（192.168.153.30）安装Java 环境因为Amoeba 基于是jdk1.5 开发的，所以官方推荐使用jdk1.5或1.6版本，高版本不建议使用。</p>
+<p>1）创建jdk java环境</p>
+<p>代码如下：</p>
+<pre>
+<code>
+cd /opt/
+#将jdk-6u14-linux-x64.bin 和 amoeba-mysql-binary-2.2.0.tar.gz上传到/opt目录下
+
+cp jdk-6u14-linux-x64.bin /usr/local/
+cd /usr/local/
+chmod +x jdk-6u14-linux-x64.bin
+./jdk-6u14-linux-x64.bin
+//按yes，按enter
+
+mv jdk1.6.0_14/ /usr/1ocal/jdk1.6
+
+vim /etc/profile
+export JAVA_HOME=/usr/local/jdk1.6
+export CLASSPATH=SCLASSPATH:$JAVA_HOME/lib:$JAVA_HOME/jre/lib
+export PATH=$JAVA_HOME/lib:$JAVA_HOME/jre/bin/:$PATH:$HOME/bin
+export AMOEBA_HOME=/usr/local/amoeba
+export PATH=$PATH:$AMOEBA_HOME/bin
+
+source /etc/profile
+java -version
+</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--><!---ecms -ecms 
+【图缺】
+--><!---ecms -ecms 
+【图缺】
+--></p>
+<p>2）安装 Amoeba软件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mkdir /usr/local/amoeba
+tar zxvf /opt/amoeba-mysql-binary-2.2.0.tar.gz -C /usr/local/amoeba/
+chmod -R 755 /usr/local/amoeba/
+/usr/local/amoeba/bin/amoeba
+//如显示amoeba start|stop 说明安装成功
+</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>3）在主从服务器的mysql上授权</p>
+<p>Master服务器：192.168.71.12Slave1服务器：192.168.71.13Slave2服务器：192.168.71.14</p>
+<p>先在Master、Slave1、Slave2 的mysql上开放权限给 Amoeba 访问</p>
+<p>代码如下：</p>
+<pre>
+<code>
+grant all on *.* to 'test'@'192.168.163.%' identified by 'abc123';</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>4）配置amoeba服务在阿米巴上配置</p>
+<p>代码如下：</p>
+<pre>
+<code>
+cd /usr/local/amoeba/conf/
+
+cp amoeba.xml amoeba.xml.bak     #对配置文件备份
+vim amoeba.xml                   #修改amoeba配置文件
+
+&lt;property name="user"&gt;amoeba&lt;/property&gt;          #30行修改
+
+&lt;property name="password"&gt;abc123&lt;/property&gt;      #32行修改 客户端连接amoeba服务器的密码
+
+&lt;property.name="defaultPool"&gt;master&lt;/property&gt;   #115行修改 设置默认池
+
+&lt;property name="writePool"&gt;master&lt;/property&gt;     #117行去掉注释 设置master为写池
+&lt;property name="readPool"&gt;slaves&lt;/property&gt;		 #slaves 为读池
+</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>代码如下：</p>
+<pre>
+<code>
+cp dbServers.xml dbServers.xml.bak
+vim dbServers.xml                     #修改数据库配置文件
+
+&lt;!-- &lt;property name="schema"&gt; test&lt;/property&gt; --&gt;      #23行,注释掉   作用: 默认进入test库以防mysql 中没有test库时，会报错
+
+&lt;property name="user"&gt;test&lt;/property&gt;                  #26行，修改主从服务器上提权的用户和密码
+
+&lt;property.name-"password"&gt;123&lt;/property&gt;           #28-30行，去掉注释
+
+&lt;dbServer name= "master" parent="abstractServer"&gt;      #45行，修改，设置主服务器的名Master
+
+&lt;property name= "ipAddress"&gt;192.168.71.12&lt;/property&gt;  #48行，修改，设置主服务器的地址
+
+&lt;dbServer name="slave1"  parent="abstractServer"&gt;      #52行，修改，设置从服务器的名slave1
+
+&lt;property.name="ipAddress"&gt;192.168.71.13&lt;/property&gt;   #55行，修改，设置从服务器1的地址
+
+&lt;dbServer name="slave2 " parent="abstractserver"&gt;      #59行，复制上面6行粘贴，设置从服务器2的名slave2和地址
+&lt;property, name="ipAddress"&gt;192.168.71.14&lt;/property&gt;
+
+&lt;dbServer name="slaves" virtual="true"&gt;                #65行，修改
+
+&lt;property name="poolNames"&gt;slave1,slave2&lt;/property&gt;    #71行，修改
+
+/usr/local/amoeba/bin/amoeba start&amp;      #启动Amoeba软件，按ctrl+c 返回
+netstat -anpt | grep java               #查看8066端口是否开启，默认端口为TCP 8066
+</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>5）测试读写分离</p>
+<p>在客户端服务器上测试</p>
+<p>代码如下：</p>
+<pre>
+<code>
+yum install -y mysql mysql-server #快速安装mysql，也可以选择编译安装
+
+mysql -u amoeba -pabc123 -h 192.168.71.20 -P8066</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>主从服务 v器上都可以看到该表</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>通过amoeba服务器代理访问mysql ，在通过客户端连接mysql后写入的数据只有主服务会记录，然后同步给从服务器</p>
+<p>代码如下：</p>
+<pre>
+<code>
+stop slave;                                    #关闭同步写入数据
+use school;
+//在slave1上:
+insert into test1 values('1','slave1');
+
+//在slave2上:
+insert into test1 values('2','slave2');
+</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p>在主服务器上插入数据</p>
+<p>代码如下：</p>
+<pre>
+<code>
+insert into test1 values('3','master');</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p>在客户端中向表插入数据</p>
+<p>代码如下：</p>
+<pre>
+<code>
+//在客户端服务器上:
+use school;
+select * from test1;    //客户端会分别向slave1和s1ave2读取数据，显示的只有在两个从服务器上添加的数据，没有在主服务器上添加的数据
+
+insert into test1 values('4','climet');   //只有主服务器上有此数据
+</code></pre>
+<p>分析MySQL主从复制及读写分离</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: left">在主服务器上查看数据</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: left">同时开启两个从服务器，查看表格记录</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>到此这篇关于详解MySQL主从复制及读写分离的文章就介绍到这了,更多相关MySQL主从复制及读写分离内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL主从复制及读写分离的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/773.html'>MySQL 数据类型 大全</a><a>下一篇</a><a href='/mysql/biji/775.html'>MySQL 用户权限管理的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

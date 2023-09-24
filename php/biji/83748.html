@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL备份与恢复之热备（3）_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="       在上两篇文章（MySQL备份与恢复之冷备，MySQL备份与恢复之真实环境使用冷备）中，我们提到了冷备和真实环境中使用冷备。那从这篇文章开始我们看下热备。显然热备和冷备是两" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL备份与恢复之热备（3）</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>       在上两篇文章（MySQL备份与恢复之冷备，MySQL备份与恢复之真实环境使用冷备）中，我们提到了冷备和真实环境中使用冷备。那从这篇文章开始我们看下热备。显然热备和冷备是两</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 在上两篇文章（MySQL备份与恢复之冷备，MySQL备份与恢复之真实环境使用冷备）中，我们提到了冷备和真实环境中使用冷备。那从这篇文章开始我们看下热备。显然热备和冷备是两个相对的概念，冷备是把数据库服务，比如MySQL，Oracle停下来，然后使用拷贝、打包或者压缩命令对数据目录进行备份；那么我们很容易想到热备就是在MySQL或者其他数据库服务在运行的情况下进行备份。但是，这里存在一个问题，因为生产库在运行的情况下，有对该库的读写，读写频率有可能高，也可能低，不管频率高低，总会就会造成备份出来的数据和生产库中的数据不一致的情况。热备这段时间，其他人不可以操作是不现实的，因为你总不可能终止用户访问Web程序。要解决这个问题，可以采用指定备份策略，比如哪个时间段进行备份，备份哪些数据等等，总之，保证数据的完整性和一致性，切记，备份重于一切！！！<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 热备可以对多个库进行备份，可以对单张表或者某几张表进行备份。但是无法同时备份多个库多个表，只有分开备份。下面我们看下热备的示意图，并进行热备模拟。<br />
+<span style="font-size: medium"><strong>示意图</strong></span></p>
+<p style="text-align: center">&nbsp;</p>
+<p><span style="font-size: medium"><strong>热备模拟</strong></span></p>
+<p><strong>1、对单个库进行备份</strong><br />
+<span style="color: #ff0000"><strong>第一步，移除LVM快照。（如果没有创建，忽略此步）<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 data]# lvremove /dev/data/smydata 
+Do you really want to remove active logical volume smydata&#63; [y/n]: y
+ Logical volume "smydata" successfully removed
+</pre>
+</div>
+<p><span style="color: #ff0000"><strong>第二步，设置MySQL的密码<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; set password=password("123456");
+Query OK, 0 rows affected (0.00 sec)</pre>
+</div>
+<p><span style="color: #ff0000"><strong>第三步，查看MySQL是否启动。因为是热备，所以要求MySQL服务启动<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 data]# /etc/init.d/mysqld status
+ SUCCESS! MySQL running (2664)
+</pre>
+</div>
+<p><span style="color: #ff0000"><strong>第四步，导出单个数据库<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 data]# cd /databackup/
+
+#本质是导出为SQL
+[root@serv01 databackup]# mysqldump -uroot -p123456 --database larrydb
+-- MySQL dump 10.13 Distrib 5.5.29, for Linux (x86_64)
+--
+-- Host: localhost Database: larrydb
+-- ------------------------------------------------------
+-- Server version 5.5.29-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Current Database: `larrydb`
+--
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `larrydb` /*!40100 DEFAULT CHARACTER SET latin1 */;
+
+USE `larrydb`;
+
+--
+-- Table structure for table `class`
+--
+
+DROP TABLE IF EXISTS `class`;
+/*!40101 SET @saved_cs_client = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `class` (
+ `cid` int(11) DEFAULT NULL,
+ `cname` varchar(30) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `class`
+--
+
+LOCK TABLES `class` WRITE;
+/*!40000 ALTER TABLE `class` DISABLE KEYS */;
+INSERT INTO `class` VALUES (1,'linux'),(2,'oracle');
+/*!40000 ALTER TABLE `class` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `stu`
+--
+
+DROP TABLE IF EXISTS `stu`;
+/*!40101 SET @saved_cs_client = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `stu` (
+ `sid` int(11) DEFAULT NULL,
+ `sname` varchar(30) DEFAULT NULL,
+ `cid` int(11) DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `stu`
+--
+
+LOCK TABLES `stu` WRITE;
+/*!40000 ALTER TABLE `stu` DISABLE KEYS */;
+INSERT INTO `stu` VALUES (1,'larry01',1),(2,'larry02',2);
+/*!40000 ALTER TABLE `stu` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+ Dump completed on 2013-09-10 18:56:06
+
+#将输出结果保存到文件中
+[root@serv01 databackup]# mysqldump -uroot -p123456 --database larrydb &gt; larrydb.sql
+</pre>
+</div>
+<p><span style="color: #ff0000"><strong>第五步，模拟数据丢失，进入MySQL，删除数据库<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 data]# mysql -uroot -p123456
+Welcome to the MySQL monitor. Commands end with ; or \g.
+Your MySQL connection id is 4
+Server version: 5.5.29-log Source distribution
+
+Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql&gt; show databases;
++--------------------+
+| Database  |
++--------------------+
+| information_schema |
+| crm  |
+| game  |
+| hello  |
+| larrydb  |
+| mnt  |
+| mysql  |
+| performance_schema |
+| test  |
++--------------------+
+9 rows in set (0.00 sec)
+
+mysql&gt; drop database larrydb;
+Query OK, 2 rows affected (0.01 sec)
+
+mysql&gt; show databases;
++--------------------+
+| Database  |
++--------------------+
+| information_schema |
+| crm  |
+| game  |
+| hello  |
+| mnt  |
+| mysql  |
+| performance_schema |
+| test  |
++--------------------+
+8 rows in set (0.00 sec)
+
+mysql&gt; exit
+Bye
+
+</pre>
+</div>
+<p><span style="color: #ff0000"><strong>第六步，导入数据<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 databackup]# mysql -uroot -p123456 &lt;larrydb.sql
+</pre>
+</div>
+<p>&nbsp;<br />
+<strong><span style="color: #ff0000">第七步，登录MySQL，查看数据是否正常<br />
+</span></strong></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 data]# mysql -uroot -p123456
+Welcome to the MySQL monitor. Commands end with ; or \g.
+Your MySQL connection id is 6
+Server version: 5.5.29-log Source distribution
+
+Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql&gt; show database;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'database' at line 1
+mysql&gt; show databases;
++--------------------+
+| Database  |
++--------------------+
+| information_schema |
+| crm  |
+| game  |
+| hello  |
+| larrydb  |
+| mnt  |
+| mysql  |
+| performance_schema |
+| test  |
++--------------------+
+9 rows in set (0.00 sec)
+
+mysql&gt; use larrydb;
+Database changed
+mysql&gt; select * from class;
++------+--------+
+| cid | cname |
++------+--------+
+| 1 | linux |
+| 2 | oracle |
++------+--------+
+2 rows in set (0.00 sec)
+
+mysql&gt; select * from stu;
++------+---------+------+
+| sid | sname | cid |
++------+---------+------+
+| 1 | larry01 | 1 |
+| 2 | larry02 | 2 |
++------+---------+------+
+2 rows in set (0.00 sec)
+
+</pre>
+</div>
+<p><strong>对多个库进行备份<br />
+</strong><span style="color: #ff0000"><strong>第一步，查看有哪些数据库<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; show databases;
++--------------------+
+| Database  |
++--------------------+
+| information_schema |
+| crm  |
+| game  |
+| hello  |
+| larrydb  |
+| mnt  |
+| mysql  |
+| performance_schema |
+| test  |
++--------------------+
+9 rows in set (0.00 sec)
+mysql&gt; use game;
+Database changed
+mysql&gt; show tables;
++----------------+
+| Tables_in_game |
++----------------+
+| country |
+| fight  |
+| hero  |
++----------------+
+3 rows in set (0.00 sec)
+
+mysql&gt; select * from country;
++-----+---------+----------+
+| cno | cname | location |
++-----+---------+----------+
+| 10 | caowei | luoyang |
+| 20 | shuhan | chengdou |
+| 30 | sunwu | nanjing |
+| 40 | houhan | luoyang |
+| 50 | beisong | kaifeng |
+| 60 | 魏国 | 洛阳 |
++-----+---------+----------+
+6 rows in set (0.00 sec)
+
+</pre>
+</div>
+<p><span style="color: #ff0000"><strong>第二步，备份多个库<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 databackup]# mysqldump -uroot -p123456 --databases larrydb game &gt; larrydb_game.sql
+[root@serv01 databackup]# ll larrydb_game.sql 
+-rw-r--r--. 1 root root 6159 Sep 10 19:05 larrydb_game.sql
+</pre>
+</div>
+<p><span style="color: #ff0000"><strong>第三步，模拟数据丢失。<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; drop database game;
+Query OK, 3 rows affected (0.01 sec)
+
+mysql&gt; drop database larrydb;
+Query OK, 2 rows affected (0.00 sec)
+mysql&gt; use crm;
+Database changed
+mysql&gt; show tables;
++---------------+
+| Tables_in_crm |
++---------------+
+| test  |
++---------------+
+1 row in set (0.00 sec)
+
+mysql&gt; select * from test;
+Empty set (0.00 sec)
+
+mysql&gt; drop database crm;
+Query OK, 1 row affected (0.00 sec)
+</pre>
+</div>
+<p></p>
+<p><span style="color: #ff0000"><strong>第四步，恢复数据<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 databackup]# mysql -uroot -p123456 &lt; larrydb_game.sql 
+</pre>
+</div>
+<p>&nbsp;<br />
+<span style="color: #ff0000"><strong>第五步，查看数据是否正常<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 data]# mysql -uroot -p123456
+Welcome to the MySQL monitor. Commands end with ; or \g.
+Your MySQL connection id is 9
+Server version: 5.5.29-log Source distribution
+
+Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql&gt; show databases;
++--------------------+
+| Database  |
++--------------------+
+| information_schema |
+| game  |
+| hello  |
+| larrydb  |
+| mnt  |
+| mysql  |
+| performance_schema |
+| test  |
++--------------------+
+8 rows in set (0.00 sec)
+
+mysql&gt; use game;
+Database changed
+mysql&gt; select * from country;
++-----+---------+----------+
+| cno | cname | location |
++-----+---------+----------+
+| 10 | caowei | luoyang |
+| 20 | shuhan | chengdou |
+| 30 | sunwu | nanjing |
+| 40 | houhan | luoyang |
+| 50 | beisong | kaifeng |
+| 60 | 魏国 | 洛阳 |
++-----+---------+----------+
+6 rows in set (0.00 sec)
+
+mysql&gt; use larrydb;
+Database changed
+mysql&gt; select * from class;
++------+--------+
+| cid | cname |
++------+--------+
+| 1 | linux |
+| 2 | oracle |
++------+--------+
+2 rows in set (0.00 sec)
+
+</pre>
+</div>
+<p>&nbsp;<br />
+<strong>备份所有的库<br />
+</strong></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 databackup]# mysqldump --help | grep all-database
+OR mysqldump [OPTIONS] --all-databases [OPTIONS]
+ -A, --all-databases Dump all the databases. This will be same as --databases
+   --databases= or --all-databases), the logs will be
+   --all-databases or --databases is given.
+all-databases   FALSE
+
+[root@serv01 databackup]# mysqldump -uroot -p123456 --all-databases &gt; all_databases.sql
+[root@serv01 databackup]# ll all_databases.sql -h
+-rw-r--r--. 1 root root 506K Sep 10 19:16 all_databases.sql
+
+</pre>
+</div>
+<p><strong>备份某张表或者某几张表<br />
+<span style="color: #ff0000">第一步，备份某张表和某几张表</span></strong><span style="color: #ff0000"><br />
+</span></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 databackup]# mysqldump game hero country -uroot -p123456 &gt; game_hero_country.sql
+[root@serv01 databackup]# ll game_hero_country.sql 
+-rw-r--r—. 1 root root 3955 Sep 10 19:11 game_hero_country.sql
+</pre>
+</div>
+<p><span style="color: #ff0000"><strong>第二步，模拟数据丢失</strong></span><br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; use game;
+Database changed
+mysql&gt; show tables;
++----------------+
+| Tables_in_game |
++----------------+
+| country |
+| fight  |
+| hero  |
++----------------+
+3 rows in set (0.00 sec)
+
+mysql&gt; drop table hero;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql&gt; drop table country;
+Query OK, 0 rows affected (0.00 sec)
+ 
+
+</pre>
+</div>
+<p><strong>第三步，查看数据是否正常</strong><br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+[root@serv01 databackup]# mysql -uroot -p123456 &lt; game_hero_country.sql 
+ERROR 1046 (3D000) at line 22: No database selected
+[root@serv01 databackup]# mysql -uroot -p123456 --database game &lt; game_hero_country.sql 
+
+[root@serv01 databackup]# mysql -uroot -p123456 -e "select * from game.country"
++-----+---------+----------+
+| cno | cname | location |
++-----+---------+----------+
+| 10 | caowei | luoyang |
+| 20 | shuhan | chengdou |
+| 30 | sunwu | nanjing |
+| 40 | houhan | luoyang |
+| 50 | beisong | kaifeng |
+| 60 | 魏国 | 洛阳 |
++-----+---------+----------+
+</pre>
+</div>
+<p></p>
+<p>通过这两天关于MySQL热备和冷备的学习，大家是不是对MySQL备份与恢复的了解更加深入了，不管是冷备还是热备其目的都是一致的保证数据的完整性和一致性，切记，备份重于一切！！！<br />
+</p>
+<p>相信今天所学的知识在之后的学习工作中对大家有所帮助。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/83747.html'>一些常用的DIV+CSS的网页布局所用的代码段</a><a>下一篇</a><a href='/php/biji/83749.html'>thinkphp autoload 命名空间自定义 namespace</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

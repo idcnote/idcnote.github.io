@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL 隔离数据列和前缀索引用法详细说明_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL 隔离数据列和前缀索引用法示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+隔离数据列" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL 隔离数据列和前缀索引用法详细说明</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:20:22                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL 隔离数据列和前缀索引用法示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+隔离数据列</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL 隔离数据列和前缀索引用法示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h2>隔离数据列</h2>
+<p>通常，我们会发现查询语句会妨碍MySQL使用索引。除非在查询语句中列是独立的，否则MySQL不会使用这些列的索引。&ldquo;隔离&rdquo;的意思是索引列不应该成为表达式的一部分或者在一个查询函数体中。例如下面的例子就不会命中actor_id这个索引。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT `actor_id` FROM `actor` WHERE `actor_id` + 1 = 2;
+</code></pre>
+<p>MySQL 隔离数据列和前缀索引的使用总结</p>
+<p>对于人来说，很容易知道查询条件实际是actor_id = 4，但是MySQL不会这么处理，因此养成简化WHERE判决条件的习惯，这意味着索引列独立地在比较操作符的一侧。下面是另外一个普遍错误的案例：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT ... WHERE TO_DAYS(CURRENT_DATE) - TO_DAYS(date_col) &lt;= 10;
+</code></pre>
+<p>MySQL 隔离数据列和前缀索引的使用总结</p>
+<h2>前缀索引和索引的选择性</h2>
+<p>有时候需要在很长字符的列上建立索引，但这样会导致索引占据的空间很大且查询变慢。一个策略是使用哈希索引模拟，但有时候这未必是足够好，这个时候该怎么做？</p>
+<p>通常是可以将索引列前面的部分字符建立索引来替换全字段索引提高性能和节省空间。但这种方式会使得选择性变差。索引的选择性是指独立的索引值筛选出的数据占整个数据集合的比例。高选择性的索引可以让MySQL过滤掉更多无关的数据。例如，一个唯一索引的选择性是1。 列的前缀通常在选择性方面已经能够提供足够好的性能。如果使用BLOB或TEXT或非常长的VARCHAR字段列，你必须定义前缀索引，以为MySQL不允许做全长度索引。</p>
+<p>你需要在使用更长的前缀以获得更好的选择性和足够短的前缀以节省存储空间之间平衡。为了确定一个合适的前缀长度，查找出最高频的值，然后和最频繁的前缀进行比较。例如以城市数据表为例，我们可以使用如下的语句统计：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT COUNT(*) as cnt, `name` FROM `common_city` GROUP BY `name` ORDER BY cnt DESC LIMIT 10
+</code></pre>
+<p>MySQL 隔离数据列和前缀索引的使用总结</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>可以看到这些城市名称出现的次数比较多。现在我们可以使用1个字的前缀查找最为频繁的城市名称前缀。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT COUNT(*) as cnt, LEFT(`name`, 1) as pref FROM `common_city` GROUP BY pref ORDER BY cnt DESC LIMIT 10
+</code></pre>
+<p>MySQL 隔离数据列和前缀索引的使用总结</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>可以看到1个字找出来的数据集更多了，这会导致独立选中的机会越少，因此需要调整一下前缀的长度。例如调到3个字。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT COUNT(*) as cnt, LEFT(`name`, 3) as pref FROM `common_city` GROUP BY pref ORDER BY cnt DESC LIMIT 10
+</code></pre>
+<p>MySQL 隔离数据列和前缀索引的使用总结</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>可以看到这和全长度的相差不多，那实际三个字的前缀就够了（原文使用的是英文城市数据表，字符会更多）。另外一种方式是使用不同长度的前缀数量与全字段数量的比例评估多少合适。例如：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT 
+  COUNT(DISTINCT LEFT(`name`, 1)) / COUNT(`name`) as pref1, 
+  COUNT(DISTINCT LEFT(`name`, 2)) / COUNT(`name`) as pref2, 
+  COUNT(DISTINCT LEFT(`name`, 3)) / COUNT(`name`) as pref3, 
+  COUNT(DISTINCT LEFT(`name`, 4)) / COUNT(`name`) as pref4 
+FROM `common_city`
+</code></pre>
+<p>MySQL 隔离数据列和前缀索引的使用总结</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>数值越接近于1效果越好，但是也可以看到，随着前缀长度的加长改善的空间越小。只看平均值并不是一个好主意，还需要检查一下最坏情况。也许会觉得3-4个字足够了，但是如果数据分布很不均匀，那可能会存在陷阱。因此还需要检查一下前缀少的是不是存在一个前缀对应的数据与其他相比极其多的情况。最后可以给指定的列加前缀索引。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+ALTER TABLE `common_city` ADD KEY (name(3));
+</code></pre>
+<p>MySQL 隔离数据列和前缀索引的使用总结</p>
+<p>前缀索引在节省空间和提高效率方面表现不错，但是也有缺陷，那就是在ORDER BY和GROUP BY上无法使用索引（实际验证在MySQL 5.7以上版本也有用）。另外一种常见的场景是在较长的十六进制字符串中，例如存储的sessionId，取前8位前缀做索引将过滤很多无关数据，效果很好。</p>
+<p>以上就是MySQL 隔离数据列和前缀索引的使用总结的详细内容，更多关于MySQL 隔离数据列和前缀索引的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL 隔离数据列和前缀索引用法示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/875.html'>MySQL 8.0 之不可见列的基本操作的解决办法</a><a>下一篇</a><a href='/mysql/biji/877.html'>MySQL 操作总结 INSERT和REPLACE</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

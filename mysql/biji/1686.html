@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>深入MySQL存储引擎比较的分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了深入MySQL存储引擎比较的分析，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！MyISAM是MySQL的默认存储引擎" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">深入MySQL存储引擎比较的分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:30:22                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了深入MySQL存储引擎比较的分析，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！MyISAM是MySQL的默认存储引擎</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了深入MySQL存储引擎比较的分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>MyISAM是MySQL的默认存储引擎。MyISAM不支持事务、也不支持外键，但其访问速度快，对事务完整性没有要求。InnoDB存储引擎提供了具有提交、回滚和崩溃恢复能力的事务安全。但是比起MyISAM存储引擎，InnoDB写的处理效率差一些并且会占用更多的磁盘空间以保留数据和索引。MEMORY存储引擎使用存在内存中的内容来创建表。每个MEMORY表只实际对应一个磁盘文件。MEMORY类型的表访问非常得快，因为它的数据是放在内存中的，并且默认使用HASH索引。但是一旦服务关闭，表中的数据就会丢失掉。
+<p>MERGE存储引擎是一组MyISAM表的组合，这些MyISAM表必须结构完全相同。MERGE表本身没有数据，对MERGE类型的表进行查询、更新、删除的操作，就是对内部的MyISAM表进行的。</p>
+<p><strong>MyISAM表还支持3中不同的存储格式：<font style="COLOR: #ff0000">1 静态表2 动态表3 压缩表 </font></strong>静态表是默认的存储格式，静态表中的字段都是非变长的字段，优点是：存储非常迅速，容易缓存，出现故障容易恢复；缺点是：占用的空间通常比动态表多。（注意： 在存储时，列的宽度不足时，用空格补足，当时在访问的时候并不会得到这些空格）动态表的字段是变长的，优点是：占用的空间相对较少，但是频繁地更新删除记录会产生碎片，需要定期改善性能，并且出现故障的时候恢复相对比较困难。压缩表占用磁盘空间小，每个记录是被单独压缩的，所以只有非常小的访问开支。</p>
+<p>MySQL支持外键存储引擎只有InnoDB，在创建外键的时候，要求附表必须有对应的索引，子表在创建外键的时候也会自动创建对应的索引。InnoDB存储方式为两种：1 使用共享表空间存储 2 使用多表空间MEMORY类型的存储引擎主要用于那些内容变化不频繁的代码表，或者作为统计操作的中间结果表，便于高效地堆中间结果进行分析并得到最终的统计结果。对MEMORY存储引擎的表进行更新操作要谨慎，因为数据并没有实际写入到磁盘中，所以一定要对下次重新启动服务后如何获得这些修改后的数据有所考虑。MERGE用于将一系列等同的MyISAM表以逻辑方式组合在一起，并作为一个对象引用它。MERGE表的优点在于可以突破对单个MyISAM表大小的限制，通过将不同的表分布在多个磁盘上，可以有效的改善MERGE表的访问效率。</p>
+<p>为了适应各种不同的运行环境，MYSQL提供了多种不同的存储引擎（StorageEngine ）,在应用程序开发这个层面上，开发者可以根据不同的需求选择适合的StorageEngine 方案，更为灵活的是，你可以根据每张表将要存储数据的特点，选择不同的StorageEngine,也就是说，在一个MYSQL数据库中，可以混合使用多种不同的StorageEngine首先小瞥一下MySQL的体系结构，在最高抽象层度下，可以用Garlan &amp; Shaw的分层结构体系来表示（左）<!---ecms -ecms 
+【图缺】
+-->其中应用层为所有RDBMS用户提供用户接口，逻辑层包括了所有核心功能的实现，物理层则负责将数据存储在硬件设备上。图中右侧更为具体的描述了逻辑层的组成，查询处理子系统、事务管理子系统、恢复管理子系统和存储管理子系统共同组成了MySQL的逻辑层。相信StorageEngine的位置是在StorageManagement处，既StorageEngine属于StorageManagement子系统的一部分为了让思路更清晰一些，下面给出一幅比较全面的体系结构图（或更确切的说是流程图，只是忽略了反馈）<!---ecms -ecms 
+【图缺】
+-->上面三幅图来自于一篇非官方（不保证百分百的正确）的MySQL体系结构的报告，与《High PerformanceMySQL》一书中给出的MySQL大体结构（下图,基本对应于Logic Layer，从第一幅图右侧可以看出MySQLlogic layer同样遵从分层体系结构）还是比较吻合的。<!---ecms -ecms 
+【图缺】
+-->连接上图中第二层和第三层之间的接口是并不针对任何存储引擎的单一API,.大概由20个基本的类似&ldquo;启动事务，返回结果集&rdquo;等函数组成。存储引擎并不处理SQL，相互之间也不通信，它们的任务只是简单的响应高层传来的请求。</p>
+<p></p>
+<p style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px"><strong>存储引擎各自的一些特点</strong>上面提到的四种存储引擎都有各自适用的环境，这取决于它们独有的一些特征。主要体现在性能、事务、并发控制、参照完整性、缓存、 故障恢复，备份及回存等几个方面目前比较普及的存储引擎是MyISAM和InnoDB.而MyISAM又是绝大部分Web应用的首选。MyISAM与InnoDB的主要的不同点在于性能和事务控制上。MyISAM是早期ISAM(Indexed Sequential Access Method,我现在用的MySQL5.0已经不支持ISAM了）的扩展实现，ISAM被设计为适合处理读频率远大于写频率这样一种情况，因此ISAM以及后来的MyISAM都没有考虑对事物的支持，排除了TPM，不需要事务记录，ISAM的查询效率相当可观，而且内存占用很少。MyISAM在继承了这类优点的同时，与时俱进的提供了大量实用的新特性和相关工具。例如考虑到并发控制，提供了表级锁，虽然MyISAM本身不支持容错，但可以通过myisamchk进行故障恢复。而且由于MyISAM是每张表使用各自独立的存储文件（MYD数据文件和MYI索引文件），使得备份及恢复十分方便（拷贝覆盖即可），而且还支持在线恢复。所以如果你的应用是不需要事务，处理的只是基本的CRUD操作，那么MyISAM是不二选择InnoDB被设计成适用于高并发读写的情况.使用MVCC(Multi-Version Concurrency Control)以及行级锁来提供遵从ACID的事务支持。InnoDB支持外键参照完整性，具备故障恢复能力。另外 InnoDB的性能其实还是不错的，特别是在处理大数据量的情况下,用官方的话说就是： InnoDB的CPU效率是其他基于磁盘的关系数据库存储引擎所不能比的。不过InnoDB的备份恢复要麻烦一点，除非你使用了4.1以后版本提供的Mulit-tablespace支持，因为InnoDB和MyISAM不同，他的数据文件并不是独立对应于每张表的。而是使用的共享表空间，简单的拷贝覆盖方法对他不适用，必须在停掉MYSQL后对进行数据恢复。使用Per-Table Tablespacesd，使其每张表对应一个独立的表空间文件，则情况要简单很多。一般来说，如果需要事务支持，并且有较高的并发读写频率，InnoDB是不错的选择。要是并发读写频率不高的话，其实可以考虑BDB,但由于在MySQL5.1及其以后版本中，将不再提供BDB支持。这个选项也就没有了至于Heap和BDB（Berkeley DB），相对来说，普及率不如前两种，但在有些情况下，还是挺适用的Heap存储引擎就是将数据存储在内存中，由于没有磁盘I./O的等待，速度极快。但由于是内存存储引擎，所做的任何修改在服务器重启后都将消失。<strong><font style="COLOR: #ff0000">Heap挺适合做测试的时候使用</font></strong>BDB是MySQL第一款事务安全的存储引擎。在Berkeley DB database library的基础上建立，同样是事务安全的，但BDB的普及率显然不及InnoDB，因为大多数在MySQL中寻找支持事务的存储引擎的同时也在找支持MVCC或是行级锁定存储引擎，而BDB只支持Page-level Lock。</p>
+<p style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px"></p>
+<p style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px"></p>
+<p style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">附上一张《High PerformanceMySQL》 中的各存储引擎的特性表</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Attribute</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">MyISAM</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Heap</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">BDB</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">InnoDB</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Transactions</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">No</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">No</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Yes</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Yes</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Lock granularity</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Table</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Table</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Page (8 KB)</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Row</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Storage</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Split files</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">In-memory</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Single file per table</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Tablespace(s)</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Isolation levels</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">None</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">None</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Read committed</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">All</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Portable format</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Yes</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">N/A</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">No</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Yes</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Referential integrity</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">No</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">No</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">No</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Yes</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Primary key with data</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">No</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">No</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Yes</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Yes</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">MySQLcaches data records</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">No</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Yes</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Yes</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Yes</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">Availability</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">All versions</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">All versions</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">MySQL-Max</p>
+<p class="docText" style="PADDING-BOTTOM: 0px; MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; PADDING-TOP: 0px">All Versions</p>
+
+<p>注：关于深入MySQL存储引擎比较的分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1685.html'>解决MySQL导入还原时乱码的问题</a><a>下一篇</a><a href='/mysql/biji/1687.html'>探讨:MySQL中如何查询当前正在运行的SQL语句</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

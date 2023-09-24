@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>php实现Linux服务器木马排查及加固功能_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="网站频繁被挂马&amp;#63;做一些改进，基本上能把这个问题解决，因为discuz x等程序存在漏洞，被上传了websehll,每次被删除过段时间又出来了，最终查到所有的木马。<br />
+<br />
+从以下几个方面查找" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">php实现Linux服务器木马排查及加固功能</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>网站频繁被挂马&amp;#63;做一些改进，基本上能把这个问题解决，因为discuz x等程序存在漏洞，被上传了websehll,每次被删除过段时间又出来了，最终查到所有的木马。<br />
+<br />
+从以下几个方面查找</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>网站频繁被挂马&#63;做一些改进，基本上能把这个问题解决，因为discuz x等程序存在漏洞，被上传了websehll,每次被删除过段时间又出来了，最终查到所有的木马。</p>
+<p></p>
+<p>从以下几个方面查找并加强（如果能不开启会员功能，不给任何上传入口，保护好后台密码，加固好PHP，一般就没什么问题了）。</p>
+<p></p>
+<p><strong>1.根据特征码查找：</strong></p>
+<p></p>
+<p>php木马一般含有<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="47677" class="copybut" id="copybut47677" onclick="doCopy('code47677')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code47677"><br />
+&lt;&#63;php eval($_POST[cmd]);&#63;&gt;<br />
+</div><br />
+或者<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="39391" class="copybut" id="copybut39391" onclick="doCopy('code39391')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code39391"><br />
+&lt;&#63;php assert($_POST[cmd]);&#63;&gt;</p>
+<p>find /wwwroot/* -type f -name "*.php" |xargs grep "eval(" &gt; /wwwroot/scan.txt<br />
+</div></p>
+<p>结果就查出很多明显的webshell,并且发现都藏在attachment等目录下</p>
+<p></p>
+<p><strong>2.利用网上的一个php代码，搜索最近被修改的文件</strong></p>
+<p></p>
+<p>scandir.php<br />
+内容如下：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="17365" class="copybut" id="copybut17365" onclick="doCopy('code17365')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code17365"><br />
+&lt;&#63;php <br />
+set_time_limit(0);//防止超时 <br />
+/** <br />
+* <br />
+* php目录扫描监控增强版 <br />
+* <br />
+* @author lssbing (lssbing#gmail.com) <br />
+* @date 2010-1-18 <br />
+* @license BSD <br />
+* @version 1.0 <br />
+* <br />
+下面几个变量使用前需要手动设置 <br />
+* <br />
+**/ <br />
+/*===================== 程序配置 =====================*/ <br />
+$pass="12345";//设置密码 <br />
+$jkdir="."; //设置监控扫描的目录，当前目录为'.'，上一级目录为'..'，也可以设置绝对路径，后面不要加斜杠，默认为当前目录 <br />
+$logfilename="./m.log";//设置存储log的路径，可以放置在任意位置 <br />
+$exclude=array('data','images');//排除目录 <br />
+$danger='eval|cmd|passthru|gzuncompress';//设置要查找的危险的函数 以确定是否木马文件 <br />
+$suffix='php|inc';//设置要扫描文件的后缀 <br />
+/*===================== 配置结束 =====================*/ <br />
+&nbsp;<br />
+$filename=$_GET['filename']; <br />
+$check=$_GET['check']; <br />
+$jumpoff=false; <br />
+$url = $_SERVER['PHP_SELF']; <br />
+$thisfile = end(explode('/',$url)); <br />
+$jump="{$thisfile}|".implode('|',$exclude); <br />
+$jkdir_num=$file_num=$danger_num=0; <br />
+define('M_PATH',$jkdir); <br />
+define('M_LOG',$logfilename); <br />
+if ($check=='check') <br />
+{ <br />
+$safearr = explode("|",$jump); <br />
+$start_time=microtime(true); <br />
+safe_check($jkdir); <br />
+$end_time=microtime(true); <br />
+$total=$end_time-$start_time; <br />
+$file_num=$file_num-$jkdir_num; <br />
+$message= " 文件数:".$file_num; <br />
+$message.= " 文件夹数：".$jkdir_num; <br />
+$message.= " 可疑文件数：".$danger_num; <br />
+$message.= " 执行时间：".$total; <br />
+echo $message; <br />
+}else{ <br />
+if ($_GET['m']=="del") Delete();//处理文件删除 <br />
+//读取文件内容 <br />
+if(isset($_GET['readfile'])){ <br />
+//输出查看密码，密码校验正确以后输出文件内容 <br />
+if(emptyempty($_POST['passchack'])){ <br />
+&nbsp;&nbsp; echo"&lt;form id=\"form1\" name=\"form1\" method=\"post\"&gt;" <br />
+&nbsp;&nbsp;&nbsp; . " &lt;label&gt;pass" <br />
+&nbsp;&nbsp;&nbsp; . " &lt;input type=\"text\" name=\"passchack\" /&gt;" <br />
+&nbsp;&nbsp;&nbsp; . " &lt;/label&gt;" <br />
+&nbsp;&nbsp;&nbsp; . " &lt;input type=\"submit\" name=\"Submit\" value=\"提交\" /&gt;" <br />
+&nbsp;&nbsp;&nbsp; . "&lt;/form&gt;" <br />
+&nbsp;&nbsp; .""; <br />
+&nbsp;&nbsp; exit; <br />
+}elseif(isset($_POST['passchack'])&&$_POST['passchack']==$pass){ <br />
+&nbsp;&nbsp; $code=file_get_contents($_GET['readfile']); <br />
+&nbsp;&nbsp; echo"&lt;textarea name=\"code\" cols=\"150\" rows=\"30\" id=\"code\" style='width:100%;height:450px;background:#cccccc;'&gt;{$code}&lt;/textarea&gt;"; <br />
+&nbsp;&nbsp; exit; <br />
+}else{ <br />
+&nbsp;&nbsp; exit; <br />
+} <br />
+&nbsp;<br />
+}else{ <br />
+record_md5(M_PATH); <br />
+if(file_exists(M_LOG)){ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $log = unserialize(file_get_contents(M_LOG)); <br />
+}else{ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $log = array(); <br />
+} <br />
+&nbsp;<br />
+if($_GET['savethis']==1){ <br />
+//保存当前文件md5到日志文件 <br />
+@unlink(M_LOG); <br />
+file_put_contents(M_LOG,serialize($file_list)); <br />
+echo "&lt;a href='scandir.php'&gt;保存成功！点击返回&lt;/a&gt;"; <br />
+exit; <br />
+} <br />
+if(emptyempty($log)){ <br />
+echo "当前还没有创建日志文件！点击[保存当前]创建日志文件！"; <br />
+}else{ <br />
+if($file_list==$log){ <br />
+&nbsp;&nbsp; echo "本文件夹没有做过任何改动！"; <br />
+}else{ <br />
+&nbsp;&nbsp; if(count($file_list) &gt; 0 ){ <br />
+&nbsp;&nbsp;&nbsp; foreach($file_list as $file =&gt; $md5){ <br />
+&nbsp;&nbsp;&nbsp; if(!isset($log[$file])){ <br />
+&nbsp;&nbsp;&nbsp;&nbsp; echo "新增文件：&lt;a href={$file} target='_blank'&gt;".$file."&lt;/a&gt;"." 创建时间：".date("Y-m-d H:i:s",filectime($file))." 修改时间：".date("Y-m-d H:i:s",filemtime($file))." &lt;a href=&#63;readfile={$file} target='_blank'&gt;源码&lt;/a&gt;&lt;a href='&#63;m=del&filename={$file}' target='_blank'&gt;删除&lt;/u&gt;&lt;/a&gt;&lt;br /&gt;"; <br />
+&nbsp;&nbsp;&nbsp; }else{ <br />
+&nbsp;&nbsp;&nbsp;&nbsp; if($log[$file] != $md5){ <br />
+&nbsp;&nbsp;&nbsp;&nbsp; echo "修改文件：&lt;a href={$file} target='_blank'&gt;".$file."&lt;/a&gt;"." 创建时间：".date("Y-m-d H:i:s",filectime($file))." 修改时间：".date("Y-m-d H:i:s",filemtime($file))." &lt;a href=&#63;readfile={$file} target='_blank'&gt;源码&lt;/a&gt;&lt;br /&gt;"; <br />
+&nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp; unset($log[$file]); <br />
+&nbsp;&nbsp;&nbsp;&nbsp; }else{ <br />
+&nbsp;&nbsp;&nbsp;&nbsp; unset($log[$file]); <br />
+&nbsp;&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;&nbsp; } <br />
+&nbsp;&nbsp; if(count($log)&gt;0){ <br />
+&nbsp;&nbsp;&nbsp; foreach($log as $file =&gt; $md5){ <br />
+&nbsp;&nbsp;&nbsp; echo "删除文件：&lt;a href={$file} target='_blank'&gt;".$file."&lt;/a&gt;&lt;br /&gt;"; <br />
+&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;&nbsp; } <br />
+&nbsp;&nbsp;&nbsp; } <br />
+} <br />
+} <br />
+} <br />
+&nbsp;<br />
+//计算md5 <br />
+function record_md5($jkdir){ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global $file_list,$exclude; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if(is_dir($jkdir)){ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $file=scandir($jkdir); <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; foreach($file as $f){ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if($f!='.' && $f!='..' && !in_array($f, $exclude)){ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $path = $jkdir.'/'.$f; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if(is_dir($path)){ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; record_md5($path); <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }else{ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $file_list[$path]=md5_file($path); <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } <br />
+} <br />
+&nbsp;<br />
+function Safe_Check($jkdir)//遍历文件 <br />
+{ <br />
+global $danger ,$suffix ,$jkdir_num ,$file_num ,$danger_num; <br />
+&nbsp;<br />
+$hand=@dir($jkdir) or die('文件夹不存在') ; <br />
+while ($file=$hand-&gt;read()) <br />
+{ <br />
+&nbsp;&nbsp;&nbsp; $filename=$jkdir.'/'.$file; <br />
+&nbsp;&nbsp;&nbsp; if (!$jumpoff) { <br />
+&nbsp;&nbsp; if(Jump($filename))continue; <br />
+&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;&nbsp;&nbsp; if(@is_dir($filename) && $file != '.' && $file!= '..'&& $file!='./..') <br />
+&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; $jkdir_num++; <br />
+&nbsp;&nbsp;&nbsp; Safe_Check($filename); <br />
+&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;&nbsp;&nbsp; if (preg_match_all ("/\.($suffix)/i",$filename,$out)) <br />
+&nbsp;&nbsp;&nbsp; { <br />
+&nbsp;<br />
+&nbsp;&nbsp; $str=''; <br />
+&nbsp;&nbsp; $fp = @fopen($filename,'r')or die('没有权限'); <br />
+&nbsp;&nbsp; while(!feof($fp)) <br />
+&nbsp;&nbsp; { <br />
+&nbsp;&nbsp; $str .= fgets($fp,1024); <br />
+&nbsp;&nbsp; } <br />
+&nbsp;&nbsp; fclose($fp); <br />
+&nbsp;&nbsp; if( preg_match_all ("/($danger)[ \r\n\t]{0,}([\[\(])/i",$str,$out)) <br />
+&nbsp;&nbsp; { <br />
+&nbsp;&nbsp; echo "&lt;font color='green' style='font-size:14px'&gt;可疑文件：{$filename}&lt;/font&gt;"." 创建时间：".date("Y-m-d H:i:s",filectime($filename))." 修改时间：".date("Y-m-d H:i:s",filemtime($filename))." &lt;a href='&#63;readfile={$filename}' target='_blank'&gt;&lt;u&gt;查看代码&lt;/u&gt;&lt;/a&gt; &lt;a href='&#63;m=del&filename=$filename' target='_blank'&gt;删除&lt;/u&gt;&lt;/a&gt;&lt;br&gt;"; <br />
+&nbsp;&nbsp; $danger_num++; <br />
+&nbsp;&nbsp; } <br />
+&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;&nbsp;&nbsp; $file_num++; <br />
+} <br />
+} <br />
+function Edit()//查看可疑文件 <br />
+{ <br />
+global $filename; <br />
+$filename = str_replace("..","",$filename); <br />
+$file = $filename; <br />
+$content = ""; <br />
+if(is_file($file)) <br />
+{ <br />
+&nbsp;&nbsp;&nbsp; $fp = fopen($file,"r")or die('没有权限'); <br />
+&nbsp;&nbsp;&nbsp; $content = fread($fp,filesize($file)); <br />
+&nbsp;&nbsp;&nbsp; fclose($fp); <br />
+&nbsp;&nbsp;&nbsp; $content = htmlspecialchars($content); <br />
+&nbsp;<br />
+} <br />
+echo "&lt;textarea name='str' style='width:100%;height:450px;background:#cccccc;'&gt;$content&lt;/textarea&gt;\r\n"; <br />
+exit(); <br />
+} <br />
+function Delete()//删除文件 <br />
+{ global $filename,$pass; <br />
+if(emptyempty($_POST['passchack'])){ <br />
+&nbsp;&nbsp;&nbsp; echo"&lt;form id=\"form1\" name=\"form1\" method=\"post\"&gt;" <br />
+&nbsp;&nbsp; . " &lt;label&gt;pass" <br />
+&nbsp;&nbsp; . " &lt;input type=\"text\" name=\"passchack\" /&gt;" <br />
+&nbsp;&nbsp; . " &lt;/label&gt;" <br />
+&nbsp;&nbsp; . " &lt;input type=\"submit\" name=\"Submit\" value=\"提交\" /&gt;" <br />
+&nbsp;&nbsp; . "&lt;/form&gt;" <br />
+&nbsp;&nbsp;&nbsp; .""; <br />
+&nbsp;&nbsp;&nbsp; exit; <br />
+}elseif(isset($_POST['passchack'])&&$_POST['passchack']==$pass){ <br />
+&nbsp;&nbsp; (is_file($filename))&#63;($mes=unlink($filename)&#63;'删除成功':'删除失败 查看权限'):''; <br />
+&nbsp;&nbsp; echo $mes; <br />
+&nbsp;&nbsp; exit(); <br />
+}else{ <br />
+&nbsp;&nbsp; echo '密码错误！'; <br />
+&nbsp;&nbsp; exit; <br />
+} <br />
+} <br />
+function Jump($file)//跳过文件 <br />
+{ <br />
+global $jump,$safearr; <br />
+if($jump != '') <br />
+{ <br />
+&nbsp;&nbsp;&nbsp; foreach($safearr as $v) <br />
+&nbsp;&nbsp;&nbsp; { <br />
+&nbsp;&nbsp; if($v=='') continue; <br />
+&nbsp;&nbsp; if( eregi($v,$file) ) return true ; <br />
+&nbsp;&nbsp;&nbsp; } <br />
+} <br />
+return false; <br />
+} <br />
+&#63;&gt; <br />
+&lt;a href="scandir.php"&gt;[查看文件改动]&lt;/a&gt;|&lt;a href="scandir.php&#63;savethis=1"&gt;[保存当前文件指纹]&lt;/a&gt;|&lt;a href="scandir.php&#63;check=check"&gt;[扫描可疑文件]&lt;/a&gt; <br />
+</div></p>
+<p></p>
+<p>执行后能看到最近被修改的文件，具有参加价值</p>
+<p></p>
+<p><strong>3.修改php.ini，限制以下函数</strong></p>
+<p></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="56885" class="copybut" id="copybut56885" onclick="doCopy('code56885')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code56885"><br />
+disable_functions =&nbsp; phpinfo,passthru,exec,system,chroot,chgrp,chown,shell_exec,proc_open,proc_get_status,ini_alter,ini_alter,ini_restore,dl,pfsockopen,openlog,syslog,readlink,symlink,popepassthru,stream_socket_server,fsocke,popen,proc_close,curl_exec,curl_multi_exec,parse_ini_file,show_source,dl,escapeshellarg,escapeshellcmd <br />
+</div></p>
+<p></p>
+<p><strong>4.修改nginx.conf ,限制一些目录执行php文件</strong></p>
+<p></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="38323" class="copybut" id="copybut38323" onclick="doCopy('code38323')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code38323"><br />
+server <br />
+{ <br />
+&nbsp;&nbsp;&nbsp; listen&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 80; <br />
+&nbsp;&nbsp;&nbsp; server_name&nbsp; www.***.com; <br />
+&nbsp;&nbsp;&nbsp; index&nbsp;&nbsp; index.htm index.html index.php; <br />
+&nbsp;&nbsp;&nbsp; root&nbsp; /wwwroot/; <br />
+&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; rewrite ^([^\.]*)/topic-(.+)\.html$ $1/portal.php&#63;mod=topic&topic=$2 last; <br />
+&nbsp;&nbsp;&nbsp; rewrite ^([^\.]*)/article-([0-9]+)-([0-9]+)\.html$ $1/portal.php&#63;mod=view&aid=$2&page=$3 last; <br />
+&nbsp;&nbsp;&nbsp; rewrite ^([^\.]*)/forum-(\w+)-([0-9]+)\.html$ $1/forum.php&#63;mod=forumdisplay&fid=$2&page=$3 last; <br />
+&nbsp;&nbsp;&nbsp; rewrite ^([^\.]*)/thread-([0-9]+)-([0-9]+)-([0-9]+)\.html$ $1/forum.php&#63;mod=viewthread&tid=$2&extra=page%3D$4&page=$3 last; <br />
+&nbsp;&nbsp;&nbsp; rewrite ^([^\.]*)/group-([0-9]+)-([0-9]+)\.html$ $1/forum.php&#63;mod=group&fid=$2&page=$3 last; <br />
+&nbsp;&nbsp;&nbsp; rewrite ^([^\.]*)/space-(username|uid)-(.+)\.html$ $1/home.php&#63;mod=space&$2=$3 last; <br />
+&nbsp;&nbsp;&nbsp; rewrite ^([^\.]*)/([a-z]+)-(.+)\.html$ $1/$2.php&#63;rewrite=$3 last; <br />
+&nbsp;&nbsp;&nbsp; rewrite ^([^\.]*)/topic-(.+)\.html$ $1/portal.php&#63;mod=topic&topic=$2 last; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; location ~ ^/images/.*\.(php|php5)$ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; { <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; deny all; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; location ~ ^/static/.*\.(php|php5)$ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; { <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; deny all; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; location ~* ^/data/(attachment|avatar)/.*\.(php|php5)$ <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; { <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; deny all; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;<br />
+&nbsp;&nbsp;&nbsp; location ~ .*\.(php|php5)&#63;$ <br />
+&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fastcgi_pass&nbsp; 127.0.0.1:9000; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fastcgi_index index.php; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include fcgi.conf; <br />
+&nbsp;&nbsp;&nbsp; } <br />
+&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;<br />
+error_page&nbsp; 400 /404.html; <br />
+error_page&nbsp; 403 /404.html; <br />
+error_page&nbsp; 404 /404.html; <br />
+error_page&nbsp; 405 /404.html; <br />
+error_page&nbsp; 408 /404.html; <br />
+error_page&nbsp; 410 /404.html; <br />
+error_page&nbsp; 411 /404.html; <br />
+error_page&nbsp; 412 /404.html; <br />
+error_page&nbsp; 413 /404.html; <br />
+error_page&nbsp; 414 /404.html; <br />
+error_page&nbsp; 415 /404.html; <br />
+error_page&nbsp; 500 /404.html; <br />
+error_page&nbsp; 501 /404.html; <br />
+error_page&nbsp; 502 /404.html; <br />
+error_page&nbsp; 503 /404.html; <br />
+error_page&nbsp; 506 /404.html; <br />
+&nbsp;<br />
+&nbsp;<br />
+log_format&nbsp; acclog&nbsp;&nbsp;&nbsp; "$remote_addr $request_time $http_x_readtime [$time_local] \"$request_method http://$host$request_uri\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; access_log&nbsp; /logs/access.log&nbsp; acclog; <br />
+} <br />
+</div></p>
+<p></p>
+<p>此处需要注意的是</p>
+<p></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="20569" class="copybut" id="copybut20569" onclick="doCopy('code20569')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code20569"><br />
+location ~ ^/images/.*\.(php|php5)$ <br />
+{ <br />
+&nbsp; deny all; <br />
+} <br />
+</div></p>
+<p></p>
+<p>这些目录的限制必须写在</p>
+<p></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="47272" class="copybut" id="copybut47272" onclick="doCopy('code47272')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code47272"><br />
+location ~ .*\.(php|php5)&#63;$ <br />
+{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp; fastcgi_pass&nbsp; 127.0.0.1:9000; <br />
+&nbsp; fastcgi_index index.php; <br />
+&nbsp; include fcgi.conf; <br />
+} <br />
+</div></p>
+<p>的前面，否则限制不生效。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/101797.html'>Win10控制面板如何显示所有项以方便使用</a><a>下一篇</a><a href='/php/biji/101799.html'>Java中使用正则表达式的一个简单例子及常用正则分享</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

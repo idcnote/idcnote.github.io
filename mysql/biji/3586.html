@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server优化的内存占用之执行缓存实现方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server优化的内存占用之执行缓存实现方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！首先说明一下S" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server优化的内存占用之执行缓存实现方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:47:53                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server优化的内存占用之执行缓存实现方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！首先说明一下S</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server优化的内存占用之执行缓存实现方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>首先说明一下SQL Server内存占用由哪几部分组成。SQL Server占用的内存主要由三部分组成：数据缓存(Data Buffer)、执行缓存(Procedure Cache)、以及SQL Server引擎程序。SQL Server引擎程序所占用缓存一般相对变化不大，则我们进行内存调优的主要着眼点在数据缓存和执行缓存的控制上。本文主要介绍一下执行缓存的调优。数据缓存的调优将在另外的文章中介绍。对于减少执行缓存的占用，主要可以通过使用参数化查询减少内存占用。1、使用参数化查询减少执行缓存占用我们通过如下例子来说明一下使用参数化查询对缓存占用的影响。为方便试验，我们使用了一台没有其它负载的SQL Server进行如下实验。下面的脚本循环执行一个简单的查询，共执行10000次。首先，我们清空一下SQL Server已经占用的缓存：dbcc freeproccache然后，执行脚本：
+<p>代码如下:</p>
+<pre>
+<code> 
+DECLARE @t datetime 
+SET @t = getdate() 
+SET NOCOUNT ON 
+DECLARE @i INT, @count INT, @sql nvarchar(4000) 
+
+SET @i = 20000 
+WHILE @i &lt;= 30000 
+BEGIN 
+SET @sql = &#39;SELECT @count=count(*) FROM P_Order WHERE MobileNo = &#39; + cast( @i as varchar(10) ) 
+EXEC sp_executesql @sql ,N&#39;@count INT OUTPUT&#39;, @count OUTPUT 
+SET @i = @i + 1 
+END 
+PRINT DATEDIFF( second, @t, current_timestamp ) 
+</code></pre>输出：DBCC 执行完毕。如果 DBCC 输出了错误信息，请与系统管理员联系。11使用了11秒完成10000次查询。我们看一下SQL Server缓存中所占用的查询计划：Select Count(*) CNT,sum(size_in_bytes) TotalSizeFrom sys.dm_exec_cached_plans查询结果：共有2628条执行计划缓存在SQL Server中。它们所占用的缓存达到：92172288字节 = 90012KB = 87 MB。我们也可以使用dbcc memorystatus 命令来检查SQL Server的执行缓存和数据缓存占用。执行结果如下：【图片暂缺】
+<p>【图片暂缺】</p>
+<p>【图片暂缺】</p>执行缓存占用了90088KB，有2629个查询计划在缓存里，有1489页空闲内存（每页8KB）可以被数据缓存和其他请求所使用。我们现在修改一下前面的脚本，然后重新执行一下dbcc freeproccache。再执行一遍修改后的脚本：
+<p>代码如下:</p>
+<pre>
+<code> 
+DECLARE @t datetime 
+SET @t = getdate() 
+SET NOCOUNT ON 
+DECLARE @i INT, @count INT, @sql nvarchar(4000) 
+
+SET @i = 20000 
+WHILE @i &lt;= 30000 
+BEGIN 
+SET @sql = &#39;select @count=count(*) FROM P_Order WHERE MobileNo = @i&#39; 
+EXEC sp_executesql @sql, N&#39;@count int output, @i int&#39;, @count OUTPUT, @i 
+SET @i = @i + 1 
+END 
+PRINT DATEDIFF( second, @t, current_timestamp ) 
+</code></pre>输出：DBCC 执行完毕。如果 DBCC 输出了错误信息，请与系统管理员联系。1即这次只用1秒钟即完成了10000次查询。我们再看一下sys.dm_exec_cached_plans中的查询计划：Select Count(*) CNT,sum(size_in_bytes) TotalSize From sys.dm_exec_cached_plans查询结果：共有4条执行计划被缓存。它们共占用内存： 172032字节 = 168KB。如果执行dbcc memorystatus，则得到结果：【图片暂缺】
+<p>【图片暂缺】</p>
+<p>【图片暂缺】</p>有12875页空闲内存(每页8KB)可以被数据缓存所使用。到这里，我们已经看到了一个反差相当明显的结果。在现实中，这个例子中的前者，正是经常被使用的一种执行SQL脚本的方式（例如：在程序中通过合并字符串方式拼成一条SQL语句，然后通过ADO.NET或者ADO方式传入SQL Server执行）。解释一下原因：我们知道，SQL语句在执行前首先将被编译并通过查询优化引擎进行优化，从而得到优化后的执行计划，然后按照执行计划被执行。对于整体相似、仅仅是参数不同的SQL语句，SQL Server可以重用执行计划。但对于不同的SQL语句，SQL Server并不能重复使用以前的执行计划，而是需要重新编译出一个新的执行计划。同时，SQL Server在内存足够使用的情况下，此时并不主动清除以前保存的查询计划（注：对于长时间不再使用的查询计划，SQL Server也会定期清理）。这样，不同的SQL语句执行方式，就将会大大影响SQL Server中存储的查询计划数目。如果限定了SQL Server最大可用内存，则过多无用的执行计划占用，将导致SQL Server可用内存减少，从而在执行查询时尤其是大的查询时与磁盘发生更多的内存页交换。如果没有限定最大可用内存，则SQL Server由于可用内存减少，从而会占用更多内存。对此，我们一般可以通过两种方式实现参数化查询：一是尽可能使用存储过程执行SQL语句（这在现实中已经成为SQL Server DBA的一条原则），二是使用sp_executesql 方式执行单个SQL语句（注意不要像上面的第一个例子那样使用sp_executesql)。在现实的同一个软件系统中，大量的负载类型往往是类似的，所区别的也只是每次传入的具体参数值的不同。所以使用参数化查询是必要和可能的。另外，通过这个例子我们也看到，由于使用了参数化查询，不仅仅是优化了SQL Server内存占用，而且由于能够重复使用前面被编译的执行计划，使后面的执行不需要再次编译，最终执行10000次查询总共只使用了1秒钟时间。2、检查并分析SQL Server执行缓存中的执行计划通过上面的介绍，我们可以看到SQL缓存所占用的内存大小。也知道了SQL Server执行缓存中的内容主要是各种SQL语句的执行计划。则要对缓存进行优化，就可以通过具体分析缓存中的执行计划，看看哪些是有用的、哪些是无用的执行计划来分析和定位问题。通过查询DMV: sys.dm_exec_cached_plans,可以了解数据库中的缓存情况，包括被使用的次数、缓存类型、占用的内存大小等。SELECT usecounts, cacheobjtype, objtype,size_in_bytes, plan_handleFROM sys.dm_exec_cached_plans【图片暂缺】
+<p></p>
+<p>通过缓存计划的plan_handle可以查询到该执行计划详细信息，包括所对应的SQL语句：</p>
+<p align="left">SELECT TOP 100 usecounts,</p>
+<p align="left"> objtype,</p>
+<p align="left"> p.size_in_bytes,</p>
+<p align="left"> [sql].[text]</p>
+<p align="left">FROM sys.dm_exec_cached_plans p</p>
+<p align="left">OUTER APPLY sys.dm_exec_sql_text (p.plan_handle) sql</p>
+<p align="left">ORDER BY usecounts</p>
+<p>【图片暂缺】</p>
+<p>我们可以选择针对那些执行计划占用较大内存、而被重用次数较少的SQL语句进行重点分析。看其调用方式是否合理。另外，也可以对执行计划被重复使用次数较多的SQL语句进行分析，看其执行计划是否已经经过优化。进一步，通过对查询计划的分析，还可以根据需要找到系统中最占用IO、CPU时间、执行次数最多的一些SQL语句，然后进行相应的调优分析。篇幅所限，这里不对此进行过多介绍。读者可以查阅联机丛书中的：sys.dm_exec_query_plan内容得到相关帮助。</p>
+<p>附：</p>
+<p align="left">1:关于DBCC MEMORY，可以查看微软的知识库: http://support.microsoft.com/kb/907877/EN-US</p>
+<p>2:关于sys.dm_exec_cached_plans和sys.dm_exec_sql_text，请参阅联机丛书。</p>
+
+<p>注：关于SQL Server优化的内存占用之执行缓存实现方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3585.html'>SQL Server 分页查询 效率最高</a><a>下一篇</a><a href='/mysql/biji/3587.html'>SQL Server 数据库中的表、字段sql语句用法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

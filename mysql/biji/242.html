@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL中float、double、decimal三个浮点类型的区别的实现方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL中float、double、decimal三个浮点类型的区别的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL中float、double、decimal三个浮点类型的区别的实现方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:14:26                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL中float、double、decimal三个浮点类型的区别的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL中float、double、decimal三个浮点类型的区别的实现方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>下表中规划了每个浮点类型的存储大小和范围:</p>
+<p></p>
+<table>
+	<thead>
+		<tr>
+			<th>类型</th>
+			<th>大小</th>
+			<th>范围（有符号）</th>
+			<th>范围（无符号）</th>
+			<th>用途</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>==float==</td>
+			<td>4 bytes</td>
+			<td>(-3.402 823 466 E+38，-1.175 494 351 E-38)，0，(1.175 494 351 E-38，3.402 823 466 351 E+38)</td>
+			<td>0，(1.175 494 351 E-38，3.402 823 466 E+38)</td>
+			<td>单精度 浮点数值</td>
+		</tr>
+		<tr>
+			<td>==double==</td>
+			<td>8 bytes</td>
+			<td>(-1.797 693 134 862 315 7 E+308，-2.225073858507 2014E-308)，0，(2.225 073 858 507 201 4 E-308，1.797 693 134 862 315 7 E+308)</td>
+			<td>0，(2.225 073 858 507 201 4 E-308，1.797 693 134 862 315 7 E+308)</td>
+			<td>双精度 浮点数值</td>
+		</tr>
+		<tr>
+			<td>decimal</td>
+			<td>对decimal(M,D) ，如果M&gt;D，为M+2否则为D+2</td>
+			<td>依赖于M和D的值</td>
+			<td>依赖于M和D的值</td>
+			<td>小数值</td>
+		</tr>
+	</tbody>
+</table>
+<p>那么MySQL中这三种都是浮点类型 它们彼此的区别又是什么呢 ？？</p>
+<ul>
+	<li>float 浮点类型用于表示==单精度浮点==数值,</li>
+	<li>double浮点类型用于表示==双精度浮点==数值</li>
+</ul>
+<p>这里肯定有些小伙伴要问了 什么是单精度 什么是双精度 ？ 下面我们就来简单了解一下吧!</p>
+<p>我们知道一个bytes(字节) 占8位 对吧!</p>
+<p>float单精度 存储浮点类型的话 就是 ==4x8=32位的长度== , 所以float单精度浮点数在内存中占 4 个字节，并且用 32 位二进制进行描述</p>
+<p>那么 double双精度 存储浮点类型就是 ==8x8 =64位的长度==, 所以double双精度浮点数在内存中占 8 个字节，并且用 64 位二进制进行描述 通过计算、那么64位就可以获得更多的尾数!</p>
+<p>尾数 : ==就是小数点后的有多少个数位==</p>
+<p>所以这里的精度主要取决于==尾数==部分的位数, 所以根据IEEE二进制浮点数算术标准 来计算得出结论:</p>
+<ul>
+	<li>float单精度小数部分只能精确到后面6位，加上小数点前的一位，即有效数字为7位</li>
+	<li>double双精度小数部分能精确到小数点后的15位，加上小数点前的一位 有效位数为16位。</li>
+	<li>最后就区别出了小数点后边位数的长度，越长越精确!</li>
+</ul>
+<p></p>
+<h3>double 和 float 彼此的区别:</h3>
+<p></p>
+<ul>
+	<li>在内存中占有的字节数不同, 单精度内存占4个字节, 双精度内存占8个字节</li>
+	<li>有效数字位数不同(尾数) 单精度小数点后有效位数7位, 双精度小数点后有效位数16位</li>
+	<li>数值取值范围不同 根据IEEE标准来计算!</li>
+	<li>在程序中处理速度不同,一般来说，CPU处理单精度浮点数的速度比处理双精度浮点数快</li>
+</ul>
+<p></p>
+<h3>double 和 float 彼此的优缺点:</h3>
+<p></p>
+<p>float单精度优点: float单精度在一些处理器上比double双精度更快而且只占用double双精度一半的空间缺点: 但是当值很大或很小的时候，它将变得不精确。</p>
+<p>double双精度优点: double 跟 float比较, 必然是 double 精度高，尾数可以有 16 位,而 float 尾数精度只有 7 位缺点: double 双精度是消耗内存的,并且是 float 单精度的两倍! ,double 的运算速度比 float 慢得多, 因为double 尾数比float 的尾数多, 所以计算起来必然是有开销的!</p>
+<p></p>
+<h3>如何选择double 和 float 的使用场景!</h3>
+<p></p>
+<p>首先: 能用单精度时不要用双精度 以省内存，加快运算速度!float: 当然你需要小数部分并且对精度的要求不高时，选择float单精度浮点型比较好!double: 因为小数位精度高的缘故，所以双精度用来进行高速数学计算、科学计算、卫星定位计算等处理器上双精度型实际上比单精度的快, 所以: 当你需要保持多次反复迭代的计算精确性时，或在操作值很大的数字时，双精度型是最好的选择。说这么多其实就是小数点后面的保留位数多少的问题!</p>
+<p></p>
+<h3>==小结double和float:==</h3>
+<p></p>
+<p>float 表示的小数点位数少,double能表示的小数点位数多，更加精确！ 就这么简单 看情况自己选择吧!</p>
+<p></p>
+<h3>double和float 后面的长度m,d代表的是什么?</h3>
+<p></p>
+<p>double(m,d) 和float(m,d) 这里的m,d代表的是什么呢 ？ 很多小伙伴也是不清不楚的! 我还是来继续解释一下吧其实跟前面整数int(n)一样，这些类型也带有附加参数：一个显示宽度m和一个小数点后面带的个数d比如: 语句 float(7,3) 规定显示的值不会超过 7 位数字，小数点后面带有 3 位数字 、double也是同理在MySQL中,在定义表字段的时候, unsigned和 zerofill 修饰符也可以被 float、double和 decimal数据类型使用, 并且效果与 int数据类型相同 跟上面一样这里就不多说了!</p>
+<p></p>
+<h3>==小结:==</h3>
+<p></p>
+<p>在MySQL 语句中, 实际定义表字段的时候,float(M,D) unsigned 中的M代表可以使用的数字位数，D则代表小数点后的小数位数, unsigned 代表不允许使用负数!double(M,D) unsigned 中的M代表可以使用的数字位数，D则代表小数点后的小数位数==注意:== M&gt;=D!</p>
+<p></p>
+<h3>decimal类型</h3>
+<p></p>
+<p>==1.介绍decimal==在存储同样范围的值时，通常比decimal使用更少的空间，float使用4个字节存储，double使用8个字节 ,而 decimal依赖于M和D的值,所以decimal使用更少的空间在实际的企业级开发中，经常遇到需要存储金额（3888.00元）的字段，这时候就需要用到数据类型decimal。在MySQL数据库中，decimal的使用语法是：decimal(M,D)，其中，M 的范围是165，D 的范围是030，而且D不能大于M。</p>
+<p>==2.最大值==数据类型为decimal的字段，可以存储的最大值/范围是多少？例如：decimal(5,2)，则该字段可以存储-999.99~999.99，最大值为999.99。也就是说D表示的是小数部分长度，(M-D)表示的是整数部分长度。==3.存储== [了解]decimal类型的数据存储形式是，将每9位十进制数存储为4个字节（官方解释：Values for DECIMAL columns are stored using a binary format that packs nine decimal digits into 4 bytes）。那有可能设置的位数不是9的倍数，官方还给了如下表格对照：</p>
+<p></p>
+<table style="height: 127px; width: 58.45%">
+	<thead>
+		<tr>
+			<th>Leftover Digits</th>
+			<th>Number of Bytes</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>0</td>
+			<td>0</td>
+		</tr>
+		<tr>
+			<td>1&ndash;2</td>
+			<td>1</td>
+		</tr>
+		<tr>
+			<td>3&ndash;4</td>
+			<td>2</td>
+		</tr>
+		<tr>
+			<td>5&ndash;6</td>
+			<td>3</td>
+		</tr>
+		<tr>
+			<td>7&ndash;9</td>
+			<td>4</td>
+		</tr>
+	</tbody>
+</table>
+<p>==表格什么意思呢，举个例子：==1、字段decimal(18,9)，18-9=9，这样整数部分和小数部分都是9，那两边分别占用4个字节；2、字段decimal(20,6)，20-6=14，其中小数部分为6，就对应上表中的3个字节，而整数部分为14，14-9=5，就是4个字节再加上表中的3个字节所以通常我们在设置小数的时候，都是用的decimal类型!!</p>
+<p></p>
+<h3>小案例1</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+mysql&gt; drop table temp2;
+Query OK, 0 rows affected (0.15 sec)
+
+mysql&gt; create table temp2(id float(10,2),id2 double(10,2),id3 decimal(10,2));
+Query OK, 0 rows affected (0.18 sec)
+
+mysql&gt; insert into temp2 values(1234567.21, 1234567.21,1234567.21),(9876543.21, 
+  -&gt; 9876543.12, 9876543.12);
+Query OK, 2 rows affected (0.06 sec)
+Records: 2 Duplicates: 0 Warnings: 0
+
+mysql&gt; select * from temp2;
++------------+------------+------------+
+| id     | id2    | id3    |
++------------+------------+------------+
+| 1234567.25 | 1234567.21 | 1234567.21 |
+| 9876543.00 | 9876543.12 | 9876543.12 |
++------------+------------+------------+
+2 rows in set (0.01 sec)
+
+mysql&gt; desc temp2;
++-------+---------------+------+-----+---------+-------+
+| Field | Type     | Null | Key | Default | Extra |
++-------+---------------+------+-----+---------+-------+
+| id  | float(10,2)  | YES |   | NULL  |    |
+| id2  | double(10,2) | YES |   | NULL  |    |
+| id3  | decimal(10,2) | YES |   | NULL  |    |
++-------+---------------+------+-----+---------+-------+
+3 rows in set (0.01 sec)
+
+</code></pre>
+<p>浅谈MySQL中float、double、decimal三个浮点类型的区别与总结</p>
+<p></p>
+<h3>小案例2</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+mysql&gt; drop table temp2;
+Query OK, 0 rows affected (0.16 sec)
+
+mysql&gt; create table temp2(id double,id2 double);
+Query OK, 0 rows affected (0.09 sec)
+
+mysql&gt; insert into temp2 values(1.235,1,235);
+ERROR 1136 (21S01): Column count doesn't match value count at row 1
+mysql&gt; insert into temp2 values(1.235,1.235);
+Query OK, 1 row affected (0.03 sec)
+
+mysql&gt; 
+mysql&gt; select * from temp2;
++-------+-------+
+| id  | id2  |
++-------+-------+
+| 1.235 | 1.235 |
++-------+-------+
+1 row in set (0.00 sec)
+
+mysql&gt; insert into temp2 values(3.3,4.4);
+Query OK, 1 row affected (0.09 sec)
+
+mysql&gt; select * from temp2;
++-------+-------+
+| id  | id2  |
++-------+-------+
+| 1.235 | 1.235 |
+|  3.3 |  4.4 |
++-------+-------+
+2 rows in set (0.00 sec)
+
+mysql&gt; select id-id2 from temp2;
++---------------------+
+| id-id2       |
++---------------------+
+|          0 |
+| -1.1000000000000005 |
++---------------------+
+2 rows in set (0.00 sec)
+
+mysql&gt; alter table temp2 modify id decimal(10,5);
+Query OK, 2 rows affected (0.28 sec)
+Records: 2 Duplicates: 0 Warnings: 0
+
+mysql&gt; alter table temp2 modify id2 decimal(10,5);
+Query OK, 2 rows affected (0.15 sec)
+Records: 2 Duplicates: 0 Warnings: 0
+
+mysql&gt; select * from temp2;
++---------+---------+
+| id   | id2   |
++---------+---------+
+| 1.23500 | 1.23500 |
+| 3.30000 | 4.40000 |
++---------+---------+
+2 rows in set (0.00 sec)
+
+mysql&gt; select id-id2 from temp2;
++----------+
+| id-id2  |
++----------+
+| 0.00000 |
+| -1.10000 |
++----------+
+2 rows in set (0.00 sec)
+
+
+</code></pre>
+<p>浅谈MySQL中float、double、decimal三个浮点类型的区别与总结</p>
+<p>到此这篇关于浅谈MySQL中float、double、decimal三个浮点类型的区别与总结 的文章就介绍到这了,更多相关MySQL float double decimal内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL中float、double、decimal三个浮点类型的区别的实现方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/241.html'>MySQL之导出整个及单个表数据的操作的解决办法</a><a>下一篇</a><a href='/mysql/biji/243.html'>MySQL基于group_concat()函数合并多行数据的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

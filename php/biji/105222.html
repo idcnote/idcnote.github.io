@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>iOS开发中用imageIO渐进加载图片及获取exif的方法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="imageIO完成渐进加载图片<br />
+一、常见渐进加载图片模式<br />
+<br />
+ <br />
+<br />
+　　目前我们看到的渐进加载主要有以下三种实现方式:<br />
+<br />
+ <br />
+<br />
+　　1)  依次从web上加载不同尺寸的图片，从小到大。最开始" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">iOS开发中用imageIO渐进加载图片及获取exif的方法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>imageIO完成渐进加载图片<br />
+一、常见渐进加载图片模式<br />
+<br />
+ <br />
+<br />
+　　目前我们看到的渐进加载主要有以下三种实现方式:<br />
+<br />
+ <br />
+<br />
+　　1)  依次从web上加载不同尺寸的图片，从小到大。最开始</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>imageIO完成渐进加载图片</strong></p>
+<p>一、常见渐进加载图片模式<br />
+&nbsp;<br />
+　　目前我们看到的渐进加载主要有以下三种实现方式:<br />
+&nbsp;<br />
+　　1)&nbsp; 依次从web上加载不同尺寸的图片，从小到大。最开始先拉取一个小缩略图做拉伸显示，然后拉取中等规格的图，拉取完毕直接覆盖显示，最后拉取原图，拉取完成后显示原图。<br />
+&nbsp;<br />
+　　2）直接从web上拉取最大的图片，每接受一点儿数据就显示一点儿图片，这样就会实现从上到下一点点刷新出来的效果。<br />
+&nbsp;<br />
+　　3）结合第1种和第2种，先拉取一个缩略图做拉伸显示，然后采用第二种方法直接拉取原图，这样即可以实现渐进加载，也可以节省几次中间的网络请求。<br />
+&nbsp;<br />
+&nbsp;<br />
+&nbsp;<br />
+二、通过imageIO实现图片的渐进加载<br />
+&nbsp;<br />
+　　imageIO的guide中原话是这么说的: "If you have a very large image, or are loading image data over the web, you may want to create an incremental image source so that you can draw the image data as you accumulate it. " <br />
+&nbsp;<br />
+　　翻译过来就是: "如果你想加载一副特别大的图片，或者从网络上加载一副图片，你可以通过创建一个imageSource实现渐进加载的效果。"翻译的不是很地道，大概就是这么个意思，以前在做PowerCam的时候，当时为了在iOS上处理超大图的时候也试过这种方法，当时测试使用的是一副中国地图，分辨率为10000*8000的，结果是当整幅图片加载到内存时，内存吃不消，于是就放弃了。现在想想对于这种超大图片的处理，我们可以采用分片的方式进行，每次只需要处理一小块图片即可，这个问题就留给大家思考吧。<br />
+&nbsp;<br />
+　　今天我们要讨论的是CGImageSource实现从web端渐进加载图片，要达到这个目的我们需要创建一个URLConnnection，然后实现代理，每次接收到数据时更新图片即可。下面主要的实现源码:<br />
+&nbsp;</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="41520" class="copybut" id="copybut41520" onclick="doCopy('code41520')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code41520"><br />
+//<br />
+//&nbsp; SvIncrementallyImage.m<br />
+//&nbsp; SvIncrementallyImage<br />
+//<br />
+//&nbsp; Created by&nbsp; maple on 6/27/13.<br />
+//&nbsp; Copyright (c) 2013 maple. All rights reserved.<br />
+//</p>
+<p>#import "SvIncrementallyImage.h"<br />
+#import &lt;ImageIO/ImageIO.h&gt;<br />
+#import &lt;CoreFoundation/CoreFoundation.h&gt;</p>
+<p>@interface SvIncrementallyImage () {<br />
+&nbsp;&nbsp;&nbsp; NSURLRequest&nbsp;&nbsp;&nbsp; *_request;<br />
+&nbsp;&nbsp;&nbsp; NSURLConnection *_conn;<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; CGImageSourceRef _incrementallyImgSource;<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSMutableData&nbsp;&nbsp; *_recieveData;<br />
+&nbsp;&nbsp;&nbsp; long long&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _expectedLeght;<br />
+&nbsp;&nbsp;&nbsp; bool&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _isLoadFinished;<br />
+}</p>
+<p>@property (nonatomic, retain) UIImage *image;<br />
+@property (nonatomic, retain) UIImage *thumbImage;</p>
+<p>@end</p>
+<p>@implementation SvIncrementallyImage</p>
+<p>@synthesize imageURL = _imageURL;<br />
+@synthesize image&nbsp;&nbsp;&nbsp; = _image;<br />
+@synthesize thumbImage = _thumbImage;</p>
+<p>- (id)initWithURL:(NSURL *)imageURL<br />
+{<br />
+&nbsp;&nbsp;&nbsp; self = [super init];<br />
+&nbsp;&nbsp;&nbsp; if (self) {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _imageURL = [imageURL retain];<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _request = [[NSURLRequest alloc] initWithURL:_imageURL];<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _conn&nbsp;&nbsp;&nbsp; = [[NSURLConnection alloc] initWithRequest:_request delegate:self];<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _incrementallyImgSource = CGImageSourceCreateIncremental(NULL);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _recieveData = [[NSMutableData alloc] init];<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _isLoadFinished = false;<br />
+&nbsp;&nbsp;&nbsp; }<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; return self;<br />
+}</p>
+<p>#pragma mark -<br />
+#pragma mark NSURLConnectionDataDelegate</p>
+<p>- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response<br />
+{<br />
+&nbsp;&nbsp;&nbsp; _expectedLeght = response.expectedContentLength;<br />
+&nbsp;&nbsp;&nbsp; NSLog(@"expected Length: %lld", _expectedLeght);<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSString *mimeType = response.MIMEType;<br />
+&nbsp;&nbsp;&nbsp; NSLog(@"MIME TYPE %@", mimeType);<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSArray *arr = [mimeType componentsSeparatedByString:@"/"];<br />
+&nbsp;&nbsp;&nbsp; if (arr.count &lt; 1 || ![[arr objectAtIndex:0] isEqual:@"image"]) {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NSLog(@"not a image url");<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [connection cancel];<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [_conn release]; _conn = nil;<br />
+&nbsp;&nbsp;&nbsp; }<br />
+}</p>
+<p>- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error<br />
+{<br />
+&nbsp;&nbsp;&nbsp; NSLog(@"Connection %@ error, error info: %@", connection, error);<br />
+}</p>
+<p>- (void)connectionDidFinishLoading:(NSURLConnection *)connection<br />
+{<br />
+&nbsp;&nbsp;&nbsp; NSLog(@"Connection Loading Finished!!!");<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; // if download image data not complete, create final image<br />
+&nbsp;&nbsp;&nbsp; if (!_isLoadFinished) {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGImageSourceUpdateData(_incrementallyImgSource, (CFDataRef)_recieveData, _isLoadFinished);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGImageRef imageRef = CGImageSourceCreateImageAtIndex(_incrementallyImgSource, 0, NULL);<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; self.image = [UIImage imageWithCGImage:imageRef];<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGImageRelease(imageRef);<br />
+&nbsp;&nbsp;&nbsp; }<br />
+}</p>
+<p>- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data<br />
+{<br />
+&nbsp;&nbsp;&nbsp; [_recieveData appendData:data];<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; _isLoadFinished = false;<br />
+&nbsp;&nbsp;&nbsp; if (_expectedLeght == _recieveData.length) {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _isLoadFinished = true;<br />
+&nbsp;&nbsp;&nbsp; }<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; CGImageSourceUpdateData(_incrementallyImgSource, (CFDataRef)_recieveData, _isLoadFinished);<br />
+&nbsp;&nbsp;&nbsp; CGImageRef imageRef = CGImageSourceCreateImageAtIndex(_incrementallyImgSource, 0, NULL);<br />
+&nbsp;&nbsp;&nbsp; self.image = [UIImage imageWithCGImage:imageRef];<br />
+&nbsp;&nbsp;&nbsp; CGImageRelease(imageRef);<br />
+}</p>
+<p>@end </div></p>
+<p><br />
+　　从上面代码中我们可以看到，一开始我们根据传入的URL创建一个URLConnection，同时创建一个空的CGImageSource，然后在每次收到数据的时候调用CGImageSourceUpdateData更新imageSource的数据，接着调用CGImageSourceCreateImageAtIndex获取最新的图片即可。<br />
+&nbsp;<br />
+　　怎么样，看到上面的实现是不是感觉实现从web上渐进加载图片很简单，虽然imageIO帮我们做了很多事情，但是我们也应该了解它的原理。我们知道文件都是有格式的，一般文件的头部会记录一些关于文件格式的数据，后面就是实际的文件数据。<br />
+&nbsp;<br />
+　　拿最简单的BMP图片文件举例:<br />
+&nbsp;<br />
+　　1)&nbsp; 最开始的BITMAPFILEHEADER，这部分主要记录文件的大小，以及实际的图像数据离文件头的距离。<br />
+&nbsp;<br />
+　　2)&nbsp; 接着是BITMAPINFOHEADER，这部分主要记录图片的宽，高，位深等信息<br />
+&nbsp;<br />
+　　3）可选的调色板信息<br />
+&nbsp;<br />
+　　4）最后一部分就是实际的图片数据。<br />
+&nbsp;<br />
+　　前三部分的信息很小，一般加起来不会超过100个字节，获取到这写信息以后，我们就可以很轻松的根据后面的数据构建出图片，当数据获取的越来越完整的时候，我们构造出的图片就会越完整，直至全部加载完成。<br />
+&nbsp;<br />
+　　BMP格式是简单的图片格式，其他的JPG，PNG虽然结果更加复杂，但是总体构成都差不多。imageIO正是帮助我们完成了众多图片格式的编解码，然后一步步构造出最终的图片。</p>
+<p><br />
+<strong>使用imageIO获取图片的exif信息</strong><br />
+一幅图片除了包含我们能看见的像素信息，背后还包含了拍摄时间，光圈大小，曝光等信息。UIImage类将这些细节信息都隐藏了起来，只提供我们关心的图片尺寸，图片方向等。我们可以通过imageIO框架获取到图片背后的所有信息，下面就让我们一起看看。<br />
+&nbsp;<br />
+　　imageIO框架是iOS中偏底层一点儿的框架，它内部提供的接口都是C风格的，关键数据也都是使用CoreFoundation进行存储。庆幸的是CoreFoundation中有很多数据类型都可以上层的数据Foundation框架中的数据类型进行无缝桥接。这也就大大方便了我们对图片信息的操作。<br />
+&nbsp;<br />
+　　CGImageSourceRef是整个imageIO的入口，通过它我们可以完成从文件的加载图片。加载完成以后我们就得到一个CGImageSourceRef，通过CGImageSourceRef我们就可以获取图片文件的大小，UTI(uniform type identifier)，内部包含几张图片，访问每一张图片以及获取每张图片对应的exif信息等。<br />
+&nbsp;<br />
+　　你可能会有一个疑问，为什么会有几张图片呢？<br />
+&nbsp;<br />
+　　这块儿我解释一下，imageSourceRef和文件是一一对应的，通常我们见到的图片文件(例如jpg，png)内部都只有一张图片，这种情况我们通过CGImageSourceGetCount方法得到的就会是1。但是不能排除一个图片文件中会有多种图片的情况，例如gif文件，这个时候一个文件中就可能包含几张甚至几十张图片。前面我写的一片博客《IOS中如何解析并显示Gif》就是通过imageSource实现加载和解析gif的功能。<br />
+&nbsp;<br />
+　　下面是系统相机拍的照片的exif信息:<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="33234" class="copybut" id="copybut33234" onclick="doCopy('code33234')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code33234"> <br />
+image property: {<br />
+&nbsp;&nbsp;&nbsp; ColorModel = RGB;<br />
+&nbsp;&nbsp;&nbsp; DPIHeight = 72;<br />
+&nbsp;&nbsp;&nbsp; DPIWidth = 72;<br />
+&nbsp;&nbsp;&nbsp; Depth = 8;<br />
+&nbsp;&nbsp;&nbsp; Orientation = 6;<br />
+&nbsp;&nbsp;&nbsp; PixelHeight = 2448;<br />
+&nbsp;&nbsp;&nbsp; PixelWidth = 3264;<br />
+&nbsp;&nbsp;&nbsp; "{Exif}" =&nbsp;&nbsp;&nbsp;&nbsp; {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ApertureValue = "2.526069";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BrightnessValue = "-0.5140446";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ColorSpace = 1;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ComponentsConfiguration =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DateTimeDigitized = "2013:06:24 22:11:30";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DateTimeOriginal = "2013:06:24 22:11:30";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ExifVersion =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ExposureMode = 0;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ExposureProgram = 2;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ExposureTime = "0.06666667";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FNumber = "2.4";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Flash = 16;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FlashPixVersion =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FocalLenIn35mmFilm = 33;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FocalLength = "4.13";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ISOSpeedRatings =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 400<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MeteringMode = 3;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PixelXDimension = 3264;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PixelYDimension = 2448;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SceneCaptureType = 0;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SensingMethod = 2;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ShutterSpeedValue = "3.906905";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SubjectArea =&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2815,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1187,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 610,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 612<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WhiteBalance = 0;<br />
+&nbsp;&nbsp;&nbsp; };<br />
+&nbsp;&nbsp;&nbsp; "{GPS}" =&nbsp;&nbsp;&nbsp;&nbsp; {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Altitude = "27.77328";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AltitudeRef = 0;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Latitude = "22.5645";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LatitudeRef = N;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Longitude = "113.8886666666667";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LongitudeRef = E;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TimeStamp = "14:11:23.36";<br />
+&nbsp;&nbsp;&nbsp; };<br />
+&nbsp;&nbsp;&nbsp; "{TIFF}" =&nbsp;&nbsp;&nbsp;&nbsp; {<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DateTime = "2013:06:24 22:11:30";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Make = Apple;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Model = "iPhone 5";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Orientation = 6;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ResolutionUnit = 2;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Software = "6.1.4";<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; XResolution = 72;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; YResolution = 72;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "_YCbCrPositioning" = 1;<br />
+&nbsp;&nbsp;&nbsp; };<br />
+}</div><br />
+　　从中我们可以看出最开始的几项分别显示了当前图片的颜色模式，色深，x，y方向的DPI，实际像素以及图片的方向。我最开始看到这个方向时，心中一喜这不是UIImage中的imageOrientation，但是实验发现这个方向和UIImage中的imageOrientation并不相等，此处的方向是exif标准定义的方向，从1到8分别对应这UIImage中的8个方向，只是顺序不一样，它们对应关系如下:<br />
+&nbsp;</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="11208" class="copybut" id="copybut11208" onclick="doCopy('code11208')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code11208"><br />
+enum {<br />
+&nbsp;&nbsp;&nbsp; exifOrientationUp = 1,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // UIImageOrientationUp<br />
+&nbsp;&nbsp;&nbsp; exifOrientationDown = 3,&nbsp;&nbsp;&nbsp; // UIImageOrientationDown<br />
+&nbsp;&nbsp;&nbsp; exifOrientationLeft = 6,&nbsp;&nbsp;&nbsp; // UIImageOrientationLeft<br />
+&nbsp;&nbsp;&nbsp; exifOrientationRight = 8,&nbsp;&nbsp; // UIImageOrientationRight<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; // these four exifOrientation does not support by all camera, but IOS support these orientation<br />
+&nbsp;&nbsp;&nbsp; exifOrientationUpMirrored = 2,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // UIImageOrientationUpMirrored<br />
+&nbsp;&nbsp;&nbsp; exifOrientationDownMirrored = 4,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // UIImageOrientationDownMirrored<br />
+&nbsp;&nbsp;&nbsp; exifOrientationLeftMirrored = 5,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // UIImageOrientationLeftMirrored<br />
+&nbsp;&nbsp;&nbsp; exifOrientationRightMirrored = 7,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // UIImageOrientationRightMirrored<br />
+};<br />
+typedef NSInteger ExifOrientation; <br />
+</div></p>
+<p>　　目前市面上的大部分数码相机和手机都会内置一个方向感应器，拍出的照片中会写如方向信息，但是通常都只会有前四种方向。这几种Mirrored方向通常都是手机前置摄像头自拍的时候才会设置。<br />
+&nbsp;<br />
+　　exif为什么要搞这么一个方向呢？<br />
+&nbsp;<br />
+　　几乎所有的摄像头在出场的时候成相芯片都是有方向的，拍出来的照片的像素都是默认方向的。如果每拍一张照片就对这些像素进行旋转，如果数码相机每秒连拍20张来算，旋转操作将会非常耗时。更聪明的做法是拍照时只记录一个方向，然后显示的时候按方向显示出来即可。因此exif定义了一个标准的方向参数，只要读图的软件都来遵守规则，加载时候读取图片方向，然后做相应的旋转即可。这样既可以达到快速成像的目的，又能达到正确的显示，何乐而不为呢。<br />
+&nbsp;<br />
+　　常见的图片浏览和编辑软件都遵守这个规则，但是有一个我们最常用的看图软件(windows自带的看图程序)不会去读这个方向，因此我们将数码相机和手机拍出来的图片导入windows上时，会经常遇到方向错误的问题。不知道windows帝国是怎么想的，或许和定义exif的组织有什么过节吧。<br />
+&nbsp;<br />
+　　图片信息中除了上面看提到的那些，还有拍摄的GPS信息，iOS自带的相册软件中的地点tab就是按照GPS信息实现的。还有很多其他的信息，感兴趣的可以自己写个程序研究研究，这里就不展开了。</p>
+<p></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/105221.html'>MAC升级10.9后校园网(锐捷)客户端无法连接找不到网卡的解决方法</a><a>下一篇</a><a href='/php/biji/105223.html'>Win8没有开始菜单在应用列表中如何找到控制面板</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

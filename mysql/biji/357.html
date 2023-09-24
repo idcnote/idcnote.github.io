@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL排序和分页(order by&amp;limit)及存在的坑的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL排序和分页(order by&amp;limit)及存在的坑的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL排序和分页(order by&amp;limit)及存在的坑的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:15:30                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL排序和分页(order by&amp;limit)及存在的坑的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL排序和分页(order by&amp;limit)及存在的坑的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p></p>
+<h3>排序查询（order by）</h3>
+<p></p>
+<p>电商中：我们想查看今天所有成交的订单，按照交易额从高到低排序，此时我们可以使用数据库中的排序功能来完成。</p>
+<p></p>
+<h3>排序语法：</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+select 字段名 from 表名 order by 字段1 [asc|desc],字段2 [asc|desc];
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<ul>
+	<li>需要排序的字段跟在order by之后；</li>
+	<li>asc|desc表示排序的规则，asc：升序，desc：降序，默认为asc；</li>
+	<li>支持多个字段进行排序，多字段排序之间用逗号隔开。</li>
+</ul>
+<p></p>
+<h3>单字段排序</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; create table test2(a int,b varchar(10));
+Query OK, 0 rows affected (0.01 sec)
+mysql&gt; insert into test2 values (10,'jack'),(8,'tom'),(5,'ready'),(100,'javacode');
+Query OK, 4 rows affected (0.00 sec)
+Records: 4 Duplicates: 0 Warnings: 0
+mysql&gt; select * from test2;
++------+----------+
+| a  | b    |
++------+----------+
+|  10 | jack   |
+|  8 | tom   |
+|  5 | ready  |
+| 100 | javacode |
++------+----------+
+4 rows in set (0.00 sec)
+mysql&gt; select * from test2 order by a asc;
++------+----------+
+| a  | b    |
++------+----------+
+|  5 | ready  |
+|  8 | tom   |
+|  10 | jack   |
+| 100 | javacode |
++------+----------+
+4 rows in set (0.00 sec)
+mysql&gt; select * from test2 order by a desc;
++------+----------+
+| a  | b    |
++------+----------+
+| 100 | javacode |
+|  10 | jack   |
+|  8 | tom   |
+|  5 | ready  |
++------+----------+
+4 rows in set (0.00 sec)
+mysql&gt; select * from test2 order by a;
++------+----------+
+| a  | b    |
++------+----------+
+|  5 | ready  |
+|  8 | tom   |
+|  10 | jack   |
+| 100 | javacode |
++------+----------+
+4 rows in set (0.00 sec)
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p></p>
+<h3>多字段排序</h3>
+<p></p>
+<p>比如学生表，先按学生年龄降序，年龄相同时，再按学号升序，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; create table stu(id int not null comment '学号' primary key,age tinyint not null comment '年龄',name varchar(16) comment '姓名');
+Query OK, 0 rows affected (0.01 sec)
+mysql&gt; insert into stu (id,age,name) values (1001,18,'路人甲Java'),(1005,20,'刘德华'),(1003,18,'张学友'),(1004,20,'张国荣'),(1010,19,'梁朝伟');
+Query OK, 5 rows affected (0.00 sec)
+Records: 5 Duplicates: 0 Warnings: 0
+mysql&gt; select * from stu;
++------+-----+---------------+
+| id  | age | name     |
++------+-----+---------------+
+| 1001 | 18 | 路人甲Java  |
+| 1003 | 18 | 张学友    |
+| 1004 | 20 | 张国荣    |
+| 1005 | 20 | 刘德华    |
+| 1010 | 19 | 梁朝伟    |
++------+-----+---------------+
+5 rows in set (0.00 sec)
+mysql&gt; select * from stu order by age desc,id asc;
++------+-----+---------------+
+| id  | age | name     |
++------+-----+---------------+
+| 1004 | 20 | 张国荣    |
+| 1005 | 20 | 刘德华    |
+| 1010 | 19 | 梁朝伟    |
+| 1001 | 18 | 路人甲Java  |
+| 1003 | 18 | 张学友    |
++------+-----+---------------+
+5 rows in set (0.00 sec)</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p></p>
+<h3>按别名排序</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select * from stu;
++------+-----+---------------+
+| id  | age | name     |
++------+-----+---------------+
+| 1001 | 18 | 路人甲Java  |
+| 1003 | 18 | 张学友    |
+| 1004 | 20 | 张国荣    |
+| 1005 | 20 | 刘德华    |
+| 1010 | 19 | 梁朝伟    |
++------+-----+---------------+
+5 rows in set (0.00 sec)
+mysql&gt; select age '年龄',id as '学号' from stu order by 年龄 asc,学号 desc;
++--------+--------+
+| 年龄  | 学号  |
++--------+--------+
+|   18 |  1003 |
+|   18 |  1001 |
+|   19 |  1010 |
+|   20 |  1005 |
+|   20 |  1004 |
++--------+--------+
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p></p>
+<h3>按函数排序</h3>
+<p></p>
+<p>有学生表（id：编号，birth：出生日期，name：姓名），如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; drop table if exists student;
+Query OK, 0 rows affected (0.01 sec)
+mysql&gt; CREATE TABLE student (
+  -&gt;  id int(11) NOT NULL COMMENT '学号',
+  -&gt;  birth date NOT NULL COMMENT '出生日期',
+  -&gt;  name varchar(16) DEFAULT NULL COMMENT '姓名',
+  -&gt;  PRIMARY KEY (id)
+  -&gt; );
+Query OK, 0 rows affected (0.01 sec)
+mysql&gt; insert into student (id,birth,name) values (1001,'1990-10-10','路人甲Java'),(1005,'1960-03-01','刘德华'),(1003,'1960-08-16','张学友'),(1004,'1968-07-01','张国荣'),(1010,'1962-05-16','梁朝伟');
+Query OK, 5 rows affected (0.00 sec)
+Records: 5 Duplicates: 0 Warnings: 0
+mysql&gt;
+mysql&gt; SELECT * FROM student;
++------+------------+---------------+
+| id  | birth   | name     |
++------+------------+---------------+
+| 1001 | 1990-10-10 | 路人甲Java  |
+| 1003 | 1960-08-16 | 张学友    |
+| 1004 | 1968-07-01 | 张国荣    |
+| 1005 | 1960-03-01 | 刘德华    |
+| 1010 | 1962-05-16 | 梁朝伟    |
++------+------------+---------------+
+5 rows in set (0.00 sec)
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p>需求：按照出生年份升序、编号升序，查询出编号、出生日期、出生年份、姓名，2种写法如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; SELECT id 编号,birth 出生日期,year(birth) 出生年份,name 姓名 from student ORDER BY year(birth) asc,id asc;
++--------+--------------+--------------+---------------+
+| 编号  | 出生日期   | 出生年份   | 姓名     |
++--------+--------------+--------------+---------------+
+|  1003 | 1960-08-16  |     1960 | 张学友    |
+|  1005 | 1960-03-01  |     1960 | 刘德华    |
+|  1010 | 1962-05-16  |     1962 | 梁朝伟    |
+|  1004 | 1968-07-01  |     1968 | 张国荣    |
+|  1001 | 1990-10-10  |     1990 | 路人甲Java  |
++--------+--------------+--------------+---------------+
+5 rows in set (0.00 sec)
+mysql&gt; SELECT id 编号,birth 出生日期,year(birth) 出生年份,name 姓名 from student ORDER BY 出生年份 asc,id asc;
++--------+--------------+--------------+---------------+
+| 编号  | 出生日期   | 出生年份   | 姓名     |
++--------+--------------+--------------+---------------+
+|  1003 | 1960-08-16  |     1960 | 张学友    |
+|  1005 | 1960-03-01  |     1960 | 刘德华    |
+|  1010 | 1962-05-16  |     1962 | 梁朝伟    |
+|  1004 | 1968-07-01  |     1968 | 张国荣    |
+|  1001 | 1990-10-10  |     1990 | 路人甲Java  |
++--------+--------------+--------------+---------------+
+5 rows in set (0.00 sec)
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p>说明：year函数：属于日期函数，可以获取对应日期中的年份。上面使用了2种方式排序，第一种是在order by中使用了函数，第二种是使用了别名排序。</p>
+<p></p>
+<h3>where之后进行排序</h3>
+<p></p>
+<p>有订单数据如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; drop table if exists t_order;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+mysql&gt; create table t_order(
+  -&gt;  id int not null auto_increment comment '订单编号',
+  -&gt;  price decimal(10,2) not null default 0 comment '订单金额',
+  -&gt;  primary key(id)
+  -&gt; )comment '订单表';
+Query OK, 0 rows affected (0.01 sec)
+mysql&gt; insert into t_order (price) values (88.95),(100.68),(500),(300),(20.88),(200.5);
+Query OK, 6 rows affected (0.00 sec)
+Records: 6 Duplicates: 0 Warnings: 0
+mysql&gt; select * from t_order;
++----+--------+
+| id | price |
++----+--------+
+| 1 | 88.95 |
+| 2 | 100.68 |
+| 3 | 500.00 |
+| 4 | 300.00 |
+| 5 | 20.88 |
+| 6 | 200.50 |
++----+--------+
+6 rows in set (0.00 sec)
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p>需求：查询订单金额&gt;=100的，按照订单金额降序排序，显示2列数据，列头：订单编号、订单金额，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a where a.price&gt;=100 order by a.price desc;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      3 |    500.00 |
+|      4 |    300.00 |
+|      6 |    200.50 |
+|      2 |    100.68 |
++--------------+--------------+
+4 rows in set (0.00 sec)
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p></p>
+<h3>limit介绍</h3>
+<p></p>
+<p>limit用来限制select查询返回的行数，常用于分页等操作。</p>
+<p>语法：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select 列 from 表 limit [offset,] count;</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p>说明：</p>
+<ul>
+	<li>offset：表示偏移量，通俗点讲就是跳过多少行，offset可以省略，默认为0，表示跳过0行；范围：[0,+&infin;)。</li>
+	<li>count：跳过offset行之后开始取数据，取count行记录；范围：[0,+&infin;)。</li>
+	<li>limit中offset和count的值不能用表达式。</li>
+</ul>
+<p>下面我们列一些常用的示例来加深理解。</p>
+<p>获取前n行记录</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select 列 from 表 limit 0,n;
+或者
+select 列 from 表 limit n;</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p>示例，获取订单的前2条记录，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; create table t_order(
+  -&gt;  id int not null auto_increment comment '订单编号',
+  -&gt;  price decimal(10,2) not null default 0 comment '订单金额',
+  -&gt;  primary key(id)
+  -&gt; )comment '订单表';
+Query OK, 0 rows affected (0.01 sec)
+mysql&gt; insert into t_order (price) values (88.95),(100.68),(500),(300),(20.88),(200.5);
+Query OK, 6 rows affected (0.01 sec)
+Records: 6 Duplicates: 0 Warnings: 0
+mysql&gt; select * from t_order;
++----+--------+
+| id | price |
++----+--------+
+| 1 | 88.95 |
+| 2 | 100.68 |
+| 3 | 500.00 |
+| 4 | 300.00 |
+| 5 | 20.88 |
+| 6 | 200.50 |
++----+--------+
+6 rows in set (0.00 sec)
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a limit 2;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      1 |    88.95 |
+|      2 |    100.68 |
++--------------+--------------+
+2 rows in set (0.00 sec)
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a limit 0,2;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      1 |    88.95 |
+|      2 |    100.68 |
++--------------+--------------+
+2 rows in set (0.00 sec)</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p></p>
+<h3>获取最大的一条记录</h3>
+<p></p>
+<p>我们需要获取订单金额最大的一条记录，可以这么做：先按照金额降序，然后取第一条记录，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a order by a.price desc;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      3 |    500.00 |
+|      4 |    300.00 |
+|      6 |    200.50 |
+|      2 |    100.68 |
+|      1 |    88.95 |
+|      5 |    20.88 |
++--------------+--------------+
+6 rows in set (0.00 sec)
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a order by a.price desc limit 1;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      3 |    500.00 |
++--------------+--------------+
+1 row in set (0.00 sec)
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a order by a.price desc limit 0,1;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      3 |    500.00 |
++--------------+--------------+
+1 row in set (0.00 sec)
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p></p>
+<h3>获取排名第n到m的记录</h3>
+<p></p>
+<p>我们需要先跳过n-1条记录，然后取m-n+1条记录，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select 列 from 表 limit n-1,m-n+1;
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p>如：我们想获取订单金额最高的3到5名的记录，我们需要跳过2条，然后获取3条记录，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a order by a.price desc;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      3 |    500.00 |
+|      4 |    300.00 |
+|      6 |    200.50 |
+|      2 |    100.68 |
+|      1 |    88.95 |
+|      5 |    20.88 |
++--------------+--------------+
+6 rows in set (0.00 sec)
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a order by a.price desc limit 2,3;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      6 |    200.50 |
+|      2 |    100.68 |
+|      1 |    88.95 |
++--------------+--------------+
+3 rows in set (0.00 sec)
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p></p>
+<h3>分页查询</h3>
+<p></p>
+<p>开发过程中，分页我们经常使用，分页一般有2个参数：page：表示第几页，从1开始，范围[1,+&infin;)pageSize：每页显示多少条记录，范围[1,+&infin;)如：page = 2，pageSize = 10，表示获取第2页10条数据。我们使用limit实现分页，语法如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select 列 from 表名 limit (page - 1) * pageSize,pageSize;
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p>需求：我们按照订单金额降序，每页显示2条，依次获取所有订单数据、第1页、第2页、第3页数据，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a order by a.price desc;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      3 |    500.00 |
+|      4 |    300.00 |
+|      6 |    200.50 |
+|      2 |    100.68 |
+|      1 |    88.95 |
+|      5 |    20.88 |
++--------------+--------------+
+6 rows in set (0.00 sec)
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a order by a.price desc limit 0,2;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      3 |    500.00 |
+|      4 |    300.00 |
++--------------+--------------+
+2 rows in set (0.00 sec)
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a order by a.price desc limit 2,2;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      6 |    200.50 |
+|      2 |    100.68 |
++--------------+--------------+
+2 rows in set (0.00 sec)
+mysql&gt; select a.id 订单编号,a.price 订单金额 from t_order a order by a.price desc limit 4,2;
++--------------+--------------+
+| 订单编号   | 订单金额   |
++--------------+--------------+
+|      1 |    88.95 |
+|      5 |    20.88 |
++--------------+--------------+
+2 rows in set (0.00 sec)
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p></p>
+<h3>避免踩坑</h3>
+<p></p>
+<p></p>
+<h3>limit中不能使用表达式</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select * from t_order where limit 1,4+1;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'limit 1,4+1' at line 1
+mysql&gt; select * from t_order where limit 1+0;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'limit 1+0' at line 1
+mysql&gt;</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p>结论：limit后面只能够跟明确的数字。</p>
+<p></p>
+<h3>limit后面的2个数字不能为负数</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select * from t_order where limit -1;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'limit -1' at line 1
+mysql&gt; select * from t_order where limit 0,-1;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'limit 0,-1' at line 1
+mysql&gt; select * from t_order where limit -1,-1;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'limit -1,-1' at line 1</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p></p>
+<h3>排序分页存在的坑</h3>
+<p></p>
+<p>准备数据：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; insert into test1 (b) values (1),(2),(3),(4),(2),(2),(2),(2);
+Query OK, 8 rows affected (0.01 sec)
+Records: 8 Duplicates: 0 Warnings: 0
+mysql&gt; select * from test1;
++---+---+
+| a | b |
++---+---+
+| 1 | 1 |
+| 2 | 2 |
+| 3 | 3 |
+| 4 | 4 |
+| 5 | 2 |
+| 6 | 2 |
+| 7 | 2 |
+| 8 | 2 |
++---+---+
+8 rows in set (0.00 sec)
+mysql&gt; select * from test1 order by b asc;
++---+---+
+| a | b |
++---+---+
+| 1 | 1 |
+| 2 | 2 |
+| 5 | 2 |
+| 6 | 2 |
+| 7 | 2 |
+| 8 | 2 |
+| 3 | 3 |
+| 4 | 4 |
++---+---+
+8 rows in set (0.00 sec)
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p>下面我们按照b升序，每页2条数据，来获取数据。</p>
+<p>下面的sql依次为第1页、第2页、第3页、第4页、第5页的数据，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select * from test1 order by b asc limit 0,2;
++---+---+
+| a | b |
++---+---+
+| 1 | 1 |
+| 2 | 2 |
++---+---+
+2 rows in set (0.00 sec)
+mysql&gt; select * from test1 order by b asc limit 2,2;
++---+---+
+| a | b |
++---+---+
+| 8 | 2 |
+| 6 | 2 |
++---+---+
+2 rows in set (0.00 sec)
+mysql&gt; select * from test1 order by b asc limit 4,2;
++---+---+
+| a | b |
++---+---+
+| 6 | 2 |
+| 7 | 2 |
++---+---+
+2 rows in set (0.00 sec)
+mysql&gt; select * from test1 order by b asc limit 6,2;
++---+---+
+| a | b |
++---+---+
+| 3 | 3 |
+| 4 | 4 |
++---+---+
+2 rows in set (0.00 sec)
+mysql&gt; select * from test1 order by b asc limit 7,2;
++---+---+
+| a | b |
++---+---+
+| 4 | 4 |
++---+---+
+1 row in set (0.00 sec)
+</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p>上面有2个问题：</p>
+<p>问题1：看一下第2个sql和第3个sql，分别是第2页和第3页的数据，结果出现了相同的数据，是不是懵逼了。</p>
+<p>问题2：整个表只有8条记录，怎么会出现第5页的数据呢，又懵逼了。</p>
+<p>我们来分析一下上面的原因：主要是b字段存在相同的值，当排序过程中存在相同的值时，没有其他排序规则时，mysql懵逼了，不知道怎么排序了。</p>
+<p>就像我们上学站队一样，按照身高排序，那身高一样的时候如何排序呢？身高一样的就乱排了。</p>
+<p>建议：排序中存在相同的值时，需要再指定一个排序规则，通过这种排序规则不存在二义性，比如上面可以再加上a降序，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select * from test1 order by b asc,a desc;
++---+---+
+| a | b |
++---+---+
+| 1 | 1 |
+| 8 | 2 |
+| 7 | 2 |
+| 6 | 2 |
+| 5 | 2 |
+| 2 | 2 |
+| 3 | 3 |
+| 4 | 4 |
++---+---+
+8 rows in set (0.00 sec)
+mysql&gt; select * from test1 order by b asc,a desc limit 0,2;
++---+---+
+| a | b |
++---+---+
+| 1 | 1 |
+| 8 | 2 |
++---+---+
+2 rows in set (0.00 sec)
+mysql&gt; select * from test1 order by b asc,a desc limit 2,2;
++---+---+
+| a | b |
++---+---+
+| 7 | 2 |
+| 6 | 2 |
++---+---+
+2 rows in set (0.00 sec)
+mysql&gt; select * from test1 order by b asc,a desc limit 4,2;
++---+---+
+| a | b |
++---+---+
+| 5 | 2 |
+| 2 | 2 |
++---+---+
+2 rows in set (0.00 sec)
+mysql&gt; select * from test1 order by b asc,a desc limit 6,2;
++---+---+
+| a | b |
++---+---+
+| 3 | 3 |
+| 4 | 4 |
++---+---+
+2 rows in set (0.00 sec)
+mysql&gt; select * from test1 order by b asc,a desc limit 8,2;
+Empty set (0.00 sec)</code></pre>
+<p>MySQL排序和分页(order by&amp;limit)及存在的坑</p>
+<p>看上面的结果，分页数据都正常了，第5页也没有数据了。</p>
+<p></p>
+<h3>总结</h3>
+<p></p>
+<ul>
+	<li>order by &hellip; [asc|desc]用于对查询结果排序，asc：升序，desc：降序，asc|desc可以省略，默认为asc</li>
+	<li>limit用来限制查询结果返回的行数，有2个参数（offset，count），offset：表示跳过多少行，count：表示跳过offset行之后取count行</li>
+	<li>limit中offset可以省略，默认值为0</li>
+	<li>limit中offset 和 count都必须大于等于0</li>
+	<li>limit中offset和count的值不能用表达式</li>
+	<li>分页排序时，排序不要有二义性，二义性情况下可能会导致分页结果乱序，可以在后面追加一个主键排序</li>
+</ul>
+<p>到此这篇关于Mysql排序和分页(order by&amp;limit)及存在的坑的文章就介绍到这了,更多相关Mysql排序和分页内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL排序和分页(order by&amp;limit)及存在的坑的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/356.html'>MySQL Select语句执行的解决办法</a><a>下一篇</a><a href='/mysql/biji/358.html'>MySQL存储过程（in、out、inout）的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

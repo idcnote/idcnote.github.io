@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>查询mysql中执行效率低的sql语句的方法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="一些小技巧1. 如何查出效率低的语句？在MySQL下，在启动参数中设置 --log-slow-queries=[文件名]，就可以在指定的日志文件中记录执行时间超过long_query_time（缺省为10秒）的SQL语句" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">查询mysql中执行效率低的sql语句的方法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>一些小技巧1. 如何查出效率低的语句？在MySQL下，在启动参数中设置 --log-slow-queries=[文件名]，就可以在指定的日志文件中记录执行时间超过long_query_time（缺省为10秒）的SQL语句</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><P>一些小技巧<BR>1. 如何查出效率低的语句？<BR>在MySQL下，在启动参数中设置 --log-slow-queries=[文件名]，就可以在指定的日志文件中记录执行时间超过long_query_time（缺省为10秒）的SQL语句。你也可以在启动配置文件中修改long query的时间，如：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="11288" class="copybut" id="copybut11288" onclick="doCopy('code11288')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code11288"><BR>&nbsp;# Set long query time to 8 seconds<BR>&nbsp;&nbsp;&nbsp; long_query_time=8</P>
+<P></div></P>
+<P>2. 如何查询某表的索引？<BR>可使用SHOW INDEX语句，如：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="3002" class="copybut" id="copybut3002" onclick="doCopy('code3002')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code3002"><BR>&nbsp;SHOW INDEX FROM [表名]</P>
+<P></div></P>
+<P>3. 如何查询某条语句的索引使用情况？<BR>可用EXPLAIN语句来看一下某条SELECT语句的索引使用情况。如果是UPDATE或DELETE语句，需要先转换为SELECT语句。<BR>4. 如何把导出INNODB引擎的内容到错误日志文件中?<BR>我们可以使用SHOW INNODB STATUS命令来查看INNODB引擎的很多有用的信息，如当前进程、事务、外键错误、死锁问题和其它一些统计数据。如何让该信息能记录在日志文件中呢？只要使用如下语句创建innodb_monitor表，MySQL就会每15秒钟把该系统写入到错误日志文件中：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="80975" class="copybut" id="copybut80975" onclick="doCopy('code80975')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code80975"><BR>CREATE TABLE innodb_monitor (a INT) ENGINE=INNODB;</P>
+<P></div></P>
+<P>如果你不再需要导出到错误日志文件，只要删除该表即可：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="20496" class="copybut" id="copybut20496" onclick="doCopy('code20496')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code20496"><BR>&nbsp;DROP TABLE innodb_monitor;</P>
+<P></div></P>
+<P>5. 如何定期删除庞大的日志文件？<BR>只要在启动配置文件中设置日志过期时间即可：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="1933" class="copybut" id="copybut1933" onclick="doCopy('code1933')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code1933"><BR>&nbsp;expire_logs_days=10</P>
+<P></div></P>
+<P>经验教训<BR>1. 重点关注索引<BR>下面以表TSK_TASK表为例说明SQL语句优化过程。TSK_TASK表用于保存系统监测任务，相关字段及索引如下：</P>
+<P>&nbsp;&nbsp;&nbsp; ID：主键；<BR>&nbsp;&nbsp;&nbsp; MON_TIME：监测时间；建了索引；<BR>&nbsp;&nbsp;&nbsp; STATUS_ID：任务状态；与SYS_HIER_INFO.ID建立了外键关系。</P>
+<P><BR>注MySQL自动会为外键建立索引，在本次优化过程中，发现这些自动建立的外键索引会对SQL语句的效率产生不必要的干扰，需要特别注意！</P>
+<P>首先，我们在日志文件中查到下面语句的执行比较慢，超过10秒了：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="84180" class="copybut" id="copybut84180" onclick="doCopy('code84180')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code84180"><BR>&nbsp;# Query_time: 18 Lock_time: 0 Rows_sent: 295 Rows_examined: 88143<BR>&nbsp;&nbsp;&nbsp; select * from TSK_TASK WHERE STATUS_ID = 1064 and MON_TIME &gt;= '2007-11-22' and MON_TIME &lt; '2007-11-23';</P>
+<P></div></P>
+<P>哦，原来在88143条记录中要查出符合条件的295条记录，那当然慢了。赶紧用EXPLAIN语句看一下索引使用情况吧：</P>
+<P>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+<BR>&nbsp;&nbsp;&nbsp; | id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra |<BR>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+<BR>&nbsp;&nbsp;&nbsp; | 1 | SIMPLE | TSK_TASK | ref | FK_task_status_id_TO_SYS_HIER_INFO,TSK_TASK_KEY_MON_TIME | FK_task_status_id_TO_SYS_HIER_INFO | 9 | const | 276168 | Using where |<BR>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+</P>
+<P><BR>可以看出，有两个索引可用FK_task_status_id_TO_SYS_HIER_INFO,TSK_TASK_KEY_MON_TIME，而最终执行语句时采用了STATUS_ID上的外键索引。</P>
+<P>再看一下TSK_TASK表的索引情况吧：</P>
+<P>&nbsp;&nbsp;&nbsp; +----------+------------------------------------+-------------+-------------+<BR>&nbsp;&nbsp;&nbsp; | Table | Key_name | Column_name | Cardinality |<BR>&nbsp;&nbsp;&nbsp; +----------+------------+------------------------------------+--------------+<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | PRIMARY | ID | 999149 |<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | FK_task_status_id_TO_SYS_HIER_INFO | STATUS_ID | 16 |<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | TSK_TASK_KEY_MON_TIME | MON_TIME | 13502 |<BR>&nbsp;&nbsp;&nbsp; +----------+------------------------------------+-------------+-----------+--</P>
+<P><BR>在Oracle或其他关系数据库下，WHERE条件中的字段顺序对索引的选择起着很重要的作用。我们调整一下字段顺序，把STATUS_ID放在后面，再EXPLAIN一下：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="10883" class="copybut" id="copybut10883" onclick="doCopy('code10883')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code10883"><BR>EXPLAIN select * from TSK_TASK WHERE MON_TIME &gt;= '2007-11-22' and MON_TIME &lt; '2007-11-23' and STATUS_ID = 1064;</P>
+<P></div></P>
+<P>但是没什么效果，MySQL还是选用系统建立的STATUS_ID外键索引。</P>
+<P>仔细分析一下，看来Cardinality属性（即索引中的唯一值的个数）对索引的选择起了极其重要的作用，MySQL选择了索引值唯一值个数小的那个索引作为整条语句的索引。</P>
+<P>针对这条语句，如果使用FK_task_status_id_TO_SYS_HIER_INFO做索引，而TSK_TASK表中存放很多天数据的话，那扫描的记录数会很多，速度较慢。可以有以下几个优化方案：</P>
+<P>&nbsp;&nbsp;&nbsp; 如果一天的任务数不多的话，我们删除索引FK_task_status_id_TO_SYS_HIER_INFO，那MySQL会使用索引TSK_TASK_KEY_MON_TIME，然后在该天的数据中在扫描STATUS_ID为1064的记录，那速度也不慢；<BR>&nbsp;&nbsp;&nbsp; 如果一天的任务数多的话，我们需删除索引FK_task_status_id_TO_SYS_HIER_INFO和TSK_TASK_KEY_MON_TIME，然后再建立STATUS_ID,MON_TIME的联合索引，这样效率肯定会很高。</P>
+<P><BR>因此建议，对那些记录数多的表，建议不要使用外键，以避免造成性能效率的严重降低。<BR>2. 尽量控制每张表的记录数<BR>当一张表的记录数很大时，管理和维护就会很麻烦，如索引维护就会占用很长时间，从而会给系统的正常运行造成很大的干扰。</P>
+<P>对随时间推移数据量不断增长的表，我们可以根据时间来区分实时数据和历史数据，可以使用后台服务程序定期移动实时表中的数据到历史表中，从而控制实时表的记录数，提高查询和操作效率。但注意每次移动的时间要足够短，不要影响正常程序的数据写入。如果占用时间太长，可能会造成死锁问题。<BR>3. 数据散列(partition)策略<BR>当客户数达到一定规模后，单个数据库将无法支撑更高的并发访问，此时可以考虑把客户数据散列(partition)到多个数据库中，以分担负载，提高系统的整体性能与效率。</P>
+<P>数据散列可以考虑采用federeated或sharded方式，网上有不少这方面的资料。<BR>一些小技巧<BR>1. 如何查出效率低的语句？<BR>在MySQL下，在启动参数中设置 --log-slow-queries=[文件名]，就可以在指定的日志文件中记录执行时间超过long_query_time（缺省为10秒）的SQL语句。你也可以在启动配置文件中修改long query的时间，如：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="30773" class="copybut" id="copybut30773" onclick="doCopy('code30773')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code30773"><BR>&nbsp;&nbsp;&nbsp; # Set long query time to 8 seconds<BR>&nbsp;&nbsp;&nbsp; long_query_time=8</P>
+<P></div></P>
+<P>2. 如何查询某表的索引？<BR>可使用SHOW INDEX语句，如：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="97661" class="copybut" id="copybut97661" onclick="doCopy('code97661')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code97661"><BR>&nbsp; SHOW INDEX FROM [表名]<BR></div><BR>3. 如何查询某条语句的索引使用情况？<BR>可用EXPLAIN语句来看一下某条SELECT语句的索引使用情况。如果是UPDATE或DELETE语句，需要先转换为SELECT语句。<BR>4. 如何把导出INNODB引擎的内容到错误日志文件中?<BR>我们可以使用SHOW INNODB STATUS命令来查看INNODB引擎的很多有用的信息，如当前进程、事务、外键错误、死锁问题和其它一些统计数据。如何让该信息能记录在日志文件中呢？只要使用如下语句创建innodb_monitor表，MySQL就会每15秒钟把该系统写入到错误日志文件中：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="96997" class="copybut" id="copybut96997" onclick="doCopy('code96997')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code96997"><BR>CREATE TABLE innodb_monitor (a INT) ENGINE=INNODB;<BR></div></P>
+<P>如果你不再需要导出到错误日志文件，只要删除该表即可：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="72430" class="copybut" id="copybut72430" onclick="doCopy('code72430')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code72430"><BR>&nbsp;&nbsp;&nbsp; DROP TABLE innodb_monitor;<BR></div><BR>5. 如何定期删除庞大的日志文件？<BR>只要在启动配置文件中设置日志过期时间即可：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="46131" class="copybut" id="copybut46131" onclick="doCopy('code46131')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code46131"><BR>&nbsp;&nbsp;&nbsp; expire_logs_days=10<BR></div><BR>经验教训<BR>1. 重点关注索引<BR>下面以表TSK_TASK表为例说明SQL语句优化过程。TSK_TASK表用于保存系统监测任务，相关字段及索引如下：</P>
+<P>&nbsp;&nbsp;&nbsp; ID：主键；<BR>&nbsp;&nbsp;&nbsp; MON_TIME：监测时间；建了索引；<BR>&nbsp;&nbsp;&nbsp; STATUS_ID：任务状态；与SYS_HIER_INFO.ID建立了外键关系。</P>
+<P><BR>注MySQL自动会为外键建立索引，在本次优化过程中，发现这些自动建立的外键索引会对SQL语句的效率产生不必要的干扰，需要特别注意！</P>
+<P>首先，我们在日志文件中查到下面语句的执行比较慢，超过10秒了：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="84180" class="copybut" id="copybut84180" onclick="doCopy('code84180')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code84180"><BR>&nbsp;# Query_time: 18 Lock_time: 0 Rows_sent: 295 Rows_examined: 88143<BR>&nbsp;&nbsp;&nbsp; select * from TSK_TASK WHERE STATUS_ID = 1064 and MON_TIME &gt;= '2007-11-22' and MON_TIME &lt; '2007-11-23';</P>
+<P></div></P>
+<P>哦，原来在88143条记录中要查出符合条件的295条记录，那当然慢了。赶紧用EXPLAIN语句看一下索引使用情况吧：</P>
+<P>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+<BR>&nbsp;&nbsp;&nbsp; | id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra |<BR>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+<BR>&nbsp;&nbsp;&nbsp; | 1 | SIMPLE | TSK_TASK | ref | FK_task_status_id_TO_SYS_HIER_INFO,TSK_TASK_KEY_MON_TIME | FK_task_status_id_TO_SYS_HIER_INFO | 9 | const | 276168 | Using where |<BR>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+</P>
+<P><BR>可以看出，有两个索引可用FK_task_status_id_TO_SYS_HIER_INFO,TSK_TASK_KEY_MON_TIME，而最终执行语句时采用了STATUS_ID上的外键索引。</P>
+<P>再看一下TSK_TASK表的索引情况吧：</P>
+<P>&nbsp;&nbsp;&nbsp; +----------+------------------------------------+-------------+-------------+<BR>&nbsp;&nbsp;&nbsp; | Table | Key_name | Column_name | Cardinality |<BR>&nbsp;&nbsp;&nbsp; +----------+------------+------------------------------------+--------------+<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | PRIMARY | ID | 999149 |<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | FK_task_status_id_TO_SYS_HIER_INFO | STATUS_ID | 16 |<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | TSK_TASK_KEY_MON_TIME | MON_TIME | 13502 |<BR>&nbsp;&nbsp;&nbsp; +----------+------------------------------------+-------------+-----------+--</P>
+<P><BR>在Oracle或其他关系数据库下，WHERE条件中的字段顺序对索引的选择起着很重要的作用。我们调整一下字段顺序，把STATUS_ID放在后面，再EXPLAIN一下：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="41454" class="copybut" id="copybut41454" onclick="doCopy('code41454')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code41454"><BR>&nbsp;&nbsp;&nbsp; EXPLAIN select * from TSK_TASK WHERE MON_TIME &gt;= '2007-11-22' and MON_TIME &lt; '2007-11-23' and STATUS_ID = 1064;<BR></div></P>
+<P>但是没什么效果，MySQL还是选用系统建立的STATUS_ID外键索引。</P>
+<P>仔细分析一下，看来Cardinality属性（即索引中的唯一值的个数）对索引的选择起了极其重要的作用，MySQL选择了索引值唯一值个数小的那个索引作为整条语句的索引。</P>
+<P>针对这条语句，如果使用FK_task_status_id_TO_SYS_HIER_INFO做索引，而TSK_TASK表中存放很多天数据的话，那扫描的记录数会很多，速度较慢。可以有以下几个优化方案：</P>
+<P>&nbsp;&nbsp;&nbsp; 如果一天的任务数不多的话，我们删除索引FK_task_status_id_TO_SYS_HIER_INFO，那MySQL会使用索引TSK_TASK_KEY_MON_TIME，然后在该天的数据中在扫描STATUS_ID为1064的记录，那速度也不慢；<BR>&nbsp;&nbsp;&nbsp; 如果一天的任务数多的话，我们需删除索引FK_task_status_id_TO_SYS_HIER_INFO和TSK_TASK_KEY_MON_TIME，然后再建立STATUS_ID,MON_TIME的联合索引，这样效率肯定会很高。</P>
+<P><BR>因此建议，对那些记录数多的表，建议不要使用外键，以避免造成性能效率的严重降低。<BR>2. 尽量控制每张表的记录数<BR>当一张表的记录数很大时，管理和维护就会很麻烦，如索引维护就会占用很长时间，从而会给系统的正常运行造成很大的干扰。</P>
+<P>对随时间推移数据量不断增长的表，我们可以根据时间来区分实时数据和历史数据，可以使用后台服务程序定期移动实时表中的数据到历史表中，从而控制实时表的记录数，提高查询和操作效率。但注意每次移动的时间要足够短，不要影响正常程序的数据写入。如果占用时间太长，可能会造成死锁问题。<BR>3. 数据散列(partition)策略<BR>当客户数达到一定规模后，单个数据库将无法支撑更高的并发访问，此时可以考虑把客户数据散列(partition)到多个数据库中，以分担负载，提高系统的整体性能与效率。</P>
+<P>数据散列可以考虑采用federeated或sharded方式，网上有不少这方面的资料。<BR>一些小技巧<BR>1. 如何查出效率低的语句？<BR>在MySQL下，在启动参数中设置 --log-slow-queries=[文件名]，就可以在指定的日志文件中记录执行时间超过long_query_time（缺省为10秒）的SQL语句。你也可以在启动配置文件中修改long query的时间，如：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="65617" class="copybut" id="copybut65617" onclick="doCopy('code65617')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code65617"><BR>&nbsp;&nbsp;&nbsp; # Set long query time to 8 seconds<BR>&nbsp;&nbsp;&nbsp; long_query_time=8<BR></div><BR>2. 如何查询某表的索引？<BR>可使用SHOW INDEX语句，如：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="93129" class="copybut" id="copybut93129" onclick="doCopy('code93129')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code93129"><BR>&nbsp;&nbsp;&nbsp; SHOW INDEX FROM [表名]<BR></div></P>
+<P>3. 如何查询某条语句的索引使用情况？<BR>可用EXPLAIN语句来看一下某条SELECT语句的索引使用情况。如果是UPDATE或DELETE语句，需要先转换为SELECT语句。<BR>4. 如何把导出INNODB引擎的内容到错误日志文件中?<BR>我们可以使用SHOW INNODB STATUS命令来查看INNODB引擎的很多有用的信息，如当前进程、事务、外键错误、死锁问题和其它一些统计数据。如何让该信息能记录在日志文件中呢？只要使用如下语句创建innodb_monitor表，MySQL就会每15秒钟把该系统写入到错误日志文件中：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="57476" class="copybut" id="copybut57476" onclick="doCopy('code57476')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code57476"><BR>&nbsp;&nbsp;&nbsp; CREATE TABLE innodb_monitor (a INT) ENGINE=INNODB;<BR></div><BR>如果你不再需要导出到错误日志文件，只要删除该表即可：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="72430" class="copybut" id="copybut72430" onclick="doCopy('code72430')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code72430"><BR>&nbsp;&nbsp;&nbsp; DROP TABLE innodb_monitor;<BR></div><BR>5. 如何定期删除庞大的日志文件？<BR>只要在启动配置文件中设置日志过期时间即可：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="46131" class="copybut" id="copybut46131" onclick="doCopy('code46131')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code46131"><BR>&nbsp;&nbsp;&nbsp; expire_logs_days=10<BR></div><BR>经验教训<BR>1. 重点关注索引<BR>下面以表TSK_TASK表为例说明SQL语句优化过程。TSK_TASK表用于保存系统监测任务，相关字段及索引如下：</P>
+<P>&nbsp;&nbsp;&nbsp; ID：主键；<BR>&nbsp;&nbsp;&nbsp; MON_TIME：监测时间；建了索引；<BR>&nbsp;&nbsp;&nbsp; STATUS_ID：任务状态；与SYS_HIER_INFO.ID建立了外键关系。</P>
+<P><BR>注MySQL自动会为外键建立索引，在本次优化过程中，发现这些自动建立的外键索引会对SQL语句的效率产生不必要的干扰，需要特别注意！</P>
+<P>首先，我们在日志文件中查到下面语句的执行比较慢，超过10秒了：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="71767" class="copybut" id="copybut71767" onclick="doCopy('code71767')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code71767"><BR>&nbsp;&nbsp;&nbsp; # Query_time: 18 Lock_time: 0 Rows_sent: 295 Rows_examined: 88143<BR>&nbsp;&nbsp;&nbsp; select * from TSK_TASK WHERE STATUS_ID = 1064 and MON_TIME &gt;= '2007-11-22' and MON_TIME &lt; '2007-11-23';<BR></div></P>
+<P>哦，原来在88143条记录中要查出符合条件的295条记录，那当然慢了。赶紧用EXPLAIN语句看一下索引使用情况吧：</P>
+<P>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+<BR>&nbsp;&nbsp;&nbsp; | id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra |<BR>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+<BR>&nbsp;&nbsp;&nbsp; | 1 | SIMPLE | TSK_TASK | ref | FK_task_status_id_TO_SYS_HIER_INFO,TSK_TASK_KEY_MON_TIME | FK_task_status_id_TO_SYS_HIER_INFO | 9 | const | 276168 | Using where |<BR>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+</P>
+<P><BR>可以看出，有两个索引可用FK_task_status_id_TO_SYS_HIER_INFO,TSK_TASK_KEY_MON_TIME，而最终执行语句时采用了STATUS_ID上的外键索引。</P>
+<P>再看一下TSK_TASK表的索引情况吧：</P>
+<P>&nbsp;&nbsp;&nbsp; +----------+------------------------------------+-------------+-------------+<BR>&nbsp;&nbsp;&nbsp; | Table | Key_name | Column_name | Cardinality |<BR>&nbsp;&nbsp;&nbsp; +----------+------------+------------------------------------+--------------+<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | PRIMARY | ID | 999149 |<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | FK_task_status_id_TO_SYS_HIER_INFO | STATUS_ID | 16 |<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | TSK_TASK_KEY_MON_TIME | MON_TIME | 13502 |<BR>&nbsp;&nbsp;&nbsp; +----------+------------------------------------+-------------+-----------+--</P>
+<P><BR>在Oracle或其他关系数据库下，WHERE条件中的字段顺序对索引的选择起着很重要的作用。我们调整一下字段顺序，把STATUS_ID放在后面，再EXPLAIN一下：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="41454" class="copybut" id="copybut41454" onclick="doCopy('code41454')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code41454"><BR>&nbsp;&nbsp;&nbsp; EXPLAIN select * from TSK_TASK WHERE MON_TIME &gt;= '2007-11-22' and MON_TIME &lt; '2007-11-23' and STATUS_ID = 1064;<BR></div></P>
+<P>但是没什么效果，MySQL还是选用系统建立的STATUS_ID外键索引。</P>
+<P>仔细分析一下，看来Cardinality属性（即索引中的唯一值的个数）对索引的选择起了极其重要的作用，MySQL选择了索引值唯一值个数小的那个索引作为整条语句的索引。</P>
+<P>针对这条语句，如果使用FK_task_status_id_TO_SYS_HIER_INFO做索引，而TSK_TASK表中存放很多天数据的话，那扫描的记录数会很多，速度较慢。可以有以下几个优化方案：</P>
+<P>&nbsp;&nbsp;&nbsp; 如果一天的任务数不多的话，我们删除索引FK_task_status_id_TO_SYS_HIER_INFO，那MySQL会使用索引TSK_TASK_KEY_MON_TIME，然后在该天的数据中在扫描STATUS_ID为1064的记录，那速度也不慢；<BR>&nbsp;&nbsp;&nbsp; 如果一天的任务数多的话，我们需删除索引FK_task_status_id_TO_SYS_HIER_INFO和TSK_TASK_KEY_MON_TIME，然后再建立STATUS_ID,MON_TIME的联合索引，这样效率肯定会很高。</P>
+<P><BR>因此建议，对那些记录数多的表，建议不要使用外键，以避免造成性能效率的严重降低。<BR>2. 尽量控制每张表的记录数<BR>当一张表的记录数很大时，管理和维护就会很麻烦，如索引维护就会占用很长时间，从而会给系统的正常运行造成很大的干扰。</P>
+<P>对随时间推移数据量不断增长的表，我们可以根据时间来区分实时数据和历史数据，可以使用后台服务程序定期移动实时表中的数据到历史表中，从而控制实时表的记录数，提高查询和操作效率。但注意每次移动的时间要足够短，不要影响正常程序的数据写入。如果占用时间太长，可能会造成死锁问题。<BR>3. 数据散列(partition)策略<BR>当客户数达到一定规模后，单个数据库将无法支撑更高的并发访问，此时可以考虑把客户数据散列(partition)到多个数据库中，以分担负载，提高系统的整体性能与效率。</P>
+<P>数据散列可以考虑采用federeated或sharded方式，网上有不少这方面的资料。<BR>一些小技巧<BR>1. 如何查出效率低的语句？<BR>在MySQL下，在启动参数中设置 --log-slow-queries=[文件名]，就可以在指定的日志文件中记录执行时间超过long_query_time（缺省为10秒）的SQL语句。你也可以在启动配置文件中修改long query的时间，如：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="65617" class="copybut" id="copybut65617" onclick="doCopy('code65617')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code65617"><BR>&nbsp;&nbsp;&nbsp; # Set long query time to 8 seconds<BR>&nbsp;&nbsp;&nbsp; long_query_time=8<BR></div><BR>2. 如何查询某表的索引？<BR>可使用SHOW INDEX语句，如：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="93129" class="copybut" id="copybut93129" onclick="doCopy('code93129')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code93129"><BR>&nbsp;&nbsp;&nbsp; SHOW INDEX FROM [表名]<BR></div><BR>3. 如何查询某条语句的索引使用情况？<BR>可用EXPLAIN语句来看一下某条SELECT语句的索引使用情况。如果是UPDATE或DELETE语句，需要先转换为SELECT语句。<BR>4. 如何把导出INNODB引擎的内容到错误日志文件中?<BR>我们可以使用SHOW INNODB STATUS命令来查看INNODB引擎的很多有用的信息，如当前进程、事务、外键错误、死锁问题和其它一些统计数据。如何让该信息能记录在日志文件中呢？只要使用如下语句创建innodb_monitor表，MySQL就会每15秒钟把该系统写入到错误日志文件中：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="57476" class="copybut" id="copybut57476" onclick="doCopy('code57476')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code57476"><BR>&nbsp;&nbsp;&nbsp; CREATE TABLE innodb_monitor (a INT) ENGINE=INNODB;<BR></div><BR>如果你不再需要导出到错误日志文件，只要删除该表即可：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="72430" class="copybut" id="copybut72430" onclick="doCopy('code72430')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code72430"><BR>&nbsp;&nbsp;&nbsp; DROP TABLE innodb_monitor;<BR></div><BR>5. 如何定期删除庞大的日志文件？<BR>只要在启动配置文件中设置日志过期时间即可：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="46131" class="copybut" id="copybut46131" onclick="doCopy('code46131')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code46131"><BR>&nbsp;&nbsp;&nbsp; expire_logs_days=10<BR></div><BR>经验教训<BR>1. 重点关注索引<BR>下面以表TSK_TASK表为例说明SQL语句优化过程。TSK_TASK表用于保存系统监测任务，相关字段及索引如下：</P>
+<P>&nbsp;&nbsp;&nbsp; ID：主键；<BR>&nbsp;&nbsp;&nbsp; MON_TIME：监测时间；建了索引；<BR>&nbsp;&nbsp;&nbsp; STATUS_ID：任务状态；与SYS_HIER_INFO.ID建立了外键关系。</P>
+<P><BR>注MySQL自动会为外键建立索引，在本次优化过程中，发现这些自动建立的外键索引会对SQL语句的效率产生不必要的干扰，需要特别注意！</P>
+<P>首先，我们在日志文件中查到下面语句的执行比较慢，超过10秒了：</P>
+<P>&nbsp;&nbsp;&nbsp; # Query_time: 18 Lock_time: 0 Rows_sent: 295 Rows_examined: 88143<BR>&nbsp;&nbsp;&nbsp; select * from TSK_TASK WHERE STATUS_ID = 1064 and MON_TIME &gt;= '2007-11-22' and MON_TIME &lt; '2007-11-23';</P>
+<P><BR>哦，原来在88143条记录中要查出符合条件的295条记录，那当然慢了。赶紧用EXPLAIN语句看一下索引使用情况吧：</P>
+<P>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+<BR>&nbsp;&nbsp;&nbsp; | id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra |<BR>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+<BR>&nbsp;&nbsp;&nbsp; | 1 | SIMPLE | TSK_TASK | ref | FK_task_status_id_TO_SYS_HIER_INFO,TSK_TASK_KEY_MON_TIME | FK_task_status_id_TO_SYS_HIER_INFO | 9 | const | 276168 | Using where |<BR>&nbsp;&nbsp;&nbsp; +----+-------------+----------+------+----------------------------------------------------------+------------------------------------+---------+-------+--------+-------------+</P>
+<P><BR>可以看出，有两个索引可用FK_task_status_id_TO_SYS_HIER_INFO,TSK_TASK_KEY_MON_TIME，而最终执行语句时采用了STATUS_ID上的外键索引。</P>
+<P>再看一下TSK_TASK表的索引情况吧：</P>
+<P>&nbsp;&nbsp;&nbsp; +----------+------------------------------------+-------------+-------------+<BR>&nbsp;&nbsp;&nbsp; | Table | Key_name | Column_name | Cardinality |<BR>&nbsp;&nbsp;&nbsp; +----------+------------+------------------------------------+--------------+<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | PRIMARY | ID | 999149 |<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | FK_task_status_id_TO_SYS_HIER_INFO | STATUS_ID | 16 |<BR>&nbsp;&nbsp;&nbsp; | TSK_TASK | TSK_TASK_KEY_MON_TIME | MON_TIME | 13502 |<BR>&nbsp;&nbsp;&nbsp; +----------+------------------------------------+-------------+-----------+--</P>
+<P><BR>在Oracle或其他关系数据库下，WHERE条件中的字段顺序对索引的选择起着很重要的作用。我们调整一下字段顺序，把STATUS_ID放在后面，再EXPLAIN一下：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="41454" class="copybut" id="copybut41454" onclick="doCopy('code41454')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code41454"><BR>&nbsp;&nbsp;&nbsp; EXPLAIN select * from TSK_TASK WHERE MON_TIME &gt;= '2007-11-22' and MON_TIME &lt; '2007-11-23' and STATUS_ID = 1064;<BR></div></P>
+<P>但是没什么效果，MySQL还是选用系统建立的STATUS_ID外键索引。</P>
+<P>仔细分析一下，看来Cardinality属性（即索引中的唯一值的个数）对索引的选择起了极其重要的作用，MySQL选择了索引值唯一值个数小的那个索引作为整条语句的索引。</P>
+<P>针对这条语句，如果使用FK_task_status_id_TO_SYS_HIER_INFO做索引，而TSK_TASK表中存放很多天数据的话，那扫描的记录数会很多，速度较慢。可以有以下几个优化方案：</P>
+<P>&nbsp;&nbsp;&nbsp; 如果一天的任务数不多的话，我们删除索引FK_task_status_id_TO_SYS_HIER_INFO，那MySQL会使用索引TSK_TASK_KEY_MON_TIME，然后在该天的数据中在扫描STATUS_ID为1064的记录，那速度也不慢；<BR>&nbsp;&nbsp;&nbsp; 如果一天的任务数多的话，我们需删除索引FK_task_status_id_TO_SYS_HIER_INFO和TSK_TASK_KEY_MON_TIME，然后再建立STATUS_ID,MON_TIME的联合索引，这样效率肯定会很高。</P>
+<P><BR>因此建议，对那些记录数多的表，建议不要使用外键，以避免造成性能效率的严重降低。<BR>2. 尽量控制每张表的记录数<BR>当一张表的记录数很大时，管理和维护就会很麻烦，如索引维护就会占用很长时间，从而会给系统的正常运行造成很大的干扰。</P>
+<P>对随时间推移数据量不断增长的表，我们可以根据时间来区分实时数据和历史数据，可以使用后台服务程序定期移动实时表中的数据到历史表中，从而控制实时表的记录数，提高查询和操作效率。但注意每次移动的时间要足够短，不要影响正常程序的数据写入。如果占用时间太长，可能会造成死锁问题。<BR>3. 数据散列(partition)策略<BR>当客户数达到一定规模后，单个数据库将无法支撑更高的并发访问，此时可以考虑把客户数据散列(partition)到多个数据库中，以分担负载，提高系统的整体性能与效率。</P>
+<P>数据散列可以考虑采用federeated或sharded方式，网上有不少这方面的资料。<BR>配置my.cnf/my.ini，增加 --log-slow-queries 配置，记录所有的slow query，然后挨个优化<BR>本文来源于 WEB开发网<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="97402" class="copybut" id="copybut97402" onclick="doCopy('code97402')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code97402"><BR>select @a=DRClass1, @b=DRClass2, @c=DRClass3, @d=DRClass4, @e=DRClass5 from Teacher Where TeacherID = @TeacherID</P>
+<P>create table classname(classname char(50))<BR>insert into classname (classname) values (@a)<BR>if (@b is not null)<BR>begin<BR>insert into classname (classname) values (@b)</P>
+<P>if (@c is not null)<BR>begin<BR>insert into classname (classname) values (@c)</P>
+<P>if (@d is not null)<BR>begin<BR>insert into classname (classname) values (@d)<BR>if (@e is not null)<BR>begin<BR>insert into classname (classname) values (@e)<BR>end<BR>end<BR>end<BR>end</P>
+<P>select * from classname<BR></div><BR>以上这些SQL语句能不能转成一个存储过程？我自己试了下<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="44659" class="copybut" id="copybut44659" onclick="doCopy('code44659')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code44659"><BR>ALTER PROCEDURE Pr_GetClass</P>
+<P>@TeacherID int,<BR>@a char(50),<BR>@b char(50),<BR>@c char(50),<BR>@d char(50),<BR>@e char(50)<BR>as</P>
+<P>select @a=DRClass1, @b=DRClass2, @c=DRClass3, @d=DRClass4, @e=DRClass5 from Teacher Where TeacherID = @TeacherID<BR>DROP TABLE classname<BR>create table classname(classname char(50))</P>
+<P>insert into classname (classname) values (@a)<BR>if (@b is not null)<BR>begin<BR>insert into classname (classname) values (@b)</P>
+<P>if (@c is not null)<BR>begin<BR>insert into classname (classname) values (@c)</P>
+<P>if (@d is not null)<BR>begin<BR>insert into classname (classname) values (@d)<BR>if (@e is not null)<BR>begin<BR>insert into classname (classname) values (@e)<BR>end<BR>end<BR>end<BR>end</P>
+<P>select * from classname<BR></div><BR>但是这样的话，这个存储过程就有6个变量，实际上应该只提供一个变量就可以了</P>
+<P>主要的问题就是自己没搞清楚 @a,@b,@C,@d 等是临时变量，是放在as后面重新做一些申明的，而不是放在开头整个存储过程的变量定义。</P>
+<P>(标准化越来越近了):namespace prefix = o ns = "urn:schemas-microsoft-com:office:office" /&gt;</P>
+<P>实战SQL语句收集(不断更新中--)</P>
+<P>前言：这里将我编程实践中遇到的有价值的sql语句一路记下来，一方面方便自己查用，一方面也夯实下即将遗忘的回忆。整个过程中我会不断更新，直到不能再加为止，同时，这里只记录最实用的咚咚，不效仿学院派的那一套。</P>
+<P>　</P>
+<P>一、常用SQL语句荟萃</P>
+<P>1，查询：</P>
+<P>1.1，简单查询：select * from table where</P>
+<P>1.2，连接查询：</P>
+<P>什么是连接查询？顾名释义，就是查询时涉及多个表的查询。是以说到连接，废话一下，要知道连接还是关系数据库的主要特点呢。</P>
+<P>连接查询分为三种：外连接(OUTER JOIN)，内连接(INNER JOIN)，交叉连接(CROSS JOIN)。</P>
+<P>(标准化越来越近了):namespace prefix = st1 ns = "urn:schemas-microsoft-com:office:smarttags" /&gt;1.2.1，内连接(INNER JOIN)使用比较运算符进行表间某(些)列数据的比较操作，并列出这些表中与连接条件相匹配的数据行。根据所使用的比较方式不同，内连接又分为等值连接、自然连接和不等连接三种。</P>
+<P>1.2.2，外连接分为左外连接(LEFT OUTER JOIN或LEFT JOIN)、右外连接(RIGHT OUTER JOIN或RIGHT JOIN)和全外连接(FULL OUTER JOIN或FULL JOIN)三种。与内连接不同的是，外连接不只列出与连接条件相匹配的行，而是列出左表(左外连接时)、右表(右外连接时)或两个表(全外连接时)中所有符合搜索条件的数据行。</P>
+<P>1.2.3，交叉连接(CROSS JOIN)没有WHERE 子句，它返回连接表中所有数据行的笛卡尔积，其结果集合中的数据行数等于第一个表中符合查询条件的数据行数乘以第二个表中符合查询条件的数据行数。连接操作中的ON (join_condition) 子句指出连接条件，它由被连接表中的列和比较运算符、逻辑运算符等构成。</P>
+<P>1.2.4，无论哪种连接都不能对text、ntext和image数据类型列进行直接连接，但可以对这三种列进行间接连接。例如：</P>
+<P>SELECT p1.pub_id,p2.pub_id,p1.pr_info<BR>FROM pub_info AS p1 INNER JOIN pub_info AS p2<BR>ON DATALENGTH(p1.pr_info)=DATALENGTH(p2.pr_info)</P>
+<P>1.2.5，使用WHERE子句设置查询条件</P>
+<P>WHERE子句设置查询条件，过滤掉不需要的数据行。例如下面语句查询年龄大于20的数据：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="56004" class="copybut" id="copybut56004" onclick="doCopy('code56004')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code56004"><BR>SELECT *</P>
+<P>FROM usertable</P>
+<P>WHERE age&gt;20<BR></div><BR>WHERE子句可包括各种条件运算符：</P>
+<P>比较运算符(大小比较)：&gt;、&gt;=、=、&lt;、&lt;=、&lt;&gt;、!&gt;、!&lt;</P>
+<P>范围运算符(表达式值是否在指定的范围)：BETWEEN…AND…</P>
+<P>NOT BETWEEN…AND…</P>
+<P>列表运算符(判断表达式是否为列表中的指定项)：IN (项1,项2……)</P>
+<P>NOT IN (项1,项2……)</P>
+<P>模式匹配符(判断值是否与指定的字符通配格式相符):LIKE、NOT LIKE</P>
+<P>空值判断符(判断表达式是否为空)：IS NULL、NOT IS NULL</P>
+<P>逻辑运算符(用于多条件的逻辑连接)：NOT、AND、OR</P>
+<P>1、范围运算符例：age BETWEEN 10 AND 30相当于age&gt;=10 AND age&lt;=30</P>
+<P>2、列表运算符例：country IN ('Germany','China')</P>
+<P>3、模式匹配符例：常用于模糊查找，它判断列值是否与指定的字符串格式相匹配。可用于char、varchar、text、ntext、datetime和smalldatetime等类型查询。</P>
+<P>可使用以下通配字符：</P>
+<P>百分号%：可匹配任意类型和长度的字符，如果是中文，请使用两个百分号即%%。</P>
+<P>下划线_：匹配单个任意字符，它常用来限制表达式的字符长度。</P>
+<P>方括号[]：指定一个字符、字符串或范围，要求所匹配对象为它们中的任一个。</P>
+<P>[^]：其取值也[] 相同，但它要求所匹配对象为指定字符以外的任一个字符。</P>
+<P>例如：</P>
+<P>限制以Publishing结尾，使用LIKE '%Publishing'</P>
+<P>限制以A开头：LIKE '[A]%'</P>
+<P>限制以A开头外：LIKE '[^A]%'</P>
+<P>空值判断符例：WHERE age IS NULL</P>
+<P>2，更新：update table</P>
+<P>　</P>
+<P>3，插入：</P>
+<P>3.1，一般插入：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="48527" class="copybut" id="copybut48527" onclick="doCopy('code48527')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code48527"><BR>INSERT INTO publishers<BR>(pub_id, pub_name, city, state)<BR>VALUES<BR>('9001', 'Acme Publishing', 'New York', 'NY')<BR></div><BR>3.2，插入多行</P>
+<P>使用 INSERT 语句可以向表添加多行数据。这些多行数据是从已经存有这些数据的另一个表中选取的。本例中，向 pubhold 表中添加有关在加利福尼亚和德克萨斯州的出版商的数据。这些数据可从 publishers 表中获得。<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="70958" class="copybut" id="copybut70958" onclick="doCopy('code70958')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code70958"><BR>INSERT pubhpold SELECT * FROM publishers<BR>WHERE state = 'CA' OR state = 'TX'<BR></div><BR>　</P>
+<P>4，删除：</P>
+<P>4.1，Delete语句联合删除：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="77107" class="copybut" id="copybut77107" onclick="doCopy('code77107')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code77107"><BR>DELETE FROM uu_SuiteToMinClassroomSect</P>
+<P>WHERE min_classroom_sect_id IN</P>
+<P>&nbsp;&nbsp; (SELECT min_classroom_sect_id</P>
+<P>&nbsp;&nbsp; FROM uu_MinClassroomSect</P>
+<P>&nbsp;&nbsp; WHERE min_classroom_id = '112')<BR></div><BR>二、视图使用细则</P>
+<P>1，一个典型的视图<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="5542" class="copybut" id="copybut5542" onclick="doCopy('code5542')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code5542"><BR>CREATE VIEW View_uuGroupTaxis</P>
+<P>AS</P>
+<P>SELECT uu_GroupInfo.group_id, uu_GroupInfo.group_name,</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uu_GroupType.main_type, uu_GroupType.group_type_name,</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uu_GroupInfo.group_icon_url, ISNULL</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((SELECT COUNT(*)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM uu_GroupUser</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE uu_GroupInfo.group_id = uu_GroupUser.group_id), 0)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 50 + ISNULL(uu_GroupInfo.fundCount, 0) + ISNULL</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((SELECT COUNT(*)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM Dv_Topic</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE Dv_Topic.BoardID = uu_GroupInfo.subforum_id), 0) * 5 + ISNULL</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((SELECT COUNT(*)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM uu_GroupPhotos</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE uu_GroupPhotos.group_id = uu_GroupInfo.group_id), 0)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 10 + ISNULL(uu_GroupInfo.topic_account, 0)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * 2 + ISNULL(uu_GroupInfo.hit_account, 0) AS group_ActiveDegree,</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ISNULL</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((SELECT COUNT(*)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM uu_GroupUser</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE uu_GroupInfo.group_id = uu_GroupUser.group_id), 0)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AS group_memberNum, ISNULL(uu_GroupInfo.fundCount, 0) AS fundCount,</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (SELECT COUNT(*)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM Dv_Topic</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE Dv_Topic.BoardID = uu_GroupInfo.subforum_id) AS group_articleNum,</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (SELECT COUNT(*)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM uu_GroupPhotos</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE uu_GroupPhotos.group_id = uu_GroupInfo.group_id) AS group_PhotoNum,</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uu_GroupInfo.topic_account, uu_GroupInfo.hit_account,</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (SELECT user_name</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM uu_RegisterUser</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE uu_RegisterUser.user_id = uu_GroupInfo.creator_id)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AS group_CreatorName, uu_GroupInfo.create_time</P>
+<P>FROM uu_GroupInfo INNER JOIN</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uu_GroupType ON</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uu_GroupInfo.group_type_id = uu_GroupType.group_type_id<BR></div><BR>三，存储过程的创建和调用</P>
+<P>1，存储过程的调用<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="46795" class="copybut" id="copybut46795" onclick="doCopy('code46795')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code46795"><BR>Execute procedureName @param='value'<BR></div><BR>2，一个典型的带参数存储过程<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="49595" class="copybut" id="copybut49595" onclick="doCopy('code49595')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code49595"><BR>CREATE PROCEDURE P_delMiniclassProc</P>
+<P>@miniClassroom_id int</P>
+<P>AS</P>
+<P>declare @billtag varchar(4)</P>
+<P>set nocount on</P>
+<P>IF @miniClassroom_id is null</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; begin</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return(-1)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; end</P>
+<P>else</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BEGIN TRANSACTION</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --删除套餐信息</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DELETE FROM uu_SuiteToMinClassroomSect</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE min_classroom_sect_id IN</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (SELECT min_classroom_sect_id</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM uu_MinClassroomSect</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE min_classroom_id =@miniClassroom_id)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --删除小课堂段信息</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; delete from uu_MinClassroomSect</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; where min_classroom_id = @miniClassroom_id</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --删除小课堂用户购买记录</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; delete from uu_UserBuyMinClassroom</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; where min_classroom_id = @miniClassroom_id</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --删除对应小课堂年级学科信息</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; delete from uu_MinClassroomToGradeClass</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; where min_classroom_id = @miniClassroom_id</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --删除小课堂发言</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; delete from uu_MinClassroomDiscuss</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; where min_classroom_id = @miniClassroom_id</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --删除课程讨论</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DELETE FROM uu_CourseDiscuss</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE course_id IN</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (SELECT course_id</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM uu_CourseInfo</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE min_classroom_id = @miniClassroom_id)</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --删除用户课程收藏</P>
+<P></div><BR>SQL语句的优化是将性能低下的SQL语句转换成目的相同的性能优异的SQL语句。</P>
+<P>　　人工智能自动SQL优化就是使用人工智能技术，自动对SQL语句进行重写，从而找到性能最好的等效SQL语句。</P>
+<P>　　数据库性能的优化</P>
+<P><BR>　　一个数据库系统的生命周期可以分成：设计、开发和成品三个阶段。在设计阶段进行数据库性能优化的成本最低，收益最大。在成品阶段进行数据库性能优化的成本最高，收益最小。</P>
+<P>　　数据库的优化通常可以通过对网络、硬件、操作系统、数据库参数和应用程序的优化来进行。最常见的优化手段就是对硬件的升级。根据统计，对网络、硬件、操作系统、数据库参数进行优化所获得的性能提升，全部加起来只占数据库系统性能提升的40%左右，其余的60%系统性能提升来自对应用程序的优化。许多优化专家认为，对应用程序的优化可以得到80%的系统性能的提升。</P>
+<P>　　应用程序的优化</P>
+<P>　　应用程序的优化通常可分为两个方面：源代码和SQL语句。由于涉及到对程序逻辑的改变，源代码的优化在时间成本和风险上代价很高，而对数据库系统性能的提升收效有限。</P>
+<P>　　为什么要优化SQL语句</P>
+<P>　　. SQL语句是对数据库进行操作的惟一途径，对数据库系统的性能起着决定性的作用。</P>
+<P>　　. SQL语句消耗了70%至90%的数据库资源。</P>
+<P>　　. SQL语句独立于程序设计逻辑，对SQL语句进行优化不会影响程序逻辑。</P>
+<P>　　. SQL语句有不同的写法，在性能上的差异非常大。</P>
+<P>　　. SQL语句易学，但难精通。</P>
+<P>　　优化SQL语句的传统方法是通过手工重写来对SQL语句进行优化。DBA或资深程序员通过对SQL语句执行计划的分析，依靠经验，尝试重写SQL语句，然后对结果和性能进行比较，以试图找到性能较佳的SQL语句。这种传统上的作法无法找出SQL语句的所有可能写法，且依赖于人的经验，非常耗费时间。</P>
+<P>　　SQL优化技术的发展历程</P>
+<P>　　第一代SQL优化工具是执行计划分析工具。这类工具针对输入的SQL语句，从数据库提取执行计划，并解释执行计划中关键字的含义。</P>
+<P>　　第二代SQL优化工具只能提供增加索引的建议，它通过对输入的SQL语句的执行计划的分析，来产生是否要增加索引的建议。</P>
+<P>　　第三代SQL优化工具不仅分析输入SQL语句的执行计划，还对输入的SQL语句本身进行语法分析，经过分析产生写法上的改进建议。</P>
+<P>　　人工智能自动SQL优化</P>
+<P>SQL语句性能优化--LECCO SQL Expert<BR>图1 人工智能自动SQL优化示意图</P>
+<P>　　人工智能自动SQL优化出现在90年代末。目前在商用数据库领域，LECCO Technology Limited(灵高科研有限公司)拥有该技术，并提供使用该技术的自动优化产品LECCO SQL Expert，它支持Oracle(大型网站数据库平台)、Sybase、MS sql server(WINDOWS平台上强大的数据库平台)和IBM DB2数据库平台。该产品针对数据库应用的开发和维护阶段提供的模块有：SQL语法优化器、PL/SQL集成化开发调试环境(IDE)、扫描器、数据库监视器等。其核心模块SQL 语法优化器的工作原理为：①输入一条源SQL语句；②“人工智能反馈式搜索引擎”对输入的SQL语句，结合检测到的数据库结构和索引进行重写，产生N条等效的SQL语句输出；③产生的N条等效SQL语句再送入“人工智能反馈式搜索引擎”进行重写，直至无法产生新的输出或搜索限额满；④对输出的SQL语句进行过滤，选出具有不同执行计划的SQL语句；⑤对得到的SQL语句进行批量测试，找出性能最好的SQL语句。</P>
+<P>　　LECCO SQL Expert自动优化实例</P>
+<P>　　假设我们从源代码中抽取出这条SQL语句(也可以通过内带的扫描器或监视器获得SQL语句)：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="67753" class="copybut" id="copybut67753" onclick="doCopy('code67753')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code67753"><BR>　　SELECT COUNT(*)</P>
+<P>　　 FROM EMPLOYEE</P>
+<P>　　swheresEXISTS (SELECT 'X'</P>
+<P>　　 FROM DEPARTMENT</P>
+<P>　　swheresEMP_DEPT=DPT_ID</P>
+<P>　　 AND DPT_NAME LIKE 'AC%')</P>
+<P>　　AND EMP_ID IN (SELECT SAL_EMP_ID</P>
+<P>　　 FROM EMP_SAL_HIST B</P>
+<P>　　swheresSAL_SALARY ＞ 70000)<BR></div><BR>　　按下“优化”按钮后，经过10几秒，SQL Expert就完成了优化的过程，并在这10几秒的时间里重写产生了2267 条等价的SQL语句，其中136条SQL语句有不同的执行计划。</P>
+<P>　　接下来，我们可以对自动重写产生的136条SQL语句进行批运行测试，以选出性能最佳的等效SQL语句。按下“批运行” 按钮，在“终止条件” 页选择“最佳运行时间SQL语句”，按“确定”。</P>
+<P>　　经过几分钟的测试运行后，我们可以发现SQL124的运行时间和反应时间最短。运行速度约有22.75倍的提升(源SQL语句运行时间为2.73秒，SQL124运行时间为0.12秒)。现在我们就可以把SQL124放入源代码中，结束一条SQL语句的优化工作了。</P>
+<P>　　“边做边学式训练”提升SQL开发水平</P>
+<P>　　LECCO SQL Expert不仅能够找到最佳的SQL语句，它所提供的“边做边学式训练”还能够教开发人员和数据库管理员如何写出性能最好的SQL语句。LECCO SQL Expert的“SQL比较器”可以标明源SQL和待选SQL间的不同之处。</P>
+<P>　　以上面优化的结果为例，为了查看源SQL语句和SQL124在写法上有什么不同，我们可以按下“比较器” 按钮，对SQL124和源SQL语句进行比较。“SQL 比较器”将SQL124相对于源SQL语句的不同之处以蓝颜色表示了出来。如果选择“双向比较”复选框，“SQL 比较器”可以将两条SQL语句的不同之处以蓝色表示。当然，我们也可以从源语句和重写后的SQL 语句中任选两条进行比较。</P>
+<P>　　从比较的结果可以看到，重写后的SQL124把第一个Exists改写成了In；在字段DPT_ID上进行了合并空字符串的操作，以诱导数据库先执行子查询中的<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="86721" class="copybut" id="copybut86721" onclick="doCopy('code86721')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code86721"><BR>　　(SELECT DPT_ID||''</P>
+<P>　　FROM DEPARTMENT</P>
+<P>　　WHERE DPT_NAME LIKE 'AC%')<BR></div><BR>　　在子查询完成后，再与EMPLOYEE表进行嵌套循环连接(Nested Loop Join)。</P>
+<P>　　如果觉得对写法的改变难以理解，还可以点中“执行计划”复选框，通过比较两条SQL语句的执行计划的不同，来了解其中的差异。在查看执行计划过程中，如果有什么不明白的地方，可以点中“SQL信息按钮”，再点击执行计划看不明白的地方，LECCO SQL Expert的上下文敏感帮助系统将提供执行计划该处的解释。</P>
+<P>　　在“SQL比较器”中，选中“统计信息”复选框后，可得到详细的两条SQL语句运行时的统计信息比较，这对于学习不同的SQL写法对数据库资源的消耗很有帮助。</P>
+<P>　　LECCO SQL Expert优化模块的特点</P>
+<P>　　LECCO SQL Expert优化模块的特点主要表现为：自动优化SQL语句；以独家的人工智能知识库“反馈式搜索引擎”来重写性能优异的SQL语句；找出所有等效的SQL语句及可能的执行计划；保证产生相同的结果；先进的SQL语法分析器能处理最复杂的SQL语句；可以重写SELECT、SELECT INTO、UPDATE、INSERT和DELETE语句；通过测试运行，为应用程序和数据库自动找到性能最好的SQL语句；提供微秒级的计时，能够优化Web应用程序和有大量用户的在线事务处理中运行时间很短的SQL语句；为开发人员提供“边做边学式训练”，迅速提高开发人员的SQL编程技能；提供上下文敏感的执行计划帮助系统和SQL运行状态帮助；不是猜测或建议，而是独一无二的SQL重写解决方案。</P>
+<P>　　写出专家级的SQL语句</P>
+<P>　　LECCO SQL Expert的出现，使SQL的优化变得极其简单，只要能够写出SQL语句，它就能帮用户找到最好性能的写法。LECCO SQL Expert不仅能在很短的时间内找到所有可能的优化方案，而且能够通过实际测试，确定最有效的优化方案。同以往的数据库优化手段相比较，LECCO SQL Expert将数据库优化技术带到了一个崭新的技术高度，依赖人的经验、耗费大量时间、受人的思维束缚的数据库优化手段已经被高效、省时且准确的自动优化软件所取代了。通过内建的“LECCO小助手”的帮助，即使是SQL的开发新手，也能快速且简单地写出专家级的SQL语句。</P>
+<P>比如现在有一人员表 （表名：peosons）<BR>若想将姓名、身份证号、住址这三个字段完全相同的记录查询出来<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="76703" class="copybut" id="copybut76703" onclick="doCopy('code76703')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code76703"><BR>select&nbsp;&nbsp; p1.*&nbsp;&nbsp; from&nbsp;&nbsp; persons&nbsp;&nbsp; p1,persons&nbsp;&nbsp; p2&nbsp;&nbsp; where&nbsp;&nbsp; p1.id&lt;&gt;p2.id&nbsp;&nbsp; and&nbsp;&nbsp; p1.cardid&nbsp;&nbsp; =&nbsp;&nbsp; p2.cardid&nbsp;&nbsp; and&nbsp;&nbsp; p1.pname&nbsp;&nbsp; =&nbsp;&nbsp; p2.pname&nbsp;&nbsp; and&nbsp;&nbsp; p1.address&nbsp;&nbsp; =&nbsp;&nbsp; p2.address<BR></div><BR>可以实现上述效果．</P>
+<P>　　select语句前加：<BR>declare @d datetime<BR>set @d=getdate()<BR>并在select语句后加：<BR>select [语句执行花费时间(毫秒)]=datediff(ms,@d,getdate())</P>
+<P>Transact_SQL小手册</P>
+<P>*******************Transact_SQL********************</P>
+<P>--语 句&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 功 能<BR>--数据操作<BR>SELECT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --从数据库表中检索数据行和列<BR>INSERT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --向数据库表添加新数据行<BR>DELETE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --从数据库表中删除数据行<BR>UPDATE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --更新数据库表中的数据<BR>--数据定义<BR>CREATE TABLE&nbsp;&nbsp;&nbsp; --创建一个数据库表<BR>DROP TABLE&nbsp;&nbsp;&nbsp;&nbsp; --从数据库中删除表<BR>ALTER TABLE&nbsp;&nbsp;&nbsp;&nbsp; --修改数据库表结构<BR>CREATE VIEW&nbsp;&nbsp;&nbsp;&nbsp; --创建一个视图<BR>DROP VIEW&nbsp;&nbsp;&nbsp;&nbsp; --从数据库中删除视图<BR>CREATE INDEX&nbsp;&nbsp;&nbsp; --为数据库表创建一个索引<BR>DROP INDEX&nbsp;&nbsp;&nbsp;&nbsp; --从数据库中删除索引<BR>CREATE PROCEDURE&nbsp;&nbsp; --创建一个存储过程<BR>DROP PROCEDURE&nbsp;&nbsp;&nbsp; --从数据库中删除存储过程<BR>CREATE TRIGGER&nbsp;&nbsp;&nbsp; --创建一个触发器<BR>DROP TRIGGER&nbsp;&nbsp;&nbsp; --从数据库中删除触发器<BR>CREATE SCHEMA&nbsp;&nbsp;&nbsp; --向数据库添加一个新模式<BR>DROP SCHEMA&nbsp;&nbsp;&nbsp;&nbsp; --从数据库中删除一个模式<BR>CREATE DOMAIN&nbsp;&nbsp;&nbsp; --创建一个数据值域<BR>ALTER DOMAIN&nbsp;&nbsp;&nbsp; --改变域定义<BR>DROP DOMAIN&nbsp;&nbsp;&nbsp;&nbsp; --从数据库中删除一个域<BR>--数据控制<BR>GRANT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --授予用户访问权限<BR>DENY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --拒绝用户访问<BR>REVOKE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --解除用户访问权限<BR>--事务控制<BR>COMMIT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --结束当前事务<BR>ROLLBACK&nbsp;&nbsp;&nbsp;&nbsp; --中止当前事务<BR>SET TRANSACTION&nbsp;&nbsp;&nbsp; --定义当前事务数据访问特征<BR>--程序化SQL<BR>DECLARE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --为查询设定游标<BR>EXPLAN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --为查询描述数据访问计划<BR>OPEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --检索查询结果打开一个游标<BR>FETCH&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --检索一行查询结果<BR>CLOSE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --关闭游标<BR>PREPARE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --为动态执行准备SQL 语句<BR>EXECUTE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --动态地执行SQL 语句<BR>DESCRIBE&nbsp;&nbsp;&nbsp;&nbsp; --描述准备好的查询</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="33314" class="copybut" id="copybut33314" onclick="doCopy('code33314')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code33314"><BR>---局部变量<BR>declare @id char(10)<BR>--set @id = '10010001'<BR>select @id = '10010001'</P>
+<P>---全局变量<BR>---必须以@@开头</P>
+<P>--IF ELSE<BR>declare @x int @y int @z int<BR>select @x = 1 @y = 2 @z=3<BR>if @x &gt; @y<BR>print 'x &gt; y' --打印字符串'x &gt; y'<BR>else if @y &gt; @z<BR>print 'y &gt; z'<BR>else print 'z &gt; y'</P>
+<P>--CASE<BR>use pangu<BR>update employee<BR>set e_wage =<BR>case<BR>when job_level = '1' then e_wage*1.08<BR>when job_level = '2' then e_wage*1.07<BR>when job_level = '3' then e_wage*1.06<BR>else e_wage*1.05<BR>end</P>
+<P>--WHILE CONTINUE BREAK<BR>declare @x int @y int @c int<BR>select @x = 1 @y=1<BR>while @x &lt; 3<BR>begin<BR>print @x --打印变量x 的值<BR>while @y &lt; 3<BR>&nbsp;&nbsp; begin<BR>&nbsp;&nbsp;&nbsp; select @c = 100*@x + @y<BR>&nbsp;&nbsp;&nbsp; print @c --打印变量c 的值<BR>&nbsp;&nbsp;&nbsp; select @y = @y + 1<BR>&nbsp;&nbsp; end<BR>select @x = @x + 1<BR>select @y = 1<BR>end</P>
+<P>--WAITFOR<BR>--例 等待1 小时2 分零3 秒后才执行SELECT 语句<BR>waitfor delay '01:02:03'<BR>select * from employee<BR>--例 等到晚上11 点零8 分后才执行SELECT 语句<BR>waitfor time '23:08:00'<BR>select * from employee</P>
+<P>***SELECT***</P>
+<P>&nbsp;&nbsp; select *(列名) from table_name(表名) where column_name operator value<BR>&nbsp;&nbsp; ex:(宿主)<BR>select * from stock_information where stockid&nbsp;&nbsp; = str(nid)<BR>&nbsp;&nbsp;&nbsp;&nbsp; stockname = 'str_name'<BR>&nbsp;&nbsp;&nbsp;&nbsp; stockname like '% find this %'<BR>&nbsp;&nbsp;&nbsp;&nbsp; stockname like '[a-zA-Z]%' --------- ([]指定值的范围)<BR>&nbsp;&nbsp;&nbsp;&nbsp; stockname like '[^F-M]%'&nbsp;&nbsp; --------- (^排除指定范围)<BR>&nbsp;&nbsp;&nbsp;&nbsp; --------- 只能在使用like关键字的where子句中使用通配符)<BR>&nbsp;&nbsp;&nbsp;&nbsp; or stockpath = 'stock_path'<BR>&nbsp;&nbsp;&nbsp;&nbsp; or stocknumber &lt; 1000<BR>&nbsp;&nbsp;&nbsp;&nbsp; and stockindex = 24<BR>&nbsp;&nbsp;&nbsp;&nbsp; not stocksex = 'man'<BR>&nbsp;&nbsp;&nbsp;&nbsp; stocknumber between 20 and 100<BR>&nbsp;&nbsp;&nbsp;&nbsp; stocknumber in(10,20,30)<BR>&nbsp;&nbsp;&nbsp;&nbsp; order by stockid desc(asc) --------- 排序，desc-降序，asc-升序<BR>&nbsp;&nbsp;&nbsp;&nbsp; order by 1,2 --------- by列号<BR>&nbsp;&nbsp;&nbsp;&nbsp; stockname = (select stockname from stock_information where stockid = 4)<BR>&nbsp;&nbsp;&nbsp;&nbsp; --------- 子查询<BR>&nbsp;&nbsp;&nbsp;&nbsp; --------- 除非能确保内层select只返回一个行的值，<BR>&nbsp;&nbsp;&nbsp;&nbsp; --------- 否则应在外层where子句中用一个in限定符<BR>select distinct column_name form table_name --------- distinct指定检索独有的列值，不重复<BR>select stocknumber ,"stocknumber + 10" = stocknumber + 10 from table_name<BR>select stockname , "stocknumber" = count(*) from table_name group by stockname<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --------- group by 将表按行分组,指定列中有相同的值<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; having count(*) = 2 --------- having选定指定的组<br><br>select *<BR>from table1, table2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>where table1.id *= table2.id -------- 左外部连接，table1中有的而table2中没有得以null表示<BR>&nbsp;&nbsp;&nbsp;&nbsp; table1.id =* table2.id -------- 右外部连接</P>
+<P>select stockname from table1<BR>union [all] ----- union合并查询结果集，all-保留重复行<BR>select stockname from table2<BR></div><BR>***insert***<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="63481" class="copybut" id="copybut63481" onclick="doCopy('code63481')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code63481"><BR>insert into table_name (Stock_name,Stock_number) value ("xxx","xxxx")<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; value (select Stockname , Stocknumber from Stock_table2)---value为select语句<BR></div><BR>***update***<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="99538" class="copybut" id="copybut99538" onclick="doCopy('code99538')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code99538"><BR>update table_name set Stockname = "xxx" [where Stockid = 3]<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stockname = default<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stockname = null<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stocknumber = Stockname + 4<BR></div><BR>***delete***<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="38250" class="copybut" id="copybut38250" onclick="doCopy('code38250')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code38250"><BR>delete from table_name where Stockid = 3<BR>truncate table_name ----------- 删除表中所有行，仍保持表的完整性<BR>drop table table_name --------------- 完全删除表<BR></div><BR>***alter table*** --- 修改数据库表结构<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="75230" class="copybut" id="copybut75230" onclick="doCopy('code75230')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code75230"><BR>alter table database.owner.table_name add column_name char(2) null .....<BR>sp_help table_name ---- 显示表已有特征<BR>create table table_name (name char(20), age smallint, lname varchar(30))<BR>insert into table_name select ......... ----- 实现删除列的方法（创建新表）<BR>alter table table_name drop constraint Stockname_default ---- 删除Stockname的default约束<BR>&nbsp;</div><br><br>***function(/*常用函数*/)***</P>
+<P>----统计函数----<BR>AVG&nbsp;&nbsp;&nbsp; --求平均值<BR>COUNT&nbsp;&nbsp; --统计数目<BR>MAX&nbsp;&nbsp;&nbsp; --求最大值<BR>MIN&nbsp;&nbsp;&nbsp; --求最小值<BR>SUM&nbsp;&nbsp;&nbsp; --求和<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="64290" class="copybut" id="copybut64290" onclick="doCopy('code64290')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code64290"><BR>--AVG<BR>use pangu<BR>select avg(e_wage) as dept_avgWage<BR>from employee<BR>group by dept_id</P>
+<P>--MAX<BR>--求工资最高的员工姓名<BR>use pangu<BR>select e_name<BR>from employee<BR>where e_wage =<BR>(select max(e_wage)<BR>from employee)</P>
+<P>--STDEV()<BR>--STDEV()函数返回表达式中所有数据的标准差</P>
+<P>--STDEVP()<BR>--STDEVP()函数返回总体标准差</P>
+<P>--VAR()<BR>--VAR()函数返回表达式中所有值的统计变异数</P>
+<P>--VARP()<BR>--VARP()函数返回总体变异数<BR></div><BR>----算术函数----</P>
+<P>/***三角函数***/<BR>SIN(float_expression) --返回以弧度表示的角的正弦<BR>COS(float_expression) --返回以弧度表示的角的余弦<BR>TAN(float_expression) --返回以弧度表示的角的正切<BR>COT(float_expression) --返回以弧度表示的角的余切<BR>/***反三角函数***/<BR>ASIN(float_expression) --返回正弦是FLOAT 值的以弧度表示的角<BR>ACOS(float_expression) --返回余弦是FLOAT 值的以弧度表示的角<BR>ATAN(float_expression) --返回正切是FLOAT 值的以弧度表示的角<BR>ATAN2(float_expression1,float_expression2)<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --返回正切是float_expression1 /float_expres-sion2的以弧度表示的角<BR>DEGREES(numeric_expression)<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --把弧度转换为角度返回与表达式相同的数据类型可为<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --INTEGER/MONEY/REAL/FLOAT 类型<BR>RADIANS(numeric_expression) --把角度转换为弧度返回与表达式相同的数据类型可为<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --INTEGER/MONEY/REAL/FLOAT 类型<BR>EXP(float_expression) --返回表达式的指数值<BR>LOG(float_expression) --返回表达式的自然对数值<BR>LOG10(float_expression)--返回表达式的以10 为底的对数值<BR>SQRT(float_expression) --返回表达式的平方根<BR>/***取近似值函数***/<BR>CEILING(numeric_expression) --返回&gt;=表达式的最小整数返回的数据类型与表达式相同可为<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --INTEGER/MONEY/REAL/FLOAT 类型<BR>FLOOR(numeric_expression)&nbsp;&nbsp;&nbsp; --返回&lt;=表达式的最小整数返回的数据类型与表达式相同可为<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --INTEGER/MONEY/REAL/FLOAT 类型<BR>ROUND(numeric_expression)&nbsp;&nbsp;&nbsp; --返回以integer_expression 为精度的四舍五入值返回的数据<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --类型与表达式相同可为INTEGER/MONEY/REAL/FLOAT 类型<BR>ABS(numeric_expression)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --返回表达式的绝对值返回的数据类型与表达式相同可为<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --INTEGER/MONEY/REAL/FLOAT 类型<BR>SIGN(numeric_expression)&nbsp;&nbsp;&nbsp;&nbsp; --测试参数的正负号返回0 零值1 正数或-1 负数返回的数据类型<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --与表达式相同可为INTEGER/MONEY/REAL/FLOAT 类型<BR>PI()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --返回值为π 即3.1415926535897936<BR>RAND([integer_expression])&nbsp;&nbsp; --用任选的[integer_expression]做种子值得出0-1 间的随机浮点数</P>
+<P><BR>----字符串函数----<BR>ASCII()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --函数返回字符表达式最左端字符的ASCII 码值<BR>CHAR()&nbsp;&nbsp; --函数用于将ASCII 码转换为字符<BR>&nbsp;&nbsp;&nbsp; --如果没有输入0 ~ 255 之间的ASCII 码值CHAR 函数会返回一个NULL 值<BR>LOWER()&nbsp;&nbsp; --函数把字符串全部转换为小写<BR>UPPER()&nbsp;&nbsp; --函数把字符串全部转换为大写<BR>STR()&nbsp;&nbsp; --函数把数值型数据转换为字符型数据<BR>LTRIM()&nbsp;&nbsp; --函数把字符串头部的空格去掉<BR>RTRIM()&nbsp;&nbsp; --函数把字符串尾部的空格去掉<BR>LEFT(),RIGHT(),SUBSTRING() --函数返回部分字符串<BR>CHARINDEX(),PATINDEX() --函数返回字符串中某个指定的子串出现的开始位置<BR>SOUNDEX() --函数返回一个四位字符码<BR>&nbsp;&nbsp;&nbsp; --SOUNDEX函数可用来查找声音相似的字符串但SOUNDEX函数对数字和汉字均只返回0 值&nbsp;&nbsp;&nbsp; <BR>DIFFERENCE()&nbsp;&nbsp;&nbsp; --函数返回由SOUNDEX 函数返回的两个字符表达式的值的差异<BR>&nbsp;&nbsp;&nbsp; --0 两个SOUNDEX 函数返回值的第一个字符不同<BR>&nbsp;&nbsp;&nbsp; --1 两个SOUNDEX 函数返回值的第一个字符相同<BR>&nbsp;&nbsp;&nbsp; --2 两个SOUNDEX 函数返回值的第一二个字符相同<BR>&nbsp;&nbsp;&nbsp; --3 两个SOUNDEX 函数返回值的第一二三个字符相同<BR>&nbsp;&nbsp;&nbsp; --4 两个SOUNDEX 函数返回值完全相同<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </P>
+<P>QUOTENAME() --函数返回被特定字符括起来的字符串</P>
+<P>/*select quotename('abc', '{') quotename('abc')<BR>运行结果如下<BR>----------------------------------{<BR>{abc} [abc]*/</P>
+<P>REPLICATE()&nbsp;&nbsp;&nbsp;&nbsp; --函数返回一个重复character_expression 指定次数的字符串<BR>/*select replicate('abc', 3) replicate( 'abc', -2)<BR>运行结果如下<BR>----------- -----------<BR>abcabcabc NULL*/</P>
+<P>REVERSE()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --函数将指定的字符串的字符排列顺序颠倒<BR>REPLACE()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --函数返回被替换了指定子串的字符串<BR>/*select replace('abc123g', '123', 'def')<BR>运行结果如下<BR>----------- -----------<BR>abcdefg*/</P>
+<P>SPACE()&nbsp;&nbsp; --函数返回一个有指定长度的空白字符串<BR>STUFF()&nbsp;&nbsp; --函数用另一子串替换字符串指定位置长度的子串</P>
+<P><BR>----数据类型转换函数----<BR>CAST() 函数语法如下<BR>CAST() (&lt;expression&gt; AS &lt;data_ type&gt;[ length ])<BR>CONVERT() 函数语法如下<BR>CONVERT() (&lt;data_ type&gt;[ length ], &lt;expression&gt; [, style])</P>
+<P>select cast(100+99 as char) convert(varchar(12), getdate())<BR>运行结果如下<BR>------------------------------ ------------<BR>199
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/91816.html'>C++简单QQ程序服务器端的实现代码</a><a>下一篇</a><a href='/php/biji/91818.html'>js取值中form.all和不加all的区别介绍</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

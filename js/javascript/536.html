@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Eclipse 的字符串分区共享优化机制_IDC笔记</title>
+    <meta name="keywords" content="javascript,javascript教程" />
+    <meta name="description" content="在 Java/C# 这样基于引用语义处理字符串的语言中，作为不可变对象存在的字符串，如果内容相同，则可以通过某种机制实现重用。" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+        <li>
+		    <a href="/js/" class="waves-effect">
+			    <i class="icon-share"></i>
+			    <span>JavaScript 教程
+			       	<span class="float-right menu-arrow">
+			       	<i class="mdi mdi-chevron-right"></i>
+			       	</span>
+			    </span>
+		    </a>
+		</li>
+						<li>
+			<a href="javascript:void(0);" class="waves-effect">
+				<i class="icon-share"></i>
+				<span> JavaScript 教程				<span class="float-right menu-arrow">
+				<i class="mdi mdi-chevron-right"></i>
+				</span> 
+				</span>
+			</a>
+			<ul class="submenu">
+				 <li><a href="/js/1.html">JavaScript 简介</a></li><li><a href="/js/2.html">JavaScript 使用</a></li><li><a href="/js/3.html">JavaScript 输出</a></li><li><a href="/js/4.html">JavaScript 语句</a></li><li><a href="/js/5.html">JavaScript 语法</a></li><li><a href="/js/6.html">JavaScript 注释</a></li><li><a href="/js/7.html">JavaScript 变量</a></li><li><a href="/js/8.html">JavaScript 运算符</a></li><li><a href="/js/9.html">JavaScript 算术</a></li><li><a href="/js/10.html">JavaScript 赋值</a></li><li><a href="/js/11.html">JavaScript 数据类型</a></li><li><a href="/js/12.html">JavaScript 函数</a></li><li><a href="/js/13.html">JavaScript 对象</a></li><li><a href="/js/14.html">JavaScript 事件</a></li><li><a href="/js/15.html">JavaScript 字符串</a></li>			</ul>
+		</li>
+				<li>
+			<a href="javascript:void(0);" class="waves-effect">
+				<i class="icon-share"></i>
+				<span> JavaScript 表单				<span class="float-right menu-arrow">
+				<i class="mdi mdi-chevron-right"></i>
+				</span> 
+				</span>
+			</a>
+			<ul class="submenu">
+				 <li><a href="/js/56.html">JavaScript 表单</a></li><li><a href="/js/57.html">JavaScript 验证 API</a></li>			</ul>
+		</li>
+				<li>
+			<a href="javascript:void(0);" class="waves-effect">
+				<i class="icon-share"></i>
+				<span> JavaScript 对象				<span class="float-right menu-arrow">
+				<i class="mdi mdi-chevron-right"></i>
+				</span> 
+				</span>
+			</a>
+			<ul class="submenu">
+				 <li><a href="/js/58.html">JavaScript 对象</a></li><li><a href="/js/59.html">JavaScript 对象属性</a></li><li><a href="/js/60.html">JavaScript 对象方法</a></li><li><a href="/js/61.html">JavaScript 对象访问器</a></li><li><a href="/js/62.html">JavaScript 对象构造器</a></li><li><a href="/js/63.html">JavaScript 对象原型</a></li><li><a href="/js/64.html">JavaScript ES5 对象方法</a></li>			</ul>
+		</li>
+				<li>
+			<a href="javascript:void(0);" class="waves-effect">
+				<i class="icon-share"></i>
+				<span> JavaScript 函数				<span class="float-right menu-arrow">
+				<i class="mdi mdi-chevron-right"></i>
+				</span> 
+				</span>
+			</a>
+			<ul class="submenu">
+				 <li><a href="/js/65.html">JavaScript 函数定义</a></li><li><a href="/js/66.html">JavaScript 函数参数</a></li><li><a href="/js/67.html">JavaScript 函数调用</a></li><li><a href="/js/68.html">JavaScript 函数 Call</a></li><li><a href="/js/69.html">JavaScript 函数 Apply</a></li><li><a href="/js/70.html">JavaScript 闭包</a></li>			</ul>
+		</li>
+				<li>
+			<a href="javascript:void(0);" class="waves-effect">
+				<i class="icon-share"></i>
+				<span> JavaScript HTML DOM				<span class="float-right menu-arrow">
+				<i class="mdi mdi-chevron-right"></i>
+				</span> 
+				</span>
+			</a>
+			<ul class="submenu">
+				 <li><a href="/js/71.html">DOM 简介</a></li><li><a href="/js/72.html">DOM 方法</a></li><li><a href="/js/73.html">DOM 文档</a></li><li><a href="/js/74.html">DOM 元素</a></li><li><a href="/js/75.html">HTML DOM</a></li><li><a href="/js/76.html">DOM CSS</a></li><li><a href="/js/77.html">DOM 动画</a></li><li><a href="/js/78.html">DOM 事件</a></li><li><a href="/js/79.html">DOM 事件监听器</a></li><li><a href="/js/80.html">DOM 导航</a></li><li><a href="/js/81.html">DOM 节点</a></li><li><a href="/js/82.html">DOM 集合</a></li><li><a href="/js/83.html">DOM 节点列表</a></li>			</ul>
+		</li>
+				<li>
+			<a href="javascript:void(0);" class="waves-effect">
+				<i class="icon-share"></i>
+				<span> JS Browser BOM				<span class="float-right menu-arrow">
+				<i class="mdi mdi-chevron-right"></i>
+				</span> 
+				</span>
+			</a>
+			<ul class="submenu">
+				 <li><a href="/js/84.html">JavaScript Window</a></li><li><a href="/js/85.html">JS Screen</a></li><li><a href="/js/86.html">JS Location</a></li><li><a href="/js/87.html">JS History</a></li><li><a href="/js/88.html">JS Navigator</a></li><li><a href="/js/89.html">JS 弹出框</a></li><li><a href="/js/90.html">JS Timing</a></li><li><a href="/js/91.html">JS Cookies</a></li>			</ul>
+		</li>
+				<li>
+			<a href="javascript:void(0);" class="waves-effect">
+				<i class="icon-share"></i>
+				<span> JavaScript AJAX				<span class="float-right menu-arrow">
+				<i class="mdi mdi-chevron-right"></i>
+				</span> 
+				</span>
+			</a>
+			<ul class="submenu">
+				 <li><a href="/js/92.html">AJAX 简介</a></li><li><a href="/js/93.html">AJAX - XMLHttp</a></li><li><a href="/js/94.html">AJAX 请求</a></li><li><a href="/js/95.html">AJAX 响应</a></li><li><a href="/js/96.html">AJAX XML 文件</a></li><li><a href="/js/97.html">AJAX PHP</a></li><li><a href="/js/98.html">AJAX 数据库</a></li><li><a href="/js/99.html">AJAX 应用程序</a></li>			</ul>
+		</li>
+				<li>
+			<a href="javascript:void(0);" class="waves-effect">
+				<i class="icon-share"></i>
+				<span> JavaScript JSON				<span class="float-right menu-arrow">
+				<i class="mdi mdi-chevron-right"></i>
+				</span> 
+				</span>
+			</a>
+			<ul class="submenu">
+				 <li><a href="/js/100.html">JSON 简介</a></li><li><a href="/js/101.html">JSON 语法</a></li><li><a href="/js/102.html">JSON 使用</a></li><li><a href="/js/103.html">JSON vs XML</a></li><li><a href="/js/104.html">JSON 数据类型</a></li><li><a href="/js/105.html">JSON 解析</a></li><li><a href="/js/106.html">JSON 字符串化</a></li><li><a href="/js/107.html">JSON 对象</a></li><li><a href="/js/108.html">JSON 数组</a></li><li><a href="/js/109.html">JSON PHP</a></li><li><a href="/js/110.html">JSON HTML</a></li><li><a href="/js/111.html">JSON JSONP</a></li>			</ul>
+		</li>
+				<li>
+		    <a href="/js/javascript" class="waves-effect">
+			    <i class="icon-share"></i>
+			    <span>JavaScript 笔记
+			       	<span class="float-right menu-arrow">
+			       	<i class="mdi mdi-chevron-right"></i>
+			       	</span>
+			    </span>
+		    </a>
+		</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Eclipse 的字符串分区共享优化机制</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>在 Java/C# 这样基于引用语义处理字符串的语言中，作为不可变对象存在的字符串，如果内容相同，则可以通过某种机制实现重用。</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span>在 Java/C# 这样基于引用语义处理字符串的语言中，作为不可变对象存在的字符串，如果内容相同，则可以通过某种机制实现重用。<br />因为对这类语言来说，指向内存中两块内存位置不同内容相同的字符串，与同时指向一个字符串并没有任何区别。<br />特别是对大量使用字符串的 XML 文件解析类似场合，这样的优化能够很大程度上降低程序的内存占用，<br />如 SAX 解析引擎标准中就专门定义了一个 http://xml.org/sax/features/string-interning 特性用于字符串重用。<br />在语言层面，Java/C# 中都直接提供了 String.Intern 的支持。而对 Java 来说，实现上的非常类似。<br />由 String.intern 方法，将当前字符串以内容为键，对象引用为值，放入一个全局性的哈希表中。<br />代码:
+<table align="center" bgcolor="#e7e9e9" border="1" bordercolor="#cccccc" width="90%">
+	<tbody>
+		<tr>
+			<td>//<br />// java/lang/String.java<br />//<br /><br />public final class String<br />{<br />　//...<br />　public native String intern(); // 使用 JNI 函数实现以保障效率<br />}<br /><br />//<br />// hotspot/src/share/vm/prims/jvm.cpp<br />//<br /><br />JVM_ENTRY(jstring, JVM_InternString(JNIEnv *env, jstring str))<br />JVMWrapper(&quot;JVM_InternString&quot;);<br />if (str == NULL) return NULL;<br />　oop string = JNIHandles::resolve_non_null(str); // 将引用解析为内部句柄<br />　oop result = StringTable::intern(string, CHECK_0); // 进行实际的字符串 intern 操作<br />　return (jstring) JNIHandles::make_local(env, result); // 获取内部句柄的引用<br />　JVM_END<br />　//<br />　// hotspot/src/share/vm/memory/symbolTable.cpp<br />　//<br />　oop StringTable::intern(oop string, TRAPS)<br />　{<br />　　if (string == NULL) return NULL;<br />　　ResourceMark rm(THREAD); // 保护线程资源区域<br />　　int length;<br />　　Handle h_string (THREAD, string);<br />　　jchar* chars = java_lang_String::as_unicode_string(string, length); // 获取实际字符串内容<br />　　oop result = intern(h_string, chars, length, CHECK_0); // 完成字符串 intern 操作<br />　　return result;<br />　}<br />　oop StringTable::intern(Handle string_or_null, jchar* name, int len, TRAPS)<br />　{<br />　　int hashValue = hash_string(name, len); // 首先根据字符串内容计算哈希值<br />　　stringTableBucket* bucket = bucketFor(hashValue); // 根据哈希值获取目标容器<br />　　oop string = bucket-&gt;lookup(name, len); // 然后检测字符串是否已经存在<br />　　// Found<br />　　if (string != NULL) return string;<br />　　// Otherwise, add to symbol to table<br />　　return basic_add(string_or_null, name, len, hashValue, CHECK_0); // 将字符串放入哈希表<br />　}</td>
+		</tr>
+	</tbody>
+</table><br />　　对全局字符串表中的字符串，是没有办法显式手动清除的。只能在不使用此字符串后，由垃圾回收线程在进行不可达对象标记时进行分析，并最终调用 StringTable::unlink 方法去遍历清除。<br />　　代码：<br />&nbsp;
+<table align="center" bgcolor="#e7e9e9" border="1" bordercolor="#cccccc" width="90%">
+	<tbody>
+		<tr>
+			<td>//<br />// hotspot/src/share/vm/memory/genMarkSweep.cpp<br />//<br /><br />void GenMarkSweep::mark_sweep_phase1(...)<br />{<br />　//...<br />　StringTable::unlink();<br />}<br /><br />//<br />// hotspot/src/share/vm/memory/symbolTable.cpp<br />//<br /><br />void StringTable::unlink() {<br />　// Readers of the string table are unlocked, so we should only be<br />　// removing entries at a safepoint.<br />　assert(SafepointSynchronize::is_at_safepoint(), &quot;must be at safepoint&quot;)<br />　for (stringTableBucket* bucket = firstBucket(); bucket &lt;= lastBucket(); bucket++) {<br />　　for (stringTableEntry** p = bucket-&gt;entry_addr(); *p != NULL;) {<br />　　　stringTableEntry* entry = *p;<br />　　　assert(entry-&gt;literal_string() != NULL, &quot;just checking&quot;);<br />　　　if (entry-&gt;literal_string()-&gt;is_gc_marked()) { // 字符串对象是否可达<br />　　　　// Is this one of calls those necessary only for verification? (DLD)<br />　　　　entry-&gt;oops_do(&amp;MarkSweep::follow_root_closure);<br />　　　　p = entry-&gt;next_addr();<br />　　　} else { // 如不可达则将其内存块回收到内存池中<br />　　　　*p = entry-&gt;next();<br />　　　　entry-&gt;set_next(free_list);<br />　　　　free_list = entry;<br />　　　}<br />　　}<br />　}<br />}</td>
+		</tr>
+	</tbody>
+</table><br />　　通过上面的代码，我们可以直观了解到，对 JVM (Sun JDK 1.4.2) 来说，String.intern 提供的是全局性的基于哈希表的共享支持。这样的实现虽然简单，并能够在最大限度上进行字符串共享;但同时也存在共享粒度太大，优化效果无法度量，大量字符串可能导致全局字符串表性能降低等问题。<br />　　为此 Eclipse 舍弃了 JVM 一级的字符串共享优化机制，而通过提供细粒度、完全可控、可测量的字符串分区共享优化机制，一定程度上缓解此问题。Eclipse 核心的 IStringPoolParticipant 接口由使用者显式实现，在其 shareStrings 方法中提交需要共享的字符串。<br />　　代码:
+<table align="center" bgcolor="#e7e9e9" border="1" bordercolor="#cccccc" width="90%">
+	<tbody>
+		<tr>
+			<td>//<br />// org.eclipse.core.runtime.IStringPoolParticipant<br />//<br /><br />public interface IStringPoolParticipant {<br />　/**<br />　* Instructs this participant to share its strings in the provided<br />　* pool.<br />　*/<br />　public void shareStrings(StringPool pool);<br />}</td>
+		</tr>
+	</tbody>
+</table><br />　　例如 MarkerInfo 类型实现了 IStringPoolParticipant 接口，在其 shareStrings 方法中，提交自己需要共享的字符串 type，并通知其下级节点进行相应的提交。<br /><br />　　代码:<br />&nbsp;
+<table align="center" bgcolor="#e7e9e9" border="1" bordercolor="#cccccc" width="90%">
+	<tbody>
+		<tr>
+			<td>//<br />// org.eclipse.core.internal.resources.MarkerInfo<br />//<br /><br />public class MarkerInfo implements ..., IStringPoolParticipant<br />{<br />　public void shareStrings(StringPool set) {<br />　　type = set.add(type);<br />　　Map map = attributes;<br />　　if (map instanceof IStringPoolParticipant)<br />　　((IStringPoolParticipant) map).shareStrings(set);<br />　}<br />}</td>
+		</tr>
+	</tbody>
+</table><br />　　这样一来，只要一个对象树各级节点选择性实现 IStringPoolParticipant 接口，就可以一次性将所有需要共享的字符串，通过递归提交到一个字符串缓冲池中进行复用优化。如 Workspace 就是这样一个字符串共享根入口，其 open 方法在完成工作区打开操作后，将需要进行字符串共享优化的缓存管理对象，加入到全局字符串缓冲区分区优化列表中。<br /><br />　　代码:<br />&nbsp;
+<table align="center" bgcolor="#e7e9e9" border="1" bordercolor="#cccccc" width="90%">
+	<tbody>
+		<tr>
+			<td>//<br />// org.eclipse.core.internal.resources<br />//<br /><br />public class Workspace ...<br />{<br />　protected SaveManager saveManager;<br />　public IStatus open(IProgressMonitor monitor) throws CoreException<br />　{<br />　　// 打开工作空间<br />　　// 最终注册一个新的字符串缓冲池分区<br />　　InternalPlatform.getDefault().addStringPoolParticipant(saveManager, getRoot());<br />　　return Status.OK_STATUS;<br />　}<br />}</td>
+		</tr>
+	</tbody>
+</table>
+<p>&nbsp;</p>
+<p>&nbsp;&nbsp;&nbsp; 对需要优化的类型 SaveManager 来说，只需要实现 IStringPoolParticipant 接口，并在被调用的时候提交自己与子元素的需优化字符串即可。其子元素甚至都不需要实现 IStringPoolParticipant 接口，只需将提交行为一级一级传递下去即可，如:<br /><br />　　代码:</p>&nbsp;
+<table align="center" bgcolor="#e7e9e9" border="1" bordercolor="#cccccc" width="90%">
+	<tbody>
+		<tr>
+			<td>//<br />// org.eclipse.core.internal.resources.SaveManager<br />//<br /><br />public class SaveManager implements ..., IStringPoolParticipant<br />{<br />　protected ElementTree lastSnap;<br />　public void shareStrings(StringPool pool)<br />　{<br />　　lastSnap.shareStrings(pool);<br />　}<br />}<br /><br />//<br />// org.eclipse.core.internal.watson.ElementTree<br />//<br />public class ElementTree<br />{<br />　protected DeltaDataTree tree;<br />　public void shareStrings(StringPool set) {<br />　　tree.storeStrings(set);<br />　}<br />}<br /><br />//<br />// org.eclipse.core.internal.dtree.DeltaDataTree<br />//<br />public class DeltaDataTree extends AbstractDataTree<br />{<br />　private AbstractDataTreeNode rootNode;<br />　private DeltaDataTree parent;<br />　public void storeStrings(StringPool set) {<br />　　//copy field to protect against concurrent changes<br />　　AbstractDataTreeNode root = rootNode;<br />　　DeltaDataTree dad = parent;<br />　　if (root != null)<br />　　　root.storeStrings(set);<br />　　if (dad != null)<br />　　　dad.storeStrings(set);<br />　}<br />}<br />//<br />// org.eclipse.core.internal.dtree.AbstractDataTreeNode<br />//<br />public abstract class AbstractDataTreeNode<br />{<br />　protected AbstractDataTreeNode children[];<br />　protected String name;<br />　public void storeStrings(StringPool set) {<br />　　name = set.add(name);<br />　　//copy children pointer in case of concurrent modification<br />　　AbstractDataTreeNode[] nodes = children;<br />　　if (nodes != null)<br />　　　for (int i = nodes.length; --i &gt;= 0;)<br />　　　　nodes[i].storeStrings(set);<br />　}<br />}</td>
+		</tr>
+	</tbody>
+</table><br />　　所有的需优化字符串，都会通过 StringPool.add 方法提交到统一的字符串缓冲池中。而这个缓冲池的左右，与 JVM 级的字符串表略有不同，它只是在进行字符串缓冲分区优化时，起到一个阶段性的整理作用，本身并不作为字符串引用的入口存在。因此在实现上它只是简单的对 HashMap 进行包装，并粗略计算优化能带来的额外空间，以提供优化效果的度量标准。<br /><br />　　代码:<br />&nbsp;
+<table align="center" bgcolor="#e7e9e9" border="1" bordercolor="#cccccc" width="90%">
+	<tbody>
+		<tr>
+			<td>//<br />// org.eclipse.core.runtime.StringPool<br />//<br /><br />public final class StringPool {<br />　private int savings;<br />　private final HashMap map = new HashMap();<br />　public StringPool() {<br />　　super();<br />　}<br />　public String add(String string) {<br />　　if (string == null)<br />　　　return string;<br />　　Object result = map.get(string);<br />　　if (result != null) {<br />　　　if (result != string)<br />　　　　savings += 44 + 2 * string.length();<br />　　　return (String) result;<br />　　}<br />　　map.put(string, string);<br />　　return string;<br />　}<br />　// 获取优化能节省多少空间的大致估算值<br />　public int getSavedStringCount() {<br />　　return savings;<br />　}<br />}</td>
+		</tr>
+	</tbody>
+</table><br />　　不过这里的估算值在某些情况下可能并不准确，例如缓冲池中包括字符串 S1，此时提交一个与之内容相同但物理位置不同的字符串 S2，则如果 S2 被提交多次，会导致错误的高估优化效果。当然如果需要得到精确值，也可以对其进行重构，通过一个 Set 跟踪每个字符串优化的过程，获得精确优化度量，但需要损失一定效率。<br /><br />　　在了解了需优化字符串的提交流程，以及字符串提交后的优化流程后，我们接着看看 Eclipse 核心是如何将这两者整合到一起的。<br /><br />　　前面提到 Workspace.open 方法会调用 InternalPlatform.addStringPoolParticipant 方法，将一个字符串缓冲池分区的根节点，添加到全局性的优化任务队列中。<br /><br />　　代码:<br />&nbsp;
+<table align="center" bgcolor="#e7e9e9" border="1" bordercolor="#cccccc" width="90%">
+	<tbody>
+		<tr>
+			<td>//<br />// org.eclipse.core.internal.runtime.InternalPlatform<br />//<br /><br />public final class InternalPlatform {<br />　private StringPoolJob stringPoolJob;<br />　public void addStringPoolParticipant(IStringPoolParticipant participant, ISchedulingRule rule) {<br />　if (stringPoolJob == null)<br />　　stringPoolJob = new StringPoolJob(); // Singleton 模式<br />　　stringPoolJob.addStringPoolParticipant(participant, rule);<br />　}<br />}<br /><br />//<br />// org.eclipse.core.internal.runtime.StringPoolJob<br />//<br /><br />public class StringPoolJob extends Job<br />{<br />　private static final long INITIAL_DELAY = 10000;//five seconds<br />　private Map participants = Collections.synchronizedMap(new HashMap(10));<br />　public void addStringPoolParticipant(IStringPoolParticipant participant, ISchedulingRule rule) {<br />　participants.put(participant, rule);<br />　if (sleep())<br />　　wakeUp(INITIAL_DELAY);<br />　}<br />　public void removeStringPoolParticipant(IStringPoolParticipant participant) {<br />　　participants.remove(participant);<br />　}<br />}</td>
+		</tr>
+	</tbody>
+</table><br />　　此任务将在合适的时候，为每个注册的分区进行共享优化。<br /><br />　　StringPoolJob 类型是分区任务的代码所在，其底层实现是通过 Eclipse 的任务调度机制。关于 Eclipse 的任务调度，有兴趣的朋友可以参考 Michael Valenta (IBM) 的 On the Job: The Eclipse Jobs API 一文。<br /><br />　　这里需要了解的是 Job 在 Eclipse 里，被作为一个异步后台任务进行调度，在时间或资源就绪的情况下，通过调用其 Job.run 方法执行。可以说 Job 非常类似一个线程，只不过是基于条件进行调度，可通过后台线程池进行优化罢了。而这里任务被调度的条件，一方面是任务自身的调度时间因素，另一方面是通过 ISchedulingRule 接口提供的任务资源依赖关系。如果一个任务与当前正在运行的任务传统，则将被挂起直到冲突被缓解。而 ISchedulingRule 接口本身可以通过 composite 模式进行组合，描述复杂的任务依赖关系。<br /><br />　　在具体完成任务的 StringPoolJob.run 方法中，将对所有字符串缓冲分区的调度条件进行合并，以便在条件允许的情况下，调用 StringPoolJob.shareStrings 方法完成实际工作。<br /><br />　　代码:<br />&nbsp;
+<table align="center" bgcolor="#e7e9e9" border="1" bordercolor="#cccccc" width="90%">
+	<tbody>
+		<tr>
+			<td>//<br />// org.eclipse.core.internal.runtime.StringPoolJob<br />//<br /><br />public class StringPoolJob extends Job<br />{<br />　private static final long RESCHEDULE_DELAY = 300000;//five minutes<br />　protected IStatus run(IProgressMonitor monitor)<br />　{<br />　　//copy current participants to handle concurrent additions and removals to map<br />　　Map.Entry[] entries = (Map.Entry[]) participants.entrySet().toArray(new Map.Entry[0]);<br />　　ISchedulingRule[] rules = new ISchedulingRule[entries.length];<br />　　IStringPoolParticipant[] toRun = new IStringPoolParticipant[entries.length];<br />　　for (int i = 0; i &lt; toRun.length; i++) {<br />　　　toRun[i] = (IStringPoolParticipant) entries[i].getKey();<br />　　　rules[i] = (ISchedulingRule) entries[i].getValue();<br />　　}<br />　　// 将所有字符串缓冲分区的调度条件进行合并<br />　　final ISchedulingRule rule = MultiRule.combine(rules);<br />　　// 在调度条件允许的情况下调用 shareStrings 方法执行优化<br />　　try {<br />　　　Platform.getJobManager().beginRule(rule, monitor); // 阻塞直至调度条件允许<br />　　　shareStrings(toRun, monitor);<br />　　} finally {<br />　　　Platform.getJobManager().endRule(rule);<br />　　}<br />　　// 重新调度任务自己，以便进行下一次优化<br />　　long scheduleDelay = Math.max(RESCHEDULE_DELAY, lastDuration*100);<br />　　schedule(scheduleDelay);<br />　　return Status.OK_STATUS;<br />　}<br />}</td>
+		</tr>
+	</tbody>
+</table><br /><br />　　StringPoolJob.shareStrings 方法只是简单的遍历所有分区，调用其根节点的 IStringPoolParticipant.shareStrings 方法，进行前面所述的优化工作，并最终返回分区的优化效果。而缓冲池本身，只是作为一个优化工具，完成后直接被放弃。<br /><br />　　代码:<br />&nbsp;
+<table align="center" bgcolor="#e7e9e9" border="1" bordercolor="#cccccc" width="90%">
+	<tbody>
+		<tr>
+			<td>private int shareStrings(IStringPoolParticipant[] toRun, IProgressMonitor monitor) {<br />　final StringPool pool = new StringPool();<br />　for (int i = 0; i &lt; toRun.length; i++) {<br />　　if (monitor.isCanceled()) // 操作是否被取消<br />　　　break;<br />　　final IStringPoolParticipant current = toRun[i];<br />　　Platform.run(new ISafeRunnable() { // 安全执行<br />　　　public void handleException(Throwable exception) {<br />　　　　//exceptions are already logged, so nothing to do<br />　　　}<br />　　　public void run() {<br />　　　　current.shareStrings(pool); // 进行字符串重用优化<br />　　　}<br />　　});<br />　}<br />　return pool.getSavedStringCount(); // 返回优化效果<br />}<br />}</td>
+		</tr>
+	</tbody>
+</table><br />　　通过上面的分析我们可以看到，Eclipse 实现的基于字符串缓冲分区的优化机制，相对于 JVM 的 String.intern() 来说:<br /><br />　　1.控制的粒度更细，可以指定要对哪些对象进行优化;<br /><br />　　2.优化效果可度量，可以大概估算出优化能节省的空间;<br /><br />　　3.不存在性能瓶颈，不存在集中的字符串缓冲池，因此不会因为大量字符串导致性能波动;<br /><br />　　4.不会长期占内存，缓冲池只在优化执行时存在，完成后中间结果被抛弃;<br /><br />　　5.优化策略可选择，通过定义调度条件，可选择性执行不同的优化策略.</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/js/javascript/535.html'>JavaScript 调用C#变量实例</a><a>下一篇</a><a href='/js/javascript/537.html'>JavaScript 的保留关键字</a></span>
+				</div>
+			</div>
+		</div>
+		<div id="author-box">
+		    <h3>作者：喵哥笔记</h3>
+		        <div class="author-info">
+		            <div class="author-avatar">
+		                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+		            </div>
+		        <div class="author-description">
+		            <p>学的不仅是技术，更是梦想！</p>
+		            <ul class="author-social follows nb">
+		            	<li>
+		                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+		                </li>
+		            </ul>
+		        </div>
+		        <div class="clear"></div>
+		    </div>
+		</div>
+		<!-- container-fluid -->
+			</div>
+		<!-- content -->
+			<footer class="footer">
+			© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+			</footer>
+	</div>
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

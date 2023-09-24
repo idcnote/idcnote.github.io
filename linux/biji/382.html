@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>使用rsync+sersync实现文件同步实时备份[linux入门]_IDC笔记</title>
+    <meta name="keywords" content=",Linux常用命令" />
+    <meta name="description" content="数据库做了同步备份，服务器上的文件一样可以做同步备份。我们一般采用的方案是使用rsync+sersync自动同步备份，当服务器指定的目录下有新的文件产生或者修改时，会将文件自动同" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+            <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> Linux命令大全            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/linux/1.html">Linux常用命令(手册)大全</a></li><li><a href="/linux/linux/2.html">Linux命令格式</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 系统管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/system/3.html">Linux ls命令:显示指定工作目录下的内容</a></li><li><a href="/linux/system/4.html">Linux pwd命令:显示当前工作目录</a></li><li><a href="/linux/system/5.html">Linux cd命令:切换工作目录</a></li><li><a href="/linux/system/6.html">Linux date命令:显示或设置系统时间</a></li><li><a href="/linux/system/7.html">Linux su命令:切换用户</a></li><li><a href="/linux/system/9.html">Linux man命令:查看帮助信息</a></li><li><a href="/linux/system/8.html">Linux clear命令:清除屏幕</a></li><li><a href="/linux/system/11.html">Linux whoami命令:显示目前登录用户名</a></li><li><a href="/linux/system/10.html">Linux who命令:显示目前登录用户信息</a></li><li><a href="/linux/system/13.html">Linux ps命令:显示进程状态</a></li><li><a href="/linux/system/12.html">Linux free命令:显示系统内存状态</a></li><li><a href="/linux/system/15.html">Linux help命令:显示帮助信息</a></li><li><a href="/linux/system/14.html">Linux top命令:查看系统活跃进程</a></li><li><a href="/linux/system/18.html">Linux shutdown命令:关机或重启</a></li><li><a href="/linux/system/17.html">Linux halt命令:关闭系统</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 文件管理与编辑命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/file/27.html">Linux mkdir命令:创建目录</a></li><li><a href="/linux/file/29.html">Linux cat命令:连接文件并打印到标准输出设备上</a></li><li><a href="/linux/file/28.html">Linux more命令:显示文本文件内容</a></li><li><a href="/linux/file/30.html">Linux grep命令:检索文件内容</a></li><li><a href="/linux/file/31.html">Linux rm命令:删除文件或目录</a></li><li><a href="/linux/file/32.html">Linux touch命令:修改文件的时间</a></li><li><a href="/linux/file/34.html">Linux cp命令:复制文件或目录</a></li><li><a href="/linux/file/33.html">Linux ln命令:创建链接</a></li><li><a href="/linux/file/35.html">Linux find命令:查找文件</a></li><li><a href="/linux/file/37.html">Linux mv命令:移动或重命名文件或目录</a></li><li><a href="/linux/file/36.html">Linux split命令:分割文件</a></li><li><a href="/linux/file/40.html">Linux head命令:查看文件前几行</a></li><li><a href="/linux/file/39.html">Linux less命令:分页显示文件内容</a></li><li><a href="/linux/file/38.html">Linux vi/vim命令:文本编辑器</a></li><li><a href="/linux/file/42.html">Linux wc命令:统计字节数、字数、行数</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 压缩与解压命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/compression/55.html">Linux unzip命令:解压文件或目录</a></li><li><a href="/linux/compression/54.html">Linux zip命令:压缩文件或目录</a></li><li><a href="/linux/compression/56.html">Linux tar命令:归档工具</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 磁盘管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/disk/57.html">Linux df命令:显示磁盘空间使用情况</a></li><li><a href="/linux/disk/59.html">Linux quota命令:显示磁盘已使用的空间与限制</a></li><li><a href="/linux/disk/58.html">Linux mount命令:挂载文件系统</a></li><li><a href="/linux/disk/62.html">Linux ip命令:执行网络管理任务</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 网络设置与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/network/61.html">Linux netstat命令:显示网络状态</a></li><li><a href="/linux/network/60.html">Linux ifconfig命令:配置或显示网络接口信息</a></li><li><a href="/linux/network/63.html">Linux ping命令:测试主机间网络连通性</a></li><li><a href="/linux/network/65.html">Linux finger命令:查找并显示用户信息</a></li><li><a href="/linux/network/64.html">Linux wall命令:发送广播</a></li><li><a href="/linux/network/67.html">Linux rlogin命令:远端登入</a></li><li><a href="/linux/network/66.html">Linux rcp命令:远程文件复制</a></li>        </ul>
+    </li>
+        <li>
+        <a href="/linux/biji/" class="waves-effect">
+            <i class="icon-share"></i>
+            <span>Linux笔记
+                <span class="float-right menu-arrow">
+                <i class="mdi mdi-chevron-right"></i>
+                </span>
+            </span>
+        </a>
+    </li>
+    </ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+</div>
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="page-title-box">
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <h1 class="page-title">使用rsync+sersync实现文件同步实时备份[linux入门]</h1>
+                    </div>
+                </div>
+                <!-- end row -->
+            </div>
+            <!-- end page-title -->
+            <!-- START ROW -->
+            <div class="panel panel-forbid">
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+                <div class="panel-content">
+                <span>数据库做了同步备份，服务器上的文件一样可以做同步备份。我们一般采用的方案是使用rsync+sersync自动同步备份，当服务器指定的目录下有新的文件产生或者修改时，会将文件自动同</span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+                <div class="panel-content">
+                <span><p>数据库做了同步备份，服务器上的文件一样可以做同步备份。我们一般采用的方案是使用rsync+sersync自动同步备份，当服务器指定的目录下有新的文件产生或者修改时，会将文件自动同步到另一台或多台服务器上，达到实时备份的目的。</p><h4>为什么选用Rsync+sersync</h4><p>1.sersync是基于Inotify开发的，类似于Inotify-tools的工具。</p><p>sersync可以记录被监听目录中发生变化的（包括增删改）具体某一个文件或某一个目录的名字，然后使用rsync同步的时候，只同步发生变化的这个文件或者这个目录。</p><p>2.rsync在同步的时候，只同步发生变化的这个文件或者这个目录（每次发生变化的数据相对整个同步目录数据来说是很小的，rsync在遍历查找比对文件时，速度很快），因此，效率很高。</p><p>当同步的目录数据量不大时，建议使用Rsync+Inotify-tools；当数据量很大（几百G甚至1T以上）、文件很多时，建议使用Rsync+sersync。</p><h4>准备环境</h4><p>服务器A：192.168.11.31 源服务器。</p><p>服务器B: 192.168.11.34 目标服务器。</p><p>我们要实现的就是把A服务器上的文件同步到B服务器上，从而实现备份。我们主要是在B服务器上安装配置rsync，在A服务器上安装配置sersync，通过sersync把文件推送到B服务器上。</p><p>服务器系统环境为CentOS7.4。</p><h4>系统基础配置</h4><p>1.修改inotify默认参数</p><p>inotify默认内核参数值太小，我们需要手动修改参数：</p><pre><code>sysctl -w fs.inotify.max_queued_events=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"99999999"</span>
+sysctl -w fs.inotify.max_user_watches=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"99999999"</span>
+sysctl -w fs.inotify.max_user_instances=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"65535"</span>
+
+vi /etc/sysctl.conf <span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">#添加以下代码</span>
+
+fs.inotify.max_queued_events=<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">99999999</span>
+fs.inotify.max_user_watches=<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">99999999</span>
+fs.inotify.max_user_instances=<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">65535</span>
+<span class="hljs-symbol" style="margin: 0px; padding: 0px; color: rgb(153, 0, 115);">:wq!</span> <span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">#保存退出</span>
+</code></pre><p>参数说明：</p><p>max_queued_events：inotify队列最大长度，如果值太小，会出现"** Event Queue Overflow **"错误，导致监控文件不准确</p><p>max_user_watches：要同步的文件包含多少目录，可以用：find /data/file -type d | wc -l 统计，必须保证max_user_watches值大于统计结果（这里/data/file为同步文件目录）</p><p>max_user_instances：每个用户创建inotify实例最大值</p><p>2.关闭selinux</p><p>在/etc/sysconfig/selinux 这个文件，设置<code>SELINUX=disable</code></p><p>3.防火墙开通873端口</p><pre><code>firewall-cmd <span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">--zone=public --add-port=873/tcp --permanent</span>
+firewall-cmd <span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">--reload</span>
+</code></pre><p>以上A、B两台服务器都需要配置。</p><h4>部署rsync</h4><p>我们需要在源服务器A和目标服务器B上都要部署rsync。</p><p>安装rsync：</p><pre><code>yum <span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">install</span> -y rsync
+</code></pre><p>配置rsync：</p><pre><code>[root@localhost ~]<span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;"># vim /etc/rsyncd.conf</span>
+uid = root
+gid = root
+<span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">use</span> <span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">chroot</span> =<span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">no</span>
+list = <span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">no</span>
+<span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">log</span> file = <span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">/var/log</span><span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">/rsyncd.log
+
+[helloweba]
+path=/data</span><span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">/file
+comment=helloweba file backup
+ignore errors=yes
+read only=no
+list=no
+max connections=2000
+timeout=200
+auth users=rsync
+secrets file=/etc</span><span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">/rsync.pas
+hosts allow=*
+#host deny=0.0.0.0/</span><span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">0</span>
+</code></pre><p><code>auth users</code>配置同步验证的用户名。</p><p><code>secrets file</code>这个是配置同步的密码文件的。</p><p><code>[helloweba]</code>这个是配置同步模块的名称。</p><p><code>path</code>是配置同步的目录。</p><p><code>hosts allow</code>是允许同步的主机。</p><p><code>hosts deny</code>拒绝同步的主机。</p><p>创建同步的用户与密码的文件</p><p>将用户名和密码写入密码文件中，同样要设置这个文件的权限为600。</p><pre><code>echo <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"rsync:123456"</span> <span class="hljs-meta" style="margin: 0px; padding: 0px; color: rgb(153, 153, 153); font-weight: bold;">&gt;&gt; </span>/etc/rsync.pas
+chmod <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">600</span> /etc/rsync.pas
+</code></pre><p>创建同步的目录</p><p>按照配置文件中的<code>path</code>创建对应的目录：</p><pre><code><span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">mkdir</span> /data/file</code></pre><p>启动和管理rsync</p><p>启动rsync:</p><pre><code>systemctl <span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">start</span> rsyncd</code></pre><p>将rsync设置为开机自启动:</p><pre><code>systemctl <span class="hljs-built_in" style="margin: 0px; padding: 0px; color: rgb(0, 134, 179);">enable</span> rsyncd</code></pre><p>如果要停止和重启rsync可以使用以下命令：</p><pre><code>systemctl <span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">stop</span>|restart rsyncd</code></pre><p>启动好rsync服务后，我们可以使用<code>netstat -tunpl | grep :873</code>查看服务端口873是否正常。</p><h4>源服务器A部署sersync</h4><p>安装和配置rsync</p><p>源服务器A也需要安装rsync，方法同上述目标服务器B部署rsync一样。</p><p>下载sersync</p><p>在google code ( http://code.google.com/p/sersync/downloads/list )下载sersync的可执行文件版本，里面有配置文件和可执行文件</p><p>不能google的同学可以到/d/file/p/20221029/ 下载旧版本。</p><p>安装sersync</p><pre><code>tar xf sersync2.5.4_64bit_binary_stable_final.tar.gz
+mv GNU-Linux-x86 /usr/<span class="hljs-built_in" style="margin: 0px; padding: 0px; color: rgb(0, 134, 179);">local</span>/sersync
+</code></pre><p>我们下载的是二进制版，无需编译安装，直接就可使用。</p><p>我们可以规范下目录结构：</p><pre><code><span class="hljs-built_in" style="margin: 0px; padding: 0px; color: rgb(0, 134, 179);">cd</span> /usr/<span class="hljs-built_in" style="margin: 0px; padding: 0px; color: rgb(0, 134, 179);">local</span>/sersync/
+mkdir conf bin logs
+mv confxml.xml conf/
+mv sersync2 bin/
+</code></pre><p>最后目录结构应该是这样的：</p><pre><code>.
+|<span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">-- bin</span>
+|   `<span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">-- sersync2</span>
+|<span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">-- conf</span>
+|   `<span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">-- confxml.xml</span>
+`<span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">-- logs</span>
+</code></pre><p>创建密码文件</p><p>和目标服务器一样，不过这个文件只要保存密码即可，不需要保存用户名，权限也是600</p><pre><code>echo <span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"123456"</span> <span class="hljs-meta" style="margin: 0px; padding: 0px; color: rgb(153, 153, 153); font-weight: bold;">&gt;&gt; </span>/etc/rsync-client.pas
+chmod <span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">600</span> /etc/rsync-client.pas
+</code></pre><p>配置sersync</p><p>直接编辑sersync的配置文件:</p><pre><code>vim /usr/<span class="hljs-built_in" style="margin: 0px; padding: 0px; color: rgb(0, 134, 179);">local</span>/sersync/conf/confxml.xml
+</code></pre><p>要注意几处需要修改的地方:</p><p>1.定义同步目录和目标服务器ip及模块名称。</p><pre><code><span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;<span class="hljs-name" style="margin: 0px; padding: 0px;">localpath</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">watch</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"/data/file"</span>&gt;</span>   # 定义本地要同步的目录
+    <span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;<span class="hljs-name" style="margin: 0px; padding: 0px;">remote</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">ip</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"192.168.11.34"</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">name</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"helloweba"</span>/&gt;</span>  # 定义要同步的服务器IP和模块名
+    <span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">&lt;!--&lt;remote ip="192.168.8.39" name="tongbu"/&gt;--&gt;</span>
+    <span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">&lt;!--&lt;remote ip="192.168.8.40" name="tongbu"/&gt;--&gt;</span>
+<span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;/<span class="hljs-name" style="margin: 0px; padding: 0px;">localpath</span>&gt;</span>
+</code></pre><p>2.配置rsync同步指令及同步认证。</p><pre><code><span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;<span class="hljs-name" style="margin: 0px; padding: 0px;">rsync</span>&gt;</span>
+    <span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;<span class="hljs-name" style="margin: 0px; padding: 0px;">commonParams</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">params</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"-artuzP"</span>/&gt;</span> # 定义同步指令
+    <span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;<span class="hljs-name" style="margin: 0px; padding: 0px;">auth</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">start</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"true"</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">users</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"rsync"</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">passwordfile</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"/etc/rsync-client.pas"</span>/&gt;</span> #启用同步认证，指定用户名及密码文件
+    <span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;<span class="hljs-name" style="margin: 0px; padding: 0px;">userDefinedPort</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">start</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"false"</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">port</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"873"</span>/&gt;</span><span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">&lt;!-- port=874 --&gt;</span> #定义远程端口
+    <span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;<span class="hljs-name" style="margin: 0px; padding: 0px;">timeout</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">start</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"false"</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">time</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"100"</span>/&gt;</span><span class="hljs-comment" style="margin: 0px; padding: 0px; color: rgb(153, 153, 136); font-style: italic;">&lt;!-- timeout=100 --&gt;</span>
+    <span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;<span class="hljs-name" style="margin: 0px; padding: 0px;">ssh</span> <span class="hljs-attr" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">start</span>=<span class="hljs-string" style="margin: 0px; padding: 0px; color: rgb(221, 17, 68);">"false"</span>/&gt;</span>
+<span class="hljs-tag" style="margin: 0px; padding: 0px; color: rgb(0, 0, 128);">&lt;/<span class="hljs-name" style="margin: 0px; padding: 0px;">rsync</span>&gt;</span>
+</code></pre><p>启动和管理sersync服务</p><p>我们需要自己制作一个服务管理脚本，新建sersync.service文件：<code>vim /usr/lib/systemd/system/sersync.service</code>，添加以下代码：</p><pre><code>
+[Unit]
+Description=sersync service
+After=network.target
+
+[Service]
+Type=forking
+LimitNOFILE=<span class="hljs-number" style="margin: 0px; padding: 0px; color: rgb(0, 128, 128);">65535</span>
+ExecStart=<span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">/usr/local</span><span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">/sersync/bin</span><span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">/sersync2 -r -d -o /usr</span><span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">/local/sersync</span><span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">/conf/confxml</span>.xml
+ExecReload=<span class="hljs-regexp" style="margin: 0px; padding: 0px; color: rgb(0, 153, 38);">/bin/kill</span> -USR1 $MAINPID
+Restart=always
+
+[Install]
+WantedBy=multi-user.target graphical.target
+</code></pre><p>保存，然后启动sersync服务：</p><pre><code><span class="hljs-selector-tag" style="margin: 0px; padding: 0px; font-weight: bold;">systemctl</span> <span class="hljs-selector-tag" style="margin: 0px; padding: 0px; font-weight: bold;">start</span> <span class="hljs-selector-tag" style="margin: 0px; padding: 0px; font-weight: bold;">sersync</span><span class="hljs-selector-class" style="margin: 0px; padding: 0px;">.service</span>
+</code></pre><p>加入到启动项随系统启动：</p><pre><code><span class="hljs-selector-tag" style="margin: 0px; padding: 0px; font-weight: bold;">systemctl</span> <span class="hljs-selector-tag" style="margin: 0px; padding: 0px; font-weight: bold;">enable</span> <span class="hljs-selector-tag" style="margin: 0px; padding: 0px; font-weight: bold;">sersync</span><span class="hljs-selector-class" style="margin: 0px; padding: 0px;">.service</span>
+</code></pre><p>可以使用以下命令停止和重启sersync服务：</p><pre><code>systemctl <span class="hljs-keyword" style="margin: 0px; padding: 0px; font-weight: bold;">stop</span>|restart sersync.service
+</code></pre><p>验证</p><p>服务都搭建好了，现在最后一步就是验证测试，我们在源服务器A的/data/file目录下（如果不存在则手动创建目录），执行新建文件、删除文件、新建文件夹等操作后，再到目标服务器B的/data/file目录下看看是否也存在相同的文件和文件夹。如果一切正常，那么恭喜实时同步配置成功了。</p><p>以上我们就做好了文件双机自动同步备份，作者亲测并应用在实际项目中，这样就不怕文件丢失了。</p><h4>后记</h4><p>有的项目中，我们希望做到双机双向自动同步备份，就像《MySQL/MariaDB主主数据同步配置》一样，两台服务器既是源服务器又是目标服务器，这个时候只需在两台服务器上都部署rsync和sersync服务，配置和本文配置一毛一样。</p>
+                    
+                                                                                                        
+                                                </div>
+                                                <!-- .entry-wrapper --></span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+                <div class="panel-content">
+                <span>[!--zhushi--]</span>                                     
+                </div>
+
+            </div>
+
+            <!-- END ROW -->
+            <div class="newsPage">
+                <div class="newsPageTurn">
+                    <span><a>上一篇</a><a href='/linux/biji/381.html'>【linux命令】Tomcat性能调优及JVM内存工作原理</a><a>下一篇</a><a href='/linux/biji/383.html'>Git忽略提交规则.gitignore配置总结</a></span>
+                </div>
+            </div>
+        </div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+                <li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<!-- container-fluid -->
+    </div>
+<!-- content -->
+    <footer class="footer">
+    © 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    </footer>
+</div>
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

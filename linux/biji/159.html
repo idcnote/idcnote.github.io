@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>redis优化系列（十）Redis cluster集群的收缩操作_IDC笔记</title>
+    <meta name="keywords" content=",Linux常用命令" />
+    <meta name="description" content="该系列博文之上一篇：传送门 走你收缩集群简介收缩集群意味着缩减规模，需要从现有集群中安全下线部分节点，下线节点过程如下图所示：1）首先需要确定下线节点是否有负责的槽，如果是，需" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+            <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> Linux命令大全            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/linux/1.html">Linux常用命令(手册)大全</a></li><li><a href="/linux/linux/2.html">Linux命令格式</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 系统管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/system/3.html">Linux ls命令:显示指定工作目录下的内容</a></li><li><a href="/linux/system/4.html">Linux pwd命令:显示当前工作目录</a></li><li><a href="/linux/system/5.html">Linux cd命令:切换工作目录</a></li><li><a href="/linux/system/6.html">Linux date命令:显示或设置系统时间</a></li><li><a href="/linux/system/7.html">Linux su命令:切换用户</a></li><li><a href="/linux/system/9.html">Linux man命令:查看帮助信息</a></li><li><a href="/linux/system/8.html">Linux clear命令:清除屏幕</a></li><li><a href="/linux/system/11.html">Linux whoami命令:显示目前登录用户名</a></li><li><a href="/linux/system/10.html">Linux who命令:显示目前登录用户信息</a></li><li><a href="/linux/system/13.html">Linux ps命令:显示进程状态</a></li><li><a href="/linux/system/12.html">Linux free命令:显示系统内存状态</a></li><li><a href="/linux/system/15.html">Linux help命令:显示帮助信息</a></li><li><a href="/linux/system/14.html">Linux top命令:查看系统活跃进程</a></li><li><a href="/linux/system/18.html">Linux shutdown命令:关机或重启</a></li><li><a href="/linux/system/17.html">Linux halt命令:关闭系统</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 文件管理与编辑命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/file/27.html">Linux mkdir命令:创建目录</a></li><li><a href="/linux/file/29.html">Linux cat命令:连接文件并打印到标准输出设备上</a></li><li><a href="/linux/file/28.html">Linux more命令:显示文本文件内容</a></li><li><a href="/linux/file/30.html">Linux grep命令:检索文件内容</a></li><li><a href="/linux/file/31.html">Linux rm命令:删除文件或目录</a></li><li><a href="/linux/file/32.html">Linux touch命令:修改文件的时间</a></li><li><a href="/linux/file/34.html">Linux cp命令:复制文件或目录</a></li><li><a href="/linux/file/33.html">Linux ln命令:创建链接</a></li><li><a href="/linux/file/35.html">Linux find命令:查找文件</a></li><li><a href="/linux/file/37.html">Linux mv命令:移动或重命名文件或目录</a></li><li><a href="/linux/file/36.html">Linux split命令:分割文件</a></li><li><a href="/linux/file/40.html">Linux head命令:查看文件前几行</a></li><li><a href="/linux/file/39.html">Linux less命令:分页显示文件内容</a></li><li><a href="/linux/file/38.html">Linux vi/vim命令:文本编辑器</a></li><li><a href="/linux/file/42.html">Linux wc命令:统计字节数、字数、行数</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 压缩与解压命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/compression/55.html">Linux unzip命令:解压文件或目录</a></li><li><a href="/linux/compression/54.html">Linux zip命令:压缩文件或目录</a></li><li><a href="/linux/compression/56.html">Linux tar命令:归档工具</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 磁盘管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/disk/57.html">Linux df命令:显示磁盘空间使用情况</a></li><li><a href="/linux/disk/59.html">Linux quota命令:显示磁盘已使用的空间与限制</a></li><li><a href="/linux/disk/58.html">Linux mount命令:挂载文件系统</a></li><li><a href="/linux/disk/62.html">Linux ip命令:执行网络管理任务</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 网络设置与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/network/61.html">Linux netstat命令:显示网络状态</a></li><li><a href="/linux/network/60.html">Linux ifconfig命令:配置或显示网络接口信息</a></li><li><a href="/linux/network/63.html">Linux ping命令:测试主机间网络连通性</a></li><li><a href="/linux/network/65.html">Linux finger命令:查找并显示用户信息</a></li><li><a href="/linux/network/64.html">Linux wall命令:发送广播</a></li><li><a href="/linux/network/67.html">Linux rlogin命令:远端登入</a></li><li><a href="/linux/network/66.html">Linux rcp命令:远程文件复制</a></li>        </ul>
+    </li>
+        <li>
+        <a href="/linux/biji/" class="waves-effect">
+            <i class="icon-share"></i>
+            <span>Linux笔记
+                <span class="float-right menu-arrow">
+                <i class="mdi mdi-chevron-right"></i>
+                </span>
+            </span>
+        </a>
+    </li>
+    </ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+</div>
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="page-title-box">
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <h1 class="page-title">redis优化系列（十）Redis cluster集群的收缩操作</h1>
+                    </div>
+                </div>
+                <!-- end row -->
+            </div>
+            <!-- end page-title -->
+            <!-- START ROW -->
+            <div class="panel panel-forbid">
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+                <div class="panel-content">
+                <span>该系列博文之上一篇：传送门 走你收缩集群简介收缩集群意味着缩减规模，需要从现有集群中安全下线部分节点，下线节点过程如下图所示：1）首先需要确定下线节点是否有负责的槽，如果是，需</span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+                <div class="panel-content">
+                <span><p><span style="white-space: normal;">该系列博文之上一篇：</span>传送门 走你</p><h2>收缩集群简介</h2><p>收缩集群意味着缩减规模，需要从现有集群中安全下线部分节点，下线节点过程如下图所示：</p><p><img src="/d/file/p/20221029/1569327323388878.jpg" title="1569327323388878.jpg" _src="/d/file/p/20221029/1569327323388878.jpg" alt="r1.jpg"/></p><p>1）首先需要确定下线节点是否有负责的槽，如果是，需要把槽迁移到其他节点，保证节点下线后整个集群槽节点映射的完整性。</p><p>2）当下线节点不再负责槽或者本身是从节点时，就可以通知集群内其他节点忘记下线节点，当所有的节点都忘记该节点后可以正常关闭。</p><p><br/></p><h2>下线节点并迁移槽</h2><p>下线节点需要把自己负责的槽迁移到其它节点上，原理与之前的节点扩容的迁移槽过程一致，但是过程收缩正好和扩容迁移方向相反，下线节点变为源节点，其它主节点变为目标节点，源节点需要把自身负责的N（因为上篇博文我们一共是4个节点，所以这里的N就是4096）个槽均匀地迁移到其它主节点上。</p><p><br/></p><p>使用 redis-trib.rb reshard 命令完成槽迁移。由于每次执行 reshard 命令只能有一个目标节点，因此需要执行N（这里的是N是3）次 reshard 命令。不过我们这里只执行一次就好，然后使用&nbsp;<span style="white-space: normal;">redis-trib.rb</span>&nbsp;<span style="color: rgb(51, 51, 51); font-family: Helvetica, Arial, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;WenQuanYi Micro Hei&quot;, &quot;tohoma,sans-serif&quot;; white-space: normal; background-color: rgb(255, 255, 255);">rebalance 命令来平衡集群中每一台redis节点的槽的数量。</span></p><p><span style="color: rgb(51, 51, 51); font-family: Helvetica, Arial, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;WenQuanYi Micro Hei&quot;, &quot;tohoma,sans-serif&quot;; white-space: normal; background-color: rgb(255, 255, 255);"></span></p><h2 style="white-space: normal;">忘记节点</h2><p>由于集群内的节点不停地通过 Gossip 消息彼此交换节点状态，因此需要通过一种健壮的机制让集群内所有节点忘记下线的节点。也就是说让其他节点不再与要下线节点进行 Gossip 消息交换。Redis 提供了 cluster forget{downNodeId}命令实现该功能，会把这个节点信息放入黑名单，但是60s之后会恢复。</p><p><br/></p><p>生产环境当中使用redis-trib.rb del-node {host：port}{downNodeId}命令进行相关操作</p><p><br/></p><h2>实战之redis cluster集群收缩操作</h2><p>上篇博文中，我们的扩容操作增加了6397、6398两台redis节点，本次收缩操作我们就将6397、6398这两台redis节点给下线。另外上篇博文中说过一个<span style="white-space: normal;">redis-trib.rb工具中的</span>&nbsp;rebalance 命令，这是一个平衡集群中每个redis节点的所拥有的槽的数量的一个命令，上篇博文中没有实际演示，本次收缩操作可以演示下这个命令。</p><p><br/></p><p>进入8台redis节点容器中的任意一台redis节点容器，我这里进入redis-master1这台redis节点容器<br/></p><pre class="brush:bash;toolbar:false">#进入redis-master1这台redis节点容器里面
+docker&nbsp;exec&nbsp;-it&nbsp;redis-master1&nbsp;bash</pre><p><br/></p><p>然后使用<span style="white-space: normal;">redis-trib.rb管理工具进行一系列操作</span></p><pre class="brush:bash;toolbar:false">redis-trib.rb&nbsp;reshard&nbsp;119.3.220.26:6397
+#使用reshard命令获取集群中的所有节点信息，相当于获取集群信息的入口，后面的6397可以写成6391、6392、6393......等，只要是集群中的任意一台redis节点都可以的。</pre><p><span style="white-space: normal;"></span><br/></p><p>运行以上命令之后，然后看下面一系列的截图，截图中都有文字说明的。</p><p><img src="/d/file/p/20221029/1569334584825198.png" title="1569334584825198.png" _src="/d/file/p/20221029/1569334584825198.png" alt="r1.png"/></p><p><br/></p><p><img src="/d/file/p/20221029/1569334590877227.png" title="1569334590877227.png" _src="/d/file/p/20221029/1569334590877227.png" alt="r2.png"/></p><p><img src="/d/file/p/20221029/1569334629850373.png" title="1569334629850373.png" _src="/d/file/p/20221029/1569334629850373.png" alt="r3.png"/></p><p><br/></p><p><img src="/d/file/p/20221029/1569334641718033.png" title="1569334641718033.png" _src="/d/file/p/20221029/1569334641718033.png" alt="r4.png"/></p><p><br/></p><p>到这里，我们槽的导入迁移操作已经完成了，然后进入集群中的另外一台redis节点容器，使用cluster nodes命令来查看集群中的变化发生了什么。</p><pre class="brush:bash;toolbar:false">docker&nbsp;exec&nbsp;-it&nbsp;redis-master2&nbsp;bash
+
+redis-cli&nbsp;-p&nbsp;6392</pre><p>示例截图如下：</p><p><img src="/d/file/p/20221029/1569334940522973.png" title="1569334940522973.png" _src="/d/file/p/20221029/1569334940522973.png" alt="r5.png"/></p><p>从上图中可以看出，6397这台redis节点已经没有槽了，而6398这台redis之前是属于6397的从节点的，6397做了槽导入到6392之后，6398也自动变成了6392的从节点了。</p><p><br/></p><p>上面的步骤中我们已经将6397这台redis节点的槽迁移到了6392那台redis节点中，6397已经没有槽了，接下来可以将6397这台节点从redis集群中移除掉，使用<span style="color: rgb(51, 51, 51); font-family: Helvetica, Arial, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;WenQuanYi Micro Hei&quot;, &quot;tohoma,sans-serif&quot;; white-space: normal; background-color: rgb(255, 255, 255);">redis-trib.rb del-node 命令来完成移除集群中的某一台redis节点。</span>命令如下：</p><pre class="brush:bash;toolbar:false">#将50849d38117989c6fa5837119fba3554911f035d这台节点(也就是6397)从集群中移除
+redis-trib.rb&nbsp;del-node&nbsp;119.3.220.26:6391&nbsp;50849d38117989c6fa5837119fba3554911f035d
+
+#上面中的6391你可能会有疑问,不应该是6397吗?其实都可以的,只要是集群中的任意一台节点就可以,最后面的节点id才是最重要的,小心看清楚&nbsp;别把节点id给错了。。</pre><p>示例截图如下：</p><p><img src="/d/file/p/20221029/1569418795112511.png" title="1569418795112511.png" _src="/d/file/p/20221029/1569418795112511.png" alt="r1.png"/></p><p><br/></p><p>然后进入redis中，再次使用cluster nodes命令来查看redis集群信息，发现6397那台redis节点在集群中已经没有了，截图如下：</p><p><img src="/d/file/p/20221029/1569418933330484.png" title="1569418933330484.png" _src="/d/file/p/20221029/1569418933330484.png" alt="r2.png"/></p><p><br/></p><p>由于我们将6397中原本4096个槽全都迁移给了6392这台redis节点，6392这台redis节点中的槽会比现在集群中任意一台的redis节点中的槽多很多，所以接下来我们使用<span style="color: rgb(51, 51, 51); font-family: Helvetica, Arial, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;WenQuanYi Micro Hei&quot;, &quot;tohoma,sans-serif&quot;; white-space: normal; background-color: rgb(255, 255, 255);">redis-trib.rb管理工具中的 <span style="color: rgb(51, 51, 51); font-family: Helvetica, Arial, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;WenQuanYi Micro Hei&quot;, &quot;tohoma,sans-serif&quot;; white-space: normal; background-color: rgb(255, 255, 255);">rebalance&nbsp;</span>&nbsp;命令，来将集群中的redis节点的槽做一个平衡操作，使集群中的每一台redis节点中的槽的数量都差不多一样多。</span></p><p><span style="color: rgb(51, 51, 51); font-family: Helvetica, Arial, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;WenQuanYi Micro Hei&quot;, &quot;tohoma,sans-serif&quot;; white-space: normal; background-color: rgb(255, 255, 255);"><br/></span></p><p><strong><span style="color: rgb(51, 51, 51); font-family: Helvetica, Arial, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;WenQuanYi Micro Hei&quot;, &quot;tohoma,sans-serif&quot;; white-space: normal; background-color: rgb(255, 255, 255);">使用<span style="color: rgb(51, 51, 51); font-family: Helvetica, Arial, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;WenQuanYi Micro Hei&quot;, &quot;tohoma,sans-serif&quot;; white-space: normal; background-color: rgb(255, 255, 255);">redis-trib.rb工具来</span>平衡集群中每一台redis节点的槽的数量</span></strong></p><pre class="brush:bash;toolbar:false">redis-trib.rb&nbsp;rebalance&nbsp;119.3.220.26:6391
+
+#再次强调。。6391可以换成6392、6393......等只要是集群中的任意一台redis节点即可</pre><p><span style="color: rgb(51, 51, 51); font-family: Helvetica, Arial, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;WenQuanYi Micro Hei&quot;, &quot;tohoma,sans-serif&quot;; white-space: normal; background-color: rgb(255, 255, 255);">示例截图如下：</span></p><p><span style="color: rgb(51, 51, 51); font-family: Helvetica, Arial, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;WenQuanYi Micro Hei&quot;, &quot;tohoma,sans-serif&quot;; white-space: normal; background-color: rgb(255, 255, 255);"><img src="/d/file/p/20221029/1569420483929182.png" title="1569420483929182.png" _src="/d/file/p/20221029/1569420483929182.png" alt="r1.png"/></span><br/></p><p><span style="color: rgb(51, 51, 51); font-family: Helvetica, Arial, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;WenQuanYi Micro Hei&quot;, &quot;tohoma,sans-serif&quot;; white-space: normal; background-color: rgb(255, 255, 255);"><br/></span></p><p><span style="color:#333333;font-family:Helvetica, Arial, PingFang SC, Microsoft YaHei, WenQuanYi Micro Hei, tohoma,sans-serif"><span style="background-color: rgb(255, 255, 255);">输入以上命令，然后按回车之后，就开始进行平衡操作了。效果如下：</span></span></p><p><span style="color:#333333;font-family:Helvetica, Arial, PingFang SC, Microsoft YaHei, WenQuanYi Micro Hei, tohoma,sans-serif"><span style="background-color: rgb(255, 255, 255);"><img src="/d/file/p/20221029/1569420603561866.png" title="1569420603561866.png" _src="/d/file/p/20221029/1569420603561866.png" alt="r2.png"/></span></span></p><p><span style="color:#333333;font-family:Helvetica, Arial, PingFang SC, Microsoft YaHei, WenQuanYi Micro Hei, tohoma,sans-serif"><span style="background-color: rgb(255, 255, 255);">由上图中可以看到，工具自动帮我们把6392的部分槽移动到了6391，然后再次将部分槽移动到了6393，然后平衡完毕了。。</span></span></p><p><span style="color:#333333;font-family:Helvetica, Arial, PingFang SC, Microsoft YaHei, WenQuanYi Micro Hei, tohoma,sans-serif"><span style="background-color: rgb(255, 255, 255);"><br/></span></span></p><p>可以进入redis客户端使用cluster nodes命令查看集群中的节点信息，截图如下：</p><p><img src="/d/file/p/20221029/1569421026887758.png" title="1569421026887758.png" _src="/d/file/p/20221029/1569421026887758.png" alt="r3.png"/></p><p>可以根据上图最新的槽的变化跟没做平衡之前的节点做比较来看一下</p><p><br/></p><p>注意：要做这个平衡操作，之前的主节点（这里就是6397那台redis主节点）的槽必须迁移完毕，并且已经从集群删除后，才能执行平衡操作，否则的话会有问题。</p><p><br/></p><p>redis集群中的收缩操作就到这里了。。结束</p><p><br/></p><p><br/></p><p style="text-align: center;"><span style="color: rgb(0, 176, 240);">春水初生&nbsp; 春林初盛&nbsp; 春风十里不如你&nbsp; &nbsp; --&gt;冯唐【三十六计】</span><br/></p><p><br/></p><p><br/></p>					
+                                                                                                        
+                                                </div>
+                                                <!-- .entry-wrapper --></span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+                <div class="panel-content">
+                <span>[!--zhushi--]</span>                                     
+                </div>
+
+            </div>
+
+            <!-- END ROW -->
+            <div class="newsPage">
+                <div class="newsPageTurn">
+                    <span><a>上一篇</a><a href='/linux/biji/158.html'>sort按照数值大小排序</a><a>下一篇</a><a href='/linux/biji/160.html'>【linux命令】Linux服务器如何释放物理内存</a></span>
+                </div>
+            </div>
+        </div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+                <li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<!-- container-fluid -->
+    </div>
+<!-- content -->
+    <footer class="footer">
+    © 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    </footer>
+</div>
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

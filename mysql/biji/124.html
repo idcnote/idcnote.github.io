@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>解决MySQL主备切换canal出现的问题_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了解决MySQL主备切换canal出现的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+通过配置VIP，在" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">解决MySQL主备切换canal出现的问题</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:13:23                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了解决MySQL主备切换canal出现的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+通过配置VIP，在</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了解决MySQL主备切换canal出现的问题，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>通过配置VIP，在进行主备切换时，出现的报错信息：</p>
+<p>1.当主备节点当前binlog文件名称相同时，原主节点的position小于主备切换后的position，出现如下报错：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+2020-07-02 15:08:09,332 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnection:293 | Register slave RegisterSlaveCommandPacket[reportHost=192.168.3.1,reportPort=63292,reportUser=canal_repl_user,reportPasswd=111111,serverId=10236,command=21]
+2020-07-02 15:08:21,227 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnection:321 | COM_BINLOG_DUMP with position:BinlogDumpCommandPacket[binlogPosition=1104,slaveServerId=10236,binlogFileName=mysql-bin.000002,command=18]
+2020-07-02 15:08:24,979 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] LogEvent:122 | common_header_len= 19, number_of_event_types= 38
+2020-07-02 15:08:24,983 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] DirectLogFetcher:163 | I/O error while reading from client socket
+java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = log event entry exceeded max_allowed_packet; Increase max_allowed_packet on master; the first event 'mysql-bin.000002' at 1104, the last event read from '/usr/local/mysql/logs/mysql-bin.000002' at 123, the last byte read from '/usr/local/mysql/logs/mysql-bin.000002' at 1123.
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+2020-07-02 15:08:24,989 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlEventParser:301 | dump address 192.168.3.100/192.168.3.100:3306 has an error, retrying. caused by 
+java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = log event entry exceeded max_allowed_packet; Increase max_allowed_packet on master; the first event 'mysql-bin.000002' at 1104, the last event read from '/usr/local/mysql/logs/mysql-bin.000002' at 123, the last byte read from '/usr/local/mysql/logs/mysql-bin.000002' at 1123.
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+2020-07-02 15:08:24,994 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] LogAlarmHandler:19 | destination:1-236[java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = log event entry exceeded max_allowed_packet; Increase max_allowed_packet on master; the first event 'mysql-bin.000002' at 1104, the last event read from '/usr/local/mysql/logs/mysql-bin.000002' at 123, the last byte read from '/usr/local/mysql/logs/mysql-bin.000002' at 1123.
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+]</code></pre>
+<p>关于MySQL主备切换canal出现的问题解决</p>
+<p>此类报错和max_allowed_packet相关。首先max_allowed_packet控制着主从复制过程中单个语句产生的二进制binlog event大小，它的值必须是1024的倍数 。出现此类错误的常见原因：</p>
+<p>1&gt;.该参数在主备库的配置大小不一致。 从主库传递到备库的binlog event大小超过了主库或者备库的max_allowed_packet大小。可以查看变量值：SHOW GLOBAL VARIABLES LIKE &quot;%max_allowed_packet%&quot;; 看两个库的值是否一致。</p>
+<p>2&gt;.在对应个binlog文件中找不到对应的偏移量position，可以通过mysqlbinlog命令查看，发现没有要报错要找的1104(position)，可以切换到存在的position位点</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysqlbinlog mysql-bin.000002 --stop-position=1200
+
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
+/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
+DELIMITER /*!*/;
+# at 4
+#200630 16:24:37 server id 2 end_log_pos 123 CRC32 0x87e4bed6  Start: binlog v 4, server v 5.7.28-log created 200630 16:24:37
+# Warning: this binlog is either in use or was not closed properly.
+BINLOG '
+xfb6Xg8CAAAAdwAAAHsAAAABAAQANS43LjI4LWxvZwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAEzgNAAgAEgAEBAQEEgAAXwAEGggAAAAICAgCAAAACgoKKioAEjQA
+Ada+5Ic=
+'/*!*/;
+# at 123
+#200630 16:24:37 server id 2 end_log_pos 234 CRC32 0xd95db8f4  Previous-GTIDs
+# b3a0925e-b78b-11ea-9b67-000c2915fd70:51-55,
+# b85582c3-14d9-11ea-a64a-000c29ab1835:40-52
+# at 234
+#200630 16:25:23 server id 1 end_log_pos 299 CRC32 0x0ed285db  GTID last_committed=0 sequence_number=1 rbr_only=yes
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+SET @@SESSION.GTID_NEXT= 'b85582c3-14d9-11ea-a64a-000c29ab1835:53'/*!*/;
+# at 299
+#200630 16:25:23 server id 1 end_log_pos 362 CRC32 0x34ec0ffb  Query thread_id=11 exec_time=0 error_code=0
+SET TIMESTAMP=1593505523/*!*/;
+SET @@session.pseudo_thread_id=11/*!*/;
+SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
+SET @@session.sql_mode=524288/*!*/;
+SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
+/*!\C utf8 *//*!*/;
+SET @@session.character_set_client=33,@@session.collation_connection=33,@@session.collation_server=33/*!*/;
+SET @@session.lc_time_names=0/*!*/;
+SET @@session.collation_database=DEFAULT/*!*/;
+BEGIN
+/*!*/;
+# at 362
+#200630 16:25:23 server id 1 end_log_pos 427 CRC32 0x62a09b2f  Table_map: `test`.`test_canal_2_hive` mapped to number 114
+# at 427
+#200630 16:25:23 server id 1 end_log_pos 492 CRC32 0x0f349879  Write_rows: table id 114 flags: STMT_END_F
+
+BINLOG '
+8/b6XhMBAAAAQQAAAKsBAAAAAHIAAAAAAAEABHRlc3QAEXRlc3RfY2FuYWxfMl9oaXZlAAMIDxED
+UAAABi+boGI=
+8/b6Xh4BAAAAQQAAAOwBAAAAAHIAAAAAAAEAAgAD//iYAAAAAAAAABB6aGFuZ3Nhbi0wMS1zMTI5
+Xvr283mYNA8=
+'/*!*/;
+# at 492
+#200630 16:25:23 server id 1 end_log_pos 523 CRC32 0x9d38dbb3  Xid = 542
+COMMIT/*!*/;
+# at 523
+#200630 16:31:33 server id 1 end_log_pos 588 CRC32 0x7a71df00  GTID last_committed=1 sequence_number=2 rbr_only=yes
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+SET @@SESSION.GTID_NEXT= 'b85582c3-14d9-11ea-a64a-000c29ab1835:54'/*!*/;
+# at 588
+#200630 16:31:33 server id 1 end_log_pos 651 CRC32 0xec353d4a  Query thread_id=11 exec_time=0 error_code=0
+SET TIMESTAMP=1593505893/*!*/;
+BEGIN
+/*!*/;
+# at 651
+#200630 16:31:33 server id 1 end_log_pos 716 CRC32 0x0309e1d5  Table_map: `test`.`test_canal_2_hive` mapped to number 114
+# at 716
+#200630 16:31:33 server id 1 end_log_pos 781 CRC32 0xb7ac4767  Write_rows: table id 114 flags: STMT_END_F
+
+BINLOG '
+Zfj6XhMBAAAAQQAAAMwCAAAAAHIAAAAAAAEABHRlc3QAEXRlc3RfY2FuYWxfMl9oaXZlAAMIDxED
+UAAABtXhCQM=
+Zfj6Xh4BAAAAQQAAAA0DAAAAAHIAAAAAAAEAAgAD//iZAAAAAAAAABB6aGFuZ3Nhbi0wMS1zMTI5
+Xvr4ZWdHrLc=
+'/*!*/;
+# at 781
+#200630 16:31:33 server id 1 end_log_pos 812 CRC32 0xa8c3ce12  Xid = 550
+COMMIT/*!*/;
+# at 812
+#200630 16:52:25 server id 1 end_log_pos 877 CRC32 0x8e7366ee  GTID last_committed=2 sequence_number=3 rbr_only=no
+SET @@SESSION.GTID_NEXT= 'b85582c3-14d9-11ea-a64a-000c29ab1835:55'/*!*/;
+# at 877
+#200630 16:52:25 server id 1 end_log_pos 1122 CRC32 0xb5c35333  Query thread_id=11 exec_time=0 error_code=0
+use `test`/*!*/;
+SET TIMESTAMP=1593507145/*!*/;
+SET @@session.sql_mode=1436549152/*!*/;
+GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'canal_repl_user'@'%' IDENTIFIED WITH 'mysql_native_password' AS '*FD571203974BA9AFE270FE62151AE967ECA5E0AA'
+/*!*/;
+# at 1122
+#200630 16:52:29 server id 1 end_log_pos 1187 CRC32 0x2f039a0c  GTID last_committed=3 sequence_number=4 rbr_only=no
+SET @@SESSION.GTID_NEXT= 'b85582c3-14d9-11ea-a64a-000c29ab1835:56'/*!*/;
+# at 1187
+#200630 16:52:29 server id 1 end_log_pos 1278 CRC32 0x0348011d  Query thread_id=11 exec_time=0 error_code=0
+SET TIMESTAMP=1593507149/*!*/;
+SET @@session.time_zone='SYSTEM'/*!*/;
+flush privileges
+/*!*/;
+SET @@SESSION.GTID_NEXT= 'AUTOMATIC' /* added by mysqlbinlog */ /*!*/;
+DELIMITER ;
+# End of log file
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;</code></pre>
+<p>关于MySQL主备切换canal出现的问题解决</p>
+<p>2.当mysql主备切换时，无论binlog文件名是否相同，如果原主节点position大于主备切换后主库当前binlog的position，会报如下错误：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+2020-07-02 14:51:16,671 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnection:293 | Register slave RegisterSlaveCommandPacket[reportHost=192.168.3.1,reportPort=60838,reportUser=canal_repl_user,reportPasswd=111111,serverId=10236,command=21]
+2020-07-02 14:51:16,671 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnection:321 | COM_BINLOG_DUMP with position:BinlogDumpCommandPacket[binlogPosition=10262,slaveServerId=10236,binlogFileName=mysql-bin.000002,command=18]
+2020-07-02 14:51:16,672 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] DirectLogFetcher:163 | I/O error while reading from client socket
+java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = Client requested master to start replication from position &gt; file size
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+2020-07-02 14:51:16,673 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlEventParser:301 | dump address 192.168.3.100/192.168.3.100:3306 has an error, retrying. caused by 
+java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = Client requested master to start replication from position &gt; file size
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+2020-07-02 14:51:16,769 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] LogAlarmHandler:19 | destination:1-236[java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = Client requested master to start replication from position &gt; file size
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+]</code></pre>
+<p>关于MySQL主备切换canal出现的问题解决</p>
+<p>从错误信息可以看出，复制时其实position大于当前binlog文件的大小</p>
+<p>3.mysql主备切换时，原主库binlog名称序号大于切换后主库binlog名称序号，会报如下错误：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+2020-07-06 11:35:07,977 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnection:293 | Register slave RegisterSlaveCommandPacket[reportHost=192.168.3.1,reportPort=59469,reportUser=canal_repl_user,reportPasswd=111111,serverId=10236,command=21]
+2020-07-06 11:35:07,978 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnection:321 | COM_BINLOG_DUMP with position:BinlogDumpCommandPacket[binlogPosition=1411,slaveServerId=10236,binlogFileName=mysql-bin.000003,command=18]
+2020-07-06 11:35:07,979 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] DirectLogFetcher:163 | I/O error while reading from client socket
+java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = Could not find first log file name in binary log index file
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+2020-07-06 11:35:07,980 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlEventParser:301 | dump address 192.168.3.100/192.168.3.100:3306 has an error, retrying. caused by 
+java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = Could not find first log file name in binary log index file
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+2020-07-06 11:35:07,987 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] LogAlarmHandler:19 | destination:1-236[java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = Could not find first log file name in binary log index file
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+]</code></pre>
+<p>关于MySQL主备切换canal出现的问题解决</p>
+<p>意思是在新主库上由于binlog名称翻转次数较少，binlog名称需要比原主库少，在新主库上找不到对应名称的binlog</p>
+<p>3.使用删除的binlog文件名称，报如下错误：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+2020-07-03 18:07:53,443 WARN [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlEventParser:456 | prepare to find start position mysql-bin.000001:4:1593507861000
+2020-07-03 18:07:53,443 WARN [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlEventParser:205 | ---&gt; find start position successfully, EntryPosition[included=false,journalName=mysql-bin.000001,position=4,serverId=&lt;null&gt;,gtid=&lt;null&gt;,timestamp=1593507861000] cost : 40ms , the next step is binlog dump
+2020-07-03 18:07:53,444 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnector:101 | disConnect MysqlConnection to /192.168.3.100:3306...
+2020-07-03 18:07:53,446 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnector:79 | connect MysqlConnection to /192.168.3.100:3306...
+2020-07-03 18:07:53,447 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnector:182 | handshake initialization packet received, prepare the client authentication packet to send
+2020-07-03 18:07:53,447 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnector:199 | client authentication packet is sent out.
+2020-07-03 18:07:53,458 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnection:293 | Register slave RegisterSlaveCommandPacket[reportHost=192.168.3.1,reportPort=49875,reportUser=canal_repl_user,reportPasswd=111111,serverId=10236,command=21]
+2020-07-03 18:07:53,459 INFO [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlConnection:321 | COM_BINLOG_DUMP with position:BinlogDumpCommandPacket[binlogPosition=4,slaveServerId=10236,binlogFileName=mysql-bin.000001,command=18]
+2020-07-03 18:07:53,460 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] DirectLogFetcher:163 | I/O error while reading from client socket
+java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = Could not find first log file name in binary log index file
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+2020-07-03 18:07:53,462 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] MysqlEventParser:301 | dump address /192.168.3.100:3306 has an error, retrying. caused by 
+java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = Could not find first log file name in binary log index file
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+2020-07-03 18:07:53,463 ERROR [destination = 1-236 , address = /192.168.3.100:3306 , EventParser] LogAlarmHandler:19 | destination:1-236[java.io.IOException: Received error packet: errno = 1236, sqlstate = HY000 errmsg = Could not find first log file name in binary log index file
+ at com.alibaba.otter.canal.parse.inbound.mysql.dbsync.DirectLogFetcher.fetch(DirectLogFetcher.java:102)
+ at com.alibaba.otter.canal.parse.inbound.mysql.MysqlConnection.dump(MysqlConnection.java:169)
+ at com.alibaba.otter.canal.parse.inbound.AbstractEventParser$3.run(AbstractEventParser.java:279)
+ at java.lang.Thread.run(Thread.java:748)
+]</code></pre>
+<p>关于MySQL主备切换canal出现的问题解决</p>
+<p>可以通过在主库上通过&quot;flush logs&quot;命令重新生成信息binlog，然后使用&quot;show master status&quot;查询信息位点，重新使用&ldquo;CHANGE MASTER TO MASTER_LOG_FILE=&#39;log-bin.00000xx&#39;,MASTER_LOG_POS=xxx;&rdquo;重新同步binlog。</p>
+<h3>总结</h3>
+<p>到此这篇关于mysql主备切换canal出现的一些问题解决的文章就介绍到这了,更多相关mysql主备切换canal问题内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于解决MySQL主备切换canal出现的问题的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/123.html'>MySQL利用索引优化ORDER BY排序语句的解决办法</a><a>下一篇</a><a href='/mysql/biji/125.html'>MySQL日志系统的简单用法详细说明</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Linux下实现MySQL数据备份和恢复的命令使用全攻略_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="为了保障数据的安全，需要定期对数据进行备份。备份的方式有很多种，效果也不一样。一旦数据库中的数据出现了错误，就需要使用备份好的数据进行还原恢复。从而将损失降到最低。下" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Linux下实现MySQL数据备份和恢复的命令使用全攻略</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>为了保障数据的安全，需要定期对数据进行备份。备份的方式有很多种，效果也不一样。一旦数据库中的数据出现了错误，就需要使用备份好的数据进行还原恢复。从而将损失降到最低。下</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>为了保障数据的安全，需要定期对数据进行备份。备份的方式有很多种，效果也不一样。一旦数据库中的数据出现了错误，就需要使用备份好的数据进行还原恢复。从而将损失降到最低。下面我们来了解一下MySQL常见的有三种备份恢复方式：</p>
+<p>1、利用Mysqldump+二进制日志实现备份<br />
+2、利用LVM快照+二进制日志实现备份<br />
+3、使用Xtrabackup备份</p>
+<p><strong>一：实验环境介绍：</strong></p>
+<p>系统介绍：CentOS6.4_X64<br />
+数据库版本：mysql-5.5.33</p>
+<p><strong>二：基于Mysqldump命令实现备份恢复</strong></p>
+<p><strong>2.1、思路概念</strong></p>
+<p>Mysqldump是一个逻辑备份命令；意思就是将数据库中的数据备份成一个文本文件；也可以说是将表的结构和数据存储在文本文件中。</p>
+<p>Mysqldump命令的工作原理很简单，它先查出需要备份的表的结构，再在文本文件中生成一个CREATE语句。然后，将表中的所有记录转换为一条INSTERT语句。这些CREATE语句和INSTERT语句都是还原时使用的。还原数据时就可以使用其中的CREATE语句来创建表。使用其中的INSERT语句来还原数据。它可以实现整个服务器备份，也可以实现单个或部分数据库、单个或部分表、表中的某些行、存储过程、存储函数、触发器的备份；并且能自动记录备份时刻的二进制日志文件及相应的位置。对于InnoDB存储引擎来讲支持基于单事务模式实现热备，对于MyISAM则最多支持温备。</p>
+<p><strong>2.2、备份策略</strong></p>
+<p>Mysqldump全备+二进制日志增备</p>
+<p><strong>2.3、过程实现</strong></p>
+<p>（1）Mysqldump全备<br />
+由于Mysql数据库默认的为MyISAM存储引擎所以只有使用温备（备份同时仅支持读请求）进行，所以我们要为所有数据库添加读锁</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+#mysqldump -uroot -pmypass --lock-all-tables --master-data=2 --events --routines--all-databases &gt; /zhao/database_`date +%F`.sql
+</pre>
+</div>
+<p>解析：–lock-all-tables表示为所有表施加读锁；–master-data=2表示在备份文件中记录当前二进制日志的位置；–events表示备份数据的同时备份时间调度器代码；–routines表示备份数据的同时备份存储过程和存储函数；–all-databases表示备份所有库。</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 zhao]
+# less database_2013-08-13.sql
+--   
+#表示注释项
+-- Position to start replication or point-in-time recovery from
+--
+-- CHANGE MASTER TO MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=14203; 
+#这里表示当前处于mysql-bin.000001这个二进制日志中，事件为14203这是通过--master-data=2产生的
+--
+-- Current Database: `hellodb`
+--
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `hellodb` /*!40100 DEFAULT CHARACTER SET utf8 */;
+</pre>
+</div>
+<p>（2）二进制全备</p>
+<p>方法一： 导出二进制日志文件内容</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 data]
+# mysqlbinlog mysql-bin.000001 &gt;/zhao/binlog_`date +%F`.sql
+</pre>
+</div>
+<p>方法二：滚动日志复制文件</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysql&gt; flush logs; 
+#滚动日志
+[root@stu18 data]
+# cp mysql-bin.000001 /zhao/mysql-bin.000001 #复制导出二进制文件
+</pre>
+</div>
+<p>（3）二进制增备<br />
+首先添加数据信息</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysql&gt; use hellodb;
+mysql&gt; INSERT INTO students(Name,Age,Gender,ClassID,TeacherID) values ('Yang kang',22,'M',3,3);
+</pre>
+</div>
+<p>然后二进制增备</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 data]
+# mysqlbinlog --start-position=14203 --stop-position=14527 mysql-bin.000001 &gt; /zhao/binlog_`date +%F_%H`.sql
+</pre>
+</div>
+<p>解析：–start-position=14203是上次全备之后的二进制事件位置；–stop-position=14527最近一天的二进制事件位置。</p>
+<p><strong>2.4、模拟数据库损坏，实现恢复工作</strong></p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysql&gt; DROP DATABASE hellodb;    
+#删除数据库
+############下面这些过程要在离线状态下执行############
+mysql&gt; SET sql_log_bin=0;     
+#先关闭二进制日志
+mysql&gt; flush logs;      
+#滚动日志
+[root@stu18 ~]
+# mysql -uroot -pmypass &lt; /zhao/database_2013-08-13.sql #导入数据库备份文件
+[root@stu18 ~]
+# mysql -uroot -pmypass &lt; /zhao/binlog_2013-08-13_19.sql #导入增量备份文件
+[root@stu18 ~]
+# mysql -uroot –pmypass #登录查看，恢复完成
+mysql&gt; SET sql_log_bin=1;
+</pre>
+</div>
+<p>这种备份方式恢复简单，但是恢复还原之后索引会出现错误需要重建，而且备份结果会占据很大的空间，请酌情使用。</p>
+<p><strong>PS：mysqldump常用命令小结<br />
+</strong>备份MySQL数据库的命令</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysqldump -hhostname -uusername -ppassword databasename &gt; backupfile.sql
+
+</pre>
+</div>
+<p>备份MySQL数据库为带删除表的格式</p>
+<p>备份MySQL数据库为带删除表的格式，能够让该备份覆盖已有数据库而不需要手动删除原有数据库。</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysqldump -–add-drop-table -uusername -ppassword databasename &gt; backupfile.sql
+
+</pre>
+</div>
+<p>直接将MySQL数据库压缩备份</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysqldump -hhostname -uusername -ppassword databasename | gzip &gt; backupfile.sql.gz
+
+</pre>
+</div>
+<p>备份MySQL数据库某个(些)表</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysqldump -hhostname -uusername -ppassword databasename specific_table1 specific_table2 &gt; backupfile.sql
+
+</pre>
+</div>
+<p>同时备份多个MySQL数据库</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysqldump -hhostname -uusername -ppassword –databases databasename1 databasename2 databasename3 &gt; multibackupfile.sql
+
+</pre>
+</div>
+<p>仅仅备份数据库结构</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysqldump –no-data –databases databasename1 databasename2 databasename3 &gt; structurebackupfile.sql
+
+</pre>
+</div>
+<p>备份服务器上所有数据库</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysqldump –all-databases &gt; allbackupfile.sql
+
+</pre>
+</div>
+<p>还原MySQL数据库的命令</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysql -hhostname -uusername -ppassword databasename &lt; backupfile.sql
+
+</pre>
+</div>
+<p>还原压缩的MySQL数据库</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+gunzip &lt; backupfile.sql.gz | mysql -uusername -ppassword databasename
+
+</pre>
+</div>
+<p>将数据库转移到新服务器</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mysqldump -uusername -ppassword databasename | mysql –host=*.*.*.* -C databasename
+
+</pre>
+</div>
+<p><strong>三、基于LVM快照实现备份恢复</strong></p>
+<p><strong>3.1、思路明细</strong></p>
+<p>（1）LVM这种备份方式要求Mysql的数据保存在逻辑卷上<br />
+（2）需要给Mysql服务器施加读锁（mysql&gt;FLUSH TABLES WITH READLOCK;），这里不可直接退出服务器<br />
+（3）另起终端为数据所在的卷创建快照（lvcreate），保证事务日志和数据文件必须在同一卷上（分别创建可能会导致数据文件和事务日志不一致，从而可能导致无法正常恢复）</p>
+<p><strong>3.2、备份策略</strong></p>
+<p>LVM快照全备+二进制日志增备（对于即时点恢复还要恢复至后续的二进制位置）</p>
+<p><strong>3.3、前提条件</strong></p>
+<p>（1）创建逻辑卷及挂载逻辑卷，此过程在此就不做演示了</p>
+<p>（2）初始化mysql将其数据目录指向/mydata/data</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# cd /usr/local/mysql/
+[root@stu18 mysql]
+# scripts/mysql_install_db --user=mysql --datadir=/mydata/data
+</pre>
+</div>
+<p>（3）编辑查看配置文件，重启服务</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 mysql]
+# vim /etc/my.cnf
+datadir = /mydata/data 
+#查看此项是否定义数据目录位置
+sync_binlog=1 
+#添加此项，每个事务提交时候，把事务日志从缓存区写到日志文件中，并且刷新日志文件的数据到磁盘上；
+[root@stu18 mysql]
+# service mysqld start
+</pre>
+</div>
+<p><strong>3.4、过程展示</strong></p>
+<p>（1）确保事务日志和数据文件必须在同一卷上</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# ls /mydata/data/
+hellodb  myclass   mysql-bin.000003 stu18.magedu.com.err
+ibdata1  mysql    mysql-bin.000004 stu18.magedu.com.pid
+ib_logfile0 mysql-bin.000001 mysql-bin.index  student
+ib_logfile1 mysql-bin.000002 performance_schema test
+</pre>
+</div>
+<p>解析：其中ib_logfile0与ib_logfile1是日志文件<br />
+（2）施加全局锁并滚动日志</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; FLUSH TABLES WITH READ LOCK;
+mysql&gt; FLUSH LOGS;
+</pre>
+</div>
+<p>（3）查看并保存当前正在使用的二进制日志及当前执行二进制日志位置（非常重要）</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; SHOW MASTER STATUS;
++------------------+----------+--------------+------------------+
+| File    | Position | Binlog_Do_DB | Binlog_Ignore_DB |
++------------------+----------+--------------+------------------+
+| mysql-bin.000004 |  187 |    |     |
++------------------+----------+--------------+------------------+
+[root@stu18 zhao]
+# mysql -uroot -pmypass -e 'SHOW MASTER STATUS;' &gt;/zhao/lvmback-2013-08-14/binlog.txt
+</pre>
+</div>
+<p>（4）创建快照卷</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 zhao]
+# lvcreate -L 100M -s -p r -n mydata-lvm /dev/vg1/mydata
+</pre>
+</div>
+<p>（5）立即切换终端释放锁</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; UNLOCK TABLES;
+</pre>
+</div>
+<p>（6）备份数据</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 data]
+# cp -a * /zhao/lvmback-2013-08-14/
+</pre>
+</div>
+<p>（7）二进制实现增量备份</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; use hellodb;   
+#指定默认数据库
+Database changed
+mysql&gt; CREATE TABLE testtb (id int,name CHAR(10));  
+#创建表
+Query OK, 0 rows affected (0.35 sec)
+mysql&gt; INSERT INTO testtb VALUES (1,'tom');   
+#添加数据
+Query OK, 1 row affected (0.09 sec)
+[root@stu18 data]
+# mysqlbinlog --start-position=187 mysql-bin.000004 &gt; /zhao/lvmlogbin_2013-08-14/binlog.sql   #日志实现增量备份
+</pre>
+</div>
+<p>（8）模拟数据库崩溃</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# service mysqld stop
+[root@stu18 ~]
+# cd /mydata/data/
+[root@stu18 data]
+# rm -rf *
+</pre>
+</div>
+<p>（9）恢复数据</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# cp /zhao/lvmback-2013-08-14/* /mydata/data/ -a   #完全备份恢复
+[root@stu18 ~]
+# cd /mydata/data/    #查看恢复数据内容
+[root@stu18 data]
+# chown -R mysql.mysql * #更改属主属组
+[root@stu18 data]
+# service mysqld start  #启动服务
+[root@stu18 data]
+# mysql -uroot –pmypass #登录测试
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; SHOW DATABASES;  
+#查看数据完整性，无测试表testtd使用二进制恢复
+mysql&gt; SET sql_log_bin=0 
+#关闭二进制日志
+mysql&gt; source /zhao/lvmlogbin_2013-08-14/binlog.sql; 
+#二进制恢复
+mysql&gt; SHOW TABLES;   
+#查看恢复结果
++-------------------+
+| Tables_in_hellodb |
++-------------------+
+| classes   |
+| coc    |
+| courses   |
+| scores   |
+| students   |
+| teachers   |
+| testtb   |
+| toc    |
++-------------------+
+mysql&gt; SET sql_log_bin=1; 
+#开启二进制日志
+</pre>
+</div>
+<p>此工具是接近于热备的方式实现的，并且用此方法来备份恢复数据速度是非常快的。</p>
+<p><strong>四:基于xtrabackup来实现备份恢复</strong></p>
+<p><strong>4.1、优势特性</strong></p>
+<p>完全以热备的形式进行，能够实现快速可靠地完全备份和部分备份，支持增量备份，支持时间点还原，备份过程中不会打扰到事务操作，能够实现网络传输和压缩功能从而有效的节约磁盘空间，备份完成后可自动验证数据是否可用，恢复速度较快等等。更多优势特性请参考http://www.percona.com/software/percona-xtrabackup</p>
+<p>注意：以上这些优势特性只能在InnoDB引擎上完美实现，而在MyISAM存储引擎上依然最多只能使用温备的形式进行并且还不支持增量备份。<br />
+另外Xtrabackup更多的高级功能还依赖于Mysql数据库对于InnoDB实现了单独的表空间，否则也就没有办法实现单表导入导出查看方式如下：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; SHOW GLOBAL VARIABLES LIKE 'innodb_file%';
++--------------------------+----------+
+| Variable_name   | Value |
++--------------------------+----------+
+| innodb_file_format  | Antelope |
+| innodb_file_format_check | ON  |
+| innodb_file_format_max | Antelope |
+| innodb_file_per_table | ON  |
++--------------------------+----------+
+</pre>
+</div>
+<p>其中的innodb_file_per_table为ON则表示实现了单表单空间。若为OFF则需要使用mysqldump全备然后更改配置文件删除原来的数据文件并重新初始化服务器最后将数据重新导入。所以建议以后在安装Mysql服务器时将其选项默认设置成1即可（innodb_file_per_table = 1）。单表单空间的数据显示形式为：</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 hellodb]
+# ls
+classes.frm coc.MYD  courses.MYI scores.MYI teachers.frm testtb.ibd
+classes.MYD coc.MYI  db.opt  students.frm teachers.MYD toc.frm
+classes.MYI courses.frm scores.frm students.MYD teachers.MYI toc.MYD
+coc.frm  courses.MYD scores.MYD students.MYI testtb.frm toc.MYI
+</pre>
+</div>
+<p><strong>4.2、安装Xtrabackup</strong></p>
+<p>下载percona-xtrabackup最新的版本为2.1.4（percona-xtrabackup-2.1.4-656.rhel6.x86_64.rpm）<br />
+安装：</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# rpm -ivh percona-xtrabackup-2.1.4-656.rhel6.x86_64.rpm
+</pre>
+</div>
+<p>若有错误无法安装请安装perl-DBD-mysql依赖包</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# yum -y install perl-DBD-mysql
+</pre>
+</div>
+<p>注意：不同的环境依赖的关系包可能有多个，请依照提示进行配置</p>
+<p><strong>4.3、完全备份</strong></p>
+<p>使用innobakupex备份时，其会调用xtrabackup备份所有的InnoDB表，复制所有关于表结构定义的相关文件(.frm)、以及MyISAM、MERGE、CSV和ARCHIVE表的相关文件，同时还会备份触发器和数据库配置信息相关的文件。这些文件会被保存至一个以时间命令的目录中。完全备份命令如下：</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+# innobackupex --user=DBUSER--password=DBUSERPASS /path/to/BACKUP-DIR/
+</pre>
+</div>
+<p>实现过程及说明：</p>
+<div class="phpstudycode">
+<pre class="brush:bash;"><p>[root@stu18 ~]
+# mkdir /innobackup    #创建备份文件目录
+[root@stu18 ~]
+# innobackupex --user=root --password=mypass /innobackup/ #完全备份
+################如果执行正确其后输出的几行信息通常如下###############
+xtrabackup: Transaction log of lsn (1604655) to (1604655) was copied. 
+#二进制日志的位置（lsn）
+130814 07:04:55 innobackupex: All tables unlocked
+innobackupex: Backup created in directory '/innobackup/2013-08-14_07-04-49'
+#备份文件保存的位置
+innobackupex: MySQL binlog position: filename 'mysql-bin.000003', position 538898
+130814 07:04:55 innobackupex: Connection to database server closed
+130814 07:04:55 innobackupex: completed</p></pre>
+</div>
+<p>OK!&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 备份完成<br />
+切换至备份文件目录查看备份的数据信息及创建生成的文件：</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+ <p>[root@stu18 ~]
+# cd /innobackup/2013-08-14_07-04-49/
+[root@stu18 2013-08-14_07-04-49]
+# ls
+backup-my.cnf myclass    student   xtrabackup_binlog_info
+hellodb  mysql    test    xtrabackup_checkpoints
+ibdata1  performance_schema xtrabackup_binary xtrabackup_logfile</p></pre>
+</div>
+<p>针对文件解析：</p>
+<p>(1)xtrabackup_checkpoints —— 备份类型（如完全或增量）、备份状态（如是否已经为prepared状态）和LSN(日志序列号)范围信息；<br />
+每个InnoDB页(通常为16k大小)都会包含一个日志序列号，即LSN。LSN是整个数据库系统的系统版本号，每个页面相关的LSN能够表明此页面最近是如何发生改变的。<br />
+(2)xtrabackup_binlog_info —— mysql服务器当前正在使用的二进制日志文件及至备份这一刻为止二进制日志事件的位置。<br />
+(3)xtrabackup_binary —— 备份中用到的xtrabackup的可执行文件；<br />
+(4)backup-my.cnf —— 备份时用到的配置选项信息，也就是配置文件中关于mysqld的相关文件配置；<br />
+(5) xtrabackup_logfile —— 非文本文件是xtrabackup本身的日志文件；</p>
+<p><strong>4.4、准备一个完全备份</strong></p>
+<p>一般情况下，在备份完成后，数据尚且不能用于恢复操作，因为备份的数据中可能会包含尚未提交的事务或已经提交但尚未同步至数据文件中的事务。因此，此时数据文件仍处于不一致状态。“准备”的主要作用正是通过回滚未提交的事务及同步已经提交的事务至数据文件从而使得数据文件处于一致性状态。</p>
+<p>innobakupex命令的–apply-log选项可用于实现上述功能。如下面的命令：</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# innobackupex -apply-log /innobackup/2013-08-14_07-04-49/
+#############如果执行正确，其最后输出的几行信息通常如下################
+xtrabackup: starting shutdown with innodb_fast_shutdown = 1
+130814 7:39:33 InnoDB: Starting shutdown...
+130814 7:39:37 InnoDB: Shutdown completed; log sequence number 1606156
+130814 07:39:37 innobackupex: completed OK!
+</pre>
+</div>
+<p><strong>4.5、模拟数据库崩溃实现完全恢复</strong></p>
+<p>（1）模拟崩溃</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# service mysqld stop
+[root@stu18 ~]
+# cd /mydata/data/
+[root@stu18 data]
+# rm -rf *
+</pre>
+</div>
+<p>（2）从完全备份中恢复数据（谨记：在恢复数据之前千万不可初始化数据库和启动服务）<br />
+innobackupex命令的–copy-back选项用于执行恢复操作，其通过复制所有数据相关的文件至mysql服务器DATADIR目录中来执行恢复过程。innobackupex通过backup-my.cnf来获取DATADIR目录的相关信息。</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# innobackupex --copy-back /innobackup/2013-08-14_07-04-49/
+#############如果执行正确，其最后输出的几行信息通常如下################
+innobackupex: Starting to copy InnoDB log files
+innobackupex: in '/innobackup/2013-08-14_07-04-49'
+innobackupex: back to original InnoDB log directory '/mydata/data'
+innobackupex: Copying '/innobackup/2013-08-14_07-04-49/ib_logfile0' to '/mydata/data'
+innobackupex: Copying '/innobackup/2013-08-14_07-04-49/ib_logfile1' to '/mydata/data'
+innobackupex: Finished copying back files.
+130814 07:58:22 innobackupex: completed OK!
+</pre>
+</div>
+<p>（3）当数据恢复至数据目录以后，还需要确保所有数据文件的属主和属组均为正确的用户，如mysql，否则，在启动mysqld之前还需要事先修改数据文件的属主和属组。</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+# chown -R mysql:mysql /mydata/data/
+</pre>
+</div>
+<p>（4）启动服务器登陆查看恢复完成。</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 data]
+# service mysqld start
+</pre>
+</div>
+<p>注意：每一次恢复完成之后一定要重新做一次完全备份工作！！</p>
+<p><strong>4.6、使用innobackupex进行增量备份</strong></p>
+<p>说明：每个InnoDB的页面都会包含一个LSN信息，每当相关的数据发生改变，相关的页面的LSN就会自动增长。这正是InnoDB表可以进行增量备份的基础，即innobackupex通过备份上次完全备份之后发生改变的页面来实现。<br />
+第一次改动数据实现增量备份<br />
+实现增量备份可以使用下面的命令进行：</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 data]
+# innobackupex --user=root --password=mypass --incremental /innobackup --incremental-basedir=/innobackup/2013-08-14_08-14-12/
+</pre>
+</div>
+<p>其中，/innobackup指的是完全备份所在的目录，此命令执行结束后，innobackupex命令会在/backup目录中创建一个新的以时间命名的目录以存放所有的增量备份数据。–incremental-basedir是指向上一次完全备份所在的目录。</p>
+<p>第二次改动数据进行增量备份：</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# innobackupex --user=root --password=mypass --incremental /innobackup --incremental-basedir=/innobackup/2013-08-14_08-29-05/
+</pre>
+</div>
+<p>第二次增量备份的执行命令和第一次大致相同，只有其–incremental-basedir应该指向上一次的增量备份所在的目录。</p>
+<p>第三次改动数据还未进行增量备份</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+mysql&gt; delete from coc where id=14;
+</pre>
+</div>
+<p>4.7、使用innobackupex基于完全+增量+二进制日志恢复数据</p>
+<p>（1）由于笔者这里将二进制日志和数据文件写在了同一个文件目录下所以在模拟数据库崩溃前必须先复制出二进制日志文件，所以建议看客们将数据目录和二进制目录分开存放，不要和笔者一样犯如此二的错误。方法如下：<br />
+前提是在刚刚建立服务器尚未启动服务器之前做如下操作；</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+mkdir /mybinlog 
+#建立一目录用于存放二进制日志
+chown mysql:mysql /mybinlog 
+#更改权限
+vim /etc/my.cnf 
+#修改配置文件
+log-bin=/mybinlog/mysql-bin 
+#二进制日志目录及文件名前缀，添加之
+</pre>
+</div>
+<p>好了言归正传复制二进制日志文件：</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 data]
+# cp mysql-bin.000001/innobackup/
+</pre>
+</div>
+<p>（2）模拟服务器崩溃</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# service mysqld stop
+[root@stu18 ~]
+# cd /mydata/data/
+[root@stu18 data]
+# rm -rf *
+</pre>
+</div>
+<p>（3）准备备份</p>
+<p>首先注意“准备”增量备份与整理完全备份有着一些不同，尤其要注意的是：<br />
+1)需要在每个备份(包括完全和各个增量备份)上，将已经提交的事务进行“重放”。“重放”之后，所有的备份数据将合并到完全备份上。<br />
+2)基于所有的备份将未提交的事务进行“回滚”。</p>
+<p>完全备份“准备”</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# innobackupex --apply-log --redo-only/innobackup/2013-08-14_08-14-12/
+</pre>
+</div>
+<p>第一次增量备份“准备”也就是说将第一次增量备份合并到了完全备份中</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# innobackupex --apply-log--redo-only /innobackup/2013-08-14_08-14-12/--incremental-dir=/innobackup/2013-08-14_08-29-05/
+</pre>
+</div>
+<p>第二次增量备份“准备”也就是说将第二次增量备份也合并到了完全备份中</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# innobackupex --apply-log--redo-only /innobackup/2013-08-14_08-14-12/ --incremental-dir=/innobackup/2013-08-14_09-08-39/
+</pre>
+</div>
+<p>其中 –redo-only是只将已提交的事务同步到数据文件中，未提交的事务日志不在进行回滚了。</p>
+<p>（4）恢复数据（基于innobackupex基于完全+增量）</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# innobackupex --copy-back/innobackup/2013-08-14_08-14-12/
+</pre>
+</div>
+<p>（5）更改属组属主</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# cd /mydata/data/
+[root@stu18 data]
+# chown -R mysql:mysql *
+</pre>
+</div>
+<p>（6）启动查看</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# mysql -uroot -pmypas
+mysql&gt; select * from coc;
++----+---------+----------+
+| ID | ClassID | CourseID |
++----+---------+----------+
+| 1|  1 |  2 |
+| 2|  1 |  5 |
+| 3|  2 |  2 |
+| 4|  2 |  6 |
+| 5|  3 |  1 |
+| 6|  3 |  7 |
+| 7|  4 |  5 |
+| 8|  4 |  2 |
+| 9|  5 |  1 |
+| 10 |  5 |  9 |
+| 11 |  6 |  3 |
+| 12 |  6 |  4 |
+| 13 |  7 |  4 |
+| 14 |  7 |  3 |
++----+---------+----------+
+14 rows in set (0.00 sec)
+</pre>
+</div>
+<p>结果显示数据正确完整，但是第三次的改动信息未生效。</p>
+<p>（7）基于二进制日志实现数据恢复<br />
+查看最后一次增量备份二进制日志所在的位置：</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 data]
+# cd /innobackup/2013-08-14_09-08-39/
+[root@stu18 2013-08-14_09-08-39]
+# cat xtrabackup_binlog_info
+mysql-bin.000001 780
+</pre>
+</div>
+<p>查看二进制日志文件将未备份数据的二进制日志导出</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 innobackup]
+# mysqlbinlog mysql-bin.000001
+# at 780
+#130814 9:20:19 server id 1 end_log_pos 851 Query thread_id=7 exec_time=0 error_code=0
+SET TIMESTAMP=1376443219/*!*/;
+BEGIN
+/*!*/;
+# at 851
+#130814 9:20:19 server id 1 end_log_pos 944 Query thread_id=7 exec_time=0 error_code=0
+SET TIMESTAMP=1376443219/*!*/;
+delete from coc where id=14
+/*!*/;
+# at 944
+#130814 9:20:19 server id 1 end_log_pos 1016 Query thread_id=7 exec_time=0 error_code=0
+SET TIMESTAMP=1376443219/*!*/;
+COMMIT
+/*!*/;
+DELIMITER ;
+# End of log file
+ROLLBACK /* added by mysqlbinlog */;
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
+[root@stu18 innobackup]
+# mysqlbinlog --start-position=780 mysql-bin.000001 &gt; ./all.sql  #导出数据
+</pre>
+</div>
+<p>恢复数据</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+[root@stu18 ~]
+# mysql -uroot –pmypass
+mysql&gt; SET SQL_LOG_BIN=0;   
+#关闭二进制日志
+mysql&gt; source /innobackup/all.sql 
+#导入数据
+mysql&gt; SET SQL_LOG_BIN=1;   
+#开启二进制日志
+mysql&gt; select * from coc;   
+#查看数据，恢复完成
++----+---------+----------+
+| ID | ClassID | CourseID |
++----+---------+----------+
+| 1 |  1 |  2 |
+| 2 |  1 |  5 |
+| 3 |  2 |  2 |
+| 4 |  2 |  6 |
+| 5 |  3 |  1 |
+| 6 |  3 |  7 |
+| 7 |  4 |  5 |
+| 8 |  4 |  2 |
+| 9 |  5 |  1 |
+| 10 |  5 |  9 |
+| 11 |  6 |  3 |
+| 12 |  6 |  4 |
+| 13 |  7 |  4 |
++----+---------+----------+
+13 rows in set (0.00 sec)
+</pre>
+</div>
+<p>这种备份恢复方式完全以热备的形式实现完全备份和增量备份和二进制日志还原数据，并且恢复速度也很快，是最佳的备份恢复方式！！</p>
+<p><strong>总结：</strong>以上三种备份恢复都是可以基于二进制日志文件进行的，因而体现出了二进制日志的重要性，从而映射出了日志的重要性；所以学习查看使用日志文件是学习Mysql的重中之重！</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/105276.html'>Javascript实现视频轮播在pc端与移动端均可</a><a>下一篇</a><a href='/php/biji/105278.html'>Jquery中国地图热点效果-鼠标经过弹出提示层信息的简单实例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

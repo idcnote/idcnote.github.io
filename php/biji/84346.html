@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>从源码分析Android的Volley库的工作流程_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="Volley现在已经被官方放到AOSP里面，已经逐步成为Android官方推荐的网络框架。<br />
+类抽象<br />
+<br />
+对Http协议的抽象<br />
+<br />
+Requeset<br />
+<br />
+顾名思义，对请求的封装，实现了Comparable接口，因为在Volley" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">从源码分析Android的Volley库的工作流程</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>Volley现在已经被官方放到AOSP里面，已经逐步成为Android官方推荐的网络框架。<br />
+类抽象<br />
+<br />
+对Http协议的抽象<br />
+<br />
+Requeset<br />
+<br />
+顾名思义，对请求的封装，实现了Comparable接口，因为在Volley</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>Volley现在已经被官方放到AOSP里面，已经逐步成为Android官方推荐的网络框架。</p>
+<p><strong>类抽象<br />
+对Http协议的抽象<br />
+Requeset<br />
+</strong>顾名思义，对请求的封装，实现了Comparable接口，因为在Volley中是可以指定请求的优先级的，实现Comparable是为了在Request任务队列中进行排序,优先级高的Request会被优先调度执行。<br />
+<strong>NetworkResponse<br />
+</strong>Http响应的封装，其中包括返回的状态码 头部 数据等。<br />
+<strong>Response<br />
+</strong>给调用者返回的结果封装，它比NetworkResponse更加简单，只包含三个东西：数据 异常 和 Cache数据。<br />
+<strong>Network<br />
+</strong>对HttpClient的抽象，接受一个Request，返回一个NetworkResponse</p>
+<p><strong>反序列化抽象<br />
+</strong>所谓反序列化，就是将网络中传输的对象变成一个Java对象，Volley中是通过扩展Request类来实现不同的反序列化功能，如JsonRequest StringRequest，我们也可以通过自己扩展一些Request子类，来实现对请求流的各种定制。</p>
+<p><strong>请求工作流抽象</strong></p>
+<p><strong>RequestQueue<br />
+</strong>用来管理各种请求队列，其中包含有4个队列<br />
+a) 所有请求集合，通过RequestQueue.add()添加的Request都会被添加进来，当请求结束之后删除。<br />
+b) 所有等待Request，这是Volley做的一点优化，想象一下，我们同时发出了三个一模一样的Request，此时底层其实不必真正走三个网络请求，而只需要走一个请求即可。所以Request1被add之后会被调度执行，而Request2 和Request3被加进来时，如果Request1还未执行完毕，那么Request2和 Request3只需要等着Request1的结果即可。<br />
+c) 缓存队列，其中的Request需要执行查找缓存的工作<br />
+d) 网络工作队列 其中的Request需要被执行网络请求的工作</p>
+<p><strong>NetworkDispatcher<br />
+</strong>执行网络Request的线程，它会从网络工作队列中取出一个请求，并执行。Volley默认有四个线程作为执行网络请求的线程。</p>
+<p><strong>CacheDispatcher<br />
+</strong>执行Cache查找的线程，它会从缓存队列中取出一个请求，然后查找该请求的本地缓存。Volley只有一个线程执行Cache任务。</p>
+<p><strong>ResponseDelivery<br />
+</strong>请求数据分发器，可以发布Request执行的结果。</p>
+<p><strong>Cache<br />
+</strong>对Cache的封装，主要定义了如何存储，获取缓存，存取依据Request中的getCacheKey()来描述。</p>
+<p><strong>提交请求<br />
+</strong>Volley通过RequestQueue.add(Request)来往任务队列中增加请求：<br />
+</p>
+<p></p>
+<p>一个Request被提交之后有几个去处：</p>
+<p>1.Set&lt;Request&lt;&#63;&gt;&gt; mCurrentRequests对应所有请求队列。所有调用add的Request必然都会添加到这里面来。<br />
+2.PriorityBlockingQueue&lt;Request&lt;&#63;&gt;&gt; mNetworkQueue 对应网络队列。如果一个Request不需要缓存，那么add之后会被直接添加到网络队列中。<br />
+3.PriorityBlockingQueue&lt;Request&lt;&#63;&gt;&gt; mCacheQueue对应缓存请求。如果一个Request需要缓存，并且当前的RequestQueue中并没有一个Request的getCacheKey和当前Request相同(可以认为一个请求)，那么加入缓存队列，让缓存工作线程来处理。<br />
+4.Map&lt;String, Queue&lt;Request&lt;&#63;&gt;&gt;&gt; mWaitingRequests对应等待队列。如果RequestQueue中已经有一个相同请求在处理，这里只需要将这个Request放到等待队列中，等之前的Request结果回来之后，进行处理即可。</p>
+<p>Volley提交任务到队列中是不是很简单？下面来说说优先级请求的事情吧，你可能已经注意到了，上面两个存放需要执行任务的队列都是PriorityBlockingQueue，前面说了Request现实了Comparable，看看这个方法：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+@Override
+public int compareTo(Request&lt;T&gt; other) {
+ Priority left = this.getPriority();
+ Priority right = other.getPriority();
+  //mSequence表示请求序列号，add时，会通过一个计数器来指定
+  return left == right &#63;
+  this.mSequence - other.mSequence :
+  right.ordinal() - left.ordinal();
+}
+</pre>
+</div>
+<p>所以，如果我们的工作线程(NetworkDispatcher,CacheDispatcher)取任务时，自然会从头部开始取。</p>
+<p>这里的优先级，仅仅是保证一个请求比另外一个请求先处理，而并不能保证一个高优先级请求一定会比低优先级的请求先回来</p>
+<p><strong>缓存工作线程处理<br />
+</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ @Override
+ public void run() {
+ //初始化Cache
+ mCache.initialize();
+ Request&lt;&#63;&gt; request;
+ while (true) {
+   //阻塞 获取一个Cache任务
+   request = mCacheQueue.take();
+  try {
+   //已经被取消
+    if (request.isCanceled()) {
+    request.finish("cache-discard-canceled");
+    continue;
+   }
+   //如果拿cache未果，放入网络请求队列
+   Cache.Entry entry = mCache.get(request.getCacheKey());
+   if (entry == null) {
+    request.addMarker("cache-miss");
+    mNetworkQueue.put(request);
+    continue;
+   }
+   //缓存超时，放入网络请求队列 
+   if (entry.isExpired()) {
+    request.addMarker("cache-hit-expired");
+    request.setCacheEntry(entry);
+    mNetworkQueue.put(request);
+    continue;
+   }
+   //根据Cache构造Response
+   Response&lt;&#63;&gt; response = request.parseNetworkResponse(
+     new NetworkResponse(entry.data, entry.responseHeaders));
+   //是否超过软过期
+   if (!entry.refreshNeeded()) {
+    // 直接返回Cache
+    mDelivery.postResponse(request, response);
+   } else {
+    request.setCacheEntry(entry);
+    //设置中间结果
+    response.intermediate = true;
+    //发送中间结果
+    final Request&lt;&#63;&gt; finalRequest = request;
+    mDelivery.postResponse(request, response, new Runnable() {
+     @Override
+     public void run() {
+      try {
+       //中间结果完事之后，讲请求放入网络队列
+       mNetworkQueue.put(finalRequest);
+      } catch (InterruptedException e) {
+       // Not much we can do about this.
+      }
+     }
+    });
+   }
+  } catch (Exception e) {
+
+  }
+ }
+}
+
+</pre>
+</div>
+<p>这里可以看到Volley确实对缓存封装很到位，各种情况都考虑到了，其中比较重要的两点：</p>
+<p>取出来的Cache并不仅仅是数据，同时还包括这次请求的一些Header<br />
+<strong>硬过期 软过期<br />
+</strong>我们可以看到Cache中有两个字段来描述缓存过期： Cache.ttl vs Cache.softTtl。什么区别呢？如果ttl过期，那么这个缓存永远不会被使用了；如果softTtl没有过期，这个数据直接返回；如果softTtl过期，那么这次请求将有两次返回，第一次返回这个Cahce，第二次返回网络请求的结果。想想，这个是不是满足我们很多场景呢？先进入页面展示缓存，然后再刷新页面；如果这个缓存太久了，可以等待网络数据回来之后再展示数据，是不是很赞？<br />
+<strong>NetworkDispatcher<br />
+</strong>执行网络请求的工作线程，默认有4个线程，它不停地从网络队列中取任务执行。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public void run() {
+ Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+ Request&lt;&#63;&gt; request;
+ while (true) {
+  long startTimeMs = SystemClock.elapsedRealtime();
+  // release previous request object to avoid leaking request object when mQueue is drained.
+  request = null;
+  try {
+   request = mQueue.take();
+  } catch (InterruptedException e) {
+   if (mQuit) {
+    return;
+   }
+   continue;
+  }
+
+  try {
+   request.addMarker("network-queue-take");
+   //取消
+   if (request.isCanceled()) {
+    request.finish("network-discard-cancelled");
+    continue;
+   }
+   //通过Http栈实现客户端发送网络请求
+   NetworkResponse networkResponse = mNetwork.performRequest(request);
+   request.addMarker("network-http-complete");
+
+   // 如果缓存软过期，那么会重新走网络；如果server返回304，表示上次之后请求结果数据本地并没有过期，所以可以直接用本地的，因为之前Volley已经发过一次Response了，所以这里就不需要再发送Response结果了。
+   if (networkResponse.notModified && request.hasHadResponseDelivered()) {
+    request.finish("not-modified");
+    continue;
+   }
+
+   Response&lt;&#63;&gt; response = request.parseNetworkResponse(networkResponse);
+   request.addMarker("network-parse-complete");
+   //更新缓存
+   if (request.shouldCache() && response.cacheEntry != null) {
+    mCache.put(request.getCacheKey(), response.cacheEntry);
+    request.addMarker("network-cache-written");
+   }
+   //发送结果
+   request.markDelivered();
+   mDelivery.postResponse(request, response);
+  } catch (VolleyError volleyError) {
+   volleyError.setNetworkTimeMs(SystemClock.elapsedRealtime() - startTimeMs);
+   parseAndDeliverNetworkError(request, volleyError);
+  } catch (Exception e) {
+   VolleyLog.e(e, "Unhandled exception %s", e.toString());
+   VolleyError volleyError = new VolleyError(e);
+   volleyError.setNetworkTimeMs(SystemClock.elapsedRealtime() - startTimeMs);
+   mDelivery.postError(request, volleyError);
+  }
+ }
+}
+
+</pre>
+</div>
+<p><strong>Request<br />
+</strong>Request中主要封装了一个请求的各类Http协议信息，比如 URL，请求方法，请求的优先级，请求重试的策略，缓存策略等。</p>
+<p>这里说一下其中比较有意思的重发策略，如果一次请求发生超时异常，比如SocketTimeoutException&nbsp; ConnectTimeoutException ,我们可以为Request配置一个RetryPolicy，你可以指定重发这个Request的次数，以及每次失败之后重新设置这个请求的超时时间（第一次失败之后，你可以调整第二次请求的超时时间增加，以减少失败的可能性）。</p>
+<p>反序列化<br />
+Request最重要的功能就是提供了内容的反序列化，通过不同的子类来实现不同的序列化功能。比如，如果请求结果是一个Json的对象，我们可以使用JsonObjectRequest，如果是一个普通字符，使用StringRequest，同时，我们也可以很方便的定制自己的Request，通过复写Response&lt;T&gt; parseNetworkResponse(NetworkResponse response);方法即可。</p>
+<p>默认的JsonRequest使用org.json中的Json解析，我们使用Gson来进行解析能够构造一个更加通用的处理json返回的Request：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ public class JsonGRequest&lt;T&gt; extends Request&lt;T&gt; {
+
+private static Gson gson = new Gson();
+
+private Response.Listener&lt;T&gt; mListener;
+
+public JsonGRequest(String url, Response.ErrorListener listener,Response.Listener responseListener) {
+ super(url, listener);
+ this.mListener = mListener;
+}
+
+public JsonGRequest(int method, String url, Response.ErrorListener listener) {
+ super(method, url, listener);
+}
+
+@Override
+protected Response&lt;T&gt; parseNetworkResponse(NetworkResponse response) {
+ return Response.success(gson.fromJson(new InputStreamReader(new ByteArrayInputStream(response.data)),getType()), HttpHeaderParser.parseCacheHeaders(response))
+}
+
+@Override
+protected void deliverResponse(T response) {
+ if(mListener != null) {
+  mListener.onResponse(response);
+ }
+}
+
+//获取指定的泛型类型 
+ protected Type getType() {
+ Type superclass;
+ for(superclass = this.getClass().getGenericSuperclass(); superclass instanceof Class && !superclass.equals(JsonGRequest.class); superclass = ((Class)superclass).getGenericSuperclass()) {
+  ;
+ }
+
+ if(superclass instanceof Class) {
+  throw new RuntimeException("Missing type parameter.");
+ } else {
+  ParameterizedType parameterized = (ParameterizedType)superclass;
+  return parameterized.getActualTypeArguments()[0];
+ }
+}
+}
+
+</pre>
+</div>
+<p><strong>ImageRequest<br />
+</strong>Volley专门为图片请求提供了ImageRequest，主要是反序列化了一下数据流到BitMap，还可以制定图片的大小，质量等参数。</p>
+<p>ImageLoader是Volley提供的一个用来加载图片的工具，它的内部还是使用ImageRequest来实现的，主要新加的功能是增加了内存缓存，你可以通过配置ImageCache来设置内存缓存。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/84345.html'>C#解析Lrc歌词文件过程详解</a><a>下一篇</a><a href='/php/biji/84347.html'>php一维二维数组键排序方法实例总结</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

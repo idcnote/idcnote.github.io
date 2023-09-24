@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL巧用sum、case和when优化统计查询的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL巧用sum、case和when优化统计查询的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL巧用sum、case和when优化统计查询的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:15:41                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL巧用sum、case和when优化统计查询的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL巧用sum、case和when优化统计查询的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>最近在公司做项目，涉及到开发统计报表相关的任务，由于数据量相对较多，之前写的查询语句查询五十万条数据大概需要十秒左右的样子，后来经过老大的指点利用sum,case...when...重写SQL性能一下子提高到一秒钟就解决了。这里为了简洁明了的阐述问题和解决的方法，我简化一下需求模型。</p>
+<p>现在数据库有一张订单表（经过简化的中间表），表结构如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+CREATE TABLE `statistic_order` (
+ `oid` bigint(20) NOT NULL,
+ `o_source` varchar(25) DEFAULT NULL COMMENT '来源编号',
+ `o_actno` varchar(30) DEFAULT NULL COMMENT '活动编号',
+ `o_actname` varchar(100) DEFAULT NULL COMMENT '参与活动名称',
+ `o_n_channel` int(2) DEFAULT NULL COMMENT '商城平台',
+ `o_clue` varchar(25) DEFAULT NULL COMMENT '线索分类',
+ `o_star_level` varchar(25) DEFAULT NULL COMMENT '订单星级',
+ `o_saledep` varchar(30) DEFAULT NULL COMMENT '营销部',
+ `o_style` varchar(30) DEFAULT NULL COMMENT '车型',
+ `o_status` int(2) DEFAULT NULL COMMENT '订单状态',
+ `syctime_day` varchar(15) DEFAULT NULL COMMENT '按天格式化日期',
+ PRIMARY KEY (`oid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8</code></pre>
+<p>MySQL巧用sum、case和when优化统计查询</p>
+<p></p>
+<h3>项目需求是这样的:</h3>
+<p></p>
+<p>统计某段时间范围内每天的来源编号数量，其中来源编号对应数据表中的o_source字段，字段值可能为CDE,SDE,PDE,CSE,SSE。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: center">来源分类随时间流动</p>
+<p>一开始写了这样一段SQL：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select S.syctime_day,
+ (select count(*) from statistic_order SS where SS.syctime_day = S.syctime_day and SS.o_source = 'CDE') as 'CDE',
+ (select count(*) from statistic_order SS where SS.syctime_day = S.syctime_day and SS.o_source = 'CDE') as 'SDE',
+ (select count(*) from statistic_order SS where SS.syctime_day = S.syctime_day and SS.o_source = 'CDE') as 'PDE',
+ (select count(*) from statistic_order SS where SS.syctime_day = S.syctime_day and SS.o_source = 'CDE') as 'CSE',
+ (select count(*) from statistic_order SS where SS.syctime_day = S.syctime_day and SS.o_source = 'CDE') as 'SSE'
+ from statistic_order S where S.syctime_day &gt; '2016-05-01' and S.syctime_day &lt; '2016-08-01' 
+ GROUP BY S.syctime_day order by S.syctime_day asc;
+</code></pre>
+<p>MySQL巧用sum、case和when优化统计查询</p>
+<p>这种写法采用了子查询的方式，在没有加索引的情况下，55万条数据执行这句SQL，在workbench下等待了将近十分钟，最后报了一个连接中断，通过explain解释器可以看到SQL的执行计划如下：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>每一个查询都进行了全表扫描，五个子查询DEPENDENT SUBQUERY说明依赖于外部查询，这种查询机制是先进行外部查询，查询出group by后的日期结果，然后子查询分别查询对应的日期中CDE，SDE等的数量，其效率可想而知。</p>
+<p>在o_source和syctime_day上加上索引之后，效率提高了很多，大概五秒钟就查询出了结果：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>查看执行计划发现扫描的行数减少了很多，不再进行全表扫描了：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>这当然还不够快，如果当数据量达到百万级别的话，查询速度肯定是不能容忍的。一直在想有没有一种办法，能否直接遍历一次就查询出所有的结果，类似于遍历java中的list集合，遇到某个条件就计数一次，这样进行一次全表扫描就可以查询出结果集，结果索引，效率应该会很高。在老大的指引下，利用sum聚合函数，加上case...when...then...这种&ldquo;陌生&rdquo;的用法，有效的解决了这个问题。具体SQL如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+ select S.syctime_day,
+ sum(case when S.o_source = 'CDE' then 1 else 0 end) as 'CDE',
+ sum(case when S.o_source = 'SDE' then 1 else 0 end) as 'SDE',
+ sum(case when S.o_source = 'PDE' then 1 else 0 end) as 'PDE',
+ sum(case when S.o_source = 'CSE' then 1 else 0 end) as 'CSE',
+ sum(case when S.o_source = 'SSE' then 1 else 0 end) as 'SSE'
+ from statistic_order S where S.syctime_day &gt; '2015-05-01' and S.syctime_day &lt; '2016-08-01' 
+ GROUP BY S.syctime_day order by S.syctime_day asc;
+</code></pre>
+<p>MySQL巧用sum、case和when优化统计查询</p>
+<p>关于MySQL中case...when...then的用法就不做过多的解释了，这条SQL很容易理解，先对一条一条记录进行遍历，group by对日期进行了分类，sum聚合函数对某个日期的值进行求和，重点就在于case...when...then对sum的求和巧妙的加入了条件，当o_source = &#39;CDE&#39;的时候，计数为1，否则为0；当o_source=&#39;SDE&#39;的时候......</p>
+<p>这条语句的执行只花了一秒多，对于五十多万的数据进行这样一个维度的统计还是比较理想的。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>通过执行计划发现，虽然扫描的行数变多了，但是只进行了一次全表扫描，而且是SIMPLE简单查询，所以执行效率自然就高了：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>针对这个问题，如果大家有更好的方案或思路，欢迎留言</p>
+<h3>总结</h3>
+<p>到此这篇关于MySQL巧用sum、case和when优化统计查询的文章就介绍到这了,更多相关MySQL优化统计查询内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL巧用sum、case和when优化统计查询的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/376.html'>MySQL处理JSON常见函数用法详细说明</a><a>下一篇</a><a href='/mysql/biji/378.html'>MySQL全文检索、关键词跑分的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

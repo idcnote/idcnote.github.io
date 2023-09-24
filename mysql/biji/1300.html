@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>windows环境下MySQL数据库的主从同步备份步骤(单向同步)_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了windows环境下MySQL数据库的主从同步备份步骤(单向同步)，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+wi" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">windows环境下MySQL数据库的主从同步备份步骤(单向同步)</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:24:24                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了windows环境下MySQL数据库的主从同步备份步骤(单向同步)，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+wi</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了windows环境下MySQL数据库的主从同步备份步骤(单向同步)，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>windows下mysql双向同步备份实现方法以下的文章主要讲述的是在windows环境下实现MySQL数据库的主从同步备份的正确操作方案，我在一些相关的网站看见关于windows环境下实现MySQL数据库的主从同步备份的操作步骤描述，但是很少有对其成功操作到底的，所以拿出此篇较为完整的方案与大家一起分享。以下配置在本机上已经成功:实现功能：A为主服务器，B为从服务器，初始状态时，A和B中的数据信息相同，当A中的数据发生变化时，B也跟着发生相应的变化，使得A和B的数据信息同步，达到备份的目的。环境：A、B的MySQL数据库版本同为4.1.20A：操作系统：Windows 2003 serverIP地址：192.168.100.1B：操作系统：Windows 2003 server的IP地址：192.168.100.2配置过程：1、在A的MySQL数据库中建立一个备份帐户，命令如下：</p>
+<p>代码如下:</p>
+<pre>
+<code> 
+GRANT REPLICATION SLAVE,RELOAD,SUPER ON *.* 
+TO backup@&#39;192.168.100.2&#39; 
+IDENTIFIED BY &#39;1234&#39;; 
+</code></pre>建立一个帐户backup，并且只能允许从192.168.100.2这个地址上来登陆，密码是1234。2、因为mysql版本新密码算法不同，所以进入mysql下，输入：set password for &#39;backup&#39;@&#39;192.168.100.2&#39;=old_password(&#39;1234&#39;);3、关停A服务器，将A中的数据拷贝到B服务器中，使得A和B中的数据同步，并且确保在全部设置操作结束前，禁止在A和B服务器中进行写操作，使得两数据库中的数据一定要相同！4、对A服务器的配置进行修改，打开mysql/my.ini文件，在[mysqld]下面添加如下内容：server-id=10log-bin=c:\log-bin.logserver-id：为主服务器A的ID值log-bin：二进制变更日值5、重启A服务器，从现在起，它将把客户堆有关数据库的修改记载到二进制变更日志里去。6、关停B服务器，对B服务器锦熙配置，以便让它知道自己的镜像ID、到哪里去找主服务器以及如何去连接服务器。最简单的情况是主、从服务器分别运行在不同的主机上并都使用着默认的TCP/IP端口，只要在从服务器启动时去读取的mysql/my.ini文件里添加以下几行指令就行了。
+<p>代码如下:</p>
+<pre>
+<code> 
+[mysqld] 
+server-id=11
+master-host=192.168.100.1 
+master-user=backup 
+master-password=1234 
+//以下内容为可选 
+replicate-do-db=backup 
+server-id：从服务器B的ID值。注意不能和主服务器的ID值相同。 
+master-host：主服务器的IP地址。 
+master-user：从服务器连接主服务器的帐号。 
+master-password：从服务器连接主服务器的帐号密码。 
+replicate-do-db：告诉主服务器只对指定的数据库进行同步镜像。 
+</code></pre>7、重启从服务器B。至此所有设置全部完成。更新A中的数据，B中也会立刻进行同步更新。如果从服务器没有进行同步更新，你可以通过查看从服务器中的mysql_error.log日志文件进行排错。8、由于设置了slave的配置信息，mysql在数据库data目录下生成master.info,所以如有要修改相关slave的配置要先删除该文件，否则修改的配置不能生效。<strong>binlog-do-db </strong>官方文档推荐的是，在master端不指定binlog-do-db，在slave端用replication-do-db来过滤。告诉主服务器，如果当前的数据库(即USE选定的数据库)是db_name，应将更新记录到二进制日志中。其它所有没有明显指定的数据库 被忽略。如果使用该选项，你应确保只对当前的数据库进行 ...例如你设置了
+<p>代码如下:</p>
+<pre>
+<code> 
+binlog-do-db=db1 
+然后你执行了以下语句 
+use db1; 
+create database db2; 
+第二句语句并不会记入log 
+即使当前数据库是db1，因为考虑的是语句中的数据库名； 
+</code></pre>相反，除了CREATE DATABASE, ALTER DATABASE, and DROP DATABASE 以外的语句是对当前数据库有关的。例如你设置了
+<p>代码如下:</p>
+<pre>
+<code> 
+binlog-do-db=db1 
+然后你执行了以下语句 
+use db2; 
+insert into db1.table1 values(1); 
+这条语句是不会计入log的，因为当前db是db2。而与操作db无关。 
+</code></pre>先在服务器端查询mysql&gt; show master status;+------------------+----------+--------------+------------------+| File | Position | Binlog_Do_DB | Binlog_Ignore_DB |+------------------+----------+--------------+------------------+| updatelog.000012 | 15016 | data | mysql |+------------------+----------+--------------+------------------+1 row in set (0.00 sec)由此可见两者的File、Position存在问题，所要要去Slave上设置对应主库的Master_Log_File、Read_Master_Log_Pos；执行如下语句；mysql&gt;slave stop;mysql&gt;CHANGE MASTER TO MASTER_HOST=&#39;192.168.0.1&#39;,MASTER_USER=&#39;test&#39;, MASTER_PASSWORD=&#39;******&#39;,MASTER_LOG_FILE=&#39;updatelog.000012&#39;,MASTER_LOG_POS=15016;确保 Slave_IO_Running: Yes 、Slave_SQL_Running: Yes都要为YES才能证明Slave的I/O和SQL进行正常。CHANGE MASTER TO MASTER_LOG_FILE=&#39;mysql-bin.000006&#39;, MASTER_LOG_POS=6267;CHANGE MASTER TOMASTER_HOST=&#39;192.168.1.100&#39;,MASTER_USER=&#39;512pic&#39;,MASTER_PASSWORD=&#39;www.512pic.com&#39;,MASTER_LOG_FILE=&#39;mysql-bin.000002&#39;,MASTER_LOG_POS=76146;然后 在slave端查看 如果正常就oK了，都是yes
+<p>代码如下:</p>
+<pre>
+
+<code>Slave_IO_Running: Yes 
+Slave_SQL_Running: Yes 
+</code></pre>[ERROR] The slave I/O thread stops because master and slave have equal MySQL server ids; these ids must be different for replication to work (or the --replicate-same-server-id option must be used on slave but this does not always make sense; please check the manual before using it).查看 server_id; 一般情况下不建议大家用 1或2，建议用10,11防止出现show variables like &#39;server_id&#39;;
+<p></p>
+
+<p>注：关于windows环境下MySQL数据库的主从同步备份步骤(单向同步)的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1299.html'>MySQL删除重复记录语句的方法</a><a>下一篇</a><a href='/mysql/biji/1301.html'>MySQL下修改engine引擎的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL/MariaDB 数据透视表的实现方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL/MariaDB 数据透视表的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前文介绍了Or" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL/MariaDB 数据透视表的实现方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:21:28                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL/MariaDB 数据透视表的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前文介绍了Or</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL/MariaDB 数据透视表的实现方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>前文介绍了Oracle 中实现数据透视表的几种方法，今天我们来看看在 MySQL/MariaDB 中如何实现相同的功能。</p>
+<p>本文使用的示例数据可以点此下载。</p>
+<h2>使用 CASE 表达式和分组聚合</h2>
+<p>数据透视表的本质就是按照行和列的不同组合进行数据分组，然后对结果进行汇总；因此，它和数据库中的分组（GROUP BY）加聚合函数（COUNT、SUM、AVG 等）的功能非常类似。</p>
+<p>我们首先使用以下 GROUP BY 子句对销售数据进行分类汇总：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select coalesce(product, '【全部产品】') "产品",
+    coalesce(channel, '【所有渠道】') "渠道",
+    any_value(coalesce(extract(year_month from saledate), '【所有月份】')) "月份",
+    sum(amount) "销量"
+from sales_data
+group by product,channel,extract(year_month from saledate) with rollup;
+
+</code></pre>
+<p>MySQL/MariaDB 如何实现数据透视表的示例代码</p>
+<p>以上语句按照产品、渠道以及月份进行汇总；with rollup 选项用于生成不同层次的小计、合计以及总计；coalesce 函数用于将汇总行中的 NULL 值显示为相应的信息；any_value 函数用于返回分组内的任意数据，如果去掉会返回语法错误（MySQL 的一个 bug）。该查询返回的结果如下：</p>
+<blockquote>
+<p>产品 |渠道 |月份 |销量 |---------|---------|-----------|-------|桔子 |京东 |201901 | 41289|桔子 |京东 |201902 | 43913|桔子 |京东 |201903 | 49803|桔子 |京东 |201904 | 49256|桔子 |京东 |201905 | 64889|桔子 |京东 |201906 | 62649|桔子 |京东 |【所有月份】| 311799|桔子 |店面 |201901 | 41306|桔子 |店面 |201902 | 37906|桔子 |店面 |201903 | 48866|桔子 |店面 |201904 | 48673|桔子 |店面 |201905 | 58998|桔子 |店面 |201906 | 58931|桔子 |店面 |【所有月份】| 294680|桔子 |淘宝 |201901 | 43488|桔子 |淘宝 |201902 | 37598|桔子 |淘宝 |201903 | 48621|桔子 |淘宝 |201904 | 49919|桔子 |淘宝 |201905 | 58530|桔子 |淘宝 |201906 | 64626|桔子 |淘宝 |【所有月份】| 302782|桔子 |【所有渠道】|【所有月份】| 909261|...香蕉 |【所有渠道】|【所有月份】| 925369|【全部产品】|【所有渠道】|【所有月份】|2771682|</p></blockquote>
+<p>实际上，我们已经得到了销量的汇总结果，只不过需要将数据按照不同月份显示为不同的列；也就是需要将行转换为列，这个功能可以使用 CASE 表达式实现：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select coalesce(product, '【全部产品】') "产品", coalesce(channel, '【所有渠道】') "渠道", 
+    sum(case extract(year_month from saledate) when 201901 then amount else 0 end) "一月",
+    sum(case extract(year_month from saledate) when 201902 then amount else 0 end) "二月",
+    sum(case extract(year_month from saledate) when 201903 then amount else 0 end) "三月",
+    sum(case extract(year_month from saledate) when 201904 then amount else 0 end) "四月",
+    sum(case extract(year_month from saledate) when 201905 then amount else 0 end) "五月",
+    sum(case extract(year_month from saledate) when 201906 then amount else 0 end) "六月",
+    sum(amount) "总计"
+from sales_data
+group by product, channel with rollup;
+
+</code></pre>
+<p>MySQL/MariaDB 如何实现数据透视表的示例代码</p>
+<p>第一个 SUM 函数中的 CASE 表达式只汇总 201901 月份的销量，其他月份销量设置为 0；后面的 SUM 函数依次类推，得到了每个月的销量汇总和所有月份的总计。该查询返回的数据透视表如下：</p>
+<blockquote>
+<p>产品 |渠道 |一月 |二月 |三月 |四月 |五月 |六月 |总计 |----------|----------|------|------|------|------|------|------|-------|桔子 |京东 | 41289| 43913| 49803| 49256| 64889| 62649| 311799|桔子 |店面 | 41306| 37906| 48866| 48673| 58998| 58931| 294680|桔子 |淘宝 | 43488| 37598| 48621| 49919| 58530| 64626| 302782|桔子 |【所有渠道】|126083|119417|147290|147848|182417|186206| 909261|苹果 |京东 | 38269| 40593| 56552| 56662| 64493| 62045| 318614|苹果 |店面 | 43845| 40539| 44909| 55646| 56771| 64933| 306643|苹果 |淘宝 | 42969| 43289| 48769| 58052| 58872| 59844| 311795|苹果 |【所有渠道】|125083|124421|150230|170360|180136|186822| 937052|香蕉 |京东 | 36879| 36981| 51748| 54801| 64936| 60688| 306033|香蕉 |店面 | 41210| 39420| 50884| 52085| 60249| 67597| 311445|香蕉 |淘宝 | 42468| 41955| 52780| 54971| 56504| 59213| 307891|香蕉 |【所有渠道】|120557|118356|155412|161857|181689|187498| 925369|【全部产品】|【所有渠道】|371723|362194|452932|480065|544242|560526|2771682|</p></blockquote>
+<p>MySQL 中的 IF(expr1,expr2,expr3) 函数也可以用于替换上面 CASE 表达式。</p>
+<p>有行转列就有列转行，MySQL 也没有专门的函数处理这种情况，可以使用 UNION 操作符将多个结果集进行合并。例如：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+with d as (
+ select product, channel,
+     sum(case extract(year_month from saledate) when 201901 then amount else 0 end) s01,
+     sum(case extract(year_month from saledate) when 201902 then amount else 0 end) s02,
+     sum(case extract(year_month from saledate) when 201903 then amount else 0 end) s03,
+     sum(case extract(year_month from saledate) when 201904 then amount else 0 end) s04,
+     sum(case extract(year_month from saledate) when 201905 then amount else 0 end) s05,
+     sum(case extract(year_month from saledate) when 201906 then amount else 0 end) s06
+ from sales_data
+ group by product, channel
+)
+select product, channel, 201901 saledate, s01 amount from d
+union all
+select product, channel, 201902 saledate, s02 from d
+union all
+select product, channel, 201903 saledate, s03 from d
+union all
+select product, channel, 201904 saledate, s04 from d
+union all
+select product, channel, 201905 saledate, s05 from d
+union all
+select product, channel, 201906 saledate, s06 from d;
+
+</code></pre>
+<p>MySQL/MariaDB 如何实现数据透视表的示例代码</p>
+<p>通用表表达（with 子句）构造了包含多个月份的销量数据，每个月份都是一列；然后每个查询返回一个月份的数据，并且通过 union all 操作符将所有结果合并到一起。</p>
+<h2>使用预编译的动态 SQL 语句</h2>
+<p>使用 CASE 表达式和聚合函数实现数据透视表的方法存在一定的局限性，假如还有 7 月份到 12 月份的销量需要统计，我们就需要修改查询语句增加这部分的处理。为此，我们可以使用动态 SQL 自动生成行列转换的语句：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select group_concat(
+ distinct concat(
+  ' sum(case extract(year_month from saledate) when ', dt,
+  ' then amount else 0 end) as "', dt, '"')
+ ) into @sql
+from (
+ select extract(year_month from saledate) as dt
+ from sales_data
+ order by saledate
+) d;
+
+set @sql
+ = concat('select coalesce(product, ''【全部产品】'') "产品", coalesce(channel, ''【所有渠道】'') "渠道",', @sql,
+      ', sum(amount) "总计"
+      from sales_data
+      group by product, channel with rollup;');
+select @sql;
+prepare stmt from @sql;
+execute stmt;
+deallocate prepare stmt;
+
+</code></pre>
+<p>MySQL/MariaDB 如何实现数据透视表的示例代码</p>
+<p>首先，通过查询 sales_data 表找出所有的月份并且构造 sum 函数，将构造的语句存入变量 @sql 中；group_concat 函数可以将多行字符串合并成单个字符串。</p>
+<p>group_concat 函数允许返回的最大长度（字节）由系统变量 group_concat_max_len 进行设置，默认值为 1024。</p>
+<p>然后，使用 set 命令将查询语句的其他部分和已有的内容进行合并，生成的查询语句如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select coalesce(product, '【全部产品】') "产品", coalesce(channel, '【所有渠道】') "渠道", 
+    sum(case extract(year_month from saledate) when 201901 then amount else 0 end) as "201901", 
+    sum(case extract(year_month from saledate) when 201902 then amount else 0 end) as "201902", 
+    sum(case extract(year_month from saledate) when 201903 then amount else 0 end) as "201903", 
+    sum(case extract(year_month from saledate) when 201904 then amount else 0 end) as "201904", 
+    sum(case extract(year_month from saledate) when 201905 then amount else 0 end) as "201905", 
+    sum(case extract(year_month from saledate) when 201906 then amount else 0 end) as "201906", 
+    sum(amount) "总计"
+from sales_data
+group by product, channel with rollup;
+
+</code></pre>
+<p>MySQL/MariaDB 如何实现数据透视表的示例代码</p>
+<p>最后通过预编译命令执行该语句并返回结果，即使增加了其他月份的销售数据也不需要手动修改查询语句。</p>
+<h2>使用 CONNECT 存储引擎</h2>
+<p>如果使用 MariaDB 10.0 以上的版本，可以利用 CONNECT 存储引擎中的 PIVOT 表类型实现数据透视表。</p>
+<p>首先，我们需要安装 CONNECT 存储引擎。Windows 系统可以执行以下命令进行动态安装：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+INSTALL SONAME 'ha_connect';</code></pre>
+<p>MySQL/MariaDB 如何实现数据透视表的示例代码</p>
+<p>也可以在配置文件 my.ini 中增加以下内容，不过需要重启服务：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[mysqld]
+plugin_load_add = ha_connect
+</code></pre>
+<p>MySQL/MariaDB 如何实现数据透视表的示例代码</p>
+<p>对于 Linux 系统，安装过程可以参考官方文档。</p>
+<p>接下来我们定义一个 pivot 类型的表：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+create table pivot_sales(
+ product varchar(20) not null,
+ channel varchar(20) not null,
+ `201901` decimal(10,2) not null flag=1,
+ `201902` decimal(10,2) not null flag=1,
+ `201903` decimal(10,2) not null flag=1,
+ `201904` decimal(10,2) not null flag=1,
+ `201905` decimal(10,2) not null flag=1,
+ `201906` decimal(10,2) not null flag=1
+)
+engine=connect table_type=pivot
+option_list='PivotCol=saledate,FncCol=amount,host=127.0.0.1,user=root, password=p123456,port=3306'
+SrcDef='select product,channel,date_format(saledate, ''%Y%m'') saledate,sum(amount) amount from sales_data group by product,channel,date_format(saledate, ''%Y%m'')';
+</code></pre>
+<p>MySQL/MariaDB 如何实现数据透视表的示例代码</p>
+<p>其中，engine 定义存储引擎为 connect；table_type 定义表的类型为 pivot；option_list 用于定义各种选项，PivotCol 表示要转换成多个字段的数据所在的列，FncCol 指定要进行汇总的字段，其他是连接源表服务器的信息；SrcDef 用于指定源表查询语句，也可以使用 Tabname 指定表名；上面的字段是透视表的结构，flag=1 表示聚合之后的字段。</p>
+<p>创建成功之后，我们就可以直接查询 pivot_sales 表中的数据了：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select * from pivot_sales;
+
+product |channel |201901 |201902 |201903 |201904 |201905 |201906 |
+--------|---------|--------|--------|--------|--------|--------|--------|
+桔子   |京东   |41289.00|43913.00|49803.00|49256.00|64889.00|62649.00|
+桔子   |店面   |41306.00|37906.00|48866.00|48673.00|58998.00|58931.00|
+桔子   |淘宝   |43488.00|37598.00|48621.00|49919.00|58530.00|64626.00|
+苹果   |京东   |38269.00|40593.00|56552.00|56662.00|64493.00|62045.00|
+苹果   |店面   |43845.00|40539.00|44909.00|55646.00|56771.00|64933.00|
+苹果   |淘宝   |42969.00|43289.00|48769.00|58052.00|58872.00|59844.00|
+香蕉   |京东   |36879.00|36981.00|51748.00|54801.00|64936.00|60688.00|
+香蕉   |店面   |41210.00|39420.00|50884.00|52085.00|60249.00|67597.00|
+香蕉   |淘宝   |42468.00|41955.00|52780.00|54971.00|56504.00|59213.00|</code></pre>
+<p>MySQL/MariaDB 如何实现数据透视表的示例代码</p>
+<p>目前，PIVOT 表支持的功能有限，只能进行一些基本的操作。例如：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+-- 不会出错
+select * from pivot_sales
+where channel ='京东';
+
+-- 语法错误
+select channel from pivot_sales
+where channel ='京东';
+
+</code></pre>
+<p>MySQL/MariaDB 如何实现数据透视表的示例代码</p>
+<p>到此这篇关于MySQL/MariaDB 如何实现数据透视表的示例代码的文章就介绍到这了,更多相关MySQL/MariaDB数据透视表内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL/MariaDB 数据透视表的实现方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/993.html'>MySQL的MVCC多版本并发控制的解决办法</a><a>下一篇</a><a href='/mysql/biji/995.html'>MySQL中的“money”类型说明</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

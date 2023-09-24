@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL的join buffer原理的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL的join buffer原理的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+一、MySQL的joi" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL的join buffer原理的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:19:30                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL的join buffer原理的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+一、MySQL的joi</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL的join buffer原理的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h2>一、MySQL的join buffer</h2>
+<p>在MySQL对于join操作的处理过程中，join buffer是一个重要的概念，也是MySQL对于table join的一个重要的优化手段。虽然这个概念实现并不复杂，但是这个是实现MySQL join连接优化的一个重要方法，在&quot;暴力&quot;连接的时候可以极大提高join查询的效率。</p>
+<p>关于这个概念的权威说明当然是来自MySQL文档中对于这个概念的说明，说明的文字不多，但是言简意赅，说明了这个优化的主要实现思想：Assume you have the following join:</p>
+<p>代码如下：</p>
+<pre>
+<code>
+Table name      Type
+t1              range
+t2              ref
+t3              ALL
+The join is then done as follows:
+ 
+- While rows in t1 matching range
+ - Read through all rows in t2 according to reference key
+  - Store used fields from t1, t2 in cache
+  - If cache is full
+    - Read through all rows in t3
+      - Compare t3 row against all t1, t2 combinations in cache
+        - If row satisfies join condition, send it to client
+    - Empty cache
+ 
+- Read through all rows in t3
+ - Compare t3 row against all stored t1, t2 combinations in cache
+   - If row satisfies join condition, send it to client
+</code></pre>
+<p>MySQL的join buffer原理</p>
+<h2>二、join buffer cache存储空间的分配</h2>
+<p>下面函数中table_count表示的就是所有join table中在该table之前的非const table数量，因为这个table要缓存自己之前所有table中的每条记录中&quot;需读取&quot;(tables[i].table-&gt;read_set置位)。</p>
+<p>其中两重循环每次执行都是复制下需要缓存的field的描述结构(及其对应的数据源)，或者说，二重循环只是为了赋值和保存元数据，而最后的cache-&gt;buff=(uchar*) my_malloc(size,MYF(0))才是真正的分配满足条件的记录内容。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+static int
+join_init_cache(THD *thd,JOIN_TAB *tables,uint table_count)
+{
+……
+  for (i=0 ; i &lt; table_count ; i++)
+  {
+    bool have_bit_fields= FALSE;
+    uint null_fields=0,used_fields;
+    Field **f_ptr,*field;
+    MY_BITMAP *read_set= tables[i].table-&gt;read_set;
+    for (f_ptr=tables[i].table-&gt;field,used_fields=tables[i].used_fields ;
+ used_fields ;
+ f_ptr++)
+    {
+      field= *f_ptr;
+      if (bitmap_is_set(read_set, field-&gt;field_index))
+      {
+used_fields--;
+length+=field-&gt;fill_cache_field(copy);
+……
+      }
+  }
+ 
+  cache-&gt;length=length+blobs*sizeof(char*);
+  cache-&gt;blobs=blobs;
+  *blob_ptr=0; /* End sequentel */
+  size=max(thd-&gt;variables.join_buff_size, cache-&gt;length);
+  if (!(cache-&gt;buff=(uchar*) my_malloc(size,MYF(0))))
+    DBUG_RETURN(1); /* Don't use cache */ /* purecov: inspected */
+  cache-&gt;end=cache-&gt;buff+size;
+  reset_cache_write(cache);
+  DBUG_RETURN(0);
+}
+</code></pre>
+<p>MySQL的join buffer原理</p>
+<h2>三、普通的多表查询实现</h2>
+<p>这个&quot;普通&quot;当然也可以理解为&quot;朴素&quot;、&quot;直观&quot;的意思，也是大部分情况下的执行流程。普通查询其实就是对于对于各个表格进行递归调用，和矩阵的乘法一样一样的，这个对应非常直观，也非常通用。</p>
+<p>而这个常规的查询动作就是通过sub_select函数来实现，这个函数本质性上是执行</p>
+<p>代码如下：</p>
+<pre>
+<code>
+tsecer_select()
+{
+for (r = first ; r != end ; r = next)
+{
+if(sofartest())
+{
+nexttable.tsecer_select()
+}
+}
+}
+</code></pre>
+<p>MySQL的join buffer原理</p>
+<p>其中的sofartest()表示&quot;使用所有当前已读取表格可以进行的判断&quot;，也就是where中下推的表达式。例如 select * from a, b where a.a &gt; 10 and b.b + a.a = 10，在a表读取之后，其实已经可以执行 a.a &gt; 10的判断。当然这个是一个甚至算不上伪代码的描述方法，而真正的代码对应为：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+enum_nested_loop_state
+sub_select(JOIN *join,JOIN_TAB *join_tab,bool end_of_records)
+{
+……
+    error= (*join_tab-&gt;read_first_record)(join_tab);
+    rc= evaluate_join_record(join, join_tab, error);
+……
+  while (rc == NESTED_LOOP_OK)
+  {
+    error= info-&gt;read_record(info);
+    rc= evaluate_join_record(join, join_tab, error);
+  }
+……
+  return rc;
+}
+static enum_nested_loop_state
+evaluate_join_record(JOIN *join, JOIN_TAB *join_tab,
+                     int error)
+{
+……
+  if (select_cond)
+  {
+    select_cond_result= test(select_cond-&gt;val_int());
+ 
+    /* check for errors evaluating the condition */
+    if (join-&gt;thd-&gt;is_error())
+      return NESTED_LOOP_ERROR;
+  }
+……
+    if (found)
+    {
+      enum enum_nested_loop_state rc;
+      /* A match from join_tab is found for the current partial join. */
+      rc= (*join_tab-&gt;next_select)(join, join_tab+1, 0);
+      if (rc != NESTED_LOOP_OK &amp;&amp; rc != NESTED_LOOP_NO_MORE_ROWS)
+        return rc;
+      if (join-&gt;return_tab &lt; join_tab)
+        return NESTED_LOOP_OK;
+      /*
+        Test if this was a SELECT DISTINCT query on a table that
+        was not in the field list;  In this case we can abort if
+        we found a row, as no new rows can be added to the result.
+      */
+      if (not_used_in_distinct &amp;&amp; found_records != join-&gt;found_records)
+        return NESTED_LOOP_NO_MORE_ROWS;
+    }
+……
+}
+</code></pre>
+<p>MySQL的join buffer原理</p>
+<p>这里可以看到，这个地方是一个递归，用来产生一个笛卡尔叉乘集合，从程序实现和数学表达上看都非常简洁可爱。在MySQL的实现中，tsecer_select函数中的for循环大致相当sub_select中的while循环，而tsecer_select函数中循环体内的内容被放在了evaluate_join_record函数中，其中的sofartest对应evaluate_join_record::test(select_cond-&gt;val_int())；tsecer_select中的nexttable.tsecer_select()语句对应evaluate_join_record::(*join_tab-&gt;next_select)(join, join_tab+1, 0)。</p>
+<h2>四、join buffer的select实现</h2>
+<p>当使用join buffer cache时，next_select函数指向sub_select_cache</p>
+<p>代码如下：</p>
+<pre>
+<code>
+enum_nested_loop_state
+sub_select_cache(JOIN *join,JOIN_TAB *join_tab,bool end_of_records)
+{
+  enum_nested_loop_state rc;
+ 
+  if (end_of_records)
+  {
+    rc= flush_cached_records(join,join_tab,FALSE);
+    if (rc == NESTED_LOOP_OK || rc == NESTED_LOOP_NO_MORE_ROWS)
+      rc= sub_select(join,join_tab,end_of_records);
+    return rc;
+  }
+  if (join-&gt;thd-&gt;killed) // If aborted by user
+  {
+    join-&gt;thd-&gt;send_kill_message();
+    return NESTED_LOOP_KILLED;                   /* purecov: inspected */
+  }
+  if (join_tab-&gt;use_quick != 2 || test_if_quick_select(join_tab) &lt;= 0)
+  {
+    if (!store_record_in_cache(&amp;join_tab-&gt;cache))
+      return NESTED_LOOP_OK;                     // There is more room in cache
+    return flush_cached_records(join,join_tab,FALSE);
+  }
+  rc= flush_cached_records(join, join_tab, TRUE);
+  if (rc == NESTED_LOOP_OK || rc == NESTED_LOOP_NO_MORE_ROWS)
+    rc= sub_select(join, join_tab, end_of_records);
+  return rc;
+}
+</code></pre>
+<p>MySQL的join buffer原理</p>
+<p>结合MySQL文档中的说明，这里的代码意义就比较明显。开始对于end_of_records的判断对应的就是</p>
+<p>代码如下：</p>
+<pre>
+<code>
+    if (!store_record_in_cache(&amp;join_tab-&gt;cache))
+      return NESTED_LOOP_OK;                     // There is more room in cache
+    return flush_cached_records(join,join_tab,FALSE);
+</code></pre>
+<p>MySQL的join buffer原理</p>
+<p>对应</p>
+<p>代码如下：</p>
+<pre>
+<code>
+  - Store used fields from t1, t2 in cache
+  - If cache is full
+</code></pre>
+<p>MySQL的join buffer原理</p>
+<p>其中store_record_in_cache函数会判断cache是否已满，如果cache可以放入更多的缓存，则把之前table的组合记录存储在cache中，并返回NESTED_LOOP_OK。注意：这个地方可以说是整个cache优化的关键，因为这里并没有启动对于table的扫描。反过来说，如果cache数据已经满了，则调用flush_cached_records函数来进行下面的流程</p>
+<p>代码如下：</p>
+<pre>
+<code>
+    - Read through all rows in t3
+      - Compare t3 row against all t1, t2 combinations in cache
+        - If row satisfies join condition, send it to client
+    - Empty cache
+</code></pre>
+<p>MySQL的join buffer原理</p>
+<p>这个流程的特殊之处在于遍历的驱动是通过对于table的每一条记录来和cache中所有t1、t2组合来进行比较，来判断是否满足下推where条件(If row satisfies join condition)，则执行join_tab-&gt;next_select函数(send it to client)。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+static enum_nested_loop_state
+flush_cached_records(JOIN *join,JOIN_TAB *join_tab,bool skip_last)
+{
+……
+  info= &amp;join_tab-&gt;read_record;
+  do
+  {//遍历t3表格所有记录
+……
+        for (i=(join_tab-&gt;cache.records- (skip_last ? 1 : 0)) ; i-- &gt; 0 ;)
+        {//遍历cache中所有t1、t2记录组合
+          read_cached_record(join_tab);
+          skip_record= FALSE;
+          if (select &amp;&amp; select-&gt;skip_record(join-&gt;thd, &amp;skip_record))
+          {//
+            reset_cache_write(&amp;join_tab-&gt;cache);
+            return NESTED_LOOP_ERROR;
+          }
+          if (!skip_record)
+          {//满足下推的where条件
+//执行下一个table的遍历
+            rc= (join_tab-&gt;next_select)(join,join_tab+1,0);
+            if (rc != NESTED_LOOP_OK &amp;&amp; rc != NESTED_LOOP_NO_MORE_ROWS)
+            {
+              reset_cache_write(&amp;join_tab-&gt;cache);
+              return rc;
+            }
+          }
+……
+  } while (!(error=info-&gt;read_record(info)));
+</code></pre>
+<p>MySQL的join buffer原理</p>
+<h2>五、举例来说明下这个流程</h2>
+<p>这个实现的核心思想并不复杂，结合具体的例子来看就更加的简单直观。举个例子，其中使用两个简单的table，其中分别存储一个x，和y的值，我们希望通过一个join操作来计算这两个表格中所有的满足 x</p>
+<p>x + y</p>
+<p>y == 5 * 5,也就是我们最常见的&quot;勾三股四弦五&quot;这样的经典勾股数数值。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; create table harry (x int);
+Query OK, 0 rows affected (0.03 sec)
+ 
+mysql&gt; insert harry values (1),(2),(3),(4),(5);
+Query OK, 5 rows affected (0.00 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+ 
+mysql&gt; create table tsecer (y int);                   
+Query OK, 0 rows affected (0.01 sec)
+ 
+mysql&gt; insert tsecer values (1),(2),(3),(4),(5);     
+Query OK, 5 rows affected (0.00 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+ 
+mysql&gt; explain select * from harry, tsecer where x * x + y * y = 5 * 5;
++----+-------------+--------+------+---------------+------+---------+------+------+--------------------------------+
+| id | select_type | table  | type | possible_keys | key  | key_len | ref  | rows | Extra                          |
++----+-------------+--------+------+---------------+------+---------+------+------+--------------------------------+
+|  1 | SIMPLE      | harry  | ALL  | NULL          | NULL | NULL    | NULL |    5 |                                |
+|  1 | SIMPLE      | tsecer | ALL  | NULL          | NULL | NULL    | NULL |    5 | Using where; Using join buffer |
++----+-------------+--------+------+---------------+------+---------+------+------+--------------------------------+
+2 rows in set (0.00 sec)
+ 
+mysql&gt;
+</code></pre>
+<p>MySQL的join buffer原理</p>
+<h3>1、不使用joinbuffer</h3>
+<p>在不使用join buffer的情况下，对于harry表的每个x值，对应的tsecer表都要进行一次全表扫描，之后使用这个x和y的组合判断是否满足x</p>
+<p>x + y</p>
+<p>y == 5 * 5这条件。由于x总共有5个值，所以tsecer需要全表扫描的次数就是5次。</p>
+<h3>2、使用joinbuffer</h3>
+<p>对于x的每个值，tsecer表在执行的时候先是把这个值缓存到joinbuffer中，如果buffer缓冲内容非空，那么把此时的x的值存储在buffer中后直接返回；当join buffer满或者是最后一条记录的时候，此时开始启动对于tsecer表的扫描，对于tsecer表中读取的每一个记录，结合前面缓存的每一个记录，看是否满足自己判断条件。对于我们看到的例子，这个地方harry表的5个值都在缓存中，在tsecer表的扫描过程中，对于从tsecer中读取的每一条记录，结合缓存中的&ldquo;每一条&rdquo;缓存，判断这个组合结果是否满足条件，如果任意一个组很满足，那么就继续next_select。在这个使用buffer的例子中，可以看到这个地方只是对于tsecer表进行了一次扫描，而通常来说，数据库的扫描代码是最高的(因为要涉及到磁盘读取)，这样使用buffer的方式将tsecer表的扫描降低为1次，所以这个效率提高很多，特别是在涉及到的多个table，并且/或者 每个table中的记录数量都很多的情况下。</p>
+<h3>3、cache可以优化的原因</h3>
+<p>本质上说，这个效率提高的原因在于提高了从table中获得的每条记录的&ldquo;利用率&rdquo;，在使用直观扫描方式时，table的全表扫描只是和一个组合进行匹配，而使用buffer之后则是和cache中的所有组合进行匹配。</p>
+<p>以上就是MySQL的join buffer原理的详细内容，更多关于MySQL join buffer的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL的join buffer原理的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/786.html'>MySQL命令行模式管理MySQL的一点心得</a><a>下一篇</a><a href='/mysql/biji/788.html'>MySQL中文排序注意事项与实现方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

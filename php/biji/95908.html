@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MongoDB在不同主机间复制数据库和集合的教程_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="1. db.cloneCollection()<br />
+<br />
+db.cloneCollection(from, collection, query)<br />
+<br />
+在不同的mongodb实例间复制数据，db.cloneCollection是cloneCollection数据库命令的一个外在体现。" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MongoDB在不同主机间复制数据库和集合的教程</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>1. db.cloneCollection()<br />
+<br />
+db.cloneCollection(from, collection, query)<br />
+<br />
+在不同的mongodb实例间复制数据，db.cloneCollection是cloneCollection数据库命令的一个外在体现。</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>1. db.cloneCollection()<br />
+</strong>db.cloneCollection(from, collection, query)<br />
+在不同的mongodb实例间复制数据，db.cloneCollection是cloneCollection数据库命令的一个外在体现。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+function (from, collection, query) {
+ assert( isString(from) && from.length );
+ assert( isString(collection) && collection.length );
+ collection = this._name + "." + collection;
+ query = query || {};
+ return this._dbCommand( { cloneCollection:collection, from:from, query:query
+} );
+}
+</pre>
+</div>
+<p>参数：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+from  string  包含需要复制的表的mongodb实例主机名
+collection string  数据实例中需要复制的表名，该命令只可以复制远程mongodb实例上相同数据库名称的表
+query  document 可选的选项。标准的查询语句过滤掉不需要的文档
+</pre>
+</div>
+<p><span style="color: #ff0000">db.cloneCollection()不允许通过mongos来复制表，只能通过mongod实例来操作。<br />
+</span>示例：<br />
+192.168.11.51 mongod实例mydb库，bar集合：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ "_id" : ObjectId("53687d9df433cf04b788c6d1"), "name" : "dog" }
+{ "_id" : ObjectId("53687ff1f433cf04b788c6d2"), "name" : "cat" }
+{ "_id" : ObjectId("53687ff4f433cf04b788c6d3"), "name" : "tiger" }
+</pre>
+</div>
+<p>本地mongod实例mydb库，复制远程主机的bar集合中满足查询条件的文档：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+db.cloneCollection("192.168.11.52", "bar", {"name" : "tiger"})
+db.bar.find();
+{ "_id" : ObjectId("53687ff4f433cf04b788c6d3"), "name" : "tiger" }
+</pre>
+</div>
+<p></p>
+<p><strong>2. db.cloneDatabase()<br />
+</strong>db.cloneDatabase("hostname")<br />
+复制远程主机的数据库到本地，该命令假设远程mongodb实例中拥有与本地相同的数据库名称。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+hostname  string  包含需要复制的数据库的mongodb实例主机名
+</pre>
+</div>
+<p>db.cloneDatabase是clone数据库命令的一个外在体现。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+function (from) {
+ assert( isString(from) && from.length );
+ return this._dbCommand( { clone: from } );
+}
+</pre>
+</div>
+<p>示例：<br />
+192.168.11.51 mongod实例mydb库，<br />
+本机mongodb实例：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+use mydb
+db.dropDatabase();
+db.cloneDatabase("192.168.11.52");
+</pre>
+</div>
+<p></p>
+<p><span style="color: #ff0000"><strong>3. db.copyDatabase()<br />
+</strong></span>db.copyDatabase(fromdb, todb, fromhost, username, password)<br />
+从远程主机复制数据库到本地，或从本地复制数据库到远程主机。<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+db.copyDatabase是copydb数据库命令的一个外在体现。
+function (fromdb, todb, fromhost, username, password) {
+ assert( isString(fromdb) && fromdb.length );
+ assert( isString(todb) && todb.length );
+ fromhost = fromhost || "";
+ if ( username && password ) {
+  var n = this._adminCommand( { copydbgetnonce : 1, fromhost:fromhost } );
+
+  return this._adminCommand( { copydb:1, fromhost:fromhost, fromdb:fromdb,
+ todb:todb, username:username, nonce:n.nonce, key:this.__pwHash( n.nonce, userna
+me, password ) } );
+ } else {
+  return this._adminCommand( { copydb:1, fromhost:fromhost, fromdb:fromdb,
+ todb:todb } );
+ }
+}
+
+</pre>
+</div>
+<p>参数：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+fromdb  string  源数据库名称
+todb  string  目标数据库名称
+fromhost string  可选项，源数据库的主机名。如果是同一主机，忽略该选项
+username string  可选项，源主机名用户名
+password string  可选项，源主机名用户名对应密码
+</pre>
+</div>
+<p>属性：<br />
+（1）db.copyDatabase()运行在目标主机的mongod实例上。<br />
+（2）db.copyDatabase()会创建目标数据库，如果其原来不存在。<br />
+（3）db.copyDatabase()需要目标机器上有足够的空间进行复制。<br />
+（4）db.copyDatabase()并不会产生目标数据库的即时快照。如果在复制过程中在源或目标库发生读写操作，会导致数据库不一致。<br />
+（5）db.copyDatabase()在操作过程中并不会锁住目标主机，所以复制过程中可能出现暂时的中断来完成其他操作。<br />
+源数据库(fromdb)：<br />
+<span style="color: #ff0000">mongodb2.6需要在源主机和目标主机拥有以下权限来执行copydb。<br />
+</span>（1）如果源主机数据库不是admin，必须确保拥有以下权限：<br />
+{ resource: { db: "mySourceDB", collection: "" }, actions: [ "find" ] }<br />
+{ resource: { db: "mySourceDB", collection: "system.js" }, actions: [ "find" ] }<br />
+如果源主机是一台远程主机，必须确保拥有以下权限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ resource: { db: "mySourceDB", collection: "system.indexes" }, actions: [ "find" ] }
+{ resource: { db: "mySourceDB", collection: "system.namespaces" }, actions: [ "find" ] }
+</pre>
+</div>
+<p>（2）如果源主机数据库是admin，必须确保拥有以下权限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ resource: { db: "admin", collection: "" }, actions: [ "find" ] }
+{ resource: { db: "admin", collection: "system.js" }, actions: [ "find" ] }
+{ resource: { db: "admin", collection: "system.users" }, actions: [ "find" ] }
+{ resource: { db: "admin", collection: "system.roles" }, actions: [ "find" ] }
+{ resource: { db: "admin", collection: "system.version" }, actions: [ "find" ] }
+</pre>
+</div>
+<p>如果源主机是一台远程主机，必须确保拥有以下权限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ resource: { db: "admin", collection: "system.indexes" }, actions: [ "find" ] }
+{ resource: { db: "admin", collection: "system.namespaces" }, actions: [ "find" ] }
+</pre>
+</div>
+<p>(3)源数据库在远程主机<br />
+如果从一个拥有用户认证的远程主机复制数据库，需要一个拥有恰当的权限的用户认证。<br />
+目标数据库(todb)：<br />
+A、如果目标主机数据库不是admin，必须确保拥有以下权限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ resource: { db: "myTargetDB", collection: "" }, actions: [ "insert", "createIndex" ] }
+{ resource: { db: "myTargetDB", collection: "system.js" }, actions: [ "insert" ] }
+</pre>
+</div>
+<p>B、如果目标主机数据库是admin，必须确保拥有以下权限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+resource: { db: "myTargetDB", collection: "" }, actions: [ "insert", "createIndex" ] },
+{ resource: { db: "myTargetDB", collection: "system.js" }, actions: [ "insert" ] },
+{ resource: { db: "myTargetDB", collection: "system.users" }, actions: [ "insert" ] },
+{ resource: { db: "myTargetDB", collection: "system.roles" }, actions: [ "insert" ] },
+{ resource: { db: "myTargetDB", collection: "system.version" }, actions: [ "insert" ] }
+</pre>
+</div>
+<p>示例：<br />
+192.168.11.51 mongod实例mydb库，<br />
+复制到本地newmydb库：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+db.copyDatabase("mydb", "newmydb", "192.168.11.52");
+</pre>
+</div>
+<p></p>
+<p><strong>4. cloneCollection<br />
+</strong>从远程mongodb实例复制集合到当前mongodb实例。集合名称是一致的：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ cloneCollection: "&lt;namespace&gt;", from: "&lt;hostname&gt;", query: { &lt;query&gt; } }
+</pre>
+</div>
+<p>cloneCollection拥有以下的域值：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+cloneCollection  string  集合的命名空间，命名空间包含了数据库名和集合名的组合
+from    string  指定远程主机名和可选的端口号
+query    document  可选的，过滤选项
+</pre>
+</div>
+<p>示例：<br />
+192.168.11.51 mongod实例mydb库，bar集合：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ "_id" : ObjectId("53687d9df433cf04b788c6d1"), "name" : "dog" }
+{ "_id" : ObjectId("53687ff1f433cf04b788c6d2"), "name" : "cat" }
+{ "_id" : ObjectId("53687ff4f433cf04b788c6d3"), "name" : "tiger" }
+</pre>
+</div>
+<p>本地mongod实例:<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+db.runCommand({cloneCollection : "mydb.bar", from : "192.168.11.52:27017", query : {"name" : "tiger"}})
+use mydb
+db.bar.find()
+{ "_id" : ObjectId("53687ff4f433cf04b788c6d3"), "name" : "tiger" }
+</pre>
+</div>
+<p>cloneCollectionAsCapped可以利用数据库中存在的非cpped集合创建出一个新的capped集合，操作对原来的集合没有副作用。<br />
+指令的语法：<br />
+<code>{ cloneCollectionAsCapped: &lt;existing collection&gt;, toCollection: &lt;capped collection&gt;, size: &lt;capped size&gt; }<br />
+</code>新集合名称在数据库中是独一无二的，如果要把一个已经存在的正常集合转变为cpped集合，可以使用convertToCapped命令，在复制过程中，cloneCollectionAsCapped指令呈现出以下行为:<br />
+mongodb会已自然顺序遍历集合中的文档。<br />
+如果size小于先前集合的尺寸，会以FIFO规则删除早先的文档。<br />
+实例：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+db.runCommand({cloneCollectionAsCapped : "bar", toCollection : "barone", size : 100})
+db.barone.isCapped();
+
+true</pre>
+</div>
+<div class="phpstudycode"></div>
+<p><strong>5. clone<br />
+</strong>clone命令从远程服务器mongodb实例复制一个数据库到当前的mongodb实例，形式如下：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ clone: "db1.example.net:27017" }
+</pre>
+</div>
+<p>需要注意的几点：<br />
+（1）clone不能去操作slave节点或副本集的非主节点。<br />
+（2）clone并不支持数据库快照功能，如果有客户端对数据更新过了，可能造成结果不一致。<br />
+（3）clone命令必须运行在目标节点上。<br />
+（4）clone过程中，目标主机没有锁定，所以复制过程中可能出现暂时的中断来完成其他操作。</p>
+<p></p>
+<p><span style="color: #ff0000"><strong>6. copydb<br />
+</strong></span>从远程主机复制数据库到本地，或从本地复制数据库到远程主机。<br />
+在本地admin库里运行以下命令语法：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ copydb: 1,
+ fromhost: &lt;hostname&gt;,
+ fromdb: &lt;database&gt;,
+ todb: &lt;database&gt;,
+ slaveOk: &lt;bool&gt;,
+ username: &lt;username&gt;,
+ nonce: &lt;nonce&gt;,
+ key: &lt;key&gt; }
+</pre>
+</div>
+<p>选项：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+fromhost  string  运行mongodb实例的远程源主机，如果是本地可以忽略
+fromdb   string  源数据库名称
+todb   string  目标数据库名称
+slaveOk   boolean  可选的，设置为true，允许从从库复制库
+username  string  可选的，远程主机的用户名。
+nonce   string  可选的，远程主机的共享密钥
+key    string  可选的，远程主机的认证密码哈希
+</pre>
+</div>
+<p>属性：<br />
+（1）copydb()运行在目标主机的mongod实例上。<br />
+（2）copydb()会创建目标数据库，如果其原来不存在。<br />
+（3）copydb()需要目标机器上有足够的空间进行复制。<br />
+（4）copydb()并不会产生目标数据库的即时快照。如果在复制过程中在源或目标库发生读写操作，会导致数据库不一致。<br />
+（5）copydb()在操作过程中并不会锁住目标主机，所以复制过程中可能出现暂时的中断来完成其他操作。<br />
+mongodb2.6需要在源主机和目标主机拥有以下权限来执行copydb。<br />
+（1）如果源主机数据库不是admin，必须确保拥有以下权限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ resource: { db: "mySourceDB", collection: "" }, actions: [ "find" ] }
+{ resource: { db: "mySourceDB", collection: "system.js" }, actions: [ "find" ] }
+</pre>
+</div>
+<p>如果源主机是一台远程主机，必须确保拥有以下权限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ resource: { db: "mySourceDB", collection: "system.indexes" }, actions: [ "find" ] }
+{ resource: { db: "mySourceDB", collection: "system.namespaces" }, actions: [ "find" ] }
+</pre>
+</div>
+<p>（2）如果源主机数据库是admin，必须确保拥有以下权限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ resource: { db: "admin", collection: "" }, actions: [ "find" ] }
+{ resource: { db: "admin", collection: "system.js" }, actions: [ "find" ] }
+{ resource: { db: "admin", collection: "system.users" }, actions: [ "find" ] }
+{ resource: { db: "admin", collection: "system.roles" }, actions: [ "find" ] }
+{ resource: { db: "admin", collection: "system.version" }, actions: [ "find" ] }
+</pre>
+</div>
+<p>如果源主机是一台远程主机，必须确保拥有以下权限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ resource: { db: "admin", collection: "system.indexes" }, actions: [ "find" ] }
+{ resource: { db: "admin", collection: "system.namespaces" }, actions: [ "find" ] }
+</pre>
+</div>
+<p>（3）源数据库在远程主机<br />
+如果从一个拥有用户认证的远程主机复制数据库，需要一个拥有恰当的权限的用户认证。<br />
+目标数据库(todb)：<br />
+A、如果目标主机数据库不是admin，必须确保拥有以下权限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+{ resource: { db: "myTargetDB", collection: "" }, actions: [ "insert", "createIndex" ] }
+{ resource: { db: "myTargetDB", collection: "system.js" }, actions: [ "insert" ] }
+</pre>
+</div>
+<p>B、如果目标主机数据库是admin，必须确保拥有以下权限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+resource: { db: "myTargetDB", collection: "" }, actions: [ "insert", "createIndex" ] },
+{ resource: { db: "myTargetDB", collection: "system.js" }, actions: [ "insert" ] },
+{ resource: { db: "myTargetDB", collection: "system.users" }, actions: [ "insert" ] },
+{ resource: { db: "myTargetDB", collection: "system.roles" }, actions: [ "insert" ] },
+{ resource: { db: "myTargetDB", collection: "system.version" }, actions: [ "insert" ] }
+</pre>
+</div>
+<p>认证：<br />
+如果远程主机需要安全认证，则需要使用username,nonce和key进行认证。<br />
+nonce是一个一次性的密码，通过运行copydbgetnonce命令：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:bash;">
+use admin
+mynonce = db.runCommand( { copydbgetnonce : 1, fromhost: &lt;hostname&gt; } ).nonce
+</pre>
+</div>
+<p>如果直接在远程主机运行copydbgetnonce命令，可以忽略fromhost选项。<br />
+如下生成一个哈希键：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+hex_md5(mynonce + username + hex_md5(username + ":mongo:" + password))
+</pre>
+</div>
+<p>副本集：设置slaveOk为true，可以在从节点运行copydb。<br />
+分片集：不要在mongos实例上运行copydb；不要复制包含分片集合的库。</p>
+<p>实例：<br />
+（1）运行在同一主机上的copydb<br />
+</p>
+<p>（2）从远程主机复制的copydb<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+db._adminCommand({
+ copydb : 1,
+ fromdb : "mydb",
+ todb : "mydbtwo",
+ formhost : "192.168.11.52"
+})
+{ "ok" : 1 }
+</pre>
+</div>
+<p>（3）从需要安全验证的远程主机复制的copydb<br />
+远程主机建立用户test:caoqing/mydb<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+use admin
+mynonce = db.runCommand( { copydbgetnonce : 1, fromhost: "192.168.11.51:27017" } ).nonce
+mykey = hex_md5(mynonce + "test" + hex_md5("test" + ":mongo:" + "caoqing"))
+db._adminCommand({
+ copydb: 1,
+ fromdb: "mydb",
+ todb: "mydbthree",
+ fromhost: "192.168.11.51",
+ username: "test",
+ nonce: mynonce,
+ key: mykey
+})
+{ "ok" : 1 }</pre>
+</div>
+<p></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/95907.html'>jquery ajax对特殊字符进行转义防止js注入使用示例</a><a>下一篇</a><a href='/php/biji/95909.html'>javascript实现页面刷新时自动清空表单并选中的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

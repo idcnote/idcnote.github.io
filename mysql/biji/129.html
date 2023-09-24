@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL之MHA高可用配置及故障切换的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL之MHA高可用配置及故障切换的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL之MHA高可用配置及故障切换的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:13:26                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL之MHA高可用配置及故障切换的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL之MHA高可用配置及故障切换的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<div id="navCategory">
+<h5 class="catalogue">目录</h5>
+<ul class="first_class_ul">
+	<li>一、MHA介绍
+	<ul class="second_class_ul">
+		<li>（一）、什么是MHA</li>
+		<li>（二）、MHA 的组成</li>
+		<li>（三）、MHA 的特点</li>
+	</ul></li>
+	<li>二、搭建 MySQL MHA
+	<ul class="second_class_ul">
+		<li>（一）、实验思路：</li>
+		<li>（二）、实验步骤</li>
+		<li>（三）、故障模拟</li>
+	</ul></li>
+</ul>
+<p class="maodian"></p>
+<h2>一、MHA介绍</h2>
+<p class="maodian"></p>
+<h3>（一）、什么是MHA</h3>
+<p>MHA（MasterHigh Availability）是一套优秀的MySQL高可用环境下故障切换和主从复制的软件。MHA 的出现就是解决MySQL 单点的问题。MySQL故障切换过程中，MHA能做到0-30秒内自动完成故障切换操作。MHA能在故障切换的过程中最大程度上保证数据的一致性，以达到真正意义上的高可用。</p>
+<p class="maodian"></p>
+<h3>（二）、MHA 的组成</h3>
+<p>MHA Node（数据节点）MHA Node 运行在每台 MySQL 服务器上。</p>
+<p>MHA Manager（管理节点）MHA Manager 可以单独部署在一台独立的机器上，管理多个 master-slave 集群；也可以部署在一台 slave 节点上。MHA Manager 会定时探测集群中的 master 节点。当 master 出现故障时，它可以自动将最新数据的 slave 提升为新的 master， 然后将所有其他的 slave 重新指向新的 master。整个故障转移过程对应用程序完全透明。</p>
+<p class="maodian"></p>
+<h3>（三）、MHA 的特点</h3>
+<ul>
+	<li>自动故障切换过程中，MHA试图从宕机的主服务器上保存二进制日志，最大程度的保证数据不丢失</li>
+	<li>使用半同步复制，可以大大降低数据丢失的风险，如果只有一个slave已经收到了最新的二进制日志，MHA可以将最新的二进制日志应用于其他所有的slave服务器上，因此可以保证所有节点的数据一致性</li>
+	<li>目前MHA支持一主多从架构，最少三台服务，即一主两从</li>
+</ul>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p class="maodian"></p>
+<h2>二、搭建 MySQL MHA</h2>
+<p class="maodian"></p>
+<h3>（一）、实验思路：</h3>
+<p>1．MHA架构</p>
+<p>1）数据库安装2）一主两从3）MHA搭建</p>
+<p>2．故障模拟</p>
+<p>1）主库失效2）备选主库成为主库3）原故障主库恢复重新加入到MHA成为从库</p>
+<p class="maodian"></p>
+<h3>（二）、实验步骤</h3>
+<p>代码如下：</p>
+<pre>
+<code>
+MHA manager 节点服务器：CentOS7.4(64 位) manager/192.168.126.10 ，安装MHA node 和 manager 组件
+Master 节点服务器：CentOS7.4(64 位) mysql1/192.168.126.20 ，安装mysql5.7、MHA node 组件
+Slave1 节点服务器：CentOS7.4(64 位) mysql2/192.168.126.30，安装mysql5.7、MHA node 组件
+Slave2 节点服务器：CentOS7.4(64 位) mysql3/192.168.126.40，安装mysql5.7、MHA node 组件
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>每台机子关闭防火墙</p>
+<p>代码如下：</p>
+<pre>
+<code>
+systemctl stop firewalld
+systemctl disable firewalld
+setenforce 0
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p></p>
+<h3>1、安装mysql15.7</h3>
+<p></p>
+<p>Master、Slave1、Slave2 节点上安装 mysql5.7 （mysql安装详见前期博文）</p>
+<p></p>
+<h3>2、修改 Master、Slave1、Slave2 节点的主机名</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+hostnamectl set-hostname Mysql1
+hostnamectl set-hostname Mysql2
+hostnamectl set-hostname Mysql3
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>3、修改 Master、Slave1、Slave2 节点的 Mysql主配置文件/etc/my.cnf</h3>##Master 节点##
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+vim /etc/my.cnf
+[mysqld]
+server-id = 1
+log_bin = master-bin
+log-slave-updates = true
+
+systemctl restart mysqld
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>##Slave1、Slave2 节点##</p>
+<p>代码如下：</p>
+<pre>
+<code>
+vim /etc/my.cnf
+server-id = 2 						#三台服务器的 server-id 不能一样
+log_bin = master-bin
+relay-log = relay-log-bin
+relay-log-index = slave-relay-bin.index
+
+systemctl restart mysqld
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>4．在 Master、Slave1、Slave2 节点上都创建两个软链接</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+ln -s /usr/local/mysql/bin/mysql /usr/sbin/
+ln -s /usr/local/mysql/bin/mysqlbinlog /usr/sbin/
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p></p>
+<h3>5．配置 mysql 一主两从</h3>（1）所有数据库节点进行 mysql 授权
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql -uroot -p
+grant replication slave on *.* to 'myslave'@'192.168.126.%' identified by '123';		#从数据库同步使用
+grant all privileges on *.* to 'mha'@'192.168.126.%' identified by 'manager';		#manager 使用
+
+grant all privileges on *.* to 'mha'@'Mysql1' identified by 'manager';				#防止从库通过主机名连接不上主库
+grant all privileges on *.* to 'mha'@'Mysql2' identified by 'manager';
+grant all privileges on *.* to 'mha'@'Mysql3' identified by 'manager';
+flush privileges;
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>（2）在 Master 节点查看二进制文件和同步点show master status;</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>（3）在 Slave1、Slave2 节点执行同步操作</p>
+<p>代码如下：</p>
+<pre>
+<code>
+change master to master_host='192.168.126.20',master_user='myslave',master_password='123',master_log_file='master-bin.000001',master_log_pos=1747; 
+
+start slave;
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>（4）在 Slave1、Slave2 节点查看数据同步结果</p>
+<p>代码如下：</p>
+<pre>
+<code>
+show slave status\G		
+//确保 IO 和 SQL 线程都是 Yes，代表同步正常。
+Slave_IO_Running: Yes
+Slave_SQL_Running: Yes
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>（5）两个从库必须设置为只读模式：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+set global read_only=1;</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>6．安装 MHA 软件</h3>（1）所有服务器上都安装 MHA 依赖的环境，首先安装 epel 源
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+yum install epel-release --nogpgcheck -y</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>代码如下：</p>
+<pre>
+<code>
+yum install -y perl-DBD-MySQL \
+perl-Config-Tiny \
+perl-Log-Dispatch \
+perl-Parallel-ForkManager \
+perl-ExtUtils-CBuilder \
+perl-ExtUtils-MakeMaker \
+perl-CPAN
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>（2）安装 MHA 软件包，先在所有服务器上必须先安装 node 组件对于每个操作系统版本不一样，这里 CentOS7.4 必须选择 0.57 版本。在所有服务器上必须先安装 node 组件，最后在 MHA-manager 节点上安装 manager 组件，因为 manager 依赖 node 组件。</p>
+<p>安装包：</p>
+<p>所有的服务器上必须安装node组件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+cd /opt
+tar zxvf mha4mysql-node-0.57.tar.gz
+cd mha4mysql-node-0.57
+perl Makefile.PL
+make &amp;&amp; make install
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>（3）在 MHA manager 节点上安装 manager 组件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+cd /opt
+tar zxvf mha4mysql-manager-0.57.tar.gz
+cd mha4mysql-manager-0.57
+perl Makefile.PL
+make &amp;&amp; make install
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>manager 组件安装后在/usr/local/bin 下面会生成几个工具，主要包括以下几个：</p>
+<ul>
+	<li>masterha_check_ssh 检查 MHA 的 SSH 配置状况</li>
+	<li>masterha_check_repl 检查 MySQL 复制状况</li>
+	<li>masterha_manger 启动 manager的脚本</li>
+	<li>masterha_check_status 检测当前 MHA 运行状态</li>
+	<li>masterha_master_monitor 检测 master 是否宕机</li>
+	<li>masterha_master_switch 控制故障转移（自动或者手动）</li>
+	<li>masterha_conf_host 添加或删除配置的 server 信息</li>
+	<li>masterha_stop 关闭manager</li>
+</ul>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>#node 组件安装后也会在/usr/local/bin 下面会生成几个脚本（这些工具通常由 MHAManager 的脚本触发，无需人为操作）主要如下：save_binary_logs 保存和复制 master 的二进制日志apply_diff_relay_logs 识别差异的中继日志事件并将其差异的事件应用于其他的 slavefilter_mysqlbinlog 去除不必要的 ROLLBACK 事件（MHA 已不再使用这个工具）</p>
+<p>purge_relay_logs 清除中继日志（不会阻塞 SQL 线程）</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>7．在所有服务器上配置无密码认证</h3>
+<p></p>
+<p>（1）在 manager 节点上配置到所有数据库节点的无密码认证</p>
+<p>代码如下：</p>
+<pre>
+<code>
+ssh-keygen -t rsa #一路按回车键
+ssh-copy-id 192.168.126.20
+ssh-copy-id 192.168.126.30
+ssh-copy-id 192.168.126.40</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>（2）在 mysql1 上配置到数据库节点 mysql2 和 mysql3 的无密码认证</p>
+<p>代码如下：</p>
+<pre>
+<code>
+ssh-keygen -t rsa
+ssh-copy-id 192.168.126.30
+ssh-copy-id 192.168.126.40</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>（3）在 mysql2 上配置到数据库节点 mysql1 和 mysql3 的无密码认证</p>
+<p>代码如下：</p>
+<pre>
+<code>
+ssh-keygen -t rsa
+ssh-copy-id 192.168.126.20
+ssh-copy-id 192.168.126.40
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>（4）在 mysql3 上配置到数据库节点 mysql1 和 mysql2 的无密码认证</p>
+<p>代码如下：</p>
+<pre>
+<code>
+ssh-keygen -t rsa
+ssh-copy-id 192.168.126.20
+ssh-copy-id 192.168.126.30
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p></p>
+<h3>8．在 manager 节点上配置 MHA</h3>
+<p></p>
+<p>（1）在 manager 节点上复制相关脚本到/usr/local/bin 目录</p>
+<p>代码如下：</p>
+<pre>
+<code>
+cp -rp /opt/mha4mysql-manager-0.57/samples/scripts /usr/local/bin
+//拷贝后会有四个执行文件
+
+ll /usr/local/bin/scripts/
+
+master_ip_failover #自动切换时 VIP 管理的脚本
+master_ip_online_change #在线切换时 vip 的管理
+power_manager  #故障发生后关闭主机的脚本
+
+send_report  #因故障切换后发送报警的脚本
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>（2）复制上述的自动切换时 VIP 管理的脚本到 /usr/local/bin 目录，这里使用master_ip_failover脚本来管理 VIP 和故障切换</p>
+<p>代码如下：</p>
+<pre>
+<code>
+cp /usr/local/bin/scripts/master_ip_failover /usr/local/bin</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>（3）修改内容如下：（删除原有内容，直接复制并修改vip相关参数）</p>
+<p>代码如下：</p>
+<pre>
+<code>
+vim /usr/local/bin/master_ip_failover
+
+#!/usr/bin/env perl
+use strict;
+use warnings FATAL =&gt; 'all';
+
+use Getopt::Long;
+
+my (
+$command, $ssh_user, $orig_master_host, $orig_master_ip,
+$orig_master_port, $new_master_host, $new_master_ip, $new_master_port
+);
+#############################添加内容部分#########################################
+my $vip = '192.168.126.200';									#指定vip的地址
+my $brdc = '192.168.126.255';								#指定vip的广播地址
+my $ifdev = 'ens33';										#指定vip绑定的网卡
+my $key = '1';												#指定vip绑定的虚拟网卡序列号
+my $ssh_start_vip = "/sbin/ifconfig ens33:$key $vip";		#代表此变量值为ifconfig ens33:1 192.168.126.200
+my $ssh_stop_vip = "/sbin/ifconfig ens33:$key down";		#代表此变量值为ifconfig ens33:1 192.168.126.200 down
+my $exit_code = 0;											#指定退出状态码为0
+#my $ssh_start_vip = "/usr/sbin/ip addr add $vip/24 brd $brdc dev $ifdev label $ifdev:$key;/usr/sbin/arping -q -A -c 1 -I $ifdev $vip;iptables -F;";
+#my $ssh_stop_vip = "/usr/sbin/ip addr del $vip/24 dev $ifdev label $ifdev:$key";
+##################################################################################
+GetOptions(
+'command=s' =&gt; \$command,
+'ssh_user=s' =&gt; \$ssh_user,
+'orig_master_host=s' =&gt; \$orig_master_host,
+'orig_master_ip=s' =&gt; \$orig_master_ip,
+'orig_master_port=i' =&gt; \$orig_master_port,
+'new_master_host=s' =&gt; \$new_master_host,
+'new_master_ip=s' =&gt; \$new_master_ip,
+'new_master_port=i' =&gt; \$new_master_port,
+);
+
+exit &amp;main();
+
+sub main {
+
+print "\n\nIN SCRIPT TEST====$ssh_stop_vip==$ssh_start_vip===\n\n";
+
+if ( $command eq "stop" || $command eq "stopssh" ) {
+
+my $exit_code = 1;
+eval {
+print "Disabling the VIP on old master: $orig_master_host \n";
+&amp;stop_vip();
+$exit_code = 0;
+};
+if ($@) {
+warn "Got Error: $@\n";
+exit $exit_code;
+}
+exit $exit_code;
+}
+elsif ( $command eq "start" ) {
+
+my $exit_code = 10;
+eval {
+print "Enabling the VIP - $vip on the new master - $new_master_host \n";
+&amp;start_vip();
+$exit_code = 0;
+};
+if ($@) {
+warn $@;
+exit $exit_code;
+}
+exit $exit_code;
+}
+elsif ( $command eq "status" ) {
+print "Checking the Status of the script.. OK \n";
+exit 0;
+}
+else {
+&amp;usage();
+exit 1;
+}
+}
+sub start_vip() {
+`ssh $ssh_user\@$new_master_host \" $ssh_start_vip \"`;
+}
+
+A simple system call that disable the VIP on the old_master
+
+sub stop_vip() {
+`ssh $ssh_user\@$orig_master_host \" $ssh_stop_vip \"`;
+}
+
+sub usage {
+print
+"Usage: master_ip_failover --command=start|stop|stopssh|status --orig_master_host=host --orig_master_ip=ip --orig_master_port=port --new_master_host=host --new_master_ip=ip --new_master_port=port\n";
+}
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>（4）创建 MHA 软件目录并拷贝配置文件，这里使用app1.cnf配置文件来管理 mysql 节点服务器</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mkdir /etc/masterha
+cp /opt/mha4mysql-manager-0.57/samples/conf/app1.cnf /etc/masterha
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>代码如下：</p>
+<pre>
+<code>
+vim /etc/masterha/app1.cnf						#删除原有内容，直接复制并修改节点服务器的IP地址
+[server default]
+manager_log=/var/log/masterha/app1/manager.log
+manager_workdir=/var/log/masterha/app1
+master_binlog_dir=/usr/local/mysql/data
+master_ip_failover_script=/usr/local/bin/master_ip_failover
+master_ip_online_change_script=/usr/local/bin/master_ip_online_change
+password=manager
+ping_interval=1
+remote_workdir=/tmp
+repl_password=123
+repl_user=myslave
+secondary_check_script=/usr/local/bin/masterha_secondary_check -s 192.168.126.30 -s 192.168.126.40
+shutdown_script=""
+ssh_user=root
+user=mha
+
+[server1]
+hostname=192.168.126.20
+port=3306
+
+[server2]
+candidate_master=1
+check_repl_delay=0
+hostname=192.168.126.30
+port=3306
+
+[server3]
+hostname=192.168.126.40
+port=3306
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[server default]
+manager_log=/var/log/masterha/app1/manager.log　　　　　　#manager日志
+manager_workdir=/var/log/masterha/app1.log　　　　　　　　#manager工作目录
+master_binlog_dir=/usr/local/mysql/data/　　　　　　　　　#master保存binlog的位置，这里的路径要与master里配置的binlog的路径一致，以便MHA能找到
+master_ip_failover_script=/usr/local/bin/master_ip_failover　　#设置自动failover时候的切换脚本，也就是上面的那个脚本
+master_ip_online_change_script=/usr/local/bin/master_ip_online_change　　#设置手动切换时候的切换脚本
+password=manager			#设置mysql中root用户的密码，这个密码是前文中创建监控用户的那个密码
+ping_interval=1				#设置监控主库，发送ping包的时间间隔，默认是3秒，尝试三次没有回应的时候自动进行failover
+remote_workdir=/tmp			#设置远端mysql在发生切换时binlog的保存位置
+repl_password=123			#设置复制用户的密码
+repl_user=myslave			#设置复制用户的用户
+report_script=/usr/local/send_report　　　　　#设置发生切换后发送的报警的脚本
+secondary_check_script=/usr/local/bin/masterha_secondary_check -s 192.168.126.30 -s 192.168.126.40	#指定检查的从服务器IP地址
+shutdown_script=""			#设置故障发生后关闭故障主机脚本（该脚本的主要作用是关闭主机防止发生脑裂,这里没有使用）
+ssh_user=root				#设置ssh的登录用户名
+user=mha					#设置监控用户root
+
+[server1]
+hostname=192.168.126.20
+port=3306
+
+[server2]
+hostname=192.168.126.30
+port=3306
+candidate_master=1
+#设置为候选master，设置该参数以后，发生主从切换以后将会将此从库提升为主库，即使这个主库不是集群中最新的slave
+
+check_repl_delay=0
+#默认情况下如果一个slave落后master 超过100M的relay logs的话，MHA将不会选择该slave作为一个新的master， 因为对于这个slave的恢复需要花费很长时间；通过设置check_repl_delay=0，MHA触发切换在选择一个新的master的时候将会忽略复制延时，这个参数对于设置了candidate_master=1的主机非常有用，因为这个候选主在切换的过程中一定是新的master
+
+[server3]
+hostname=192.168.126.40
+port=3306
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p></p>
+<h3>9．第一次配置需要在 Master 节点上手动开启虚拟IP</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+/sbin/ifconfig ens33:1 192.168.126.200/24</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>10．在 manager 节点上测试 ssh 无密码认证，如果正常最后会输出 successfully，如下所示。</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+masterha_check_ssh -conf=/etc/masterha/app1.cnf</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>11．在 manager 节点上测试 mysql 主从连接情况，最后出现 MySQL Replication Health is OK 字样说明正常。如下所示。</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+masterha_check_repl -conf=/etc/masterha/app1.cnf</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>12．在 manager 节点上启动 MHA</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+nohup masterha_manager --conf=/etc/masterha/app1.cnf --remove_dead_master_conf --ignore_last_failover &lt; /dev/null &gt; /var/log/masterha/app1/manager.log 2&gt;&amp;1 &amp;
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>&ndash;remove_dead_master_conf：该参数代表当发生主从切换后，老的主库的 ip 将会从配置文件中移除。&ndash;manger_log：日志存放位置。</p>
+<p>&ndash;ignore_last_failover：在缺省情况下，如果 MHA 检测到连续发生宕机，且两次宕机间隔不足 8 小时的话，则不会进行 Failover， 之所以这样限制是为了避免 ping-pong 效应。该参数代表忽略上次 MHA 触发切换产生的文件，默认情况下，MHA 发生切换后会在日志记目录，也就是上面设置的日志app1.failover.complete文件，下次再次切换的时候如果发现该目录下存在该文件将不允许触发切换，除非在第一次切换后收到删除该文件，为了方便，这里设置为&ndash;ignore_last_failover。</p>
+<p></p>
+<h3>13．查看 MHA 状态，可以看到当前的 master 是 Mysql1 节点。</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+masterha_check_status --conf=/etc/masterha/app1.cnf</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>14. 查看 MHA 日志，也以看到当前的 master 是 192.168.126.20，如下所示。</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+cat /var/log/masterha/app1/manager.log | grep "current master"</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>查看 Mysql1 的 VIP 地址 192.168.126.200 是否存在，这个 VIP 地址不会因为 manager 节点停止 MHA 服务而消失。</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+ifconfig
+
+//若要关闭 manager 服务，可以使用如下命令。
+masterha_stop --conf=/etc/masterha/app1.cnf
+或者可以直接采用 kill 进程 ID 的方式关闭。
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p class="maodian"></p>
+<h3>（三）、故障模拟</h3>
+<p>#在 manager 节点上监控观察日志记录</p>
+<p>代码如下：</p>
+<pre>
+<code>
+tail -f /var/log/masterha/app1/manager.log</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>#在 Master 节点 Mysql1 上停止mysql服务</p>
+<p>代码如下：</p>
+<pre>
+<code>
+systemctl stop mysqld
+或
+pkill -9 mysql</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>#正常自动切换一次后，MHA 进程会退出。HMA 会自动修改 app1.cnf 文件内容，将宕机的 mysql1 节点删除。查看 mysql2 是否接管 VIPifconfig</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>故障切换备选主库的算法：</h3>1．一般判断从库的是从（position/GTID）判断优劣，数据有差异，最接近于master的slave，成为备选主。2．数据一致的情况下，按照配置文件顺序，选择备选主库。3．设定有权重（candidate_master=1），按照权重强制指定备选主。（1）默认情况下如果一个slave落后master 100M的relay logs的话，即使有权重，也会失效。（2）如果check_repl_delay=0的话，即使落后很多日志，也强制选择其为备选主。
+<p></p>
+<p>故障修复步骤：</p>
+<p>1．修复mysql</p>
+<p>代码如下：</p>
+<pre>
+<code>
+systemctl restart mysqld</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>2．修复主从</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#在现主库服务器 Mysql2 查看二进制文件和同步点
+show master status;</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#在原主库服务器 mysql1 执行同步操作
+change master to master_host=‘192.168.126.30',master_user=‘myslave',master_password=‘123',master_log_file=‘master-bin.000001',master_log_pos=1747;
+
+start slave;
+
+show slave status\G
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>3．在 manager 节点上修改配置文件app1.cnf（再把这个记录添加进去，因为它检测掉失效时候会自动消失）</p>
+<p>代码如下：</p>
+<pre>
+<code>
+vim /etc/masterha/app1.cnf
+......
+secondary_check_script=/usr/local/bin/masterha_secondary_check -s 192.168.126.20 -s 192.168.126.40
+......
+[server1]
+hostname=192.168.126.30
+port=3306
+
+[server2]
+candidate_master=1
+check_repl_delay=0
+hostname=192.168.126.20
+port=3306
+
+[server3]
+hostname=192.168.126.40
+port=3306
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>4．在 manager 节点上启动 MHA</p>
+<p>代码如下：</p>
+<pre>
+<code>
+nohup masterha_manager --conf=/etc/masterha/app1.cnf --remove_dead_master_conf --ignore_last_failover &lt; /dev/null &gt; /var/log/masterha/app1/manager.log 2&gt;&amp;1 &amp;
+</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>代码如下：</p>
+<pre>
+<code>
+#解决中英字不兼容报错的问题
+dos2unix /usr/local/bin/master_ip_failover</code></pre>
+<p>MySQL之MHA高可用配置及故障切换实现详细部署步骤</p>
+<p>到此这篇关于MySQL之MHA高可用配置及故障切换实现详细部署步骤的文章就介绍到这了,更多相关MySQL MHA高可用配置内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p></div>
+
+<p>注：关于MySQL之MHA高可用配置及故障切换的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/128.html'>MySQL Aborted connection告警日志的深入分析</a><a>下一篇</a><a href='/mysql/biji/130.html'>MySQL对于模糊查询like的一些汇总示例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

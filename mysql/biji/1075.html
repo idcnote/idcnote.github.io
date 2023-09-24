@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>使用MySQL的LAST_INSERT_ID来确定各分表的唯一ID值_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了使用MySQL的LAST_INSERT_ID来确定各分表的唯一ID值，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！分表除了" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">使用MySQL的LAST_INSERT_ID来确定各分表的唯一ID值</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:22:19                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了使用MySQL的LAST_INSERT_ID来确定各分表的唯一ID值，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！分表除了</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了使用MySQL的LAST_INSERT_ID来确定各分表的唯一ID值，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>分表除了表名的索引不同之外，表结构都是一样的，如果各表的&lsquo;ID&#39;字段仍采用&lsquo;AUTO_INCREMENT&#39;的方式的话，ID就不能唯确定一条记录了。这时就需要一种处于各个分表之外的机制来生成ID，我们一般采用一张单独的数据表（不妨假设表名为&lsquo;ticket_mutex&#39;）来保存这个ID，无论哪个分表有数据增加时，都是先到ticket_mutex表把ID值加1，然后取得ID值。这个取ID的操作看似很复杂，所幸的是，MySQL提供了LAST_INSERT_ID机制，让我们能一步完成。<strong>1、新建数据表ticket_mutex </strong>
+<p>代码如下:</p>
+<pre>
+<code> 
+CREATE TABLE ticket_mutex ( 
+name varchar(32) NOT NULL PRIMARY KEY COMMENT &#39;业务名称&#39;, 
+value bigint(20) UNSIGNED NOT NULL COMMENT &#39;ID值&#39; 
+)Engine=InnoDB DEFAULT CHARSET=UTF8 COMMENT &#39;保存分表ID表&#39;; 
+</code></pre>字段&lsquo;name&#39;用来说明这个ID是哪个业务的，比如&lsquo;用户&#39;的ID，我们可以定为&lsquo;USER&#39;；字段&lsquo;value&#39;即该业务的ID值。<strong>2、初始化业务和其ID值</strong>
+<p>代码如下:</p>
+<pre>
+<code> 
+INSERT INTO ticket_mutex(name, value) values(&#39;USER&#39;, 0),(&#39;POST&#39;, 0); 
++------+-------+ 
+| name | value | 
++------+-------+ 
+| POST | 0 | 
+| USER | 0 | 
++------+-------+ 
+</code></pre>我们初始化了2条记录，即有2个不同的业务，分别代表&lsquo;用户信息&#39;和&lsquo;主题信息&#39;，它们初始ID值均为&lsquo;0&#39;；<strong>3、获取分表唯一ID </strong>这个时候就要利用MySQL提供的LAST_INSERT_ID()机制了。在往用户表里新增一条数据时，获取&lsquo;用户ID&#39;：
+<p>代码如下:</p>
+<pre>
+<code> 
+UPDATE ticket_mutex SET value=LAST_INSERT_ID(value+1) WHERE name=&#39;USER&#39;;SELECT LAST_INSERT_ID(); 
++------------------+ 
+| LAST_INSERT_ID() | 
++------------------+ 
+| 1 | 
++------------------+ 
+</code></pre>通过这条语句之后，我们得到结果为1，这个值就是我们所需要的值。再来查看数据记录，我们发现记录总数没有改变，但是&lsquo;用户&#39;的ID已经为1了；
+<p>代码如下:</p>
+<pre>
+<code> 
++------+-------+ 
+| name | value | 
++------+-------+ 
+| POST | 0 | 
+| USER | 1 | 
++------+-------+ 
+</code></pre>查看所有的记录：
+<p>代码如下:</p>
+<pre>
+<code> 
++------+-------+ 
+| name | value | 
++------+-------+ 
+| POST | 1 | 
+| USER | 1 | 
++------+-------+ 
+</code></pre>从上可以看出，通过MySQL的LAST_INSERT_ID机制，我们可以保证在记录总数不增长的情况下，让业务ID在不断的增加，从而保证了分表ID的唯一性。<strong>4、LAST_INSERT_ID说明 </strong>从名字可以看出，LAST_INSERT_ID即为最后插入的ID值，根据MySQL的官方手册说明，它有2种使用方法一是不带参数：LAST_INSERT_ID()，这种方法和AUTO_INCREMENT属性一起使用，当往带有&lsquo;AUTO_INCREMENT&#39;属性字段的表中新增记录时，LAST_INSERT_ID()即返回该字段的值，大家可试下（我已经验证过）；二是带有表达式：如上面介绍的LAST_INSERT_ID(value+1)，它返回的是表达式的值，即&lsquo;value+1&#39;；
+
+<p>注：关于使用MySQL的LAST_INSERT_ID来确定各分表的唯一ID值的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1074.html'>MySQL命令行导入sql数据的代码</a><a>下一篇</a><a href='/mysql/biji/1076.html'>MySQL交叉表实现分享</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

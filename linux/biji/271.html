@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>【linux命令】Linux环境下通过rsync+inotify实现数据实时同步_IDC笔记</title>
+    <meta name="keywords" content=",Linux常用命令" />
+    <meta name="description" content="本站一直缺少类似方面教程，今天就补充一下。其中rsync是一个远程数据同步工具，使用方法可以参考之前的文章《linux系统下Rsync远程数据同步命令介绍以及使用整理》 ，但数据更新" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+            <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> Linux命令大全            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/linux/1.html">Linux常用命令(手册)大全</a></li><li><a href="/linux/linux/2.html">Linux命令格式</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 系统管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/system/3.html">Linux ls命令:显示指定工作目录下的内容</a></li><li><a href="/linux/system/4.html">Linux pwd命令:显示当前工作目录</a></li><li><a href="/linux/system/5.html">Linux cd命令:切换工作目录</a></li><li><a href="/linux/system/6.html">Linux date命令:显示或设置系统时间</a></li><li><a href="/linux/system/7.html">Linux su命令:切换用户</a></li><li><a href="/linux/system/9.html">Linux man命令:查看帮助信息</a></li><li><a href="/linux/system/8.html">Linux clear命令:清除屏幕</a></li><li><a href="/linux/system/11.html">Linux whoami命令:显示目前登录用户名</a></li><li><a href="/linux/system/10.html">Linux who命令:显示目前登录用户信息</a></li><li><a href="/linux/system/13.html">Linux ps命令:显示进程状态</a></li><li><a href="/linux/system/12.html">Linux free命令:显示系统内存状态</a></li><li><a href="/linux/system/15.html">Linux help命令:显示帮助信息</a></li><li><a href="/linux/system/14.html">Linux top命令:查看系统活跃进程</a></li><li><a href="/linux/system/18.html">Linux shutdown命令:关机或重启</a></li><li><a href="/linux/system/17.html">Linux halt命令:关闭系统</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 文件管理与编辑命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/file/27.html">Linux mkdir命令:创建目录</a></li><li><a href="/linux/file/29.html">Linux cat命令:连接文件并打印到标准输出设备上</a></li><li><a href="/linux/file/28.html">Linux more命令:显示文本文件内容</a></li><li><a href="/linux/file/30.html">Linux grep命令:检索文件内容</a></li><li><a href="/linux/file/31.html">Linux rm命令:删除文件或目录</a></li><li><a href="/linux/file/32.html">Linux touch命令:修改文件的时间</a></li><li><a href="/linux/file/34.html">Linux cp命令:复制文件或目录</a></li><li><a href="/linux/file/33.html">Linux ln命令:创建链接</a></li><li><a href="/linux/file/35.html">Linux find命令:查找文件</a></li><li><a href="/linux/file/37.html">Linux mv命令:移动或重命名文件或目录</a></li><li><a href="/linux/file/36.html">Linux split命令:分割文件</a></li><li><a href="/linux/file/40.html">Linux head命令:查看文件前几行</a></li><li><a href="/linux/file/39.html">Linux less命令:分页显示文件内容</a></li><li><a href="/linux/file/38.html">Linux vi/vim命令:文本编辑器</a></li><li><a href="/linux/file/42.html">Linux wc命令:统计字节数、字数、行数</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 压缩与解压命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/compression/55.html">Linux unzip命令:解压文件或目录</a></li><li><a href="/linux/compression/54.html">Linux zip命令:压缩文件或目录</a></li><li><a href="/linux/compression/56.html">Linux tar命令:归档工具</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 磁盘管理与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/disk/57.html">Linux df命令:显示磁盘空间使用情况</a></li><li><a href="/linux/disk/59.html">Linux quota命令:显示磁盘已使用的空间与限制</a></li><li><a href="/linux/disk/58.html">Linux mount命令:挂载文件系统</a></li><li><a href="/linux/disk/62.html">Linux ip命令:执行网络管理任务</a></li>        </ul>
+    </li>
+        <li>
+        <a href="javascript:void(0);" class="waves-effect">
+            <i class="icon-share"></i>
+            <span> 网络设置与维护命令            <span class="float-right menu-arrow">
+            <i class="mdi mdi-chevron-right"></i>
+            </span> 
+            </span>
+        </a>
+        <ul class="submenu">
+             <li><a href="/linux/network/61.html">Linux netstat命令:显示网络状态</a></li><li><a href="/linux/network/60.html">Linux ifconfig命令:配置或显示网络接口信息</a></li><li><a href="/linux/network/63.html">Linux ping命令:测试主机间网络连通性</a></li><li><a href="/linux/network/65.html">Linux finger命令:查找并显示用户信息</a></li><li><a href="/linux/network/64.html">Linux wall命令:发送广播</a></li><li><a href="/linux/network/67.html">Linux rlogin命令:远端登入</a></li><li><a href="/linux/network/66.html">Linux rcp命令:远程文件复制</a></li>        </ul>
+    </li>
+        <li>
+        <a href="/linux/biji/" class="waves-effect">
+            <i class="icon-share"></i>
+            <span>Linux笔记
+                <span class="float-right menu-arrow">
+                <i class="mdi mdi-chevron-right"></i>
+                </span>
+            </span>
+        </a>
+    </li>
+    </ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+</div>
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="page-title-box">
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <h1 class="page-title">【linux命令】Linux环境下通过rsync+inotify实现数据实时同步</h1>
+                    </div>
+                </div>
+                <!-- end row -->
+            </div>
+            <!-- end page-title -->
+            <!-- START ROW -->
+            <div class="panel panel-forbid">
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+                <div class="panel-content">
+                <span>本站一直缺少类似方面教程，今天就补充一下。其中rsync是一个远程数据同步工具，使用方法可以参考之前的文章《linux系统下Rsync远程数据同步命令介绍以及使用整理》 ，但数据更新</span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+                <div class="panel-content">
+                <span><p><span style="color: #000000;">本站一直缺少类似方面教程，今天就补充一下。其中rsync是一个远程数据同步工具，使用方法可以参考之前的文章《linux系统下Rsync远程数据同步命令介绍以及使用整理》 ，但数据更新以后数据还需要手工同步，无法实现自动化。这里就借助资料配置一个rsync+innotify实现数据实时同步，解决手工处理烦恼。</span></p>
+<p><span style="color: #000000;">环境准备：centos三台</span><br />
+<span style="color: #000000;"> 源数据服务器：192.168.1.8</span><br />
+<span style="color: #000000;"> 目标服务器：192.168.1.9    192.168.1.10</span><br />
+<span style="color: #000000;"> 测试目的：将源服务器的/home/21yunwei 自动同步到目标服务器。</span><br />
+<span style="color: #000000;"> 为了测试，关闭selinux以及iptables（iptables也可以放行873端口，不用关闭）</span><br />
+<span style="color: #000000;"> <strong>一，两个目标服务器配置<br />
+</strong>1，安装rsync和xinetd，centos下是通过xinetd管理rsync。</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">yum install rsync xinetd  -y
+</pre>
+<p><span style="color: #000000;">编辑vi /etc/xinetd.d/rsync 设置rsync启动，即disable = no 。默认是不启动yes。</span><br />
+<span style="color: #000000;"> 修改完以后启动xinetd：/etc/init.d/xinetd start</span><br />
+<span style="color: #000000;"> netstat -tnlp |grep 873 如果看到有xinetd服务，说明启动成功。</span><br />
+<span style="color: #000000;"> 2，创建rsyncd.conf配置文件并修改参数。<br />
+vi /etc/rsyncd.conf<br />
+</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">log file = /var/log/rsyncd.log 
+pidfile = /var/run/rsyncd.pid  
+lock file = /var/run/rsync.lock  
+secrets file = /etc/rsync.pass 
+motd file = /etc/rsyncd.Motd 
+
+[home_21yunwei]
+path = /home/21yunwei/ 
+comment = home_21yunwei
+uid = root 
+gid = root 
+port=873 
+use chroot = no
+read only = no
+list = no
+max connections = 200
+timeout = 600  
+auth users = 21yunwei 
+hosts allow = 192.168.1.8
+hosts deny = 192.168.1.200
+</pre>
+<p><span style="color: #000000;">其中参数说明这里列举一下：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">log file = /var/log/rsyncd.log #日志文件位置，启动rsync后自动产生这个文件，无需提前创建
+pidfile = /var/run/rsyncd.pid  #pid文件的存放位置
+lock file = /var/run/rsync.lock  #支持max connections参数的锁文件
+secrets file = /etc/rsync.pass  #用户认证配置文件，里面保存用户名称和密码，后面会创建这个文件
+motd file = /etc/rsyncd.Motd  #rsync启动时欢迎信息页面文件位置（文件内容自定义）
+
+[home_21yunwei] #自定义名称
+path = /home/21yunwei/ #rsync服务端数据目录路径
+comment = home_21yunwei #模块名称与[home_21yunwei]自定义名称相同
+uid = root #设置rsync运行权限为root
+gid = root #设置rsync运行权限为root
+port=873  #默认端口
+use chroot = no #默认为true，修改为no，增加对目录文件软连接的备份
+read only = no  #设置rsync服务端文件为读写权限
+list = no #不显示rsync服务端资源列表
+max connections = 200 #最大连接数
+timeout = 600  #设置超时时间
+auth users = 21yunwei #执行数据同步的用户名，可以设置多个，用英文状态下逗号隔开
+hosts allow = 192.168.1.8  #允许进行数据同步的客户端IP地址，可以设置多个，用英文状态下逗号隔开
+hosts deny = 192.168.1.200 #禁止数据同步的客户端IP地址，可以设置多个，用英文状态下逗号隔开
+</pre>
+<p><span style="color: #000000;">3，创建用户认证文件</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">vi /etc/rsync.pass
+21yunwei:123456   #格式，用户名:密码，可以设置多个，每行一个用户名:密码
+</pre>
+<p><span style="color: #000000;">4,设置文件权限</span><br />
+<span style="color: #000000;"> chmod  600 /etc/rsyncd.conf</span><br />
+<span style="color: #000000;"> chmod  600  /etc/rsync.pass</span><br />
+<span style="color: #000000;"> 如果不设置这个权限，那么会报错password file must not be other-accessible。</span></p>
+<p><span style="color: #000000;">重启xinetd服务：</span><br />
+<span style="color: #000000;"> /etc/init.d/xinetd restart</span></p>
+<p><span style="color: #000000;"><strong>二，源数据服务器配置</strong></span></p>
+<p><span style="color: #000000;">1，安装rsync和xinetd</span><br />
+<span style="color: #000000;"> 基本上目标服务器安装是一样的，安装完将服务设置成启动。启动xinetd服务。</span><br />
+<span style="color: #000000;"> 2，创建认证密码文件</span><br />
+<span style="color: #000000;"> vi /etc/passwd.txt  写入：</span><br />
+<span style="color: #000000;"> 123456 #密码</span></p>
+<p><span style="color: #000000;">设置权限：</span><br />
+<span style="color: #000000;"> chmod 600 /etc/passwd.txt</span><br />
+<span style="color: #000000;"> 如果不设置权限会报错：password file must not be other-accessible</span><br />
+<span style="color: #000000;"> 3，测试源服务器192.168.1.8到两台目标服务器之间数据同步情况。</span><br />
+<span style="color: #000000;"> 测试目的：将/home/21yunwei下的文件同步到两台目标服务器。</span><br />
+<span style="color: #000000;"> 我们touch /home/21yunwei{1..10}.php 后执行测试：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">rsync -avz --port=873  --delete  /home/21yunwei/   [email&#160;protected]::home_21yunwei    --password-file=/etc/passwd.txt
+rsync -avz --port=873  --delete  /home/21yunwei/   [email&#160;protected]::home_21yunwei   --password-file=/etc/passwd.txt
+</pre>
+<p><span style="color: #000000;">测试结果：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">[[email&#160;protected] home]# rsync -avz --port=873  --delete  /home/21yunwei/   [email&#160;protected]::home_21yunwei   --password-file=/etc/passwd.txt
+
+sending incremental file list
+./
+1.php
+10.php
+2.php
+3.php
+4.php
+5.php
+6.php
+7.php
+8.php
+9.php
+
+sent 557 bytes  received 206 bytes  1526.00 bytes/sec
+total size is 4  speedup is 0.01
+</pre>
+<p><span style="color: #000000;">查看下10目标服务器目录：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">[[email&#160;protected] home]# ll 21yunwei/
+total 8
+-rw-r--r-- 1 root root    0 Sep  1 15:36 10.php
+-rw-r--r-- 1 root root    4 Sep  1 15:43 1.php
+-rw-r--r-- 1 root root    0 Sep  1 15:36 2.php
+-rw-r--r-- 1 root root    0 Sep  1 15:36 3.php
+-rw-r--r-- 1 root root    0 Sep  1 15:36 4.php
+-rw-r--r-- 1 root root    0 Sep  1 15:36 5.php
+-rw-r--r-- 1 root root    0 Sep  1 15:36 6.php
+-rw-r--r-- 1 root root    0 Sep  1 15:36 7.php
+-rw-r--r-- 1 root root    0 Sep  1 15:36 8.php
+-rw-r--r-- 1 root root    0 Sep  1 15:36 9.php
+</pre>
+<p><span style="color: #000000;">两台服务器测试完毕，效果测试同步数据没问题。</span></p>
+<p><span style="color: #000000;"><strong>三，源服务器安装Inotify-tools工具，实时触发rsync进行同步。<br />
+</strong></span><br />
+<span style="color: #000000;"> 1、查看服务器内核是否支持inotify</span><br />
+<span style="color: #000000;"> ll /proc/sys/fs/inotify</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">[[email&#160;protected] home]# ll /proc/sys/fs/inotify 
+total 0
+-rw-r--r-- 1 root root 0 Sep  1 17:20 max_queued_events
+-rw-r--r-- 1 root root 0 Sep  1 17:20 max_user_instances
+-rw-r--r-- 1 root root 0 Sep  1 17:20 max_user_watches
+</pre>
+<p><span style="color: #000000;">如果出现上述内容，说明支持innotify。</span><br />
+<span style="color: #000000;"> 2，安装inotify-tools工具</span><br />
+<span style="color: #000000;"> 下载/d/file/p/20221029/inotify-tools-3.14.tar.gz 压缩包并进行解压，编译、安装。</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">tar zxvf inotify-tools-3.14.tar.gz 
+cd inotify-tools-3.14
+./configure --prefix=/usr/local/inotify
+make 
+make install
+</pre>
+<p><span style="color: #000000;">3，设置环境变量并建立软链接。</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">echo &quot;PATH=/usr/local/inotify/bin:$PATH&quot; &gt;&gt;;/etc/profile.d/inotify.sh
+source /etc/profile.d/inotify.sh 
+echo &quot;/usr/local/inotify/lib&quot; &gt;/etc/ld.so.conf.d/inotify.conf
+ln -s /usr/local/inotify/include  /usr/include/inotify
+</pre>
+<p><span style="color: #000000;">4，修改inotify默认参数。</span><br />
+<span style="color: #000000;"> 修改参数：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">sysctl -w fs.inotify.max_queued_events=&quot;99999999&quot;
+sysctl -w fs.inotify.max_user_watches=&quot;99999999&quot;
+sysctl -w fs.inotify.max_user_instances=&quot;65535&quot;
+</pre>
+<p><span style="color: #000000;">编辑vi /etc/sysctl.conf</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">fs.inotify.max_queued_events=99999999
+fs.inotify.max_user_watches=99999999
+fs.inotify.max_user_instances=65535
+</pre>
+<p><span style="color: #000000;">参数说明：</span><br />
+<span style="color: #000000;"> max_queued_events：</span><br />
+<span style="color: #000000;"> inotify队列最大长度，如果值太小，会出现&#8221;** Event Queue Overflow **&#8221;错误，导致监控文件不准确</span></p>
+<p><span style="color: #000000;">max_user_watches：</span><br />
+<span style="color: #000000;"> 要同步的文件包含多少目录。防止该值太小导致失败，尤其是小文件目录比较多的情况。</span><br />
+<span style="color: #000000;"> max_user_instances：</span><br />
+<span style="color: #000000;"> 每个用户创建inotify实例最大值。</span></p>
+<p><span style="color: #000000;">5、创建脚本，实时触发rsync进行同步</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">#!/bin/sh
+
+srcdir=/home/21yunwei/
+dstdir=home_21yunwei
+excludedir=/usr/local/inotify/exclude.list
+rsyncuser=21yunwei
+rsyncpassdir=/etc/passwd.txt
+dstip=&quot;192.168.1.9  192.168.1.10&quot;
+
+for ip in $dstip
+do
+rsync -avH --port=873 --progress --delete  --exclude-from=$excludedir  $srcdir [email&#160;protected]$ip::$dstdir --password-file=$rsyncpassdir
+done
+
+/usr/local/inotify/bin/inotifywait -mrq --timefmt &#039;%d/%m/%y %H:%M&#039; --format &#039;%T %w%f%e&#039; -e close_write,modify,delete,create,attrib,move $srcdir |  while read file
+do
+  for ip in $dstip
+  do
+  rsync -avH --port=873 --progress --delete  --exclude-from=$excludedir  $srcdir [email&#160;protected]$ip::$dstdir --password-file=$rsyncpassdir
+  echo &quot;  ${file} was rsynced&quot; &gt;&gt; /tmp/rsync.log 2&gt;&amp;1
+  done
+done
+</pre>
+<p><span style="color: #000000;">脚本参数说明：</span></p>
+<p><span style="color: #000000;">srcdir=/home/21yunwei/ #源服务器同步目录</span><br />
+<span style="color: #000000;"> dstdir=home_21yunwei #目标服务器rsync同步目录模块名称</span><br />
+<span style="color: #000000;"> excludedir=/usr/local/inotify/exclude.list</span><br />
+<span style="color: #000000;"> #不需要同步的目录，如果有多个，每一行写一个目录，使用相对于同步模块的路径；</span><br />
+<span style="color: #000000;"> #例如：不需要同步/home/21yunwei/目录下的a目录和b目录下面的b1目录，exclude.list文件可以这样写</span><br />
+<span style="color: #000000;"> a/</span><br />
+<span style="color: #000000;"> b/b1/</span></p>
+<p><span style="color: #000000;">rsyncuser=21yunwei #目标服务器rsync同步用户名</span><br />
+<span style="color: #000000;"> rsyncpassdir=/etc/passwd.txt #目标服务器rsync同步用户的密码在源服务器的存放路径</span><br />
+<span style="color: #000000;"> dstip=&#8221;192.168.1.9 192.168.1.10&#8243; #目标服务器ip，多个ip用空格分开</span><br />
+<span style="color: #000000;"> /tmp/rsync.log #脚本运行日志记录</span></p>
+<p><span style="color: #000000;">6、设置脚本开机自动执行</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">vi /etc/rc.d/rc.local  
+/bin/bash /usr/local/inotify/rsync.sh &amp; ＃设置开机自动并在后台运行脚本
+</pre>
+<p><span style="color: #000000;">重启服务器。</span><br />
+<span style="color: #000000;"> 7，测试inotify实时触发rsync同步脚本是否正常运行。</span><br />
+<span style="color: #000000;"> 我们在源服务器的/home/21yunwei 创建文件：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">[[email&#160;protected] 21yunwei]# echo &quot;test inotify&quot; &gt;&gt; 21yunwei.php
+[[email&#160;protected] 21yunwei]# 
+sending incremental file list
+./
+21yunwei.php
+          13 100%    0.00kB/s    0:00:00 (xfer#1, to-check=8/14)
+
+sent 268 bytes  received 30 bytes  596.00 bytes/sec
+total size is 17  speedup is 0.06
+
+sending incremental file list
+21yunwei.php
+          13 100%    0.00kB/s    0:00:00 (xfer#1, to-check=8/14)
+</pre>
+<p><span style="color: #000000;">然后进去192.168.1.9 和192.168.1.10目录查看， 查看这两个文件也是存在的。 删除也是一样：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">[[email&#160;protected] 21yunwei]# ll
+total 12
+-rw-r--r-- 1 root root    0 Sep  1 15:36 10.php
+-rw-r--r-- 1 root root    4 Sep  1 15:43 1.php
+-rw-r--r-- 1 root root    0 Sep  1 17:49 1.txt
+-rw-r--r-- 1 root root   13 Sep  1 17:51 21yunwei.php
+</pre>
+<p><span style="color: #000000;">再多测试一道，我们从svn更新下内容到/home/21yunwei，看下是否web 9和web10两个节点也发生变化:</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">[[email&#160;protected] 21yunwei]# svn  co   svn://59.46.x.x/21yunweinew  /home/21yunwei/  --username=21yunwei  --password=xxxxxx
+</pre>
+<p><span style="color: #000000;">进入web9和web10，发现新更新的数据也都是在的。</span><br />
+<span style="color: #000000;"> inotify常用参数：</span></p>
+<pre class="wp-code-highlight prettyprint linenums:1">inotify参数
+-m 是保持一直监听
+-r 是递归查看目录
+-q 是打印出事件
+-e create,move,delete,modify,attrib 是指 “监听 创建 移动 删除 写入 权限” 事件
+</pre>
+<p><span style="color: #000000;">至此，inotify+rsync设置完成。</span></p>
+<p><span style="color: #000000;">本操作的顺利实现，主要参考了文章/d/file/p/20221029/7435.html ，特此说明。</span></p>
+<p>&nbsp;</p>
+
+                                                                                                        
+                                                </div>
+                                                <!-- .entry-wrapper --></span>                                     
+                </div>
+                <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+                <div class="panel-content">
+                <span>[!--zhushi--]</span>                                     
+                </div>
+
+            </div>
+
+            <!-- END ROW -->
+            <div class="newsPage">
+                <div class="newsPageTurn">
+                    <span><a>上一篇</a><a href='/linux/biji/270.html'>【linux命令】linux文件属性详解</a><a>下一篇</a><a href='/linux/biji/272.html'>【linux命令】linux磁盘管理-LVM的创建与扩容管理</a></span>
+                </div>
+            </div>
+        </div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+                <li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<!-- container-fluid -->
+    </div>
+<!-- content -->
+    <footer class="footer">
+    © 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+    </footer>
+</div>
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

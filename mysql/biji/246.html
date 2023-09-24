@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL并行复制的深入分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL并行复制的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+01 并行复制的概念
+
+ 在" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL并行复制的深入分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:14:28                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL并行复制的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+01 并行复制的概念
+
+ 在</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL并行复制的深入分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p></p>
+<h3>01 并行复制的概念</h3>
+<p></p>
+<p> 在MySQL的主从复制架构中，主库上经常会并发的执行很多SQL，只要这些SQL没有产生锁等待，那么同一时间并发好几个SQL线程是没有问题的。</p>
+<p> 我们知道，MySQL的从库是要通过IO_thread去拉取主库上的binlog的，然后存入本地，落盘成relay-log，通过sql_thread来应用这些relay-log。</p>
+<p> 在MySQL5.6之前的版本中，当主库上有多个线程并发执行SQL时，sql_thread只有一个，在某些TPS比较高的场景下，会出现主库严重延迟的问题。MySQL为了解决这个问题，将sql_thread演化了多个worker的形式，在slave端并行应用relay log中的事务，从而提高relay log的应用速度，减少复制延迟。这就是并行复制的由来。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p> 在MySQL中，复制线程是由参数slave_parallel_workers来控制的，通常情况下，在8G内存、8核CPU的机器上，将该值设置为8比较合适，如果你的CPU核数比较高，那么可以适当调整为8~16之间的数字。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show variables like 'slave_parallel_workers';
++------------------------+-------+
+| Variable_name     | Value |
++------------------------+-------+
+| slave_parallel_workers | 8   |
++------------------------+-------+
+1 row in set, 1 warning (0.00 sec)</code></pre>
+<p>浅析MySQL并行复制</p>
+<p></p>
+<h3>02 并行复制的演进</h3>
+<p></p>
+<p> 并行复制的本质是同时执行的SQL不存在锁争用。</p>
+<p> 在MySQL5.6版本，MySQL支持的粒度是按照数据库进行并行执行relay log，这种方式能够解决一部分问题，因为不同数据库上的SQL，肯定不会修改表中的同一行内容。这样也就不会产生锁争用。在一些数据库均匀分布，每个数据库使用频率都差不多的场景下，这种并行复制的方法比较好。如果你的业务的数据都集中在一个热点表，这种情况下，并行复制会退化为单线程复制。</p>
+<p> 随后，在MariaDB中对并行复制做了一定的改进，它的做法是：</p>
+<p>1、主库上能够并行提交的事务，也就是已经进入到了redo log commit阶段的事务，在从库上也一定能够并行提交，所以在主库上并行提交的事务，它用一个commit_id对这组事务来进行标识，下一组并行事务的commit_id为本组的commit_id+1</p>
+<p>2、将所有的事务的commit_id写入binlog中</p>
+<p>3、在从库上应用binlog的时候，将所有的binlog按照commit_id进行划分到不同的worker上</p>
+<p>4、本组commit_id的事务全部在从库上提交完成之后，再去拿下一批事务。</p>
+<p> 这种方法大大增加了从库应用relay log的速度，但是问题是从库在应用前一组事务的时候，后一组事务是处于等待中的，即使前一组的worker有些已经空闲。而在主库上，可能无时无刻不在写入，这样，系统的吞吐量上主从节点就不匹配，主库的吞吐量严重高于从库。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p> MySQL5.7的并行复制在MariaDB的基础上做了改进，我们知道，事务进入到redo log prepare阶段的时候，由于WAL技术，说明此时事务已经经过了所冲突检测阶段了。MySQL5.7的并行复制时将所有在主库上处于redo log prepare阶段的事务，和该阶段之后的事务，也就是处于redo log commit阶段的事务，在从库并行执行，从而减少worker线程不必要的等待。</p>
+<p> 这里，有必要再说两个参数，</p>
+<ul>
+	<li>binnlog_group_commit_sync_delay参数，表示redo log prepare阶段完成之后，延迟多少微秒后才调用fsync;</li>
+	<li>binlog_group_commit_sync_no_delay_count参数，表示累积多少次redo log prepare：write的操作以后才调用fsync</li>
+</ul>
+<p> 这两个参数是用于故意拉长binlog从write到fsync的时间，以此减少binlog的写盘次数。在MySQL 5.7的并行复制策略里，它们可以用来制造更多的&ldquo;同时处于prepare阶段的事务&rdquo;。这样就增加了备库复制的并行度。</p>
+<p> 它们既可以&ldquo;故意&rdquo;让主库提交得慢些，又可以让备库执行得快些。在MySQL 5.7处理备库延迟的时候，可以考虑调整这两个参数值，来达到提升备库复制并发度的目的。</p>
+<p>以上就是浅析MySQL并行复制的详细内容，更多关于MySQL并行复制的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL并行复制的深入分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/245.html'>SQL优化教程之in与range查询的解决办法</a><a>下一篇</a><a href='/mysql/biji/247.html'>CentOS7.5 安装MySQL的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

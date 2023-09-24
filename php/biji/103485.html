@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>深入解析JVM对dll文件和对类的装载过程_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="JVM的对dll文件的装载过程<br />
+操作系统装入JVM是通过jdk中Java.exe来完成,通过下面4步来完成JVM环境.<br />
+1.创建JVM装载环境和配置<br />
+2.装载JVM.dll<br />
+3.初始化JVM.dll并挂界到JNIENV(" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">深入解析JVM对dll文件和对类的装载过程</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>JVM的对dll文件的装载过程<br />
+操作系统装入JVM是通过jdk中Java.exe来完成,通过下面4步来完成JVM环境.<br />
+1.创建JVM装载环境和配置<br />
+2.装载JVM.dll<br />
+3.初始化JVM.dll并挂界到JNIENV(</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>JVM的对dll文件的装载过程</strong></p>
+<p>操作系统装入JVM是通过jdk中Java.exe来完成,通过下面4步来完成JVM环境.</p>
+<p>1.创建JVM装载环境和配置</p>
+<p>2.装载JVM.dll</p>
+<p>3.初始化JVM.dll并挂界到JNIENV(JNI调用接口)实例</p>
+<p>4.调用JNIEnv实例装载并处理class类。</p>
+<p>一．JVM装入环境，JVM提供的方式是操作系统的动态连接文件． <br />
+&nbsp;&nbsp;&nbsp; 既然是文件那就一个装入路径的问题，Java是怎么找这个路径的呢？当你在调用Java test的时候，操作系统会在path下在你的Java.exe程序，Java.exe就通过下面一个过程来确定JVM的路径和相关的参数配置了．下面基于Windows的实现的分析．</p>
+<p>&nbsp;&nbsp;&nbsp; 首先查找jre路径，Java是通过GetApplicationHome api【该方法存在于java_md.c】来获得当前的Java.exe绝对路径。<br />
+&nbsp;&nbsp;&nbsp; 例如 c:\j2sdk1.4.2_09\bin\Java.exe,那么它会截取到绝对路径c:\j2sdk1.4.2_09\，判断c:\j2sdk1.4.2_09\bin\Java.dll文件是否存在，如果存在就把c:\j2sdk1.4.2_09\作为jre路径，如果不存在则判断c:\j2sdk1.4.2_09\jre\bin\Java.dll是否存在，如果存在这c:\j2sdk1.4.2_09\jre作为jre路径．如果不存在调用GetPublicJREHome查HKEY_LOCAL_MACHINE\Software\JavaSoft\Java Runtime Environment\“当前JRE版本号”\JavaHome的路径为jre路径。<br />
+&nbsp;&nbsp; 备注获取当前jre路径的方法为System.out.println(System.getProperty("java.home"));</p>
+<p>&nbsp;&nbsp; 然后装载JVM.cfg文件JRE路径+\lib+\ARCH（CPU构架）+\JVM.cfgARCH（CPU构架）的判断是通过Java_md.c中GetArch函数判断的，该函数中windows平台只有两种情况：WIN64的‘ia64'，其他情况都为‘i386'。以我的为例：C:\j2sdk1.4.2_09\jre\lib\i386\JVM.cfg.主要的内容如下：&nbsp;</p>
+<ul>
+<li>&nbsp; -client KNOWN&nbsp;&nbsp;</li>
+<li>&nbsp; -server KNOWN&nbsp;</li>
+<li>&nbsp; -hotspot ALIASED_TO -client&nbsp;&nbsp;</li>
+<li>&nbsp; -classic WARN</li>
+<li>&nbsp; -native ERROR</li>
+<li>&nbsp; -green ERROR&nbsp;&nbsp;</li>
+</ul>
+<p>&nbsp; 在我们的jdk目录中jre\bin\server和jre\bin\client都有JVM.dll文件存在，而Java正是通过JVM.cfg配置文件来管理这些不同版本的JVM.dll的．通过文件我们可以定义目前jdk中支持那些JVM,前面部分（client）是JVM名称，后面是参数，KNOWN表示JVM存在，ALIASED_TO表示给别的JVM取一个别名，WARN表示不存在时找一个JVM替代，ERROR表示不存在抛出异常．</p>
+<p>&nbsp; 在运行Java XXX是，Java.exe会通过CheckJVMType来检查当前的JVM类型，Java可以通过两种方式来指定具体的JVM类型，<br />
+&nbsp; 第一种按照JVM.cfg文件中的JVM名称指定。<br />
+&nbsp; 第二种方法是直接指定，它们执行的方法分别是“Java -J”、“Java -XXaltJVM=”或“Java -J-XXaltJVM=”。<br />
+&nbsp; 如果是第一种参数传递方式，CheckJVMType函数会取参数‘-J'后面的JVM名称，然后从已知的JVM配置参数中查找如果找到同名的则去掉该JVM名称前的‘-'直接返回该值；<br />
+&nbsp; 而第二种方法，会直接返回“-XXaltJVM=”或“-J-XXaltJVM=”后面的JVM类型名称；如果在运行Java时未指定上面两种方法中的任一一种参数，CheckJVMType会取配置文件中第一个配置中的JVM名称，去掉名称前面的‘-'返回该值。CheckJVMType函数的这个返回值会在下面的函数中汇同jre路径组合成JVM.dll的绝对路径。<br />
+&nbsp; 如果没有指定这会使用JVM.cfg中第一个定义的JVM.可以通过set _Java_LAUNCHER_DEBUG=1在控制台上测试．</p>
+<p>&nbsp; 最后获得JVM.dll的路径，JRE路径+\bin+\JVM类型字符串+\JVM.dll就是JVM的文件路径了，但是如果在调用Java程序时用-XXaltJVM=参数指定的路径path,就直接用path+\JVM.dll文件做为JVM.dll的文件路径．</p>
+<p>二：装载JVM.dll</p>
+<p>&nbsp;&nbsp;&nbsp; 通过第一步已经找到了JVM的路径，Java通过LoadJavaVM来装入JVM.dll文件．装入工作很简单就是调用Windows API函数：</p>
+<p>&nbsp;&nbsp;&nbsp; LoadLibrary装载JVM.dll动态连接库．然后把JVM.dll中的导出函数JNI_CreateJavaVM和JNI_GetDefaultJavaVMInitArgs挂接到&nbsp;&nbsp; InvocationFunctions变量的CreateJavaVM和GetDefaultJavaVMInitArgs函数指针变量上。JVM.dll的装载工作宣告完成。</p>
+<p>三：初始化JVM，获得本地调用接口<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 这样就可以在Java中调用JVM的函数了．调用InvocationFunctions－&gt;CreateJavaVM也就是JVM中&nbsp;&nbsp; JNI_CreateJavaVM方法获得JNIEnv结构的实例．</p>
+<p>四：运行Java程序．</p>
+<p>&nbsp;&nbsp;&nbsp; Java程序有两种方式一种是jar包，一种是class. 运行jar,Java -jar XXX.jar运行的时候，Java.exe调用GetMainClassName函数，该函数先获得JNIEnv实例然后调用Java类Java.util.jar.JarFileJNIEnv中方法getManifest()并从返回的Manifest对象中取getAttributes("Main-Class")的值即jar包中文件：META-INF/MANIFEST.MF指定的Main-Class的主类名作为运行的主类。之后main函数会调用Java.c中LoadClass方法装载该主类（使用JNIEnv实例的FindClass）。main函数直接调用Java.c中LoadClass方法装载该类。如果是执行class方法。main函数直接调用Java.c中LoadClass方法装载该类。</p>
+<p>&nbsp;&nbsp;&nbsp; 然后main函数调用JNIEnv实例的GetStaticMethodID方法查找装载的class主类中。“public static void main(String[] args)”方法，并判断该方法是否为public方法，然后调用JNIEnv实例的 CallStaticVoidMethod方法调用该Java类的main方法。</p>
+<p><strong>JVM的类装载<br />
+</strong>一、引言<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Java虚拟机(JVM)的类装载就是指将包含在类文件中的字节码装载到JVM中, 并使其成为JVM一部分的过程。JVM的类动态装载技术能够在运行时刻动态地加载或者替换系统的某些功能模块, 而不影响系统其他功能模块的正常运行。本文将分析JVM中的类装载系统，探讨JVM中类装载的原理、实现以及应用。<br />
+二、Java虚拟机的类装载实现与应用<br />
+2.1&nbsp; 装载过程简介<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 所谓装载就是寻找一个类或是一个接口的二进制形式并用该二进制形式来构造代表这个类或是这个接口的class对象的过程，其中类或接口的名称是给定了的。当然名称也可以通过计算得到，但是更常见的是通过搜索源代码经过编译器编译后所得到的二进制形式来构造。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 在Java中，类装载器把一个类装入Java虚拟机中，要经过三个步骤来完成：装载、链接和初始化，其中链接又可以分成校验、准备和解析三步，除了解析外，其它步骤是严格按照顺序完成的，各个步骤的主要工作如下：</p>
+<ul>
+<li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 装载：查找和导入类或接口的二进制数据；</li>
+<li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 链接：执行下面的校验、准备和解析步骤，其中解析步骤是可以选择的；</li>
+<li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 校验：检查导入类或接口的二进制数据的正确性；</li>
+<li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 准备：给类的静态变量分配并初始化存储空间；</li>
+<li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 解析：将符号引用转成直接引用；</li>
+<li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 初始化：激活类的静态变量的初始化Java代码和静态Java代码块。</li>
+</ul>
+<p>2.2&nbsp; 装载的实现</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; JVM中类的装载是由ClassLoader和它的子类来实现的,Java ClassLoader 是一个重要的Java运行时系统组件。它负责在运行时查找和装入类文件的类。<br />
+&nbsp;&nbsp;&nbsp;&nbsp; 在Java中，ClassLoader是一个抽象类，它在包java.lang中,可以这样说，只要了解了在ClassLoader中的一些重要的方法，再结合上面所介绍的JVM中类装载的具体的过程，对动态装载类这项技术就有了一个比较大概的掌握，这些重要的方法包括以下几个:<br />
+&nbsp;&nbsp;&nbsp;&nbsp; ①loadCass方法&nbsp; loadClass(String name ,boolean resolve)其中name参数指定了JVM需要的类的名称,该名称以包表示法表示,如Java.lang.Object；resolve参数告诉方法是否需要解析类，在初始化类之前,应考虑类解析，并不是所有的类都需要解析，如果JVM只需要知道该类是否存在或找出该类的超类,那么就不需要解析。这个方法是ClassLoader 的入口点。<br />
+&nbsp;&nbsp;&nbsp;&nbsp; ②defineClass方法&nbsp; 这个方法接受类文件的字节数组并把它转换成Class对象。字节数组可以是从本地文件系统或网络装入的数据。它把字节码分析成运行时数据结构、校验有效性等等。<br />
+&nbsp;&nbsp;&nbsp;&nbsp; ③findSystemClass方法&nbsp; findSystemClass方法从本地文件系统装入文件。它在本地文件系统中寻找类文件,如果存在,就使用defineClass将字节数组转换成 Class对象,以将该文件转换成类。当运行Java应用程序时,这是JVM 正常装入类的缺省机制。<br />
+&nbsp;&nbsp;&nbsp;&nbsp; ④resolveClass方法&nbsp; resolveClass(Class c)方法解析装入的类,如果该类已经被解析过那么将不做处理。当调用loadClass方法时,通过它的resolve 参数决定是否要进行解析。<br />
+&nbsp;&nbsp;&nbsp;&nbsp; ⑤findLoadedClass方法&nbsp; 当调用loadClass方法装入类时,调用findLoadedClass 方法来查看ClassLoader是否已装入这个类,如果已装入,那么返回Class对象,否则返回NULL。如果强行装载已存在的类,将会抛出链接错误。<br />
+2.3&nbsp; 装载的应用<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 一般来说，我们使用虚拟机的类装载时需要继承抽象类java.lang.ClassLoader,其中必须实现的方法是loadClass()，对于这个方法需要实现如下操作:(1) 确认类的名称;(2) 检查请求要装载的类是否已经被装载;(3) 检查请求加载的类是否是系统类;(4) 尝试从类装载器的存储区获取所请求的类;(5) 在虚拟机中定义所请求的类;(6) 解析所请求的类;(7) 返回所请求的类。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 所有的Java 虚拟机都包括一个内置的类装载器，这个内置的类库装载器被称为根装载器(bootstrap ClassLoader)。根装载器的特殊之处是它只能够装载在设计时刻已知的类,因此虚拟机假定由根装载器所装载的类都是安全的、可信任的,可以不经过安全认证而直接运行。当应用程序需要加载并不是设计时就知道的类时,必须使用用户自定义的装载器(user-defined ClassLoader)。下面我们举例说明它的应用。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public abstract class MultiClassLoader extends ClassLoader{ 
+  ... 
+  public synchronized Class loadClass(String s, boolean flag) 
+    throws ClassNotFoundException 
+  { 
+    /* 检查类s是否已经在本地内存*/ 
+    Class class1 = (Class)classes.get(s); 
+ 
+/* 类s已经在本地内存*/ 
+    if(class1 != null) return class1;  
+    try/*用默认的ClassLoader 装入类*/ { 
+      class1 = super.findSystemClass(s); 
+      return class1; 
+    } 
+    catch(ClassNotFoundException _ex) { 
+      System.out.println("&gt;&gt; Not a system class."); 
+    } 
+ 
+/* 取得类s的字节数组*/ 
+    byte abyte0[] = loadClassBytes(s); 
+    if(abyte0 == null)  throw new ClassNotFoundException(); 
+ 
+/* 将类字节数组转换为类*/ 
+    class1 = defineClass(null, abyte0, 0, abyte0.length); 
+    if(class1 == null) throw new ClassFormatError(); 
+    if(flag)  resolveClass(class1); /*解析类*/ 
+ 
+/* 将新加载的类放入本地内存*/ 
+    classes.put(s, class1); 
+    System.out.println("&gt;&gt; Returning newly loaded class."); 
+ 
+/* 返回已装载、解析的类*/ 
+    return class1; 
+  } 
+  ... 
+} 
+</pre>
+</div>
+<p>&nbsp; <br />
+三、Java虚拟机的类装载原理<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 前面我们已经知道，一个Java应用程序使用两种类型的类装载器：根装载器(bootstrap)和用户定义的装载器(user- defined)。根装载器是Java虚拟机实现的一部分，举个例子来说，如果一个Java虚拟机是在现在已经存在并且正在被使用的操作系统的顶部用C程序来实现的，那么根装载器将是那些C程序的一部分。根装载器以某种默认的方式将类装入，包括那些Java API的类。在运行期间一个Java程序能安装用户自己定义的类装载器。根装载器是虚拟机固有的一部分，而用户定义的类装载器则不是，它是用Java语言写的，被编译成class文件之后然后再被装入到虚拟机，并像其它的任何对象一样可以被实例化。 Java类装载器的体系结构如下所示：<br />
+</p>
+<p>图1&nbsp; Java的类装载的体系结构<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Java的类装载模型是一种代理(delegation)模型。当JVM 要求类装载器CL(ClassLoader)装载一个类时,CL首先将这个类装载请求转发给他的父装载器。只有当父装载器没有装载并无法装载这个类时,CL才获得装载这个类的机会。这样, 所有类装载器的代理关系构成了一种树状的关系。树的根是类的根装载器(bootstrap ClassLoader) , 在JVM 中它以"null"表示。除根装载器以外的类装载器有且仅有一个父装载器。在创建一个装载器时, 如果没有显式地给出父装载器, 那么JVM将默认系统装载器为其父装载器。Java的基本类装载器代理结构如图2所示：<br />
+</p>
+<p></p>
+<p>图2&nbsp; Java类装载的代理结构<br />
+下面针对各种类装载器分别进行详细的说明。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 根(Bootstrap) 装载器:该装载器没有父装载器，它是JVM实现的一部分，从sun.boot.class.path装载运行时库的核心代码。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 扩展(Extension) 装载器:继承的父装载器为根装载器，不像根装载器可能与运行时的操作系统有关，这个类装载器是用纯Java代码实现的，它从java.ext.dirs (扩展目录)中装载代码。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 系统(System or Application) 装载器:装载器为扩展装载器，我们都知道在安装JDK的时候要设置环境变量(CLASSPATH )，这个类装载器就是从java.class.path(CLASSPATH 环境变量)中装载代码的，它也是用纯Java代码实现的，同时还是用户自定义类装载器的缺省父装载器。<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 小应用程序(Applet) 装载器: 装载器为系统装载器，它从用户指定的网络上的特定目录装载小应用程序代码。<br />
+在设计一个类装载器的时候，应该满足以下两个条件：<br />
+&nbsp;&nbsp;&nbsp;&nbsp; 对于相同的类名，类装载器所返回的对象应该是同一个类对象<br />
+&nbsp;&nbsp;&nbsp;&nbsp; 如果类装载器CL1将装载类C的请求转给类装载器CL2，那么对于以下的类或接口,CL1和CL2应该返回同一个类对象:a)S为C的直接超类;b)S为C的直接超接口;c)S为C的成员变量的类型;d)S为C的成员方法或构建器的参数类型;e)S为C的成员方法的返回类型。 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 每个已经装载到JVM中的类都隐式含有装载它的类装载器的信息。类方法getClassLoader 可以得到装载这个类的类装载器。一个类装载器认识的类包括它的父装载器认识的类和它自己装载的类，可见类装载器认识的类是它自己装载的类的超集。注意我们可以得到类装载器的有关的信息，但是已经装载到JVM中的类是不能更改它的类装载器的。<br />
+Java中的类的装载过程也就是代理装载的过程。比如:Web浏览器中的JVM需要装载一个小应用程序TestApplet。JVM调用小应用程序装载器ACL(Applet ClassLoader)来完成装载。ACL首先请求它的父装载器, 即系统装载器装载TestApplet是否装载了这个类, 由于TestApplet不在系统装载器的装载路径中, 所以系统装载器没有找到这个类, 也就没有装载成功。接着ACL自己装载TestApplet。ACL通过网络成功地找到了TestApplet.class 文件并将它导入到了JVM中。在装载过程中, JVM发现TestAppet是从超类java.applet.Applet继承的。所以JVM再次调用ACL来装载 java.applet.Applet类。ACL又再次按上面的顺序装载Applet类, 结果ACL发现他的父装载器已经装载了这个类, 所以ACL就直接将这个已经装载的类返回给了JVM , 完成了Applet类的装载。接下来,Applet类的超类也一样处理。最后, TestApplet及所有有关的类都装载到了JVM中。<br />
+四、结论<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 类的动态装载机制是JVM的一项核心技术, 也是容易被忽视而引起很多误解的地方。本文介绍了JVM中类装载的原理、实现以及应用，尤其分析了ClassLoader的结构、用途以及如何利用自定义的ClassLoader装载并执行Java类，希望能使读者对JVM中的类装载有一个比较深入的理解。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/103484.html'>win7系统登录用友T3软件弹出&quot;未检测到合法的license授权&quot;错误的解决方法</a><a>下一篇</a><a href='/php/biji/103486.html'>CSS表达式(expression)解决IE6 position:fixed无效问题</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

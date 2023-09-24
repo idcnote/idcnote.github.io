@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Microsoft .Net Remoting系列教程之二:Marshal、Disconnect与生命周期以及跟踪服务_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="一、远程对象的激活<br />
+　　在Remoting中有三种激活方式，一般的实现是通过RemotingServices类的静态方法来完成。工作过程事实上是将该远程对象注册到通道中。由于Remoting没有" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Microsoft .Net Remoting系列教程之二:Marshal、Disconnect与生命周期以及跟踪服务</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>一、远程对象的激活<br />
+　　在Remoting中有三种激活方式，一般的实现是通过RemotingServices类的静态方法来完成。工作过程事实上是将该远程对象注册到通道中。由于Remoting没有</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>一、远程对象的激活</strong></p>
+<p>　　在Remoting中有三种激活方式，一般的实现是通过RemotingServices类的静态方法来完成。工作过程事实上是将该远程对象注册到通道中。由于Remoting没有提供与之对应的Unregister方法来注销远程对象，所以如果需要注册/注销指定对象，微软推荐使用Marshal（一般译为编组）和Disconnect配对使用。在《Net Remoting基础篇》中我已经谈到：Marshal()方法是将MarshalByRefObject类对象转化为ObjRef类对象，这个对象是存储生成代理以与远程对象通讯所需的所有相关信息。这样就可以将该实例序列化以便在应用程序域之间以及通过网络进行传输，客户端就可以调用了。而Disconnect()方法则将具体的实例对象从通道中断开。</p>
+<p>　　根据上述说明，Marshal()方法对远程对象以引用方式进行编组（Marshal-by-Reference，MBR），并将对象的代理信息放到通道中。客户端可以通过Activator.GetObject()来获取。如果用户要注销该对象，则通过调用Disconnect()方法。那么这种方式对于编组的远程对象是否存在生命周期的管理呢？这就是本文所要描述的问题。</p>
+<p><strong>二、生命周期</strong></p>
+<p>　　在CLR中，框架提供了GC（垃圾回收器）来管理内存中对象的生命周期。同样的，.Net Remoting使用了一种分布式垃圾回收，基于租用的形式来管理远程对象的生命周期。</p>
+<p>　　早期的DCOM对于对象生命周期的管理是通过ping和引用计数来确定对象何时应当作为垃圾回收。然而ping引起的网络流量对分布式应用程序的性能是一种痛苦的负担，它大大地影响了分布式处理的整体性能。.Net Remoting在每个应用程序域中都引入一个租用管理器，为每个服务器端的SingleTon，或每个客户端激活的远程对象保存着对租用对象的引用。（说明：对于服务器端激活的SingleCall方式，由于它是无状态的，对于每个激活的远程对象，都由CLR的GC来自动回收，因此对于SingleCall模式激活的远程对象，不存在生命周期的管理。）</p>
+<p><strong>1、租用</strong></p>
+<p>　　租用是个封装了TimeSpan值的对象，用以管理远程对象的生存期。在.Net Remoting中提供了定义租用功能的ILease接口。当Remoting通过SingleTon模式或客户端激活模式来激活远程对象时，租用对象调用从System.MarshalByRefObject继承的InitializeLifetimeService方法，向对象请求租用。</p>
+<p><span style="color: #0000ff">ILease接口定义了有关生命周期的属性，均为TimeSpan值。如下：</span><br />
+</p>
+<p>InitialLeaseTime：初始化有效时间，默认值为300秒，如果为0，表示永不过期；<br />
+RenewOnCallTime：调用远程对象一个方法时的租用更新时间，默认值为120秒；<br />
+SponsorshipTimeout：超时值，通知Sponsor（发起人）租用过期后，Remoting会等待的时间，默认值为120秒；<br />
+CurrentLeaseTime：当前租用时间，首次获得租用时，为InitializeLeaseTime的值。</p>
+<p>Remoting的远程对象因为继承了MarshalByRefObject，因此默认继承了InitializeLifetimeService方法，那么租用的相关属性为默认值。如果要改变这些设置，可以在远程对象中重写该方法。例如：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+public override object InitializeLifetimeService()
+{
+ ILease lease = (ILease)base.InitializeLifetimeService();
+ if (lease.CurrentState == LeaseState.Initial)
+ {
+ lease.InitialLeaseTime = TimeSpan.FromMinutes(1);
+ lease.RenewOnCallTime = TimeSpan.FromSeconds(20);
+ }
+ return lease; 
+}</pre>
+</div>
+<p>也可以忽略该方法，将对象的租用周期改变为无限：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+public override object InitializeLifetimeService()
+{
+ return null;
+}</pre>
+</div>
+<p><strong>2、租用管理器</strong></p>
+<p>　　如果是前面所说的租用主要是应用在每个具体的远程对象上，那么租用管理器是服务器端专门用来管理远程对象生命周期的管理器，它维持着一个System.Hashtable成员，将租用映射为System.DateTime实例表示每个租用何时应过期。Remoting采用轮询的方式以一定的时间唤醒租用管理器，检查每个租用是否过期。默认为每10秒钟唤醒一次。轮询的间隔可以配置，如将轮询间隔设置为5分钟：</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+LifetimeService.LeaseManagerPollTime = System.TimeSpan.FromMinutes(5);</pre>
+</div>
+<p>我们还可以在租用管理器中设置远程对象租用的属性，如改变远程对象的初始有效时间为永久有效：</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+LifetimeServices.LeaseTime = TimeSpan.Zero;</pre>
+</div>
+<p>我们也可以通过配置文件来设置生命周期，如：</p>
+<div class="phpstudycode">
+<pre class="brush:xml;">
+&lt;configuration&gt;
+ &lt;system.runtime.remoting&gt;
+ &lt;application name = "SimpleServer"&gt;
+  &lt;lifetime leaseTime = "0" sponsorshipTimeOut = "1M" renewOnCallTime = "1M" pollTime = "30S"/&gt; 
+ &lt;/application&gt;
+ &lt;/system.runtime.remoting&gt;
+&lt;/configuration&gt;</pre>
+</div>
+<p><span style="color: #ff0000">注：配置文件中的pollTime即为上面所说的租用管理器的轮询间隔时间LeaseManagerPollTime。</span></p>
+<p>　　租用管理器对于生命周期的设置是针对服务器上所有的远程对象。当我们通过配置文件或租用管理器设置租用的属性时，所有远程对象的生命周期都遵循该设置，除非我们对于指定的远程对象通过重写InitializeLifetimeService方法，改变了相关配置。也就是说，远程对象的租用配置优先级高于服务器端配置。</p>
+<p><strong>3、发起人（Sponsor）</strong></p>
+<p>　　发起人是针对客户端而言的。远程对象就是发起人要租用的对象，发起人可以与服务器端签订租约，约定租用时间。一旦到期后，发起人还可以续租，就像现实生活中租方的契约，房东、租房者之间的关系一样。</p>
+<p>　　在.Net Framework中的System.Runtime.Remoting.Lifetime命名空间中定义了ClientSponsor类，该类继承了System.MarshalByRefObject，并实现了ISponsor接口。ClientSponsor类的属性和方法，可以参考MSDN。</p>
+<p>　　客户端要使用发起人机制，必须创建ClientSponsor类的一个实例。然后调用相关方法如Register()或Renewal()方法来注册远程对象或延长生命周期。如：</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+RemotingObject obj = new RemotingObject();
+ClientSponsor sponsor = new ClientSponsor();
+sponsor.RenewalTime = TimeSpan.FromMinutes(2);
+sponsor.Register(obj);</pre>
+</div>
+<p>续租时间也可以在ClientSponsor的构造函数中直接设置，如：</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+ClientSponsor sponsor = new ClientSponsor(TimeSpan.FromMinutes(2));
+sponsor.Register(obj);</pre>
+</div>
+<p>我们也可以自己编写Sponsor来管理发起人机制，这个类必须继承ClientSponsor并实现ISponsor接口。</p>
+<p><strong>三、跟踪服务</strong></p>
+<p>　　如前所述，我们要判断通过Marshal编组远程对象是否存在生命周期的管理。在Remoting中，可以通过跟踪服务程序来监视MBR对象的编组进程。</p>
+<p>　　我们可以创建一个简单的跟踪处理程序，该程序实现接口ITrackingHandler。接口ITrackingHandler定义了3个方法，MarshalObject、UnmarshalObject和DisconnectedObject。当远程对象被编组、解组和断开连接时，就会调用相应的方法。下面是该跟踪处理类的代码：</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+public class MyTracking:ITrackingHandler
+{
+ public MyTracking()
+ {
+ //
+ // TODO: 在此处添加构造函数逻辑
+ //
+ }
+
+ public void MarshaledObject(object obj,ObjRef or)
+ {
+ Console.WriteLine();
+ Console.WriteLine("对象" + obj.Tostring() + " is marshaled at " + DateTime.Now.ToShortTimeString());
+ }
+
+ public void UnmarshaledObject(object obj,ObjRef or)
+ {
+ Console.WriteLine();
+ Console.WriteLine("对象" + obj.Tostring() + " is unmarshaled at " + DateTime.Now.ToShortTimeString());
+ }
+
+ public void DisconnectedObject(object obj)
+ {
+ Console.WriteLine(obj.ToString() + " is disconnected at " + DateTime.Now.ToShortTimeString());
+ }
+}
+
+</pre>
+</div>
+<p>然后再服务器端创建该跟踪处理类的实例，并注册跟踪服务：<br />
+TrackingServices.RegisterTrackingHandler(new MyTracking());</p>
+<p><strong>四、测试</strong></p>
+<p><strong>1、建立两个远程对象，并重写InitializeLifetimeService方法：</strong></p>
+<p>对象一：AppService1<br />
+初始生命周期：1分钟</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+public class AppService1:MarshalByRefObject
+{
+ public void PrintString(string contents)
+ {
+ Console.WriteLine(contents); 
+ }
+
+ public override object InitializeLifetimeService()
+ {
+ ILease lease = (ILease)base.InitializeLifetimeService();
+ if (lease.CurrentState == LeaseState.Initial)
+ {
+  lease.InitialLeaseTime = TimeSpan.FromMinutes(1);
+  lease.RenewOnCallTime = TimeSpan.FromSeconds(20);
+ }
+ return lease;
+ }
+}
+
+</pre>
+</div>
+<p>对象二：AppService2<br />
+初始生命周期：3分钟</p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+public class AppService2:MarshalByRefObject
+{
+ public void PrintString(string contents)
+ {
+ Console.WriteLine(contents); 
+ }
+
+ public override object InitializeLifetimeService()
+ {
+ ILease lease = (ILease)base.InitializeLifetimeService();
+ if (lease.CurrentState == LeaseState.Initial)
+ {
+  lease.InitialLeaseTime = TimeSpan.FromMinutes(3);
+  lease.RenewOnCallTime = TimeSpan.FromSeconds(40);
+ }
+ return lease;
+ }
+}
+
+</pre>
+</div>
+<p>为简便起见，两个对象的方法都一样。</p>
+<p><strong>2、服务器端</strong></p>
+<p><strong>(1) 首先建立如上的监控处理类；</strong></p>
+<p><strong>(2) 注册通道：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+TcpChannel channel = new TcpChannel(8080);
+ChannelServices.RegisterChannel(channel);</pre>
+</div>
+<p><strong>(3) 设置租用管理器的初始租用时间为无限：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+LifetimeServices.LeaseTime = TimeSpan.Zero;</pre>
+</div>
+<p><strong>(4) 创建该跟踪处理类的实例，并注册跟踪服务：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+TrackingServices.RegisterTrackingHandler(new MyTracking());</pre>
+</div>
+<p><strong>(5) 编组两个远程对象：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+ServerAS.AppService1 service1 = new ServerAS1.AppService1();
+ObjRef objRef1 = RemotingServices.Marshal((MarshalByRefObject)service1,"AppService1");
+
+ServerAS.AppService2 service2 = new ServerAS1.AppService2();
+ObjRef objRef2 = RemotingServices.Marshal((MarshalByRefObject)service2,"AppService2");
+</pre>
+</div>
+<p><strong>(6) 使服务器端保持运行：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+Console.WriteLine("Remoting服务启动，按退出..."); 
+Console.ReadLine();</pre>
+</div>
+<p><strong>3、客户端</strong></p>
+<p>通过Activator.GetObject()获得两个远程对象，并调用其方法PrintString。代码略。</p>
+<p><strong>4、运行测试：</strong></p>
+<p>运行服务器端和客户端，由于监控程序将监视远程对象的编组进程，因此在运行开始，就会显示远程对象已经被Marshal：</p>
+<p></p>
+<p>然后再客户端调用这两个远程对象的PrintString方法，服务器端接受字符串：</p>
+<p></p>
+<p>一分钟后，远程对象一自动被Disconnect：</p>
+<p></p>
+<p>此时客户端如要调用远程对象一，会抛出RemotingException异常；</p>
+<p>又一分钟后，远程对象二被Disconnect了：</p>
+<p></p>
+<p>　　用户还可以根据这个代码测试RenewOnCallTime的时间是否正确。也即是说，在对象还未被Disconnect时，调用对象，则从调用对象的这一刻起，其生命周期不再是原来设定的初始有效时间值（InitialLeaseTime），而是租用更新时间值（RenewOnCallTime）。另外，如果这两个远程对象没有重写InitializeLifetimeService方法，则生命周期应为租用管理器所设定的值，为永久有效（设置为0）。那么这两个对象不会被自动Disconnect，除非我们显式指定关闭它的连接。当然，如果我们显式关闭连接，跟踪程序仍然会监视到它的变化，然后显示出来。</p>
+<p><strong>五、结论</strong></p>
+<p>　　通过我们的测试，其实结论已经很明显了。通过Marshal编组的对象要受到租用的生命周期所控制。注意对象被Disconnect，并不是指这个对象被GC回收，而是指这个对象保存在通道的相关代理信息被断开了，而对象本身仍然在服务器端存在。</p>
+<p>　　所以我们通过Remoting提供服务，应根据实际情况指定远程对象的生命周期，如果不指定，则为Remoting默认的设定。要让所有的远程对象永久有效，可以通过配置文件或租用管理器将初始有效时间设为0。</p>
+<p>　　以上就是.Net Remoting中Marshal、Disconnect与生命周期以及跟踪服务全部内容，希望能给大家一个参考，也希望大家多多支持phpstudy。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/94426.html'>Spring3.1.1+MyBatis3.1.1的增、删、查、改以及分页和事务管理</a><a>下一篇</a><a href='/php/biji/94428.html'>JQuery勾选指定name的复选框集合并显示的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

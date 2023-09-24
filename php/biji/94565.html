@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Linux折腾记（七）：硬盘GPT分区和MBR分区爬坑记_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="　　之所以想到写这篇，是因为本人在折腾Linux系统的过程中，有多次掉入硬盘分区的陷阱的经历。最近几天，再一次掉入坑中，折腾了两天才从坑中爬出来。经过多方查询资料，终于弄明白" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Linux折腾记（七）：硬盘GPT分区和MBR分区爬坑记</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>　　之所以想到写这篇，是因为本人在折腾Linux系统的过程中，有多次掉入硬盘分区的陷阱的经历。最近几天，再一次掉入坑中，折腾了两天才从坑中爬出来。经过多方查询资料，终于弄明白</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>　　之所以想到写这篇，是因为本人在折腾Linux系统的过程中，有多次掉入硬盘分区的陷阱的经历。最近几天，再一次掉入坑中，折腾了两天才从坑中爬出来。经过多方查询资料，终于弄明白了硬盘分区的一些概念。下面将其记录下来，以警示来者。</p>
+<p>　　说起我自己掉坑的经历，无不与WinXP和Linux的激烈碰撞有关。多年前，我就开始在一台电脑上同时安装WinXP和Linux，只要遵守先安装WinXP再安装Linux的顺序，就不会出问题，Linux的安装程序会自动识别多系统，安装完成后可顺利启动多系统。有一天，我觉得单用Linux就够了，于是就格了整个硬盘安装了Linux。又有一天，我觉得还是要用WinXP，于是就重新安装WinXP（不要对我说虚拟机，多年前我的电脑还只有256M内存，虚拟机根本跑不动），结果发现，WinXP的安装程序没办法对硬盘进行分区了。这个坑是由Linux中的LVM引起的，WinXP识别不了LVM分区，那个时代的WinPE、DOS工具箱中的所有工具都没办法识别LVM，而那时我对Linux的了解又只停留在只会在安装系统的时候分区，根本不知道Linux系统中还有fdisk、parted这样的工具，所以折腾了许久才从坑里面爬出来。多年后的现在，我又一次掉入了坑中。我工作时用的电脑是WinXP系统（天朝国情，你懂的），为了干点私活，我又装了个Ubuntu上去了，这两个系统一直相安无事。直到有一天，我把Ubuntu系统又折腾挂了，于是重装，因为在分区的时候不小心选择了默认的&ldquo;清除整个盘并安装Ubuntu&rdquo;，然后硬盘就被整个格掉了，WinXP就没有了。我当时想，这多大点儿事，我再装个WinXP不就完了吗。但是问题来了，无论我怎么安装，WinXP系统就是启动不了。后来才整明白，这个坑是硬盘采用了GPT分区引起的。那为什么我让Ubuntu自动分区它就分成了GPT分区呢？这也怪这台惠普的工作用机比较奇葩，它即支持legacy BIOS，也支持EFI，当原来WinXP存在时，它用的当然是MBR分区（msdos分区），所以安装Ubuntu时就是使用的MBR分区，而后来Ubuntu自动分区时，它看到主板支持EFI，就自动把硬盘整成GPT分区了。我也是折腾了几天才明白这个道理，最后终于在Ubuntu LiveCD的parted程序的帮助下，使用一个mklabel msdos命令把硬盘从GPT分区更改为MBR分区，然后再按顺序安装WinXP和Ubuntu，才算是从坑里面爬出来。</p>
+<p>　　对于那些长期管理大型机房和大存储容量的服务器的朋友，对于硬盘分区，他们肯定是早就做好了功课。不会像我这样，直到碰到问题才会去学习相关的知识。对于硬盘分区的这些知识，我总结如下（只是简单总结，具体内容请大家自行搜素）：</p>
+<p>　　1、传统的BIOS只支持从MBR分区的硬盘启动。MBR分区的分区表保存在硬盘的第一个扇区，而且只有64字节，所以最多只能有四个表项。也就是说，我们只能把硬盘分为4主分区，或者分成小于等于3个主分区再加一个扩展分区。扩展分区又可以分为多个逻辑分区。MBR分区的优点就是简单，大家都用，所以大家都懂的嘛，很多操作系统都可以从MBR分区的硬盘启动。缺点就是MBR分区不能识别大于2T的硬盘空间，也不能有大于2T的分区；</p>
+<p>　　2、GPT分区的硬盘可以解决以上MBR分区的所有缺点，它没有4个主分区的限制，想分几个主分区就可以分几个主分区，它可以识别大于2T的硬盘空间，每个分区的大小也可以超过2T。但是它的缺点是需要操作系统支持。比如只有WinXP 64位、Win Vista、Win 7和Win 8和比较新的Linux发行版支持GPT分区的硬盘。而且，如果没有EFI的支持的话，以上系统也只能将GPT分区的硬盘当成数据盘，不能从GPT分区的硬盘启动；</p>
+<p>　　3、要从GPT分区的硬盘启动，则主板使用EFI、硬盘使用GPT分区、操作系统支持GPT和EFI这三个条件缺一不可。目前比较新的64位Linux系统和Win8系统都是支持EFI的，所以都是需要从GPT分区的硬盘启动的。现在的电脑主板已经逐渐抛弃legacy BIOS，而只支持EFI了。（像我的工作机这样的过渡产品将越来越少。）目前很多预装Win8的笔记本的主板几乎都只支持EFI了。所以，学习GPT和EFI的相关知识势在必行；</p>
+<p>　　4、以上分区策略都是固定分区。硬盘分区一旦完成，则分区的大小不可改变，如果要改变分区的大小的话，只有重新分区。而且由于没有办法把多个硬盘分到一个区，所以再怎么分，每个分区的大小都有限。所以我们需要一种动态分区的东西。LVM就是这样一个东东，它叫逻辑卷管理。使用LVM的机制是这样的：首先把硬盘分区或者整块硬盘标记为一个物理卷（PV），然后再创建一个卷组（VG），把一个或多个物理卷加入卷组，最后对卷组进行分区，每一个分区称为一个逻辑卷（LV）。LVM的优点就是可以随时向卷组中添加物理卷扩展卷组的大小，以可以动态调整逻辑卷的大小。这在服务器中尤其有用，比如说有一个原本有100个用户的服务器，其/home目录下就会有100个用户的主目录，如果给他们每人分配20G的空间的话，就会占满一个2T的硬盘，如果这时再来100个用户怎么办？如果使用LVM就可以顺利解决这个问题，我们可以再加一个3T的硬盘，然后把这个硬盘加入卷组就可以扩大卷组的大小，然后再调整/home所在的逻辑卷的大小即可。LVM既可以搭配MBR使用，也可以搭配GPT使用。</p>
+<p>　　下面通过Ubuntu 14.04安装过程中自动分区的策略来验证以上知识点。首先，对于只支持legacy BIOS的电脑，安装Ubuntu时分区选项如下：<br /></p>
+<p align="center"></p>
+<p>　　这时，不选择启动LVM的选项。安装完操作系统后，使用parted程序查看硬盘分区，通过查看/etc/fstab文件来了解哪个分区对应哪个文件系统，如下图：<br /></p>
+<p align="center"></p>
+<p>　　通过上面图片中parted程序中的print命令的输出可以看出，硬盘的分区表类型为msdos，也就是MBR分区。硬盘分为一个主分区sda1和一个扩展分区sda2，主分区sda1占20.4G，扩展分区sda2只有1072M，扩展分区中只有一个逻辑分区sda5。通过/etc/fstab可以看出主分区sda1挂载到根目录，逻辑分区sda5为交换空间。</p>
+<p>　　上面的分区方案是最简单最常用的一种。下面来看看启用LVM是什么效果。在选择分区方案的界面选择开启LVM的选项，如下图：<br /></p>
+<p align="center"></p>
+<p>　　安装完操作系统后，还是通过parted程序和/etc/fstab来查看硬盘的分区及使用情况，如下图：</p>
+<p align="center"></p>
+<p>　　从图中可以看出，分区表的类型还是msdos。硬盘还是只分了一个主分区sda1和一个扩展分区sda2，但是主分区sda1只有255M，扩展分区sda2倒是有21.2G，同样扩展分区只分为一个逻辑分区sda5，逻辑分区sda5占用扩展分区中全部的21.2G空间，而且sda5的标志是lvm，说明该分区被标记为一个物理卷（PV），它肯定是被加入到了一个卷组（VG）中。通过/etc/fstab文件可以看出，主分区sda1挂载到/boot，而根目录和交换空间挂载的是两个逻辑卷（LV）。</p>
+<p>　　通过LVM命令可以查看系统中卷组、物理卷和逻辑卷的信息，如下图：<br /><br /></p>
+<p align="center"></p>
+<p>　　通过pvs和pvdisplay命令，可以看到系统中只有一个物理卷，那就是/dev/sda5，该物理卷加入到了卷组ubuntu-vg之中。通过vgs和vgdisplay命令可以看到系统中只有一个卷组，那就是ubuntu-vg，该卷组被分为两个逻辑卷。</p>
+<p>　　再看下图：<br /><br /></p>
+<p align="center"></p>
+<p>　　通过lvs和lvdisplay命令可以看到卷组分为两个逻辑卷，它们分别挂载到根目录和交换空间。</p>
+<p>　　通过LVM命令还可以进行更多的操作，比如创建新的卷组，将新的物理卷加入到卷组，增大或减小逻辑卷的大小等等。具体用什么命令，一个help即可搞定。</p>
+<p>　　最后，来看看在主板只支持EFI的情况下，Ubuntu如何分区。安装的启动界面如下：<br /><br /></p>
+<p align="center"></p>
+<p>　　这个安装界面和legacy BIOS系统下的安装界面是不同的，传统的安装界面如下：<br /><br /></p>
+<p align="center"></p>
+<p>　　在EFI模式下，还是选择自动分区。安装完操作系统后，使用parted和/etc/fstab来查看硬盘的分区和使用情况，如下图：<br /><br /></p>
+<p align="center"></p>
+<p>　　通过以上图片可以看出，硬盘的分区表类型为gpt，硬盘分为三个区，都是主分区。其中第1个分区sda1的大小是537M，文件系统是fat32，其挂载的路径是/boot/efi，而另外两个分区一个挂载到根目录，一个为交换空间。从上面的信息我们不难推断：只支持EFI的主板只能从GPT分区的硬盘启动，而且该硬盘第1个分区必须为fat32文件系统，该文件系统中存放的是EFI需要的各种文件。</p>
+<p>　　如果在安装Ubuntu系统的时候不是选择自动分区，而是选择最后那个&ldquo;其它选项&rdquo;来自定义分区，会发现其实Ubuntu提供的自定义分区功能很有限。它没办法让人选择是使用MBR分区还是使用GPT分区，也没有办法选择是否启用LVM。如果需要更灵活的管理的话，还是只有点击&ldquo;试用Ubuntu&rdquo;按钮，进入LiveCD的Ubuntu系统后，使用parted命令和lvm命令手动管理硬盘分区。</p>
+<strong>延伸阅读：</strong>
+<p>　　除了硬盘分区，平常还有可能用到的硬盘管理功能有以下一些：</p>
+<p>　　1、创建RAID，可以使用mdadm程序；</p>
+<p>　　2、查看个分区或各文件夹的空间占用 ，使用df和du程序；</p>
+<p>　　3、指定磁盘配额，使用quota软件包；</p>
+<p>　　4、查看各分区的文件系统、UUID、卷标，使用blkid程序。</p>
+<p>&nbsp;</p>
+<p>（京山游侠于2014-07-13发布于博客园，2015-01-23整理于BlogJava，转载请注明出处。）</p>
+<p></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/94564.html'>深入解析JavaScript中的数字对象与字符串对象</a><a>下一篇</a><a href='/php/biji/94566.html'>实例讲解Android应用开发中TabHost的使用要点</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

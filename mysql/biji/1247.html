@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL InnoDB之事务与锁分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL InnoDB之事务与锁分析，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+引题：为何引入事务？
+1&gt;.数据完整" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL InnoDB之事务与锁分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:23:55                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL InnoDB之事务与锁分析，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+引题：为何引入事务？
+1&gt;.数据完整</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL InnoDB之事务与锁分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p><strong>引题：为何引入事务？</strong></p>
+<p><strong>1&gt;.</strong><strong>数据完整性</strong></p>
+<p><strong>2&gt;.</strong><strong>数据安全性</strong></p>
+<p><strong>3&gt;.</strong><strong>充分利用系统资源，提高系统并发处理的能力</strong></p>
+<p><strong>1.</strong><strong>事务的特征</strong></p>
+<p>事务具有四个特性：原子性（Atomiocity）、一致性（Consistency）、隔离性（Isolation）和持久性（Durability），这四个特性简称ACID特性。</p>
+<p><strong>1.1</strong><strong>原子性</strong></p>
+<p>事务是数据库的逻辑工作单位，事务中包括的所有操作要么都做，要么都不做。</p>
+<p><strong>1.2</strong><strong>一致性</strong></p>
+<p>事务执行的结果必须是使数据库从一个一致性的状态变到另外一个一致性状态。</p>
+<p><strong>1.3</strong><strong>隔离性</strong></p>
+<p>一个事务的执行不能被其他事务干扰。即一个事务内部的操作及使用的数据对其他</p>
+<p>事务是隔离的，并发执行的各个事务之间互相不干扰。</p>
+<p><strong>1.4</strong><strong>持久性</strong></p>
+<p>一个事务一旦成功提交，对数据库中数据的修改就是持久性的。接下来其他的其他</p>
+<p>操作或故障不应该对其执行结果有任何影响。</p>
+<p><strong>2. MySQL</strong><strong>的InnoDB</strong><strong>引擎中事物与锁</strong></p>
+<p><strong>2.1 SELECT &hellip;&hellip; LOCK IN SHARE MODE</strong></p>
+<p>会话事务中查找的数据，加上一个共享锁。若会话事务中查找的数据已经被其他会话事务加上独占锁的话，共享锁会等待其结束再加，若等待时间过长就会显示事务需要的锁等待超时。</p>
+<p><strong>2.2 SELECT &hellip;.. FOR UPDATE</strong></p>
+<p>会话事务中查找的数据，加上一个读更新琐，其他会话事务将无法再加其他锁，必须等待其结束。</p>
+<p><strong>2.3 INSERT</strong><strong>、UPDATE</strong><strong>、DELETE</strong></p>
+<p>会话事务会对DML语句操作的数据加上一个独占锁，其他会话的事务都将会等待其释放独占锁。</p>
+<p><strong>2.4 gap and next key lock</strong><strong>（间隙锁）</strong></p>
+<p>InnoDB引擎会自动给会话事务中的共享锁、更新琐以及独占锁，需要加到一个区间值域的时候，再加上个间隙锁（或称范围锁），对不存在的数据也锁住，防止出现幻写。</p>
+<p><strong>备注：</strong></p>
+<p>以上2.1，2.2，2.3，2.4中描述的情况，跟MySQL所设置的事务隔离级别也有关系。</p>
+<p><strong>3.</strong><strong>四种事务隔离模式</strong></p>
+<p><strong>3.1 READ UNCOMMITED</strong></p>
+<p>SELECT的时候允许脏读，即SELECT会读取其他事务修改而还没有提交的数据。</p>
+<p><strong>3.2 READ COMMITED</strong></p>
+<p>SELECT的时候无法重复读，即同一个事务中两次执行同样的查询语句，若在第一次与第二次查询之间时间段，其他事务又刚好修改了其查询的数据且提交了，则两次读到的数据不一致。</p>
+<p><strong>3.3 REPEATABLE READ</strong></p>
+<p>SELECT的时候可以重复读，即同一个事务中两次执行同样的查询语句，得到的数据始终都是一致的。</p>
+<p><strong>3.4 SERIALIZABLE</strong></p>
+<p>与可重复读的唯一区别是，默认把普通的SELECT语句改成SELECT &hellip;. LOCK IN SHARE MODE。即为查询语句涉及到的数据加上共享琐，阻塞其他事务修改真实数据。</p>
+<p><strong>4.</strong><strong>验证事务与锁定示例</strong></p>
+<p>接下来，我们将以MySQL中的InnoDB引擎，解释其如何实现ACID特性，不同隔离级别下事务与事务之间的影响。示例表结构：</p>
+<p>CREATE TABLE `account ` (</p>
+<p>`ID` int(11) NOT NULL AUTO_INCREMENT,</p>
+<p>`VACCOUNT_ID` varchar(32) NOT NULL,</p>
+<p>`GMT_CREATE` datetime NOT NULL,</p>
+<p>PRIMARY KEY (`ID`),</p>
+<p>KEY `idx_VACCOUNT_PARAMETER_VACCOUNTID ` (`VACCOUNT_ID`)</p>
+<p>) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE utf8_general_ci;</p>
+<p>然后向表account中写入10W条创建日期分布合理的帐号数据，以方便测试之用。</p>
+<table border="0" cellpadding="0" cellspacing="0" class="jbborder">
+	<tbody>
+		<tr>
+			<td><strong>tx_isolation</strong><strong>：SET GLOBAL tx_isolation=&#39;read-uncommitted&#39;</strong></td>
+		</tr>
+		<tr>
+			<td><strong>ID</strong></td>
+			<td><strong>事务1</strong></td>
+			<td><strong>事务1输出</strong></td>
+			<td><strong>事务2</strong></td>
+			<td><strong>事务2输出</strong></td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>2</td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>caimao101510</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>3</td>
+			<td></td>
+			<td></td>
+			<td>UPDATE account set VACCOUNT_ID=&#39;uncommitted&#39; where ID =1001;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>4</td>
+			<td></td>
+			<td></td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>uncommitted</td>
+		</tr>
+		<tr>
+			<td>5</td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>uncommitted</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>6</td>
+			<td></td>
+			<td></td>
+			<td>ROLLBACK;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>7</td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>caimao101510</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>8</td>
+			<td>COMMIT;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+	</tbody>
+</table>
+<table border="0" cellpadding="0" cellspacing="0">
+	<tbody>
+		<tr>
+			<td><strong>tx_isolation</strong><strong>：SET GLOBAL tx_isolation=&#39;read-committed&#39;</strong></td>
+		</tr>
+		<tr>
+			<td><strong>ID</strong></td>
+			<td><strong>事务1</strong></td>
+			<td><strong>事务1输出</strong></td>
+			<td><strong>事务2</strong></td>
+			<td><strong>事务2输出</strong></td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>2</td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>caimao101510</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>3</td>
+			<td></td>
+			<td></td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>4</td>
+			<td></td>
+			<td></td>
+			<td>UPDATE account set VACCOUNT_ID=&#39;uncommitted&#39; where ID =1001;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>5</td>
+			<td></td>
+			<td></td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>uncommitted</td>
+		</tr>
+		<tr>
+			<td>6</td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>caimao101510</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>7</td>
+			<td></td>
+			<td></td>
+			<td>COMMIT;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>8</td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>uncommitted</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>9</td>
+			<td>COMMIT;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+	</tbody>
+</table>
+<table border="0" cellpadding="0" cellspacing="0">
+	<tbody>
+		<tr>
+			<td><strong>tx_isolation</strong><strong>：SET GLOBAL tx_isolation=&#39;REPEATABLE-READ&#39;</strong></td>
+		</tr>
+		<tr>
+			<td><strong>ID</strong></td>
+			<td><strong>事务1</strong></td>
+			<td><strong>事务1输出</strong></td>
+			<td><strong>事务2</strong></td>
+			<td><strong>事务2输出</strong></td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>2</td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>caimao101510</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>3</td>
+			<td></td>
+			<td></td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>4</td>
+			<td></td>
+			<td></td>
+			<td>UPDATE account set VACCOUNT_ID=&#39;uncommitted&#39; where ID =1001;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>5</td>
+			<td></td>
+			<td></td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>uncommitted</td>
+		</tr>
+		<tr>
+			<td>6</td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>caimao101510</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>7</td>
+			<td></td>
+			<td></td>
+			<td>COMMIT;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>8</td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>caimao101510</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>9</td>
+			<td>COMMIT;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+	</tbody>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" class="jbborder">
+	<tbody>
+		<tr>
+			<td><strong>tx_isolation</strong><strong>：SET GLOBAL tx_isolation=&#39;SERIALIZABLE&#39;</strong></td>
+		</tr>
+		<tr>
+			<td><strong>ID</strong></td>
+			<td><strong>事务1</strong></td>
+			<td><strong>事务1输出</strong></td>
+			<td><strong>事务2</strong></td>
+			<td><strong>事务2输出</strong></td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>2</td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>caimao101510</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>3</td>
+			<td></td>
+			<td></td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>4</td>
+			<td></td>
+			<td></td>
+			<td>UPDATE account set VACCOUNT_ID=&#39;uncommitted&#39; where ID =1001;</td>
+			<td>STATE: Updating</td>
+		</tr>
+		<tr>
+			<td>5</td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>caimao101510</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td>事务2超时</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>6</td>
+			<td>COMMIT;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>7</td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>8</td>
+			<td>UPDATE account set VACCOUNT_ID=&#39;uncommitted&#39; where ID =1001;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>9</td>
+			<td></td>
+			<td></td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>10</td>
+			<td></td>
+			<td></td>
+			<td>SELECT VACCOUNT_ID from account where ID =1001;</td>
+			<td>STATE：statistics</td>
+		</tr>
+		<tr>
+			<td>11</td>
+			<td></td>
+			<td></td>
+			<td>事务2超时</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>12</td>
+			<td>commit;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+	</tbody>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" class="jbborder">
+	<tbody>
+		<tr>
+			<td><strong>tx_isolation</strong><strong>：SET GLOBAL tx_isolation=&#39;REPEATABLE-READ&#39;</strong></td>
+		</tr>
+		<tr>
+			<td><strong>ID</strong></td>
+			<td><strong>事务1</strong></td>
+			<td><strong>事务1输出</strong></td>
+			<td><strong>事务2</strong></td>
+			<td><strong>事务2输出</strong></td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>2</td>
+			<td>select max(ID) FROM account;</td>
+			<td>124999</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>3</td>
+			<td></td>
+			<td></td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>4</td>
+			<td>UPDATE account set gmt_create=date_add(gmt_create,interval +1 day) WHERE ID &gt;=124999;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>5</td>
+			<td></td>
+			<td></td>
+			<td>insert into account(VACCOUNT_ID,gmt_create) values(&lsquo;eugene&#39;,now());</td>
+			<td>STATE:update</td>
+		</tr>
+		<tr>
+			<td>6</td>
+			<td></td>
+			<td></td>
+			<td>事务2超时</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>7</td>
+			<td></td>
+			<td></td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>8</td>
+			<td></td>
+			<td></td>
+			<td>SELECT * FROM account WHERE ID =124998;</td>
+			<td>2007-10-20 13:47</td>
+		</tr>
+		<tr>
+			<td>9</td>
+			<td></td>
+			<td></td>
+			<td>UPDATE account set gmt_create=date_add(gmt_create,interval +1 day) WHERE ID =124998;</td>
+			<td>执行成功</td>
+		</tr>
+		<tr>
+			<td>10</td>
+			<td></td>
+			<td></td>
+			<td>SELECT * FROM account WHERE ID =124998;</td>
+			<td>2007-10-21 13:47</td>
+		</tr>
+		<tr>
+			<td>11</td>
+			<td>COMMIT;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>12</td>
+			<td></td>
+			<td></td>
+			<td>COMMIT;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>2</td>
+			<td>UPDATE account set gmt_create=date_add(gmt_create,interval -1 day) WHERE gmt_create &gt;&#39;2009-07-01&prime;;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>3</td>
+			<td></td>
+			<td></td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>4</td>
+			<td></td>
+			<td></td>
+			<td>SELECT * FROM account WHERE gmt_create&gt;&#39;2009-07-10&prime; LIMIT 1;</td>
+			<td>2009-10-2 13:47</td>
+		</tr>
+		<tr>
+			<td>5</td>
+			<td>SELECT * FROM account WHERE gmt_create&gt;&#39;2009-07-10&prime; LIMIT 1;</td>
+			<td>2009-10-1 13:47</td>
+			<td></td>
+			<td>STATE:update</td>
+		</tr>
+		<tr>
+			<td>6</td>
+			<td></td>
+			<td></td>
+			<td>insert into account(VACCOUNT_ID,gmt_create) values(&lsquo;gmt_create_test&#39;,now());</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>7</td>
+			<td></td>
+			<td></td>
+			<td>事务2超时</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>8</td>
+			<td>COMMIT;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>9</td>
+			<td></td>
+			<td></td>
+			<td>SELECT * FROM account WHERE gmt_create&gt;&#39;2009-07-10&prime; LIMIT 1;</td>
+			<td>2009-10-1 13:47</td>
+		</tr>
+		<tr>
+			<td><strong>无索引条件更新事务</strong></td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td>UPDATE account set gmt_create=date_add(gmt_create,interval -1 day) WHERE gmt_create &gt;&#39;2009-07-01&prime; AND gmt_create &lt;&#39;2009-07-10&prime;;</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td>START TRANSACTION;</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td>insert into account(VACCOUNT_ID,gmt_create) values(&lsquo;gmt_create_interval&#39;,now());</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td>事务2超时</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td>COMMIT;</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>注：关于MySQL InnoDB之事务与锁分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1246.html'>MySQL创建用户与授权方法</a><a>下一篇</a><a href='/mysql/biji/1248.html'>MySQL数据库插入速度和读取速度的调整记录</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

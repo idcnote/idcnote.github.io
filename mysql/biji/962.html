@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL SERVER回滚恢复误操作数据的实现方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL SERVER回滚恢复误操作数据的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣SQL SERVER回滚恢复误操作数据的实现方法的小伙伴，下面" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL SERVER回滚恢复误操作数据的实现方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:21:10                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL SERVER回滚恢复误操作数据的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣SQL SERVER回滚恢复误操作数据的实现方法的小伙伴，下面</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL SERVER回滚恢复误操作数据的实现方法，具有一定的参考价值，可以用来参考一下。</p>
+
+感兴趣SQL SERVER回滚恢复误操作数据的实现方法的小伙伴，下面一起跟随512笔记的小编罗X来看看吧.在生产数据库做CURD操作时，可能会有执行某条语句误操作的情况发生，针对这个种情况有两点建议：1、在SQL SERVER上开启事务确认功能，当执行完语句后确认无误，再提交事务。（开启方法见附件图片）。2、新建存储过程，粘贴附件脚本。此存储过程执行后能够自动产生两个操作日志表，自动记录CRUD的所有操作。适用于提交事务后才发现错误的情况。只需要打开表UPDATE_LOG，粘贴RollbackupSQL里的语句执行即可恢复数据。注意：1)如果表中有自增长的ID，所恢复数据的ID值是最大ID+1。2)由于正常操作也会回写操作日志，注意及时清理日志表，或者在执行完后删掉新建的存储过程、触发器及表。回滚脚本，执行后数据要记录的表名
+<pre>
+<code class="language-sql">CREATE PROCEDURE [dbo].[SP_UPDATE_LOG]
+    @TABLENAME VARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF NOT EXISTS(SELECT * FROM sys.tables WHERE NAME = @TABLENAME AND TYPE = 'U' )
+    BEGIN
+        PRINT'ERROR：not exist table '+@TABLENAME
+        RETURN
+    END
+    IF (@TABLENAME LIKE'BACKUP_%' OR @TABLENAME='UPDATE_LOG' )
+    BEGIN
+        --PRINT'ERROR：not exist table '+@TABLENAME
+        RETURN
+    END
+    --================================判断是否存在 UPDATE_LOG 表============================
+    IF NOT EXISTS(SELECT * FROM sys.tables WHERE NAME = 'UPDATE_LOG' AND TYPE = 'U')
+        CREATE TABLE UPDATE_LOG
+        (
+            UpdateGUID VARCHAR(36),
+            UpdateTime DATETIME,
+            TableName varchar(20),
+            UpdateType varchar(6),
+            RollBackSQL varchar(MAX),
+            ExecSQL VARCHAR(500)
+        )
+    --=================================判断是否存在 BACKUP_ 表================================
+    IF NOT EXISTS(SELECT * FROM sys.tables WHERE NAME = 'BACKUP_'+@TABLENAME AND TYPE = 'U')
+    BEGIN
+        DECLARE test_Cursor CURSOR FOR
+        SELECT COLUMN_NAME,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.columns
+        WHERE TABLE_NAME=@TABLENAME
+        OPEN test_Cursor
+        DECLARE @SQLTB NVARCHAR(MAX)=''
+        DECLARE @COLUMN_NAME NVARCHAR(50),@DATA_TYPE VARCHAR(20),@CHARACTER_MAXIMUM_LENGTH INT
+        FETCH NEXT FROM test_Cursor INTO @COLUMN_NAME,@DATA_TYPE,@CHARACTER_MAXIMUM_LENGTH
+        WHILE @@FETCH_STATUS=0
+        BEGIN
+            SET @SQLTB=@SQLTB+'['+@COLUMN_NAME+'] '+@DATA_TYPE+CASE ISNULL(@CHARACTER_MAXIMUM_LENGTH,0) WHEN 0 THEN '' WHEN -1 THEN '(MAX)' ELSE'('+CAST(@CHARACTER_MAXIMUM_LENGTH AS VARCHAR(10))+')' END+','
+            FETCH NEXT FROM test_Cursor INTO @COLUMN_NAME,@DATA_TYPE,@CHARACTER_MAXIMUM_LENGTH
+        END
+        SET @SQLTB='CREATE TABLE BACKUP_'+@TABLENAME+' (UpdateGUID varchar(36),UpdateType Varchar(10),'+SUBSTRING(@SQLTB,1,LEN(@SQLTB)-1)+')'
+        EXEC (@SQLTB)
+        CLOSE test_Cursor
+        DEALLOCATE test_Cursor
+    END
+    --======================================判断是否存在 UPDATE 触发器=========================
+    IF NOT EXISTS(SELECT * FROM sys.objects WHERE NAME = 'tg_'+@TABLENAME+'_Update' AND TYPE = 'TR')
+    BEGIN
+        DECLARE @SQLTR NVARCHAR(MAX)
+        SET @SQLTR='
+CREATE TRIGGER tg_'+@TABLENAME+'_Update
+    ON  '+@TABLENAME+'
+    AFTER Update,Delete,Insert
+AS
+BEGIN 
+    SET NOCOUNT ON;
+    --==============================获取GUID==========================================
+    DECLARE @NEWID VARCHAR(36)=NEWID()
+    --===========================将删掉或新增的数据插入备份表=========================
+    DECLARE @ROWCOUNT INT
+    INSERT INTO [dbo].[BACKUP_'+@TABLENAME+']
+    SELECT @NEWID,''DELETE'',* FROM deleted
+    SET @ROWCOUNT=@@ROWCOUNT
+    IF @ROWCOUNT&gt;0
+    BEGIN
+        INSERT INTO [dbo].[BACKUP_'+@TABLENAME+']
+        SELECT @NEWID,''INSERT'',* FROM inserted
+    END
+    ELSE
+    BEGIN
+        INSERT INTO [dbo].[BACKUP_'+@TABLENAME+']
+        SELECT @NEWID,''INSERT'',* FROM inserted
+        SET @ROWCOUNT=@@ROWCOUNT
+    END
+    --==============================记录日志和回滚操作的SQL===========================
+    --******************生成插入语句用到的列名（需避开自增字段）********************
+    DECLARE @COLUMN1 NVARCHAR(MAX)=''''
+    SELECT @COLUMN1+='',[''+COLUMN_NAME+'']'' FROM INFORMATION_SCHEMA.columns
+    WHERE TABLE_NAME='''+@TABLENAME+'''
+    AND COLUMNPROPERTY(OBJECT_ID('''+@TABLENAME+'''),COLUMN_NAME,''IsIdentity'')&lt;&gt;1 --非自增字段
+    SET @COLUMN1=SUBSTRING(@COLUMN1,2,LEN(@COLUMN1))
+    --*******************动态定义变量、删除条件匹配的列********************
+    DECLARE @DECLARE VARCHAR(MAX)='''',@INTODECLARE VARCHAR(MAX)='''',@WHERE VARCHAR(MAX)='''',@COLUMN2 VARCHAR(MAX)=''''
+    SELECT @DECLARE+=''@''+COLUMN_NAME+'' ''+DATA_TYPE+CASE ISNULL(CAST(CHARACTER_OCTET_LENGTH AS VARCHAR(10)),'''') WHEN '''' THEN '','' WHEN ''-1'' THEN ''(MAX),'' ELSE ''(''+CAST(CHARACTER_OCTET_LENGTH AS VARCHAR(10))+''),'' END,
+        @INTODECLARE+=''@''+COLUMN_NAME+'','',
+        @COLUMN2+=''[''+COLUMN_NAME+''],'' ,
+        @WHERE += ''ISNULL(''+ COLUMN_NAME+'','''''''')=ISNULL(@''+COLUMN_NAME+'','''''''') AND ''
+    FROM INFORMATION_SCHEMA.columns
+    WHERE TABLE_NAME='''+@TABLENAME+'''
+    SET @DECLARE=LEFT(@DECLARE,LEN(@DECLARE)-1)
+    SET @INTODECLARE=LEFT(@INTODECLARE,LEN(@INTODECLARE)-1)
+    SET @COLUMN2=LEFT(@COLUMN2,LEN(@COLUMN2)-1)
+    SET @WHERE= LEFT(@WHERE,LEN(@WHERE)-3)
+    --*******************判断是否还原当前表的最近一次操作*******************         
+    DECLARE @SQL_ISLAST VARCHAR(MAX)=''
+    SET NOCOUNT ON
+    DECLARE @maxdate datetime
+    SELECT @maxdate=max(updatetime) FROM UPDATE_LOG WHERE TableName='''''+@TABLENAME+'''''
+    IF NOT EXISTS(SELECT 1 FROM UPDATE_LOG WHERE UpdateTime=@maxdate AND UPDATEGUID=''''''+@NEWID+'''''')
+    BEGIN
+        DECLARE @MAXGUID VARCHAR(50)
+        SELECT @MAXGUID=UPDATEGUID FROM UPDATE_LOG WHERE UpdateTime=@maxdate
+        PRINT ''''此操作并非最近一次操作，请逐步还原,此表最近一次操作的GUID是：''''+@MAXGUID
+        RETURN
+    END
+    ''
+    --********************还原insert和update操作用到的SQL*******************
+    DECLARE @SQL_DELETE VARCHAR(MAX)=''
+    SET ROWCOUNT 1  --设定相同条件下只删除1行        
+    DECLARE Cursor_ CURSOR FOR
+    SELECT ''+@COLUMN2+'' FROM BACKUP_'+@TABLENAME+' WHERE UPDATEGUID= ''''''+@NEWID+'''''' AND UpdateType=''''INSERT''''
+    OPEN Cursor_
+    DECLARE ''+@DECLARE+''
+    FETCH NEXT FROM Cursor_ INTO ''+@INTODECLARE+''
+    WHILE @@FETCH_STATUS=0
+    BEGIN                  
+        DELETE FROM '+@TABLENAME+' WHERE ''+@WHERE+''
+        FETCH NEXT FROM Cursor_ INTO ''+@INTODECLARE+''
+    END
+    CLOSE Cursor_
+    DEALLOCATE Cursor_
+    SET ROWCOUNT 0
+    ''
+    --*********************还原delete和update操作用到的SQL*******************
+    DECLARE @SQL_INSERT VARCHAR(MAX)=''
+    INSERT INTO '+@TABLENAME+' SELECT ''+@COLUMN1+'' FROM BACKUP_'+@TABLENAME+' WHERE UPDATEGUID=''''''+@NEWID+'''''' AND UpdateType=''''DELETE''''
+    ''
+    --*********************还原操作之后把备份表和log表的记录删掉*************
+    DECLARE @SQL_DELGUID VARCHAR(MAX)=''
+    DELETE FROM BACKUP_'+@TABLENAME+' WHERE  UPDATEGUID IN(SELECT UPDATEGUID FROM UPDATE_LOG WHERE UpdateTime&gt;=@maxdate AND TableName='''''+@TABLENAME+''''')
+    DELETE FROM UPDATE_LOG WHERE UpdateTime&gt;=@maxdate AND TableName='''''+@TABLENAME+'''''
+    PRINT ''''回滚操作执行成功，共恢复 ''+CAST(@ROWCOUNT AS VARCHAR(10))+'' 条记录''''
+    SET NOCOUNT OFF
+    ''
+    --*********************执行还原操作的SQL**********************************
+    DECLARE @EXECSQL VARCHAR(500)=''
+    DECLARE @SQL VARCHAR(MAX)
+    SELECT @SQL=ROLLBACKSQL FROM UPDATE_LOG WHERE UPDATEGUID=''''''+@NEWID+''''''  
+    EXEC(@SQL) 
+    ''
+    --==============================判断执行的哪种操作方式=================================
+    DECLARE @DoType VARCHAR(MAX)=''UPDATE''
+    IF NOT EXISTS(SELECT 1 FROM deleted)
+        SET @DoType=''INSERT''
+    IF NOT EXISTS(SELECT 1 FROM inserted)
+        SET @DoType=''DELETE''
+    IF NOT EXISTS(SELECT 1 FROM deleted) AND  NOT EXISTS(SELECT 1 FROM inserted)
+        RETURN
+    IF @DoType=''UPDATE''
+    BEGIN
+        INSERT INTO [dbo].[UPDATE_LOG]
+        SELECT @NEWID,GETDATE(),'''+@TABLENAME+''',''UPDATE'',@SQL_ISLAST+@SQL_DELETE+@SQL_INSERT+@SQL_DELGUID,@EXECSQL
+        RETURN
+    END
+    IF @DoType=''DELETE''
+    BEGIN
+        INSERT INTO [dbo].[UPDATE_LOG]
+        SELECT @NEWID,GETDATE(),'''+@TABLENAME+''',''DELETE'',@SQL_ISLAST+@SQL_INSERT+@SQL_DELGUID,@EXECSQL
+        RETURN
+    END
+    IF @DoType=''INSERT''
+    BEGIN
+        INSERT INTO [dbo].[UPDATE_LOG]
+        SELECT @NEWID,GETDATE(),'''+@TABLENAME+''',''INSERT'',@SQL_ISLAST+@SQL_DELETE+@SQL_DELGUID,@EXECSQL
+        RETURN
+    END
+END
+            '
+        EXEC (@SQLTR)
+    END
+END</code></pre>
+
+<p>注：关于SQL SERVER回滚恢复误操作数据的实现方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/961.html'>MySQL update set 和 and的区别用法详细说明</a><a>下一篇</a><a href='/mysql/biji/963.html'>MySQL数据表分区策略及优缺点的功能实例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

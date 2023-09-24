@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server 数据库中索引原理分析说明_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server 数据库中索引原理分析说明，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！下面，我们举例来说明一" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server 数据库中索引原理分析说明</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:51:13                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server 数据库中索引原理分析说明，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！下面，我们举例来说明一</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server 数据库中索引原理分析说明，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>下面，我们举例来说明一下聚集索引和非聚集索引的区别：其实，我们的汉语字典的正文本身就是一个聚集索引。比如，我们要查&ldquo;安&rdquo;字，就会很自然地翻开字典的前几页，因为&ldquo;安&rdquo;的拼音是&ldquo;an&rdquo;，而按照拼音排序汉字的字典是以英文字母&ldquo;a&rdquo;开头并以&ldquo;z&rdquo;结尾的，那么&ldquo;安&rdquo;字就自然地排在字典的前部。如果您翻完了所有以&ldquo;a&rdquo;开头的部分仍然找不到这个字，那么就说明您的字典中没有这个字；同样的，如果查&ldquo;张&rdquo;字，那您也会将您的字典翻到最后部分，因为&ldquo;张&rdquo;的拼音是&ldquo;zhang&rdquo;。<font color="#ff0000">也就是说，字典的正文部分本身就是一个目录，您不需要再去查其他目录来找到您需要找的内容。</font><font color="#ff0000">我们把这种正文内容本身就是一种按照一定规则排列的目录称为&ldquo;聚集索引&rdquo;。</font>如果您认识某个字，您可以快速地从自动中查到这个字。但您也可能会遇到您不认识的字，不知道它的发音，这时候，您就不能按照刚才的<u><strong><font color="#617b85">方法</font></strong></u>找到您要查的字，而需要去根据&ldquo;偏旁部首&rdquo;查到您要找的字，然后根据这个字后的页码直接翻到某页来找到您要找的字。但您结合&ldquo;部首目录&rdquo;和&ldquo;检字表&rdquo;而查到的字的排序并不是真正的正文的排序方法，比如您查&ldquo;张&rdquo;字，我们可以看到在查部首之后的检字表中&ldquo;张&rdquo;的页码是672页，检字表中&ldquo;张&rdquo;的上面是&ldquo;驰&rdquo;字，但页码却是63 页，&ldquo;张&rdquo;的下面是&ldquo;弩&rdquo;字，页面是390页。很显然，这些字并不是真正的分别位于&ldquo;张&rdquo;字的上下方，现在您看到的连续的&ldquo;驰、张、弩&rdquo;三字实际上就是他们在非聚集索引中的排序，是字典正文中的字在非聚集索引中的映射。<font color="#ff0000">我们可以通过这种方式来找到您所需要的字，但它需要两个过程，先找到目录中的结果，然后再翻到您所需要的页码。</font><font color="#ff0000">我们把这种目录纯粹是目录，正文纯粹是正文的排序方式称为&ldquo;非聚集索引&rdquo;。</font>通过以上例子，我们可以理解到什么是&ldquo;聚集索引&rdquo;和&ldquo;非聚集索引&rdquo;。进一步引申一下，我们可以很容易的理解：每个表只能有一个聚集索引，因为目录只能按照一种方法进行排序。（二）何时使用聚集索引或非聚集索引下面的表<u><strong><font color="#617b85">总结</font></strong></u>了何时使用聚集索引或非聚集索引（很重要）。
+<table cellspacing="0" class="t_table" style="WIDTH: 98%">
+	<tbody>
+		<tr>
+			<td><font color="#ff0000">动作描述</font></td>
+			<td><font color="#ff0000">列经常被分组排序</font></td>
+			<td><font color="#ff0000">返回某范围内的数据</font></td>
+			<td><font color="#ff0000">一个或极少不同值</font></td>
+			<td><font color="#ff0000">小数目的不同</font></td>
+			<td><font color="#ff0000">大数目的不同值</font></td>
+			<td><font color="#ff0000">频繁更新的列</font></td>
+			<td><font color="#ff0000">外键列</font></td>
+			<td><font color="#ff0000">主键列</font></td>
+			<td><font color="#ff0000">频繁修改索引列</font></td>
+		</tr>
+		<tr>
+			<td><font color="#ff0000">使用聚集索引</font></td>
+			<td><font color="#ff0000">应</font></td>
+			<td><font color="#ff0000">应</font></td>
+			<td><font color="#ff0000">不应</font></td>
+			<td><font color="#ff0000">不应</font></td>
+			<td><font color="#ff0000">不应</font></td>
+			<td><font color="#ff0000">不应</font></td>
+			<td><font color="#ff0000">应</font></td>
+			<td><font color="#ff0000">应</font></td>
+			<td><font color="#ff0000">不应</font></td>
+		</tr>
+		<tr>
+			<td><font color="#ff0000">不使用聚集索引</font></td>
+			<td><font color="#ff0000">应</font></td>
+			<td><font color="#ff0000">不应</font></td>
+			<td><font color="#ff0000">不应</font></td>
+			<td><font color="#ff0000">不应</font></td>
+			<td><font color="#ff0000">应</font></td>
+			<td><font color="#ff0000">应</font></td>
+			<td><font color="#ff0000">应</font></td>
+			<td><font color="#ff0000">应</font></td>
+			<td><font color="#ff0000">应</font></td>
+		</tr>
+	</tbody>
+</table>事实上，我们可以通过前面聚集索引和非聚集索引的定义的例子来理解上表。如：返回某范围内的数据一项。比如您的某个表有一个时间列，恰好您把聚合索引建立在了该列，这时您查询2004年1月1日至2004年10月1日之间的全部数据时，这个速度就将是很快的，因为您的这本字典正文是按日期进行排序的，聚类索引只需要找到要检索的所有数据中的开头和结尾数据即可；而不像非聚集索引，必须先查到目录中查到每一项数据对应的页码，然后再根据页码查到具体内容。（三）结合实际，谈索引使用的误区理论的目的是应用。虽然我们刚才列出了何时应使用聚集索引或非聚集索引，但在实践中以上规则却很容易被忽视或不能根据实际情况进行综合分析。下面我们将根据在实践中遇到的实际问题来谈一下索引使用的误区，以便于大家掌握索引建立的方法。1、主键就是聚集索引这种想法笔者认为是极端错误的，是对聚集索引的一种浪费。虽然SQL SERVER默认是在主键上建立聚集索引的。通常，我们会在每个表中都建立一个ID列，以区分每条数据，并且这个ID列是自动增大的，步长一般为1。我们的这个办公自动化的实例中的列Gid就是如此。此时，如果我们将这个列设为主键，SQL SERVER会将此列默认为聚集索引。这样做有好处，就是可以让您的数据在<u><strong><font color="#617b85">数据库</font></strong></u>中按照ID进行物理排序，但笔者认为这样做意义不大。显而易见，聚集索引的优势是很明显的，而每个表中只能有一个聚集索引的规则，这使得聚集索引变得更加珍贵。从我们前面谈到的聚集索引的定义我们可以看出，<font color="#ff0000">使用聚集索引的最大好处就是能够根据查询要求，迅速缩小查询范围，避免全表扫描。</font><font color="#ff0000">在实际应用中，因为ID号是自动生成的，我们并不知道每条记录的ID号，所以我们很难在实践中用ID号来进行查询。这就使让ID号这个主键作为聚集索引成为一种资源浪费。</font><font color="#ff0000">其次，让每个ID号都不同的字段作为聚集索引也不符合&ldquo;大数目的不同值情况下不应建立聚合索引&rdquo;规则；</font>当然，这种情况只是针对用户经常修改记录内容，特别是索引项的时候会负作用，但对于查询速度并没有影响。在办公自动化系统中，无论是系统首页显示的需要用户签收的文件、会议还是用户进行文件查询等任何情况下进行数据查询都离不开字段的是&ldquo;日期&rdquo;还有用户本身的&ldquo;用户名&rdquo;。通常，办公自动化的首页会显示每个用户尚未签收的文件或会议。虽然我们的where语句可以仅仅限制当前用户尚未签收的情况，但如果您的系统已建立了很长时间，并且数据量很大，那么，每次每个用户打开首页的时候都进行一次全表扫描，这样做意义是不大的，绝大多数的用户1个月前的文件都已经浏览过了，这样做只能徒增数据库的开销而已。事实上，我们完全可以让用户打开系统首页时，数据库仅仅查询这个用户近3个月来未阅览的文件，通过&ldquo;日期&rdquo;这个字段来限制表扫描，提高查询速度。如果您的办公自动化系统已经建立的2年，那么您的首页显示速度理论上将是原来速度8倍，甚至更快。在这里之所以提到&ldquo;理论上&rdquo;三字，是因为如果您的聚集索引还是盲目地建在ID这个主键上时，您的查询速度是没有这么高的，即使您在&ldquo;日期&rdquo;这个字段上建立的索引（非聚合索引）。下面我们就来看一下在1000万条数据量的情况下各种查询的速度表现（3个月内的数据为25万条）：（1）仅在主键上建立聚集索引，并且不划分时间段：Select gid,fariqi,neibuyonghu,title from tgongwen用时：128470毫秒（即：128秒）（2）在主键上建立聚集索引，在fariq上建立非聚集索引：select gid,fariqi,neibuyonghu,title from Tgongwenwhere fariqi&gt; dateadd(day,-90,getdate())用时：53763毫秒（54秒）（3）将聚合索引建立在日期列（fariqi）上：select gid,fariqi,neibuyonghu,title from Tgongwenwhere fariqi&gt; dateadd(day,-90,getdate())用时：2423毫秒（2秒）虽然每条语句提取出来的都是25万条数据，各种情况的差异却是巨大的，特别是将聚集索引建立在日期列时的差异。事实上，如果您的数据库真的有1000万容量的话，把主键建立在ID列上，就像以上的第1、2种情况，在网页上的表现就是超时，根本就无法显示。这也是我摒弃ID列作为聚集索引的一个最重要的因素。得出以上速度的方法是：在各个select语句前加：declare @d datetimeset @d=getdate()并在select语句后加：select [语句执行花费时间(毫秒)]=datediff(ms,@d,getdate())2、只要建立索引就能显著提高查询速度事实上，我们可以发现上面的例子中，第2、3条语句完全相同，且建立索引的字段也相同；不同的仅是前者在fariqi字段上建立的是非聚合索引，后者在此字段上建立的是聚合索引，但查询速度却有着天壤之别。所以，<font color="#ff0000">并非是在任何字段上简单地建立索引就能提高查询速度。</font>从建表的语句中，我们可以看到这个有着1000万数据的表中fariqi字段有5003个不同记录。在此字段上建立聚合索引是再合适不过了。在现实中，我们每天都会发几个文件，这几个文件的发文日期就相同，这完全符合建立聚集索引要求的：&ldquo;既不能绝大多数都相同，又不能只有极少数相同&rdquo;的规则。由此看来，<font color="#ff0000">我们建立&ldquo;适当&rdquo;的聚合索引对于我们提高查询速度是非常重要的。</font>3、<font color="#ff0000">把所有需要提高查询速度的字段都加进聚集索引，以提高查询速度。</font>上面已经谈到：在进行数据查询时都离不开字段的是&ldquo;日期&rdquo;还有用户本身的&ldquo;用户名&rdquo;。既然这两个字段都是如此的重要，我们可以把他们合并起来，建立一个复合索引（compound index）。很多人认为只要把任何字段加进聚集索引，就能提高查询速度，也有人感到迷惑：如果把复合的聚集索引字段分开查询，那么查询速度会减慢吗？带着这个问题，我们来看一下以下的查询速度（结果集都是25万条数据）：（日期列fariqi首先排在复合聚集索引的起始列，用户名neibuyonghu排在后列）（1）select gid,fariqi,neibuyonghu,title from Tgongwen where fariqi&gt;&#39;2004-5-5&#39;查询速度：2513毫秒（2）select gid,fariqi,neibuyonghu,title from Tgongwen where fariqi&gt;&#39;2004-5-5&#39; and neibuyonghu=&#39;办公室&#39;查询速度：2516毫秒（3）select gid,fariqi,neibuyonghu,title from Tgongwen where neibuyonghu=&#39;办公室&#39;查询速度：60280毫秒从以上试验中，我们可以看到如果仅用聚集索引的起始列作为查询条件和同时用到复合聚集索引的全部列的查询速度是几乎一样的，甚至比用上全部的复合索引列还要略快（在查询结果集数目一样的情况下）；而如果仅用复合聚集索引的非起始列作为查询条件的话，这个索引是不起任何作用的。当然，语句1、2的查询速度一样是因为查询的条目数一样，如果复合索引的所有列都用上，而且查询结果少的话，这样就会形成&ldquo;索引覆盖&rdquo;，因而性能可以达到最优。同时，<font color="#ff0000">请记住：无论您是否经常使用聚合索引的其他列，但其前导列一定要是使用最频繁的列。</font>（四）其他书上没有的索引使用经验总结<font color="#ff0000">1、用聚合索引比用不是聚合索引的主键速度快</font>下面是实例语句：（都是提取25万条数据）select gid,fariqi,neibuyonghu,reader,title from Tgongwen where fariqi=&#39;2004-9-16&#39;使用时间：3326毫秒select gid,fariqi,neibuyonghu,reader,title from Tgongwen where gid&lt;=250000使用时间：4470毫秒这里，用聚合索引比用不是聚合索引的主键速度快了近1/4。<font color="#ff0000">2、用聚合索引比用一般的主键作order by时速度快，特别是在小数据量情况下</font>select gid,fariqi,neibuyonghu,reader,title from Tgongwen order by fariqi用时：12936select gid,fariqi,neibuyonghu,reader,title from Tgongwen order by gid用时：18843这里，用聚合索引比用一般的主键作order by时，速度快了3/10。事实上，如果数据量很小的话，用聚集索引作为排序列要比使用非聚集索引速度快得明显的多；而数据量如果很大的话，如10万以上，则二者的速度差别不明显。<font color="#ff0000">3、使用聚合索引内的时间段，搜索时间会按数据占整个数据表的百分比成比例减少，而无论聚合索引使用了多少个</font>select gid,fariqi,neibuyonghu,reader,title from Tgongwen where fariqi&gt;&#39;2004-1-1&#39;用时：6343毫秒（提取100万条）select gid,fariqi,neibuyonghu,reader,title from Tgongwen where fariqi&gt;&#39;2004-6-6&#39;用时：3170毫秒（提取50万条）select gid,fariqi,neibuyonghu,reader,title from Tgongwen where fariqi=&#39;2004-9-16&#39;用时：3326毫秒（和上句的结果一模一样。如果采集的数量一样，那么用大于号和等于号是一样的）select gid,fariqi,neibuyonghu,reader,title from Tgongwen where fariqi&gt;&#39;2004-1-1&#39; and fariqi&lt;&#39;2004-6-6&#39;用时：3280毫秒<font color="#ff0000">4 、日期列不会因为有分秒的输入而减慢查询速度</font>下面的例子中，共有100万条数据，2004年1月1日以后的数据有50万条，但只有两个不同的日期，日期精确到日；之前有数据50万条，有5000个不同的日期，日期精确到秒。select gid,fariqi,neibuyonghu,reader,title from Tgongwen where fariqi&gt;&#39;2004-1-1&#39; order by fariqi用时：6390毫秒select gid,fariqi,neibuyonghu,reader,title from Tgongwen where fariqi&lt;&#39;2004-1-1&#39; order by fariqi用时：6453毫秒
+
+<p>注：关于SQL Server 数据库中索引原理分析说明的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3928.html'>SQL Server sql基本函数大全</a><a>下一篇</a><a href='/mysql/biji/3930.html'>在SQL Server启动时自动执行存储过程</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

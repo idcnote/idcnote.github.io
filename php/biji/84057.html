@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>很简单的Java断点续传实现原理_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="原理解析<br />
+在开发当中，“断点续传”这种功能很实用和常见，听上去也是比较有“逼格”的感觉。所以通常我们都有兴趣去研究研究这种功能是如何实现的？ <br />
+<br />
+以Java来说，网络上也能找到" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">很简单的Java断点续传实现原理</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>原理解析<br />
+在开发当中，“断点续传”这种功能很实用和常见，听上去也是比较有“逼格”的感觉。所以通常我们都有兴趣去研究研究这种功能是如何实现的？ <br />
+<br />
+以Java来说，网络上也能找到</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>原理解析</strong></p>
+<p>在开发当中，“断点续传”这种功能很实用和常见，听上去也是比较有“逼格”的感觉。所以通常我们都有兴趣去研究研究这种功能是如何实现的？ <br />
+以Java来说，网络上也能找到不少关于实现类似功能的资料。但是呢，大多数都是举个Demo然后贴出源码，真正对其实现原理有详细的说明很少。 <br />
+于是我们在最初接触的时候，很可能就是直接Crtl + C/V代码，然后捣鼓捣鼓，然而最终也能把效果弄出来。但初学时这样做其实很显然是有好有坏的。 <br />
+好处在于，源码很多，解释很少；如果我们肯下功夫，针对于别人贴出的代码里那些自己不明白的东西去查资料，去钻研。最终多半会收获颇丰。 <br />
+坏处也很明显：作为初学者，面对一大堆的源码，感觉好多东西都很陌生，就很容易望而生畏。即使最终大致了解了用法，但也不一定明白实现原理。</p>
+<p>我们今天就一起从最基本的角度切入，来看看所谓的“断点续传”这个东西是不是真的如此“高逼格”。 <br />
+其实在接触一件新的“事物”的时候，将它拟化成一些我们本身比较熟悉的事物，来参照和对比着学习。通常会事半功倍。 <br />
+如果我们刚接触“断点续传”这个概念，肯定很难说清楚个一二三。那么，“玩游戏”我们肯定不会陌生。</p>
+<p>OK，那就假设我们现在有一款“通关制的RPG游戏”。想想我们在玩这类游戏时通常会怎么做？ <br />
+很明显，第一天我们浴血奋战，大杀四方，假设终于来到了第四关。虽然激战正酣，但一看墙上的时钟，已经凌晨12点，该睡觉了。 <br />
+这个时候就很尴尬了，为了能够在下一次玩的时候，顺利接轨上我们本次游戏的进度，我们应该怎么办呢？ <br />
+很简单，我们不关掉游戏，直接去睡觉，第二天再接着玩呗。这样是可以，但似乎总觉着有哪里让人不爽。 <br />
+那么，这个时候，如果这个游戏有一个功能叫做“存档”，就很关键了。我们直接选择存档，输入存档名“第四关”，然后就可以关闭游戏了。 <br />
+等到下次进行游戏时，我们直接找到“第四关”这个存档，然后进行读档，就可以接着进行游戏了。</p>
+<p>这个时候，所谓的“断点续传”就很好理解了。我们顺着我们之前“玩游戏”的思路来理一下： <br />
+假设，现在有一个文件需要我们进行下载，当我们下载了一部分的时候，出现情况了，比如：电脑死机、没电、网络中断等等。 <br />
+其实这就好比我们之前玩游戏玩着玩着，突然12点需要去睡觉休息了是一个道理。OK，那么这个时候的情况是：</p>
+<p><strong>&nbsp;&#8226; </strong>如果游戏不能存档，那么则意味着我们下次游戏的时候，这次已经通过的4关的进度将会丢失，无法接档。<br />
+<strong>&nbsp;&#8226; </strong>对应的，如果“下载”的行为无法记录本次下载的一个进度。那么，当我们再次下载这个文件也就只能从头来过。<br />
+&nbsp;话到这里，其实我们已经发现了，对于我们以上所说的行为，关键就在于一个字“<span style="color: #800000"><strong>续</strong></span>”！ <br />
+而我们要实现让一种断开的行为“续”起来的目的，关键就在于要有“介质”能够记录和读取行为出现”中断”的这个节点的信息。</p>
+<p><strong>转化到编程世界</strong></p>
+<p>实际上这就是“断点续传”最最基础的原理，用大白话说就是：我们要在下载行为出现中断的时候，记录下中断的位置信息，然后在下次行为中读取。 <br />
+有了这个位置信息之后，想想我们该怎么做。是的，很简单，在新的下载行为开始的时候，直接从记录的这个位置开始下载内容，而不再从头开始。 <br />
+好吧，我们用大白话掰扯了这么久的原理，开始觉得无聊了。那么我们现在最后总结一下，然后就来看看我们应该怎么把原理转换到编程世界中去。</p>
+<p><strong>&nbsp;&#8226; </strong>当“上传(下载)的行为”出现中断，我们需要记录本次上传(下载)的位置(position)。<br />
+<strong>&nbsp;&#8226; </strong>当“续”这一行为开始，我们直接跳转到postion处继续上传(下载)的行为。&nbsp;<br />
+</p>
+<p>显然问题的关键就在于所谓的“position”，以我们举的“通关游戏来说”，可以用“第几关”来作为这个position的单位。 <br />
+那么转换到所谓的“断点续传”，我们该使用什么来衡量“position”呢？很显然，回归二进制，因为这里的本质无非就是文件的读写。</p>
+<p>那么剩下的工作就很简单了，先是记录position，这似乎都没什么值得说的，因为只是数据的持久化而已(内存，文件，数据库)，我们有很多方式。</p>
+<p>另一个关键在于当“续传”的行为开始，我们需要需要从上次记录的position位置开始读写操作，所以我们需要一个类似于“指针”功能的东西。 <br />
+我们当然也可以自己想办法去实现这样一个“指针”，但高兴地是，Java已经为我们提供了这样的一个类，那就是RandomAccessFile。 <br />
+这个类的功能从名字就很直观的体现了，能够随机的去访问文件。我们看一下API文档中对该类的说明：</p>
+<p><span style="font-size: larger"><strong><span style="color: #808080">此类的实例支持对随机访问文件的读取和写入。随机访问文件的行为类似存储在文件系统中的一个大型 byte 数组。</span></strong></span></p>
+<p><span style="font-size: larger"><strong><span style="color: #808080">如果随机访问文件以读取/写入模式创建，则输出操作也可用；输出操作从文件指针开始写入字节，并随着对字节的写入而前移此文件指针。</span></strong></span></p>
+<p><span style="font-size: larger"><strong><span style="color: #808080">写入隐含数组的当前末尾之后的输出操作导致该数组扩展。该文件指针可以通过 getFilePointer 方法读取，并通过 seek 方法设置。</span></strong></span>&nbsp;<br />
+</p>
+<p>看完API说明，我们笑了，是的，这不正是我们要的吗？那好吧，我们磨刀磨了这么久了，还不去砍砍柴吗？</p>
+<p><strong>实例演示</strong></p>
+<p>既然是针对于文件的“断点续传”，那么很明显，我们先搞一个文件出来。也许音频文件，图像文件什么的看上去会更上档次一点。 <br />
+但我们已经说了，在计算机大兄弟眼中，它们最终都将回归“二进制”。所以我们这里就创建一个简单的”txt”文件，因为txt更利于理解。</p>
+<p>我们在D盘的根目录下创建一个名为”test.txt”的文件，文件内容很简单，如图所示：</p>
+<p style="text-align: center"><br />
+</p>
+<p>没错，我们输入的内容就是简单的6个英语字母。然后我们右键→属性：</p>
+<p style="text-align: center"><br />
+</p>
+<p>我们看到，文件现在的大小是6个字节。这也就是为什么我们说，所有的东西到最后还是离不开“二进制”。 <br />
+是的，我们都明白，因为我们输入了6个英文字母，而1个英文字母将占据的存储空间是1个字节(即8个比特位)。 <br />
+目前为止，我们看到的都很无聊，因为这基本等于废话，稍微有计算机常识的人都知道这些知识。别着急，我们继续。</p>
+<p>在Java中对一个文件进行读写操作很简单。假设现在的需求如果是“把D盘的这个文件写入到E盘”，那么我们会提起键盘，啪啪啪啪，搞定！ <br />
+但其实所谓的文件的“上传(下载)”不是也没什么不同吗？区别就仅仅在于行为由“仅仅在本机之间”转变成了”本机与服务器之间”的文件读写。 <br />
+这时我们会说，“别逼逼了，这些谁都知道，‘断点续传'呢？“，其实到了这里也已经很简单了，我们再次明确，断点续传要做的无非就是： <br />
+前一次读写行为如果出现中断，请记录下此次读写完成的文件内容的位置信息；当“续传开始”则直接将指针移到此处，开始继续读写操作。</p>
+<p>反复的强调原理，实际上是因为只要弄明白了原理，剩下的就只是招式而已了。这就就像武侠小说里的“九九归一”大法一样，最高境界就是回归本源。 <br />
+任何复杂的事物，只要明白其原理，我们就能将其剥离，还原为一个个简单的事物。同理，一系列简单的事物，经过逻辑组合，就形成了复杂的事物。</p>
+<p>下面，我们马上就将回归混沌，以最基本的形式模拟一次“断点续传”。在这里我们连服务器的代码都不去写了，直接通过一个本地测试类搞定。 <br />
+我们要实现的效果很简单：将在D盘的”test.txt”文件写入到E盘当中，但中途我们会模拟一次”中断”行为，然后在重新继续上传，最终完成整个过程。 <br />
+也就是说，我们这里将会把“D盘”视作一台电脑，并且直接将”E盘”视作一台服务器。那么这样我们甚至都不再与http协议扯上半毛钱关系了，（当然实际开发我们肯定是还是得与它扯上关系的 ^&lt;^)，从而只关心最基本的文件读写的”断”和”续”的原理是怎么样的。</p>
+<p>为了通过对比加深理解，我们先来写一段正常的代码，即正常读写，不发生中断：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class Test {
+
+ public static void main(String[] args) {
+  // 源文件与目标文件
+  File sourceFile = new File("D:/", "test.txt");
+  File targetFile = new File("E:/", "test.txt");
+  // 输入输出流
+  FileInputStream fis = null;
+  FileOutputStream fos = null;
+  // 数据缓冲区
+  byte[] buf = new byte[1];
+
+  try {
+   fis = new FileInputStream(sourceFile);
+   fos = new FileOutputStream(targetFile);
+   // 数据读写
+   while (fis.read(buf) != -1) {
+    System.out.println("write data...");
+    fos.write(buf);
+   }
+  } catch (FileNotFoundException e) {
+   System.out.println("指定文件不存在");
+  } catch (IOException e) {
+   // TODO: handle exception
+  } finally {
+   try {
+    // 关闭输入输出流
+    if (fis != null)
+     fis.close();
+
+    if (fos != null)
+     fos.close();
+   } catch (IOException e) {
+    e.printStackTrace();
+   }
+
+  }
+ }
+}
+
+</pre>
+</div>
+<p>该段代码运行，我们就会发现在E盘中已经成功拷贝了一份“test.txt”。这段代码很简单，唯一稍微说一下就是: <br />
+我们看到我们将buf，即缓冲区 设置的大小是1，这其实就代表我们每次read，是读取一个字节的数据(即1个英文字母)。</p>
+<p>现在，我们就来模拟这个读写中断的行为，我们将之前的代码完善如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+
+public class Test {
+
+ private static int position = -1;
+
+ public static void main(String[] args) {
+  // 源文件与目标文件
+  File sourceFile = new File("D:/", "test.txt");
+  File targetFile = new File("E:/", "test.txt");
+  // 输入输出流
+  FileInputStream fis = null;
+  FileOutputStream fos = null;
+  // 数据缓冲区
+  byte[] buf = new byte[1];
+
+  try {
+   fis = new FileInputStream(sourceFile);
+   fos = new FileOutputStream(targetFile);
+   // 数据读写
+   while (fis.read(buf) != -1) {
+    fos.write(buf);
+    // 当已经上传了3字节的文件内容时，网络中断了，抛出异常
+    if (targetFile.length() == 3) {
+     position = 3;
+     throw new FileAccessException();
+    }
+   }
+  } catch (FileAccessException e) {
+   keepGoing(sourceFile,targetFile, position);
+  } catch (FileNotFoundException e) {
+   System.out.println("指定文件不存在");
+  } catch (IOException e) {
+   // TODO: handle exception
+  } finally {
+   try {
+    // 关闭输入输出流
+    if (fis != null)
+     fis.close();
+
+    if (fos != null)
+     fos.close();
+   } catch (IOException e) {
+    e.printStackTrace();
+   }
+
+  }
+ }
+
+ private static void keepGoing(File source,File target, int position) {
+  try {
+   Thread.sleep(10000);
+  } catch (InterruptedException e) {
+   // TODO Auto-generated catch block
+   e.printStackTrace();
+  }
+
+  try {
+   RandomAccessFile readFile = new RandomAccessFile(source, "rw");
+   RandomAccessFile writeFile = new RandomAccessFile(target, "rw");
+   readFile.seek(position);
+   writeFile.seek(position);
+
+   // 数据缓冲区
+   byte[] buf = new byte[1];
+   // 数据读写
+   while (readFile.read(buf) != -1) {
+    writeFile.write(buf);
+   }
+  } catch (FileNotFoundException e) {
+   // TODO Auto-generated catch block
+   e.printStackTrace();
+  } catch (IOException e) {
+   // TODO Auto-generated catch block
+   e.printStackTrace();
+  }
+ }
+
+}
+
+class FileAccessException extends Exception {
+
+}
+
+</pre>
+</div>
+<p>总结一下，我们在这次改动当中都做了什么工作：</p>
+<p><strong>&nbsp;&#8226; </strong>首先，我们定义了一个变量position，记录在发生中断的时候，已完成读写的位置。（这是为了方便，实际来说肯定应该讲这个值存到文件或者数据库等进行持久化）<br />
+&nbsp;<strong>&#8226; </strong>然后在文件读写的while循环中，我们去模拟一个中断行为的发生。这里是当targetFile的文件长度为3个字节则模拟抛出一个我们自定义的异常。(我们可以想象为实际下载中，已经上传(下载)了”x”个字节的内容，这个时候网络中断了，那么我们就在网络中断抛出的异常中将”x”记录下来)。<br />
+<strong>&nbsp;&#8226; </strong>剩下的就如果我们之前说的一样，在“续传”行为开始后，通过RandomAccessFile类来包装我们的文件，然后通过seek将指针指定到之前发生中断的位置进行读写就搞定了。 <br />
+（实际的文件下载上传，我们当然需要将保存的中断值上传给服务器，这个方式通常为httpConnection.setRequestProperty(“RANGE”,”bytes=x”);）<br />
+</p>
+<p>在我们这段代码，开启”续传“行为，即keepGoing方法中：我们起头让线程休眠10秒钟，这正是为了让我们运行程序看到效果。 <br />
+现在我们运行程序，那么文件就会开启“由D盘上传到E盘的过程”，我们首先点开E盘，会发现的确多了一个test.txt文件，打开它发现内容如下：</p>
+<p style="text-align: center"><br />
+</p>
+<p>没错，这个时候我们发现内容只有“abc”。这是在我们预料以内的，因为我们的程序模拟在文件上传了3个字节的时候发生了中断。</p>
+<p>Ok，我们静静的等待10秒钟过去，然后再点开该文件，看看是否能够成功：</p>
+<p style="text-align: center"></p>
+<p>通过截图我们发现内容的确已经变成了“abc”，由此也就完成了续传。<br />
+</p>
+<p>以上就是本文的全部内容，希望对大家的学习有所帮助，也希望大家多多支持phpstudy。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/84056.html'>Cocos2d-x 3.x入门教程（一）：基础概念</a><a>下一篇</a><a href='/php/biji/84058.html'>获取pc电脑和平板物理地址</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

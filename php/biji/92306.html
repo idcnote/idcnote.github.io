@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>使用Node.js实现一个简单的FastCGI服务器实例_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="本文是我最近对Node.js学习过程中产生的一个想法，提出来和大家一起探讨。<br />
+Node.js的HTTP服务器<br />
+使用Node.js可以非常容易的实现一个http服务，最简的例子如官方网站的示例：复制" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">使用Node.js实现一个简单的FastCGI服务器实例</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>本文是我最近对Node.js学习过程中产生的一个想法，提出来和大家一起探讨。<br />
+Node.js的HTTP服务器<br />
+使用Node.js可以非常容易的实现一个http服务，最简的例子如官方网站的示例：复制</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><P>本文是我最近对Node.js学习过程中产生的一个想法，提出来和大家一起探讨。</P>
+<P><STRONG>Node.js的HTTP服务器</STRONG></P>
+<P>使用Node.js可以非常容易的实现一个http服务，最简的例子如官方网站的示例：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="34449" class="copybut" id="copybut34449" onclick="doCopy('code34449')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code34449"><BR>var http = require('http');<BR>http.createServer(function (req, res) {<BR>&nbsp;&nbsp;&nbsp; res.writeHead(200, {'Content-Type': 'text/plain'});<BR>&nbsp;&nbsp;&nbsp; res.end('Hello World\n');<BR>}).listen(1337, '127.0.0.1');</div><BR>这样就快速的搭建了一个监听在1337端口所有http请求的web服务。<BR>但是，在真正的生产环境中，我们一般很少直接使用Node.js作为面向用户的最前端web服务器，原因主要有以下几种：</P>
+<P>1.基于Node.js单线程特性的原因，其健壮性的保证对开发人员要求比较高。<BR>2.服务器上可能已有其他http服务已占用80端口，而非80端口的web服务对用户显然不够友好。<BR>3.Node.js对文件IO处理并没太大优势，如作为常规网站可能需同时响应图片等文件资源。<BR>4.分布式负载场景也是一个挑战。</P>
+<P>所以，使用Node.js作为web服务更多可能是作为游戏服务器接口等类似场景，大多是处理不需用户直接访问且仅作数据交换的服务。</P>
+<P><STRONG>基于Nginx作为前端机的Node.js web服务</STRONG></P>
+<P>基于上述原因，如果是使用Node.js搭建的网站形的产品，常规的使用方式是在Node.js的web服务前端放置另一个成熟的http服务器，如最常使用的是Nginx。<BR>然后使用Nginx作为反向代理访问基于Node.js的web服务。如：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="26163" class="copybut" id="copybut26163" onclick="doCopy('code26163')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code26163"><BR>server{<BR>&nbsp;&nbsp;&nbsp; listen 80;<BR>&nbsp;&nbsp;&nbsp; server_name yekai.me;<BR>&nbsp;&nbsp;&nbsp; root /home/andy/wwwroot/yekai;</P>
+<P>&nbsp;&nbsp;&nbsp; location / {<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; proxy_pass http://127.0.0.1:1337;<BR>&nbsp;&nbsp;&nbsp; }</P>
+<P>&nbsp;&nbsp;&nbsp; location ~ \.(gif|jpg|png|swf|ico|css|js)$ {<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; root /home/andy/wwwroot/yekai/static;<BR>&nbsp;&nbsp;&nbsp; }<BR>}<BR></div></P>
+<P>这样就比较好的解决了上面提出的几个问题。</P>
+<P><STRONG>使用FastCGI协议通讯</STRONG></P>
+<P>不过，上述代理的方式也有一些不是很好的地方。<BR>一个是有可能的场景是需要控制后面的Node.js的web服务的直接http访问。不过，要解决的话也可以使用自身的服务或者依靠防火墙阻挡。<BR>另外一个是因为代理的方式毕竟是网络应用层上的方案，也不是很方便直接获取和处理与客户端http交互的数据，比如对keep-alive、trunk甚至cookie等的处理。当然这也与代理服务器自身的能力和功能完善程度相关。<BR>所以，我在想尝试另外一种处理方式，首先想到的就是现在在php web应用上普遍使用的FastCGI的方式。</P>
+<P><STRONG>什么是FastCGI</STRONG></P>
+<P>快速通用网关接口（Fast Common Gateway Interface／FastCGI）是一种让交互程序与Web服务器通信的协议。</P>
+<P>FastCGI产生的背景是用来作为cgi web应用的替代方案，一个最明显的特点是一个FastCGI服务进程可以用来处理一连串的请求，web服务器会把环境变量和这个页面请求通过一个socket比如FastCGI进程与web服务器连接起来，连接可用Unix Domain Socket或是一个TCP/IP连接。关于更多的背景知识可以参考Wikipedia的词条。</P>
+<P><STRONG>Node.js的FastCGI实现</STRONG></P>
+<P>那么理论上我们只需要使用Node.js创建一个FastCGI进程，再指定Nginx的监听请求发送到这个进程就行了。由于Nginx和Node.js都是基于事件驱动的服务模型，“理论”上应该是天作地合的解决方案。下面我们就亲自实现一下。<BR>在Node.js中net模块刚好可用来建立一个socket服务，为了方便我们就选用unix socket的方式。<BR>在Nginx端的配置稍微修改下：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="4137" class="copybut" id="copybut4137" onclick="doCopy('code4137')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code4137"><BR>...<BR>location / {<BR>&nbsp;&nbsp;&nbsp; fastcgi_pass&nbsp;&nbsp; unix:/tmp/node_fcgi.sock;<BR>}<BR>...</div><BR>新建一个文件node_fcgi.js，内容如下：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="43658" class="copybut" id="copybut43658" onclick="doCopy('code43658')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code43658"><BR>var net = require('net');</P>
+<P>var server = net.createServer();<BR>server.listen('/tmp/node_fcgi.sock');</P>
+<P>server.on('connection', function(sock){<BR>&nbsp;&nbsp;&nbsp; console.log('connection');</P>
+<P>&nbsp;&nbsp;&nbsp; sock.on('data', function(data){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; console.log(data);<BR>&nbsp;&nbsp;&nbsp; });<BR>});</div></P>
+<P><BR>然后运行（因为权限的原因，请保证Nginx和node脚本使用同一用户或有相互权限的帐号运行，不然读写sock文件会遇到权限问题）：</P>
+<P>node node_fcgi.js<br><br>在浏览器访问，我们看到运行node脚本的终端正常的接收到了数据内容，比如这样：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="25095" class="copybut" id="copybut25095" onclick="doCopy('code25095')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code25095"><BR>connection<BR>&lt; Buffer 01 01 00 01 00 08 00 00 00 01 00 00 00 00 00 00 01 04 00 01 01 87 01...&gt;</div></P>
+<P>这就证明我们的理论基础已经实现了第一步，接下来只需要搞清楚这个buffer的内容如何解析就行了。</P>
+<P><BR><STRONG>FastCGI协议基础</STRONG></P>
+<P>FastCGI记录由一个定长前缀后跟可变数量的内容和填充字节组成。记录结构如下：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="7341" class="copybut" id="copybut7341" onclick="doCopy('code7341')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code7341"><BR>typedef struct {<BR>&nbsp;&nbsp;&nbsp; unsigned char version;<BR>&nbsp;&nbsp;&nbsp; unsigned char type;<BR>&nbsp;&nbsp;&nbsp; unsigned char requestIdB1;<BR>&nbsp;&nbsp;&nbsp; unsigned char requestIdB0;<BR>&nbsp;&nbsp;&nbsp; unsigned char contentLengthB1;<BR>&nbsp;&nbsp;&nbsp; unsigned char contentLengthB0;<BR>&nbsp;&nbsp;&nbsp; unsigned char paddingLength;<BR>&nbsp;&nbsp;&nbsp; unsigned char reserved;<BR>&nbsp;&nbsp;&nbsp; unsigned char contentData[contentLength];<BR>&nbsp;&nbsp;&nbsp; unsigned char paddingData[paddingLength];<BR>} FCGI_Record;</div></P>
+<P>version ：FastCGI协议版本，现在默认就用1就好<BR>type ：记录类型，其实可以当做是不同状态，后面具体说<BR>requestId ：请求id，返回时需对应，如果不是多路复用并发的情况，这里直接用1就好<BR>contentLength ：内容长度，这里最大长度是65535<BR>paddingLength ：填充长度，作用就是长数据填充为满8字节的整数倍，主要是用来更有效地处理保持对齐的数据，主要是性能考虑<BR>reserved ：保留字节，为了后续扩展<BR>contentData ：真正的内容数据，一会具体说<BR>paddingData ：填充数据，反正都是0，直接忽略就好。</P>
+<P>具体的结构和说明请参考官网文档(http://www.fastcgi.com/devkit/doc/fcgi-spec.html#S3.3)。</P>
+<P><BR><STRONG>请求部分</STRONG></P>
+<P>似乎好像很简单，就是这样解析一次拿到数据就行了。不过，这里有一个坑，那就是这里定义的是数据单元（记录）的结构，并不是整个buffer的结构，整个buffer由一个记录一个记录这样的组成。一开始可能对于我们习惯了前端开发的同学不大好理解，但是这是理解FastCGI协议的基础，后面还会看到更多例子。<BR>所以，我们需要将一个记录一个记录单独解析出来，根据前面拿到的type来区分记录。这里是一个简单的获取所有记录的函数：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="34044" class="copybut" id="copybut34044" onclick="doCopy('code34044')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code34044"><BR>function getRcds(data, cb){<BR>&nbsp;&nbsp;&nbsp; var rcds = [],<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; start = 0,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; length = data.length;<BR>&nbsp;&nbsp;&nbsp; return function (){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if(start &gt;= length){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cb && cb(rcds);<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcds = null;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; var end = start + 8,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; header = data.slice(start, end),<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; version = header[0],<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; type&nbsp;&nbsp;&nbsp; = header[1],<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; requestId = (header[2] &lt;&lt; 8) + header[3],<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; contentLength = (header[4] &lt;&lt; 8) + header[5],<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; paddingLength = header[6];<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; start = end + contentLength + paddingLength;</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; var body = contentLength ? data.slice(end, contentLength) : null;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcds.push([type, body, requestId]);</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return arguments.callee();<BR>&nbsp;&nbsp;&nbsp; }<BR>}<BR>//使用<BR>sock.on('data', function(data){<BR>&nbsp;&nbsp;&nbsp; getRcds(data, function(rcds){<BR>&nbsp;&nbsp;&nbsp; })();<BR>}<BR></div></P>
+<P>注意这里只是简单处理，如果有上传文件等复杂情况这个函数不适应，为了最简演示就先简便处理了。同时，也忽略了requestId参数，如果是多路复用的情况下不能忽略，并且处理会需要复杂得多。<BR>接下来就可以根据type来对不同的记录进行处理了。type的定义如下：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="53934" class="copybut" id="copybut53934" onclick="doCopy('code53934')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code53934"><BR>#define FCGI_BEGIN_REQUEST&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1<BR>#define FCGI_ABORT_REQUEST&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2<BR>#define FCGI_END_REQUEST&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3<BR>#define FCGI_PARAMS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4<BR>#define FCGI_STDIN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5<BR>#define FCGI_STDOUT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 6<BR>#define FCGI_STDERR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7<BR>#define FCGI_DATA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8<BR>#define FCGI_GET_VALUES&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9<BR>#define FCGI_GET_VALUES_RESULT&nbsp; 10<BR>#define FCGI_UNKNOWN_TYPE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11<BR>#define FCGI_MAXTYPE (FCGI_UNKNOWN_TYPE)<BR></div></P>
+<P>接下来就可以根据记录的type来解析拿到真正的数据，下面我只拿最常用的FCGI_PARAMS、FCGI_GET_VALUES、FCGI_GET_VALUES_RESULT来说明，好在他们的解析方式是一致的。其他type记录的解析有自己不同的规则，可以参考规范的定义实现，我这里就不细说了。<BR>FCGI_PARAMS、FCGI_GET_VALUES、FCGI_GET_VALUES_RESULT都是“编码名-值”类型数据，标准格式为：以名字长度，后跟值的长度，后跟名字，后跟值的形式传送，其中127字节或更少的长度能在一字节中编码，而更长的长度总是在四字节中编码。长度的第一字节的高位指示长度的编码方式。高位为0意味着一个字节的编码方式，1意味着四字节的编码方式。看个综合的例子，比如长名短值的情况：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="20822" class="copybut" id="copybut20822" onclick="doCopy('code20822')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code20822"><BR>typedef struct {<BR>&nbsp;&nbsp;&nbsp; unsigned char nameLengthB3;&nbsp; /* nameLengthB3&nbsp; &gt;&gt; 7 == 1 */<BR>&nbsp;&nbsp;&nbsp; unsigned char nameLengthB2;<BR>&nbsp;&nbsp;&nbsp; unsigned char nameLengthB1;<BR>&nbsp;&nbsp;&nbsp; unsigned char nameLengthB0;<BR>&nbsp;&nbsp;&nbsp; unsigned char valueLengthB0; /* valueLengthB0 &gt;&gt; 7 == 0 */<BR>&nbsp;&nbsp;&nbsp; unsigned char nameData[nameLength<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((B3 & 0x7f) &lt;&lt; 24) + (B2 &lt;&lt; 16) + (B1 &lt;&lt; 8) + B0];<BR>&nbsp;&nbsp;&nbsp; unsigned char valueData[valueLength];<BR>} FCGI_NameValuePair41;<BR></div></P>
+<P>对应的实现js方法示例：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="20159" class="copybut" id="copybut20159" onclick="doCopy('code20159')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code20159"><BR>function parseParams(body){<BR>&nbsp;&nbsp;&nbsp; var j = 0,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; params = {},<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; length = body.length;<BR>&nbsp;&nbsp;&nbsp; while(j &lt; length){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; var name,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; value,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nameLength,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; valueLength;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if(body[j] &gt;&gt; 7 == 1){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nameLength = ((body[j++] & 0x7f) &lt;&lt; 24) + (body[j++] &lt;&lt; 16) + (body[j++] &lt;&lt; 8) + body[j++];<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else {<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nameLength = body[j++];<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if(body[j] &gt;&gt; 7 == 1){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; valueLength = ((body[j++] & 0x7f) &lt;&lt; 24) + (body[j++] &lt;&lt; 16) + (body[j++] &lt;&lt; 8) + body[j++];<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else {<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; valueLength = body[j++];<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; var ret = body.asciiSlice(j, j + nameLength + valueLength);<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; name = ret.substring(0, nameLength);<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; value = ret.substring(nameLength);<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; params[name] = value;</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; j += (nameLength + valueLength);<BR>&nbsp;&nbsp;&nbsp; }<BR>&nbsp;&nbsp;&nbsp; return params;<BR>}<BR></div></P>
+<P>这样就实现了一个简单可获取各种参数和环境变量的方法。完善前面的代码，演示我们如何获取客户端ip：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="95592" class="copybut" id="copybut95592" onclick="doCopy('code95592')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code95592"><BR>sock.on('data', function(data){<BR>&nbsp;&nbsp;&nbsp; getRcds(data, function(rcds){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for(var i = 0, l = rcds.length; i &lt; l; i++){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; var bodyData = rcds[i],<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; type = bodyData[0],<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; body = bodyData[1];<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if(body && (type === TYPES.FCGI_PARAMS || type === TYPES.FCGI_GET_VALUES || type === TYPES.FCGI_GET_VALUES_RESULT)){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; var params = parseParams(body);<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; console.log(params.REMOTE_ADDR);<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<BR>&nbsp;&nbsp;&nbsp; })();<BR>}</div></P>
+<P>到现在我们已经了解了FastCGI请求部分的基础，下面接着将响应部分的实现，并最终完成一个简单的echo应答服务。</P>
+<P><STRONG>响应部分</STRONG></P>
+<P>响应部分相对比较简单，最简单的情况只需要发送两个记录就行了，那就是FCGI_STDOUT和FCGI_END_REQUEST。<BR>具体记录实体的内容就不冗述了，直接看代码吧：</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="69293" class="copybut" id="copybut69293" onclick="doCopy('code69293')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code69293"><BR>var res = (function(){<BR>&nbsp;&nbsp;&nbsp; var MaxLength = Math.pow(2, 16);</P>
+<P>&nbsp;&nbsp;&nbsp; function buffer0(len){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return new Buffer((new Array(len + 1)).join('\u0000'));<BR>&nbsp;&nbsp;&nbsp; };</P>
+<P>&nbsp;&nbsp;&nbsp; function writeStdout(data){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; var rcdStdoutHd = new Buffer(8),<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; contendLength = data.length,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; paddingLength = 8 - contendLength % 8;</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdStdoutHd[0] = 1;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdStdoutHd[1] = TYPES.FCGI_STDOUT;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdStdoutHd[2] = 0;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdStdoutHd[3] = 1;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdStdoutHd[4] = contendLength &gt;&gt; 8;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdStdoutHd[5] = contendLength;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdStdoutHd[6] = paddingLength;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdStdoutHd[7] = 0;</P>
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return Buffer.concat([rcdStdoutHd, data, buffer0(paddingLength)]);<BR>&nbsp;&nbsp;&nbsp; };</P>
+<P>&nbsp;&nbsp;&nbsp; function writeHttpHead(){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return writeStdout(new Buffer("HTTP/1.1 200 OK\r\nContent-Type:text/html; charset=utf-8\r\nConnection: close\r\n\r\n"));<BR>&nbsp;&nbsp;&nbsp; }</P>
+<P>&nbsp;&nbsp;&nbsp; function writeHttpBody(bodyStr){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; var bodyBuffer = [],<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; body = new Buffer(bodyStr);<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for(var i = 0, l = body.length; i &lt; l; i += MaxLength + 1){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bodyBuffer.push(writeStdout(body.slice(i, i + MaxLength)));<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return Buffer.concat(bodyBuffer);<BR>&nbsp;&nbsp;&nbsp; }</P>
+<P>&nbsp;&nbsp;&nbsp; function writeEnd(){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; var rcdEndHd = new Buffer(8);<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdEndHd[0] = 1;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdEndHd[1] = TYPES.FCGI_END_REQUEST;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdEndHd[2] = 0;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdEndHd[3] = 1;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdEndHd[4] = 0;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdEndHd[5] = 8;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdEndHd[6] = 0;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rcdEndHd[7] = 0;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return Buffer.concat([rcdEndHd, buffer0(8)]);<BR>&nbsp;&nbsp;&nbsp; }</P>
+<P>&nbsp;&nbsp;&nbsp; return function(data){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return Buffer.concat([writeHttpHead(), writeHttpBody(data), writeEnd()]);<BR>&nbsp;&nbsp;&nbsp; };<BR>})();<BR></div></P>
+<P>在最简单的情况下，这样就可以发送一个完整的响应了。把我们最终的代码修改一下：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="21631" class="copybut" id="copybut21631" onclick="doCopy('code21631')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code21631"><BR>var visitors = 0;<BR>server.on('connection', function(sock){<BR>&nbsp;&nbsp;&nbsp; visitors++;<BR>&nbsp;&nbsp;&nbsp; sock.on('data', function(data){<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; var querys = querystring.parse(params.QUERY_STRING);<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; var ret = res('欢迎你，' + (querys.name || '亲爱的朋友') + '！你是本站第' + visitors + '位用户哦~');<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sock.write(ret);<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ret = null;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sock.end();<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...<BR>&nbsp;&nbsp;&nbsp; });</div><BR>打开浏览器访问：http://domain/?name=yekai，可看到类似“欢迎你，yekai！你是本站第7位用户哦~”。<BR>至此，我们就成功的使用Node.js实现了一个最简单的FastCGI服务。如果需要作为真正的服务使用，接下来只需要对照协议规范完善我们的逻辑就行了。</P>
+<P><BR><STRONG>对比测试</STRONG></P>
+<P>最后，我们需要考虑的问题是这个方案具体是否具有可行性？可能已经有同学看出了问题，我先把简单的压测结果放上来：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="64616" class="copybut" id="copybut64616" onclick="doCopy('code64616')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code64616"><BR>//FastCGI方式：<BR>500 clients, running 10 sec.<BR>Speed=27678 pages/min, 63277 bytes/sec.<BR>Requests: 3295 susceed, 1318 failed.</P>
+<P>500 clients, running 20 sec.<BR>Speed=22131 pages/min, 63359 bytes/sec.<BR>Requests: 6523 susceed, 854 failed.</P>
+<P>//proxy方式：<BR>500 clients, running 10 sec.<BR>Speed=28752 pages/min, 73191 bytes/sec.<BR>Requests: 3724 susceed, 1068 failed.</P>
+<P>500 clients, running 20 sec.<BR>Speed=26508 pages/min, 66267 bytes/sec.<BR>Requests: 6716 susceed, 2120 failed.</P>
+<P>//直接访问Node.js服务方式：<BR>500 clients, running 10 sec.<BR>Speed=101154 pages/min, 264247 bytes/sec.<BR>Requests: 15729 susceed, 1130 failed.</P>
+<P>500 clients, running 20 sec.<BR>Speed=43791 pages/min, 115962 bytes/sec.<BR>Requests: 13898 susceed, 699 failed.<BR></div><BR>为什么proxy方式反而会优于FastCGI方式呢？那是因为在proxy方案下后端服务是直接由Node.js原生模块跑的，而FastCGI方案是我们自己使用JavaScrip实现的。不过，也可以看出两者方案效率上并没有很大的差距（当然，这里对比的只是简单的情况，如果在真正的业务场景下，差距应该会更大），并且如果Node.js原生支持FastCGI服务，那么效率上应该会更优。</P>
+<P><STRONG>后记</STRONG></P>
+<P>如果有兴趣继续玩的同学可以查看我本文实现的例子源码，这两天研究下了协议规范，其实不难。<BR>同时，回头准备再玩玩uWSGI，不过官方说v8已经在准备直接支持了。<BR>玩得很浅，如有错误欢迎指正交流。<BR></P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/92305.html'>.Net程序防止被注入代码(整站通用)分享</a><a>下一篇</a><a href='/php/biji/92307.html'>ajax动态为a标签href赋值不执行跳转的原因分析及解决</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

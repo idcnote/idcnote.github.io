@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>解决MySQL读写分离过期的问题_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了解决MySQL读写分离过期的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+mysql读写分离的坑" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">解决MySQL读写分离过期的问题</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:14:24                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了解决MySQL读写分离过期的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+mysql读写分离的坑</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了解决MySQL读写分离过期的问题，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p></p>
+<h3>mysql读写分离的坑</h3>
+<p></p>
+<p>读写分离的主要目标是分摊主库的压力，由客户端选择后端数据库进行查询。还有种架构就是在MYSQL和客户端之间有一个中间代理层proxy，客户端之连接proxy，由proxy根据请求类型和上下文决定请求的分发路由。</p>
+<ul>
+	<li>客户端直连方案：因为少了一层proxy转发，所以查询性能稍微好一点儿，并且整体架构简单，排查问题更方便。但是这种方案，由于要了解后端部署细节，所以在出现主备切换、库迁移等操作的时候，客户端都会感知到，并且需要调整数据库连接信息。</li>
+	<li>带proxy架构：对客户端比较友好。客户端不需要关注后端细节，连接维护、后端信息维护等工作，都是由proxy完成的。但这样的话，对后端维护团队的要求会更高。</li>
+</ul>
+<p>无论使用哪种架构，由于主从可能存在延迟，客户端执行完一个更新事务后马上发起查询，如果查询选择的是从库的话，就有可能读到刚刚的事务更新之前的状态。这种&ldquo;在从库上会读到系统的一个过期状态&rdquo;的现象，我们暂且称之为&ldquo;过期读&rdquo;。</p>
+<p></p>
+<h3>方案一：强制走主库方案</h3>
+<p></p>
+<p>将查询请求分为两类：</p>
+<ul>
+	<li>对于必须要拿到最新结果的请求，强制将其发到主库上。比如，在一个交易平台上，卖家发布商品以后，马上要返回主页面，看商品是否发布成功。那么，这个请求需要拿到最新的结果，就必须走主库。</li>
+	<li>对于可以读到旧数据的请求，才将其发到从库上。在这个交易平台上，买家来逛商铺页面，就算晚几秒看到最新发布的商品，也是可以接受的。那么，这类请求就可以走从库。这个方案的最大问题在于会碰到所有查询都不是&ldquo;过期读&rdquo;的需求，比如金融类业务，这样就要放弃读写分离，所有的压力都在主库。采用以下方案。</li>
+</ul>
+<p></p>
+<h3>方案二：Sleep方案</h3>
+<p></p>
+<p>主库更新后，读从库之前先sleep一下，类似执行了select sleep（1）命令，这个方案的假设是，大多数情况下主备延迟在1秒之内，做一个sleep可以有很大概率拿到最新的数据。</p>
+<p>以卖家发布商品为例，商品发布后，用Ajax直接把客户端输入的内容作为&ldquo;新的商品&rdquo;显示在页面上，而不是真正地去数据库做查询。这样，卖家就可以通过这个显示，来确认产品已经发布成功了。等到卖家再刷新页面，去查看商品的时候，其实已经过了一段时间，也就达到了sleep的目的，进而也就解决了过期读的问题。</p>
+<p></p>
+<h3>方案三：判断主备无延迟方案：</h3>
+<p></p>
+<p>第一种方法：先用show slave status结果里的seconds_behind_master参数的值，可以用来衡量主备延迟时间的长短。先判断这个参数值是否为0，如果不为0，必须等到这个参数变为0才能执行请求。</p>
+<p>第二种方法：对比位点确保主备无延迟。</p>
+<ul>
+	<li>Master_Log_File和Read_Master_Log_Pos，表示的是读到的主库的最新位点；</li>
+	<li>Relay_Master_Log_File和Exec_Master_Log_Pos，表示的是备库执行的最新位点。</li>
+</ul>
+<p>如果Master_Log_File和Relay_Master_Log_File、Read_Master_Log_Pos和Exec_Master_Log_Pos这两组值完全相同，就表示接收到的日志已经同步完成。</p>
+<p>第三种方法：对比GTID（全局事物ID）确保主备无延迟</p>
+<ul>
+	<li>Auto_Position=1 ，表示这对主备关系使用了GTID协议。</li>
+	<li>Retrieved_Gtid_Set，是备库收到的所有日志的GTID集合；</li>
+	<li>Executed_Gtid_Set，是备库所有已经执行完成的GTID集合。</li>
+</ul>
+<p>如果这两个集合相同，表示备库接收到的日志都已经同步完成。</p>
+<p></p>
+<h3>方案四：等主库位点方案</h3>
+<p></p>
+<p><code>select master_pos_wait(file, pos[, timeout]);</code></p>
+<p>这条命令是在从库执行的 ，参数file和pos指的是主库上的文件名和位置，timeout表示这个函数最多等待N秒。</p>
+<ul>
+	<li>这个命令正常返回的结果是一个正整数M，表示从命令开始执行，到应用完file和pos表示的binlog位置，执行了多少事务。</li>
+	<li>如果备库同步线程发生异常，则返回null</li>
+	<li>如果等待超过N秒，就返回-1</li>
+	<li>如果刚开始执行就发现已经执行过了，则返回0</li>
+</ul>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>如图：先执行trx1，再执行一个查询请求的逻辑，要保证能够查到正确的数据，我们可以使用</p>
+<p>这个逻辑</p>
+<p>1. trx1事物更新完成后，马上执行show master status得到当前主库执行到的File和Position；</p>
+<p>2. 选定一个从库执行查询语句；</p>
+<p>3. 在从库上执行select master_pos_wait(File, Position, 1)；</p>
+<p>4. 如果返回值是&gt;=0的正整数，则在这个从库执行查询语句；</p>
+<p>5. 否则，到主库执行查询语句。</p>
+<p>这里我们假设，这条select查询最多在从库上等待1秒。那么，如果1秒内master_pos_wait返回一个大于等于0的整数，就确保了从库上执行的这个查询结果一定包含了trx1的数据。</p>
+<p>5到主库执行查询语句，是这类方案常用的退化机制。因为从库的延迟时间不可控，不能无限等待，所以如果等待超时，就应该放弃，然后到主库去查。按照我们设定不允许过期读的要求，就只有两种选择，一种是超时放弃，一种是转到主库查询。</p>
+<p></p>
+<h3>并发连接和并发查询</h3>
+<p></p>
+<p>innodb_thread_concurrency参数是控制innodb的并发线程上限。一旦超过这个数值，新请求就会进入等待。</p>
+<ul>
+	<li>show processlist看到的几千个连接，是值并发连接，而当前正在执行的语句，才是并发查询。并发连接影响不大，只是会多占内存，而并发查询才是CPU杀手。</li>
+	<li>在线程进入锁等待以后，并发线程的计数会建议，也就是等行锁的线程是不算在并发查询里的。因为所等待已经不吃CPU了</li>
+</ul>
+<p>以上就是本文的全部内容，希望对大家的学习有所帮助，也希望大家多多支持512笔记。</p>
+
+<p>注：关于解决MySQL读写分离过期的问题的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/238.html'>MySQL性能突然下降的原因的解决办法</a><a>下一篇</a><a href='/mysql/biji/240.html'>查看连接MySQL的IP地址的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

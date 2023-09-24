@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL利用索引优化ORDER BY排序语句的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL利用索引优化ORDER BY排序语句的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+创" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL利用索引优化ORDER BY排序语句的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:13:22                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL利用索引优化ORDER BY排序语句的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+创</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL利用索引优化ORDER BY排序语句的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p></p>
+<h3>创建表&amp;创建索引</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+create table tbl1 (
+id int unique, sname varchar(50),
+index tbl1_index_sname(sname desc)
+);</code></pre>
+<p>MySQL利用索引优化ORDER BY排序语句的方法</p>
+<p>在已有的表创建索引语法</p>
+<blockquote>
+<p>create [unique|fulltext|spatial] index 索引名 on 表名(字段名 [长度] [asc|desc]);</p></blockquote>
+<p>MySQL也能利用索引来快速地执行ORDER BY和GROUP BY语句的排序和分组操作。</p>
+<p></p>
+<h3>通过索引优化来实现MySQL的ORDER BY语句优化：</h3>
+<p></p>
+<p></p>
+<h3><strong>1、ORDER BY的索引优化</strong></h3>
+<p></p>
+<p>如果一个SQL语句形如：</p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+SELECT [column1],[column2],…. FROM [TABLE] ORDER BY [sort];</code></pre>
+<p>MySQL利用索引优化ORDER BY排序语句的方法</p>
+<p>在[sort]这个栏位上建立索引就可以实现利用索引进行order by 优化。</p>
+<p></p>
+<h3>2、WHERE + ORDER BY的索引优化</h3>
+<p></p>
+<p>形如：</p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+SELECT [column1],[column2],…. FROM [TABLE] WHERE [columnX] = [value] ORDER BY [sort];
+</code></pre>
+<p>MySQL利用索引优化ORDER BY排序语句的方法</p>
+<p>建立一个联合索引(columnX,sort)来实现order by 优化。</p>
+<p>注意：如果columnX对应多个值，如下面语句就无法利用索引来实现order by的优化</p>
+<p>SELECT [column1],[column2],&hellip;. FROM [TABLE] WHERE [columnX] IN ([value1],[value2],&hellip;) ORDER BY[sort];</p>
+<p></p>
+<h3>3、WHERE+ 多个字段ORDER BY</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+SELECT * FROM [table] WHERE uid=1 ORDER x,y LIMIT 0,10;</code></pre>
+<p>MySQL利用索引优化ORDER BY排序语句的方法</p>
+<p>建立索引(uid,x,y)实现order by的优化,比建立(x,y,uid)索引效果要好得多。</p>
+<p></p>
+<h3>MySQL Order By不能使用索引来优化排序的情况</h3>
+<p></p>
+<p></p>
+<h3>1. 对不同的索引键做 ORDER BY ：(key1,key2分别建立索引)</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+SELECT * FROM t1 ORDER BY key1, key2;</code></pre>
+<p>MySQL利用索引优化ORDER BY排序语句的方法</p>
+<p></p>
+<h3>2. 在非连续的索引键部分上做 ORDER BY：(key_part1,key_part2建立联合索引;key2建立索引)</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+SELECT * FROM t1 WHERE key2=constant ORDER BY key_part2;</code></pre>
+<p>MySQL利用索引优化ORDER BY排序语句的方法</p>
+<p></p>
+<h3>3. 同时使用了 ASC 和 DESC：(key_part1,key_part2建立联合索引)</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+SELECT * FROM t1 ORDER BY key_part1 DESC, key_part2 ASC;</code></pre>
+<p>MySQL利用索引优化ORDER BY排序语句的方法</p>
+<p></p>
+<h3>4. 用于搜索记录的索引键和做 ORDER BY 的不是同一个：(key1,key2分别建立索引)</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+SELECT * FROM t1 WHERE key2=constant ORDER BY key1;</code></pre>
+<p>MySQL利用索引优化ORDER BY排序语句的方法</p>
+<p></p>
+<h3>5. 如果在WHERE和ORDER BY的栏位上应用表达式(函数)时，则无法利用索引来实现order by的优化</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+SELECT * FROM t1 ORDER BY YEAR(logindate) LIMIT 0,10;</code></pre>
+<p>MySQL利用索引优化ORDER BY排序语句的方法</p>
+<p></p>
+<h3>特别提示:</h3>
+<p></p>
+<p>1&gt;mysql一次查询只能使用一个索引。如果要对多个字段使用索引，建立复合索引。</p>
+<p>2&gt;在ORDER BY操作中，MySQL只有在排序条件不是一个查询条件表达式的情况下才使用索引。</p>
+<p>以上就是MySQL利用索引优化ORDER BY排序语句的方法的详细内容，更多关于MySQL 优化ORDER BY排序语句的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL利用索引优化ORDER BY排序语句的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/122.html'>解决MySQL无法关闭的问题的解决办法</a><a>下一篇</a><a href='/mysql/biji/124.html'>解决MySQL主备切换canal出现的问题</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

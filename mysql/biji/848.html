@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>解决MySQL隔离性之Read View的问题_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了解决MySQL隔离性之Read View的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+当前事务能读取" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">解决MySQL隔离性之Read View的问题</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:20:07                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了解决MySQL隔离性之Read View的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+当前事务能读取</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了解决MySQL隔离性之Read View的问题，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h2>当前事务能读取到哪个历史版本？</h2>
+<p>Read View是事务开启时，当前所有事务的一个集合，这个数据结构中存储了当前Read View中最大的ID及最小的ID。</p>
+<p>这就是当前活跃事务列表，如下所示：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+ct-trx --&gt; trx11 --&gt; trx9 --&gt; trx6 --&gt; trx5 --&gt; trx3;</code></pre>
+<p>MySQL隔离性之Read View的用法说明</p>
+<p>ct-trx 表示当前事务的id，对应上面的read_view数据结构如下，</p>
+<p>代码如下：</p>
+<pre>
+<code>
+read_view-&gt;creator_trx_id = ct-trx;
+read_view-&gt;up_limit_id = trx3; 低水位
+read_view-&gt;low_limit_id = trx11; 高水位
+read_view-&gt;trx_ids = [trx11, trx9, trx6, trx5, trx3];
+</code></pre>
+<p>MySQL隔离性之Read View的用法说明</p>
+<p>low_limit_id是&ldquo;高水位&rdquo;，即当时活跃事务的最大id，如果读到row的db_trx_id&gt;=low_limit_id，说明这些id在此之前的数据都没有提交，如注释中的描述，这些数据都不可见。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+if (trx_id &gt;= view-&gt;low_limit_id) {
+return(FALSE);
+}
+</code></pre>
+<p>MySQL隔离性之Read View的用法说明</p>
+<p>注：readview 部分源码</p>
+<p>up_limit_id是&ldquo;低水位&rdquo;，即当时活跃事务列表的最小事务id，如果row的db_trx_id&lt;up_limit_id,说明这些数据在事务创建id的时都已经提交，如注释中的描述，这些数据均可见。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+if (trx_id &lt; view-&gt;up_limit_id) {
+return(TRUE);
+}
+</code></pre>
+<p>MySQL隔离性之Read View的用法说明</p>
+<p>row的db_trx_id在low_limit_id和up_limit_id之间，则查找该记录的db_trx_id是否在自己事务的read_view-&gt;trx_ids列表中，如果在则该记录的当前版本不可见，否则该记录的当前版本可见。</p>
+<h2>不同隔离级别ReadView实现方式</h2>
+<h3>1. read-commited:</h3>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>即：在每次语句执行的过程中，都关闭read_view, 重新在row_search_for_mysql函数中创建当前的一份read_view。这样就会产生不可重复读现象发生。</p>
+<h3>2. repeatable read：</h3>
+<p>在repeatable read的隔离级别下，创建事务trx结构的时候，就生成了当前的global read view。使用trx_assign_read_view函数创建，一直维持到事务结束。在事务结束这段时间内 每一次查询都不会重新重建Read View ， 从而实现了可重复读。</p>
+<p></p>
+<h3>补充：mysql的mvcc和readview</h3>
+<p></p>
+<h2>隔离级别标准定义：</h2>
+<p>read uncommited 一个事务读取到了另一个事务未提交的结果（可能发生回滚），叫脏读，这会带来脏读、幻读、不可重复读问题</p>
+<p>read commited 一个事务a读取到了另一个事务b最新提交的结果，使得事务a两次读取的结果不同，其避免了脏读，会出现不可重复读，幻读，通过版本链（mvcc）和readview实现。</p>
+<p>repeatable read（mysql的默认隔离级别） 一个事务第一次读过某条记录后，另一个事务修改提交了该条记录后，事务a读取到的还是第一次的值，这就是可重复读，同一个事务中多次读取相同的数据返回的结果是一样的。事务不会读到其他事务对已有数据的修改，即使其他事务已提交，也就是说，事务开始时读到的已有数据是什么，在事务提交前的任意时刻，这些数据的值都是一样的。但是，对于其他事务新插入的数据是可以读到的，这也就引发了幻读问题。其避免了脏读和不可重复读问题，但幻读依然存在。还是会出现幻读，（但是mysql解决了幻读的问题），通过版本链和readview实现</p>
+<p>serializable 不允许对同一行记录的读和写的并发操作，必需串行执行，所以不会出现幻读，脏读现象</p>
+<p>在mysql中读已提交和可重复读事务隔离级别是通过mvcc和readview实现的</p>
+<p>mvcc即Multi-Version Concurrency Control，多版本并发控制，维护一个数据的多个版本，使得事务之间的读写按照隔离级别获取相应的结果，不发生冲突</p>
+<p><!---ecms -ecms 
+【图缺】
+--></p>
+<p>对于隔离级别read committed,每次都生成一个新的readview</p>
+<p>对于隔离级别repeatable read，只在事务开启时，生成一个readview，直到事务提交，不发生变化，所以可以保证可重复读。</p>
+<h2>生成readview时</h2>
+<p>m_ids:表示活跃事务id列表</p>
+<p>min_trx_id:活跃事务中的最小事务id</p>
+<p>max_trx_id:已创建的最大事务id</p>
+<p>creator_trx_id:当前的事务id</p>
+<h2>对当前事务来说，按照以下规则从最新的版本开始遍历，获取对应的版本记录。</h2>
+<p>1、被访问的trx_id与readview中的creator_trx_id相同，表示当前事务在访问自己修改的记录，可见，返回；</p>
+<p>2、被访问的trx_id小于min_trx_id，表明该版本已提交，可见，返回；</p>
+<p>3、被访问的trx_id大于等于max_trx_id，表明该版本在生成readview时，还未开启，不可见，返回；</p>
+<p>4、被访问的trx_id在min_trx_id和max_trx_id之间，判断是否在m_ids中，如果在，则说明生成readview时，该版本事务未提交，该版本不可见；如果不在，则说明生成readview时，该版本事务已提交可见，返回。</p>
+<p>以上为个人经验，希望能给大家一个参考，也希望大家多多支持512笔记。如有错误或未考虑完全的地方，望不吝赐教。</p>
+
+<p>注：关于解决MySQL隔离性之Read View的问题的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/847.html'>解决MySQL的做大表删除的问题</a><a>下一篇</a><a href='/mysql/biji/849.html'>MySQL 维护常用命令</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

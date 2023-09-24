@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server使用游标处理Tempdb究极竞争-DBA问题-程序员必知_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server使用游标处理Tempdb究极竞争-DBA问题-程序员必知，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server使用游标处理Tempdb究极竞争-DBA问题-程序员必知</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:41:19                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server使用游标处理Tempdb究极竞争-DBA问题-程序员必知，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server使用游标处理Tempdb究极竞争-DBA问题-程序员必知，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>SQL Server tempdb分配竞争算是DBA老生常谈的问题了,几乎现在所有的DBA都知道多建几个文件来解决/缓解问题.但是深层次的的竞争依旧不可避免.这里给大家剖析下游标在tempdb中的特点使其在一定场景下替代临时表/表变量对象,解决深层次的tempdb竞争问题.</p>
+<p>在抛出这个不可避免的问题之前我们先简要看下什么是tempdb竞争.</p>
+<p>我们拿SQL Server创建一个临时表的过程来描述</p>
+<p>1 在系统表中创建表的条目(系统数据页中)</p>
+<p>2 分配一个IAM页并找到一个混合区在PFS页中标记</p>
+<p>3 分配一个数据页(查看SGAM页,查看PFS页后并更新,更新IAM页)</p>
+<p>4 表记录记录到系统表中</p>
+<p>从上述过程可以看出创建一个简单临时表需要查找,更新一系列的系统表/系统数据页,且当使用完删除临时表时上述操作逆向进行.索引相应的创建/销毁一旦大量并发,内部竞争也就产生了.虽然tempdb的缓存策略一定程度可以缓解相应创建过程的IAM,数据页分配, Sql Server tempdb原理-缓存机制解析实践,但竞争依旧.</p>
+<p>可以看到SGAM,PFS等系统页是表创建过程的必经之路,他的分配竞争也就十分明显了.这也就是为什么采用多个数据文件，让系统页(包含系统表)在分散在多个数据文件中的以减轻分配竞争的压力原因.</p>
+<p>到此也许大家都改猜到了终极问题是什么了,就是对系统对象的操作.连SQL Server大牛Paul Randal都为之头疼的问题.</p>
+<p>具体哪些对象呢,我们可以简单测试捕捉下如图1-1</p>
+<p>使用SQLQUERYSTRESS捕捉</p>
+<p>Code</p>
+<p>代码如下：</p>
+<pre>
+<code>
+create table #t
+(id int,
+str1 varchar(10)
+)
+---SSMS中开启会话捕捉
+SELECT resource_description,* FROM SYS.dm_os_waiting_tasks
+WHERE session_id&gt;50</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p> 图1-1</p>
+<p>可以看到图中tempdb中系统页 2:1:53中发生典型的Pagelatch竞争.我们用dbcc page来看下页的情况如图2-2</p>
+<p>Code</p>
+<p>代码如下：</p>
+<pre>
+<code>
+dbcc traceon(3604)
+go
+dbcc page(2,1,53,1)
+select OBJECT_NAME(7)----the object_id from dbcc page
+</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p style="text-align: center"> 图2-2</p>
+<p>可以看到在系统对象sysallocunits处发生了竞争,当然还有许多其他的系统对象,感兴趣的朋友自行捕捉.</p>
+<p>大量的针对系统对象表的操作使得tempdb其吞吐难以得到进一步的提升,这个是由系统本身的运作方式引发的,当然面对如此巨量的tempdb使用,就没有别的方式了吗?这时我不能给肯定的答案，但可以给大家一个IT界的流行答案:It depends :)</p>
+<p>在介绍游标前,先简单说下面对tempdb竞争中针对系统表竞争的常规处理方式</p>
+<p>1 减小针对系统对象的事务大小(如select * into #的使用)</p>
+<p>2 减小tempdb的使用频次(看似废话,但实际中的确可能用不到这么多)</p>
+<p>3 临时对象中少使用约束造成额外的系统对象负担.</p>
+<p>好了接下来该说游标了,貌似八竿子打不着的事儿,实际上的确如此,我们只是利用游标的特性在极其特殊的场景下来解决相应问题.</p>
+<p>也许你已经猜到了,游标是使用tempdb的,归类到worktables中,使用worktables的对象如游标,dbcc checkdb,merge join,exchange spill等等.worktables是tempdb中一种普遍而又特殊的使用方式,他只在SQL Server内部中应用,给它定义为&rdquo;temporary rowsets&rdquo;,他的object id是负的,且无需系统表的记录!</p>
+<p>我们来简单验证说明下</p>
+<p>code</p>
+<p>代码如下：</p>
+<pre>
+<code>
+use tempdb
+checkpoint ---生产环境中慎用
+dbcc checkdb(master) –这里采用dbcc checkdb探究worktables
+select Description,* from fn_dblog(null,null)</code></pre>
+<p>得到的tempdb Log如图 2-1</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p style="text-align: center"> 图2-1</p>
+<p>我们用dbcc page分析此页 可以看到这个是个IAM页如图2-2</p>
+<p>code</p>
+<p>代码如下：</p>
+<pre>
+<code>
+dbcc traceon(3604)
+dbcc page(2,4,104,3)</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p> 图2-2</p>
+<p>我们进而分析IAM分配的数据页,发现他就是一个简单的数据页,不属于任何系统对象如图2-3</p>
+<p>Code</p>
+<p>代码如下：</p>
+<pre>
+<code>
+dbcc traceon(3604)
+dbcc page(2,5,104,3)</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p style="text-align: center"> 图2-3</p>
+<p>OK,至此联想起游标同样适用worktables,我们可能联想到了一些游标适用的场景居然还可以帮助tempdb缓解竞争.至于何种场景？It depends,大家自己去联想吧,但tempdb遇到相应竞争时我是否可以采用?朋友们自己抉择吧.</p>
+<p>最后看图说话如图2-4</p>
+<p>Code</p>
+<p>代码如下：</p>
+<pre>
+<code>
+--cursor
+declare @cur cursor 
+set @cur =cursor For select * from tt
+--temp table
+create table #tt (id int)
+insert into #tt select * from tt</code></pre>
+<p style="text-align: center">【图片暂缺】</p>
+<p style="text-align: center"> 图2-4</p>
+<p>以上叙述是否改变了你对游标的看法呢?程序员朋友们,当DBA告诉你使用tempdb太多时是否考虑换种方式使用tempdb, DBA朋友们,不要轻易告诉程序员们过度使用tempdb.</p>
+<p>结语 任何系统的愉快运转都是基于某种状态的平衡.我们需要在复杂环境中的性能瓶颈,资源消耗,相应时间等等因素中找到平衡点.什么样的平衡点? It depends :)</p>
+<p>ps：sql server 数据库 &#39; &#39; 附近有语法错误</p>
+<p>昨天做项目时候，遇到标题的问题，代码跟踪把sql 语句 复制出来在数据库执行不了，然后重新写个一模一样的，然后在 赋值到代码中，还是同样的错误，就是不知道哪里出现了错误，最后 把 sql 语句写成最简单的 select * from tab 还是同样的错误。</p>
+<p>然后 ，然后就不会了。</p>
+<p>最后在这个语句写同样的语句，最后发现问题了，新写的sql 语句的 select 变 颜色了，而之前的赋值出来的 select 和 字段 表名的颜色一样，证明系统 不承认它是关键字，把这个select 删掉在 这个位置上重新写，还是同样的错误，最后发现原来在 这个select 前面有个全角的 空格，全角空格真的是用肉眼看不出来啊，恍然大悟，才知道 &#39; &#39; 附近有语法错误 ，意思是 空格 有语法错误，证明不是 sql server 支持的 空格格式。</p>
+<p>这个问题百度了，也没解决，希望 可以帮到其他人，又不是特别难的东西，但是找到问题还是很浪费时间。</p>
+
+<p>注：关于SQL Server使用游标处理Tempdb究极竞争-DBA问题-程序员必知的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2873.html'>SQL Server执行动态SQL的正确示例</a><a>下一篇</a><a href='/mysql/biji/2875.html'>SQL Server导入导出数据的错误解决方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

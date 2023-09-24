@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL使用Xtrabackup备份的实现方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL使用Xtrabackup备份的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	01 背" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL使用Xtrabackup备份的实现方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:17:05                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL使用Xtrabackup备份的实现方法，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	01 背</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL使用Xtrabackup备份的实现方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<div id="navCategory">
+<h5 class="catalogue">目录</h5>
+<ul class="first_class_ul">
+	<li>01 背景</li>
+	<li>02 简介</li>
+	<li>03 工作流程</li>
+	<li>04 一些疑问</li>
+	<li>05 备份文件</li>
+</ul>
+<p class="maodian"></p>
+<h2>01 背景</h2>
+<p> Xtrabackup是Percona公司开发的一款开源的MySQL热备份工具，之前的工作中也是经常使用，但是也仅仅是停留在使用的阶段，对于这个工具的细节，并没有做过多的研究，今天细细看了一下过程，还是有点收获的，写下来记录一下，有不对的地方，还请指正。</p>
+<p>  Xtrabackup工具能够备份InnoDB，XtraDB和MyISAM的表，它支持Percona Server的所有版本，而且兼容MySQL，也兼容MariaDB，还支持一些高级的特性，例如流方式备份、压缩、加密、以及增量备份等等。</p>
+<p> 优点如下：</p>
+<p>1、无需停止数据库进行InnoDB热备份，在50G以上的数据量备份时候，应该是首选工具。</p>
+<p>2、支持增量备份MySQL并通过流传输到其他的服务器上。</p>
+<p>3、备份MySQL的时候不会增加服务器的负载。</p>
+<p class="maodian"></p>
+<h2>02 简介</h2>
+<p> 在这个工具中，最主要的应用程序有两个，分别是innobackupex与xtrabackup，其中前者是perl脚本，后面是C++变异的二进制程序，需要注意，后者不能备份除了Innodb存储引擎的其他表。Innobackup是对xtrabackup的封装，可以备份非Innodb的表。</p>
+<p> 以上所述，可能大家都知道，这里需要留意，由于mysql等系统数据库中的表有些存储引擎是基于MyISAM的，所以一般情况下使用innobackupex来备份系统库。</p>
+<p class="maodian"></p>
+<h2>03 工作流程</h2>
+<p>下面讲述Innobackupex和Xtrabackup的工作流程，可能有些交叉的部分，二者共同完成备份任务。</p>
+<p> 主要的工作流程如下：</p>
+<p>1、innobackupex启动之后，首先会创建xtrabackup进程，并且启动，然后等待xtrabackup完成innodb相关文件的备份。</p>
+<p>2、xtrabackup在备份InnoDB相关文件时，会开启如下两种线程，一种是ibd复制线程，负责复制表空间ibd文件，一种是redo log复制线程，负责复制redo log信息。其中redo log线程先于ibd线程开始，redo log线程会从最近的checkpoint点开始复制redo log，(关于checkpoint，之前的文章中讲过)，复制完成之后启动ibd线程。需要注意的是，在这个过程中，innobackupex进程处于等待状态，等待被xtrabackup进程唤醒。</p>
+<p>3、xtrabackup复制ibd完成之后(redo log线程可能还在工作)，通知innobackupex进程，同时自己进入wait状态。</p>
+<p>4、innobackupex收到通知，会执行备份锁，渠道一致性的位点，然后开始复制非innodb的文件。</p>
+<p>5、当非innodb文件复制完成之后，innobackupex开始获取binlog的位置。</p>
+<p>6、创建xtrabackup_binlog_info文件，并将binlog的点位信息写入文件中。</p>
+<p>7、接着，innobackupex会发起一个通知给xtrabackup进程，同时自己进入等待状态。</p>
+<p>8、xtrabackup进程收到通知后，就会停止redo log的复制线程，并告知redo log复制完毕，然后通知innodbbackupex开始释放锁。</p>
+<p>9、紧接着，就是一些收尾工作，释放资源，备份元数据信息，打印备份目录，备份binlog的位置信息，以及写入xtrabackup_info文件信息等。</p>
+<p>10、innobackupex进程等待xtrabackup进程结束后退出。</p>
+<p class="maodian"></p>
+<h2>04 一些疑问</h2>
+<p>1、为什么要复制redo log？</p>
+<p> 这是因为备份ibd文件的过程中，该文件可能被修改，这样备份出来的文件就有可能是包含脏数据的，在恢复的时候，需要听过redo log进行数据恢复，也就是应用已经提交的事务，回滚那些没有提交的事务。</p>
+<p>2、innobackupex和xtrabackup是如何交互的？</p>
+<p> 其实本质是通过删除和创建两个特定的文件，这两个进程都会监听指定目录下是否包含特定的文件，如果包含，就进行工作，不包含，则停止工作，进入等待状态。</p>
+<p class="maodian"></p>
+<h2>05 备份文件</h2>
+<p> 一般备份完成之后，备份目录中会产生7个重要的文件，包含：</p>
+<ul>
+	<li>backup-my.cnf：此文件包含了备份所需的my.cnf中的选项。恢复的时候，会依赖这个文件。</li>
+	<li>xtrabackup_checkpoints：记录备份的类型、备份的状态信息、增量备份依赖于这个信息</li>
+	<li>xtrabackup_binlog_info：该文件记录备份时候的二进制文件信息和偏移量位置信息。</li>
+	<li>xtrabackup_binlog_pos_innodb：该文件记录了innodb表的二进制文件和位置信息，当执行--apply-log的时候，会创建这个文件。</li>
+	<li>xtrabackup_binary:该文件记录备份进程使用的xtrabackup二进制文件。</li>
+	<li>xtrabackup_logfile：该文件记录apply log操作时所需的数据，如果apply log的时间比较长，这个文件就会很大。</li>
+	<li>xtrabackup_slave_info:这个文件很常用，它记录了在建立主从关系的时候，change master 语句所需要的信息。</li>
+</ul>
+<p>以上就是MySQL使用Xtrabackup备份流程详解的详细内容，更多关于MySQL使用Xtrabackup备份的资料请关注512笔记其它相关文章！</p></div>
+
+<p>注：关于MySQL使用Xtrabackup备份的实现方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/527.html'>MySQL root用户的密码修改和消除</a><a>下一篇</a><a href='/mysql/biji/529.html'>MySQL基础之连接MySQL、修改密码、添加用户</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

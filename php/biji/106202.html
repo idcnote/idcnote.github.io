@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Android 日志系统Logger源代码详细介绍_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content=" 我们知道，在Android系统中，提供了一个轻量级的日志系统，这个日志系统是以驱动程序的形式实现在内核空间的，而在用户空间分别提供了Java接口和C/C++接口来使用这个日志系统，取决" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Android 日志系统Logger源代码详细介绍</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span> 我们知道，在Android系统中，提供了一个轻量级的日志系统，这个日志系统是以驱动程序的形式实现在内核空间的，而在用户空间分别提供了Java接口和C/C++接口来使用这个日志系统，取决</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>&nbsp;我们知道，在Android系统中，提供了一个轻量级的日志系统，这个日志系统是以驱动程序的形式实现在内核空间的，而在用户空间分别提供了Java接口和C/C++接口来使用这个日志系统，取决于你编写的是Android应用程序还是系统组件。在前面的文章浅谈Android系统开发中LOG的使用中，已经简要地介绍了在Android应用程序开发中Log的使用方法，在这一篇文章中，我们将更进一步地分析Logger驱动程序的源代码，使得我们对Android日志系统有一个深刻的认识。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 既然Android 日志系统是以驱动程序的形式实现在内核空间的，我们就需要获取Android内核源代码来分析了，请参照前面在Ubuntu上下载、编译和安装Android最新源代码和在Ubuntu上下载、编译和安装Android最新内核源代码（Linux Kernel）两篇文章，下载好Android源代码工程。Logger驱动程序主要由两个文件构成，分别是：</p>
+<p><span style="color: #0000ff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; kernel/common/drivers/staging/android/logger.h</span></p>
+<p><span style="color: #0000ff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; kernel/common/drivers/staging/android/logger.c</span></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 接下来，我们将分别介绍Logger驱动程序的相关数据结构，然后对Logger驱动程序源代码进行情景分析，分别日志系统初始化情景、日志读取情景和日志写入情景。</p>
+<p><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 一. Logger驱动程序的相关数据结构。</strong></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 我们首先来看logger.h头文件的内容：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+#ifndef _LINUX_LOGGER_H 
+#define _LINUX_LOGGER_H 
+ 
+#include &lt;linux/types.h&gt; 
+#include &lt;linux/ioctl.h&gt; 
+ 
+struct logger_entry { 
+ __u16 len; /* length of the payload */ 
+ __u16 __pad; /* no matter what, we get 2 bytes of padding */ 
+ __s32 pid; /* generating process's pid */ 
+ __s32 tid; /* generating process's tid */ 
+ __s32 sec; /* seconds since Epoch */ 
+ __s32 nsec; /* nanoseconds */ 
+ char msg[0]; /* the entry's payload */ 
+}; 
+ 
+#define LOGGER_LOG_RADIO "log_radio" /* radio-related messages */ 
+#define LOGGER_LOG_EVENTS "log_events" /* system/hardware events */ 
+#define LOGGER_LOG_MAIN "log_main" /* everything else */ 
+ 
+#define LOGGER_ENTRY_MAX_LEN (4*1024) 
+#define LOGGER_ENTRY_MAX_PAYLOAD \ 
+ (LOGGER_ENTRY_MAX_LEN - sizeof(struct logger_entry)) 
+ 
+#define __LOGGERIO 0xAE 
+ 
+#define LOGGER_GET_LOG_BUF_SIZE _IO(__LOGGERIO, 1) /* size of log */ 
+#define LOGGER_GET_LOG_LEN _IO(__LOGGERIO, 2) /* used log len */ 
+#define LOGGER_GET_NEXT_ENTRY_LEN _IO(__LOGGERIO, 3) /* next entry len */ 
+#define LOGGER_FLUSH_LOG _IO(__LOGGERIO, 4) /* flush log */ 
+ 
+#endif /* _LINUX_LOGGER_H */ </pre>
+</div>
+<p>&nbsp;struct logger_entry是一个用于描述一条Log记录的结构体。len成员变量记录了这条记录的有效负载的长度，有效负载指定的日志记录本身的长度，但是不包括用于描述这个记录的struct logger_entry结构体。回忆一下我们调用android.util.Log接口来使用日志系统时，会指定日志的优先级别Priority、Tag字符串以及Msg字符串，Priority + Tag + Msg三者内容的长度加起来就是记录的有效负载长度了。__pad成员变量是用来对齐结构体的。pid和tid成员变量分别用来记录是哪条进程写入了这条记录。sec和nsec成员变量记录日志写的时间。msg成员变量记录的就有效负载的内容了，它的大小由len成员变量来确定。&nbsp;&nbsp;</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;接着定义两个宏：</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #0000ff">#define LOGGER_ENTRY_MAX_LEN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (4*1024)</span></p>
+<p><span style="color: #0000ff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define LOGGER_ENTRY_MAX_PAYLOAD&nbsp;&nbsp; \&nbsp;(LOGGER_ENTRY_MAX_LEN - sizeof(struct logger_entry))</span></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 从这两个宏可以看出，每条日志记录的有效负载长度加上结构体logger_entry的长度不能超过4K个字节。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; logger.h文件中还定义了其它宏，读者可以自己分析，在下面的分析中，碰到时，我们也会详细解释。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 再来看logger.c文件中，其它相关数据结构的定义：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+/* 
+ * struct logger_log - represents a specific log, such as 'main' or 'radio' 
+ * 
+ * This structure lives from module insertion until module removal, so it does 
+ * not need additional reference counting. The structure is protected by the 
+ * mutex 'mutex'. 
+ */ 
+struct logger_log { 
+ unsigned char * buffer; /* the ring buffer itself */ 
+ struct miscdevice misc; /* misc device representing the log */ 
+ wait_queue_head_t wq; /* wait queue for readers */ 
+ struct list_head readers; /* this log's readers */ 
+ struct mutex mutex; /* mutex protecting buffer */ 
+ size_t  w_off; /* current write head offset */ 
+ size_t  head; /* new readers start here */ 
+ size_t  size; /* size of the log */ 
+}; 
+ 
+/* 
+ * struct logger_reader - a logging device open for reading 
+ * 
+ * This object lives from open to release, so we don't need additional 
+ * reference counting. The structure is protected by log-&gt;mutex. 
+ */ 
+struct logger_reader { 
+ struct logger_log * log; /* associated log */ 
+ struct list_head list; /* entry in logger_log's list */ 
+ size_t  r_off; /* current read head offset */ 
+}; 
+ 
+/* logger_offset - returns index 'n' into the log via (optimized) modulus */ 
+#define logger_offset(n) ((n) & (log-&gt;size - 1)) </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 结构体struct logger_log就是真正用来保存日志的地方了。buffer成员变量变是用保存日志信息的内存缓冲区，它的大小由size成员变量确定。从misc成员变量可以看出，logger驱动程序使用的设备属于misc类型的设备，通过在Android模拟器上执行cat /proc/devices命令（可参考在Ubuntu上下载、编译和安装Android最新内核源代码（Linux Kernel）一文），可以看出，misc类型设备的主设备号是10。关于主设备号的相关知识，可以参考Android学习启动篇一文中提到的Linux Driver Development一书。wq成员变量是一个等待队列，用于保存正在等待读取日志的进程。readers成员变量用来保存当前正在读取日志的进程，正在读取日志的进程由结构体logger_reader来描述。mutex成员变量是一个互斥量，用来保护log的并发访问。可以看出，这里的日志系统的读写问题，其实是一个生产者-消费者的问题，因此，需要互斥量来保护log的并发访问。 w_off成员变量用来记录下一条日志应该从哪里开始写。head成员变量用来表示打开日志文件中，应该从哪一个位置开始读取日志。&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 结构体struct logger_reader用来表示一个读取日志的进程，log成员变量指向要读取的日志缓冲区。list成员变量用来连接其它读者进程。r_off成员变量表示当前要读取的日志在缓冲区中的位置。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct logger_log结构体中用于保存日志信息的内存缓冲区buffer是一个循环使用的环形缓冲区，缓冲区中保存的内容是以struct logger_entry为单位的，每个单位的组成为：</p>
+<p><span style="color: #0000ff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct logger_entry | priority | tag | msg</span></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 由于是内存缓冲区buffer是一个循环使用的环形缓冲区，给定一个偏移值，它在buffer中的位置由下logger_offset来确定：</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #0000ff">#define logger_offset(n)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((n) & (log-&gt;size - 1))</span></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 二. Logger驱动程序模块的初始化过程分析。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 继续看logger.c文件，定义了三个日志设备：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+/* 
+ * Defines a log structure with name 'NAME' and a size of 'SIZE' bytes, which 
+ * must be a power of two, greater than LOGGER_ENTRY_MAX_LEN, and less than 
+ * LONG_MAX minus LOGGER_ENTRY_MAX_LEN. 
+ */ 
+#define DEFINE_LOGGER_DEVICE(VAR, NAME, SIZE) \ 
+static unsigned char _buf_ ## VAR[SIZE]; \ 
+static struct logger_log VAR = { \ 
+ .buffer = _buf_ ## VAR, \ 
+ .misc = { \ 
+ .minor = MISC_DYNAMIC_MINOR, \ 
+ .name = NAME, \ 
+ .fops = &logger_fops, \ 
+ .parent = NULL, \ 
+ }, \ 
+ .wq = __WAIT_QUEUE_HEAD_INITIALIZER(VAR .wq), \ 
+ .readers = LIST_HEAD_INIT(VAR .readers), \ 
+ .mutex = __MUTEX_INITIALIZER(VAR .mutex), \ 
+ .w_off = 0, \ 
+ .head = 0, \ 
+ .size = SIZE, \ 
+}; 
+ 
+DEFINE_LOGGER_DEVICE(log_main, LOGGER_LOG_MAIN, 64*1024) 
+DEFINE_LOGGER_DEVICE(log_events, LOGGER_LOG_EVENTS, 256*1024) 
+DEFINE_LOGGER_DEVICE(log_radio, LOGGER_LOG_RADIO, 64*1024) </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 分别是log_main、log_events和log_radio，名称分别LOGGER_LOG_MAIN、LOGGER_LOG_EVENTS和LOGGER_LOG_RADIO，它们的次设备号为MISC_DYNAMIC_MINOR，即为在注册时动态分配。在logger.h文件中，有这三个宏的定义：&nbsp;</p>
+<p>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; #define LOGGER_LOG_RADIO&nbsp;"log_radio"&nbsp;/* radio-related messages */<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define LOGGER_LOG_EVENTS&nbsp;"log_events"&nbsp;/* system/hardware events */<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define LOGGER_LOG_MAIN&nbsp;&nbsp;"log_main"&nbsp;/* everything else */</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 注释说明了这三个日志设备的用途。注册的日志设备文件操作方法为logger_fops：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+static struct file_operations logger_fops = {
+	.owner = THIS_MODULE,
+	.read = logger_read,
+	.aio_write = logger_aio_write,
+	.poll = logger_poll,
+	.unlocked_ioctl = logger_ioctl,
+	.compat_ioctl = logger_ioctl,
+	.open = logger_open,
+	.release = logger_release,
+};</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;日志驱动程序模块的初始化函数为logger_init：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+static int __init logger_init(void)
+{
+	int ret;
+
+	ret = init_log(&log_main);
+	if (unlikely(ret))
+		goto out;
+
+	ret = init_log(&log_events);
+	if (unlikely(ret))
+		goto out;
+
+	ret = init_log(&log_radio);
+	if (unlikely(ret))
+		goto out;
+
+out:
+	return ret;
+}
+device_initcall(logger_init);</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; logger_init函数通过调用init_log函数来初始化了上述提到的三个日志设备：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+static int __init init_log(struct logger_log *log)
+{
+	int ret;
+
+	ret = misc_register(&log-&gt;misc);
+	if (unlikely(ret)) {
+		printk(KERN_ERR "logger: failed to register misc "
+		 "device for log '%s'!\n", log-&gt;misc.name);
+		return ret;
+	}
+
+	printk(KERN_INFO "logger: created %luK log '%s'\n",
+	 (unsigned long) log-&gt;size &gt;&gt; 10, log-&gt;misc.name);
+
+	return 0;
+}</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;init_log函数主要调用了misc_register函数来注册misc设备，misc_register函数定义在kernel/common/drivers/char/misc.c文件中：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+ * misc_register - register a miscellaneous device 
+ * @misc: device structure 
+ * 
+ * Register a miscellaneous device with the kernel. If the minor 
+ * number is set to %MISC_DYNAMIC_MINOR a minor number is assigned 
+ * and placed in the minor field of the structure. For other cases 
+ * the minor number requested is used. 
+ * 
+ * The structure passed is linked into the kernel and may not be 
+ * destroyed until it has been unregistered. 
+ * 
+ * A zero is returned on success and a negative errno code for 
+ * failure. 
+ */ 
+ 
+int misc_register(struct miscdevice * misc) 
+{ 
+ struct miscdevice *c; 
+ dev_t dev; 
+ int err = 0; 
+ 
+ INIT_LIST_HEAD(&misc-&gt;list); 
+ 
+ mutex_lock(&misc_mtx); 
+ list_for_each_entry(c, &misc_list, list) { 
+  if (c-&gt;minor == misc-&gt;minor) { 
+   mutex_unlock(&misc_mtx); 
+   return -EBUSY; 
+  } 
+ } 
+ 
+ if (misc-&gt;minor == MISC_DYNAMIC_MINOR) { 
+  int i = DYNAMIC_MINORS; 
+  while (--i &gt;= 0) 
+   if ( (misc_minors[i&gt;&gt;3] & (1 &lt;&lt; (i&7))) == 0) 
+    break; 
+  if (i&lt;0) { 
+   mutex_unlock(&misc_mtx); 
+   return -EBUSY; 
+  } 
+  misc-&gt;minor = i; 
+ } 
+ 
+ if (misc-&gt;minor &lt; DYNAMIC_MINORS) 
+  misc_minors[misc-&gt;minor &gt;&gt; 3] |= 1 &lt;&lt; (misc-&gt;minor & 7); 
+ dev = MKDEV(MISC_MAJOR, misc-&gt;minor); 
+ 
+ misc-&gt;this_device = device_create(misc_class, misc-&gt;parent, dev, NULL, 
+      "%s", misc-&gt;name); 
+ if (IS_ERR(misc-&gt;this_device)) { 
+  err = PTR_ERR(misc-&gt;this_device); 
+  goto out; 
+ } 
+ 
+ /* 
+  * Add it to the front, so that later devices can "override" 
+  * earlier defaults 
+  */ 
+ list_add(&misc-&gt;list, &misc_list); 
+ out: 
+ mutex_unlock(&misc_mtx); 
+ return err; 
+} </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 注册完成后，通过device_create创建设备文件节点。这里，将创建/dev/log/main、/dev/log/events和/dev/log/radio三个设备文件，这样，用户空间就可以通过读写这三个文件和驱动程序进行交互。&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 三. Logger驱动程序的日志记录读取过程分析。</strong></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 继续看logger.c 文件，注册的读取日志设备文件的方法为logger_read：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+/* 
+ * logger_read - our log's read() method 
+ * 
+ * Behavior: 
+ * 
+ * - O_NONBLOCK works 
+ * - If there are no log entries to read, blocks until log is written to 
+ * - Atomically reads exactly one log entry 
+ * 
+ * Optimal read size is LOGGER_ENTRY_MAX_LEN. Will set errno to EINVAL if read 
+ * buffer is insufficient to hold next entry. 
+ */ 
+static ssize_t logger_read(struct file *file, char __user *buf, 
+  size_t count, loff_t *pos) 
+{ 
+ struct logger_reader *reader = file-&gt;private_data; 
+ struct logger_log *log = reader-&gt;log; 
+ ssize_t ret; 
+ DEFINE_WAIT(wait); 
+ 
+start: 
+ while (1) { 
+ prepare_to_wait(&log-&gt;wq, &wait, TASK_INTERRUPTIBLE); 
+ 
+ mutex_lock(&log-&gt;mutex); 
+ ret = (log-&gt;w_off == reader-&gt;r_off); 
+ mutex_unlock(&log-&gt;mutex); 
+ if (!ret) 
+  break; 
+ 
+ if (file-&gt;f_flags & O_NONBLOCK) { 
+  ret = -EAGAIN; 
+  break; 
+ } 
+ 
+ if (signal_pending(current)) { 
+  ret = -EINTR; 
+  break; 
+ } 
+ 
+ schedule(); 
+ } 
+ 
+ finish_wait(&log-&gt;wq, &wait); 
+ if (ret) 
+ return ret; 
+ 
+ mutex_lock(&log-&gt;mutex); 
+ 
+ /* is there still something to read or did we race&#63; */ 
+ if (unlikely(log-&gt;w_off == reader-&gt;r_off)) { 
+ mutex_unlock(&log-&gt;mutex); 
+ goto start; 
+ } 
+ 
+ /* get the size of the next entry */ 
+ ret = get_entry_len(log, reader-&gt;r_off); 
+ if (count &lt; ret) { 
+ ret = -EINVAL; 
+ goto out; 
+ } 
+ 
+ /* get exactly one entry from the log */ 
+ ret = do_read_log_to_user(log, reader, buf, ret); 
+ 
+out: 
+ mutex_unlock(&log-&gt;mutex); 
+ 
+ return ret; 
+} </pre>
+</div>
+<p><span style="color: #ff0000">&nbsp;注意</span>，在函数开始的地方，表示读取日志上下文的struct logger_reader是保存在文件指针的private_data成员变量里面的，这是在打开设备文件时设置的，设备文件打开方法为<span style="color: #3366ff">logger_open</span>：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+/* 
+ * logger_open - the log's open() file operation 
+ * 
+ * Note how near a no-op this is in the write-only case. Keep it that way! 
+ */ 
+static int logger_open(struct inode *inode, struct file *file) 
+{ 
+ struct logger_log *log; 
+ int ret; 
+ 
+ ret = nonseekable_open(inode, file); 
+ if (ret) 
+ return ret; 
+ 
+ log = get_log_from_minor(MINOR(inode-&gt;i_rdev)); 
+ if (!log) 
+ return -ENODEV; 
+ 
+ if (file-&gt;f_mode & FMODE_READ) { 
+ struct logger_reader *reader; 
+ 
+ reader = kmalloc(sizeof(struct logger_reader), GFP_KERNEL); 
+ if (!reader) 
+  return -ENOMEM; 
+ 
+ reader-&gt;log = log; 
+ INIT_LIST_HEAD(&reader-&gt;list); 
+ 
+ mutex_lock(&log-&gt;mutex); 
+ reader-&gt;r_off = log-&gt;head; 
+ list_add_tail(&reader-&gt;list, &log-&gt;readers); 
+ mutex_unlock(&log-&gt;mutex); 
+ 
+ file-&gt;private_data = reader; 
+ } else 
+ file-&gt;private_data = log; 
+ 
+ return 0; </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 新打开日志设备文件时，是从log-&gt;head位置开始读取日志的，保存在struct logger_reader的成员变量r_off中。<br />
+</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; start标号处的while循环是在等待日志可读，如果已经没有新的日志可读了，那么就要读进程就要进入休眠状态，等待新的日志写入后再唤醒，这是通过prepare_wait和schedule两个调用来实现的。如果没有新的日志可读，并且设备文件不是以非阻塞O_NONBLOCK的方式打开或者这时有信号要处理（signal_pending(current)），那么就直接返回，不再等待新的日志写入。判断当前是否有新的日志可读的方法是：</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #0000ff">&nbsp;&nbsp; ret = (log-&gt;w_off == reader-&gt;r_off);</span></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 即判断当前缓冲区的写入位置和当前读进程的读取位置是否相等，如果不相等，则说明有新的日志可读。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 继续向下看，如果有新的日志可读，那么就，首先通过get_entry_len来获取下一条可读的日志记录的长度，从这里可以看出，日志读取进程是以日志记录为单位进行读取的，一次只读取一条记录。get_entry_len的函数实现如下：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+/* 
+ * get_entry_len - Grabs the length of the payload of the next entry starting 
+ * from 'off'. 
+ * 
+ * Caller needs to hold log-&gt;mutex. 
+ */ 
+static __u32 get_entry_len(struct logger_log *log, size_t off) 
+{ 
+ __u16 val; 
+ 
+ switch (log-&gt;size - off) { 
+ case 1: 
+ memcpy(&val, log-&gt;buffer + off, 1); 
+ memcpy(((char *) &val) + 1, log-&gt;buffer, 1); 
+ break; 
+ default: 
+ memcpy(&val, log-&gt;buffer + off, 2); 
+ } 
+ 
+ return sizeof(struct logger_entry) + val; </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 上面我们提到，每一条日志记录是由两大部分组成的，一个用于描述这条日志记录的结构体struct logger_entry，另一个是记录体本身，即有效负载。结构体struct logger_entry的长度是固定的，只要知道有效负载的长度，就可以知道整条日志记录的长度了。而有效负载的长度是记录在结构体struct logger_entry的成员变量len中，而len成员变量的地址与struct logger_entry的地址相同，因此，只需要读取记录的开始位置的两个字节就可以了。又由于日志记录缓冲区是循环使用的，这两个节字有可能是第一个字节存放在缓冲区最后一个字节，而第二个字节存放在缓冲区的第一个节，除此之外，这两个字节都是连在一起的。因此，分两种情况来考虑，对于前者，分别通过读取缓冲区最后一个字节和第一个字节来得到日志记录的有效负载长度到本地变量val中，对于后者，直接读取连续两个字节的值到本地变量val中。这两种情况是通过判断日志缓冲区的大小和要读取的日志记录在缓冲区中的位置的差值来区别的，如果相差1，就说明是前一种情况了。最后，把有效负载的长度val加上struct logger_entry的长度就得到了要读取的日志记录的总长度了。<br />
+</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 接着往下看，得到了要读取的记录的长度，就调用do_read_log_to_user函数来执行真正的读取动作：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+static ssize_t do_read_log_to_user(struct logger_log *log, 
+   struct logger_reader *reader, 
+   char __user *buf, 
+   size_t count) 
+{ 
+ size_t len; 
+ 
+ /* 
+ * We read from the log in two disjoint operations. First, we read from 
+ * the current read head offset up to 'count' bytes or to the end of 
+ * the log, whichever comes first. 
+ */ 
+ len = min(count, log-&gt;size - reader-&gt;r_off); 
+ if (copy_to_user(buf, log-&gt;buffer + reader-&gt;r_off, len)) 
+ return -EFAULT; 
+ 
+ /* 
+ * Second, we read any remaining bytes, starting back at the head of 
+ * the log. 
+ */ 
+ if (count != len) 
+ if (copy_to_user(buf + len, log-&gt;buffer, count - len)) 
+  return -EFAULT; 
+ 
+ reader-&gt;r_off = logger_offset(reader-&gt;r_off + count); 
+ 
+ return count; 
+} </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 这个函数简单地调用copy_to_user函数来把位于内核空间的日志缓冲区指定的内容拷贝到用户空间的内存缓冲区就可以了，同时，把当前读取日志进程的上下文信息中的读偏移r_off前进到下一条日志记录的开始的位置上。&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>&nbsp;四.&nbsp; Logger驱动程序的日志记录写入过程分析。</strong></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;继续看logger.c 文件，注册的写入日志设备文件的方法为<span style="color: #0000ff">logger_aio_write：</span><br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+/* 
+ * logger_aio_write - our write method, implementing support for write(), 
+ * writev(), and aio_write(). Writes are our fast path, and we try to optimize 
+ * them above all else. 
+ */ 
+ssize_t logger_aio_write(struct kiocb *iocb, const struct iovec *iov, 
+  unsigned long nr_segs, loff_t ppos) 
+{ 
+ struct logger_log *log = file_get_log(iocb-&gt;ki_filp); 
+ size_t orig = log-&gt;w_off; 
+ struct logger_entry header; 
+ struct timespec now; 
+ ssize_t ret = 0; 
+ 
+ now = current_kernel_time(); 
+ 
+ header.pid = current-&gt;tgid; 
+ header.tid = current-&gt;pid; 
+ header.sec = now.tv_sec; 
+ header.nsec = now.tv_nsec; 
+ header.len = min_t(size_t, iocb-&gt;ki_left, LOGGER_ENTRY_MAX_PAYLOAD); 
+ 
+ /* null writes succeed, return zero */ 
+ if (unlikely(!header.len)) 
+ return 0; 
+ 
+ mutex_lock(&log-&gt;mutex); 
+ 
+ /* 
+ * Fix up any readers, pulling them forward to the first readable 
+ * entry after (what will be) the new write offset. We do this now 
+ * because if we partially fail, we can end up with clobbered log 
+ * entries that encroach on readable buffer. 
+ */ 
+ fix_up_readers(log, sizeof(struct logger_entry) + header.len); 
+ 
+ do_write_log(log, &header, sizeof(struct logger_entry)); 
+ 
+ while (nr_segs-- &gt; 0) { 
+ size_t len; 
+ ssize_t nr; 
+ 
+ /* figure out how much of this vector we can keep */ 
+ len = min_t(size_t, iov-&gt;iov_len, header.len - ret); 
+ 
+ /* write out this segment's payload */ 
+ nr = do_write_log_from_user(log, iov-&gt;iov_base, len); 
+ if (unlikely(nr &lt; 0)) { 
+  log-&gt;w_off = orig; 
+  mutex_unlock(&log-&gt;mutex); 
+  return nr; 
+ } 
+ 
+ iov++; 
+ ret += nr; 
+ } 
+ 
+ mutex_unlock(&log-&gt;mutex); 
+ 
+ /* wake up any blocked readers */ 
+ wake_up_interruptible(&log-&gt;wq); 
+ 
+ return ret; </pre>
+</div>
+<p>&nbsp;输入的参数iocb表示io上下文，iov表示要写入的内容，长度为nr_segs，表示有nr_segs个段的内容要写入。我们知道，每个要写入的日志的结构形式为：<br />
+</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #0000ff">struct logger_entry | priority | tag | msg</span></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 其中， priority、tag和msg这三个段的内容是由iov参数从用户空间传递下来的，分别对应iov里面的三个元素。而 logger_entry是由内核空间来构造的：</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct logger_entry header;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct timespec now;</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;now = current_kernel_time();header.pid = current-&gt;tgid;<br />
+</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; header.tid = current-&gt;pid;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;header.sec = now.tv_sec;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;header.nsec = now.tv_nsec;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;header.len = min_t(size_t, iocb-&gt;ki_left, LOGGER_ENTRY_MAX_PAYLOAD);</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 然后调用<span style="color: #0000ff">do_write_log</span>首先把logger_entry结构体写入到日志缓冲区中：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+/* 
+ * do_write_log - writes 'len' bytes from 'buf' to 'log' 
+ * 
+ * The caller needs to hold log-&gt;mutex. 
+ */ 
+static void do_write_log(struct logger_log *log, const void *buf, size_t count) 
+{ 
+ size_t len; 
+ 
+ len = min(count, log-&gt;size - log-&gt;w_off); 
+ memcpy(log-&gt;buffer + log-&gt;w_off, buf, len); 
+ 
+ if (count != len) 
+ memcpy(log-&gt;buffer, buf + len, count - len); 
+ 
+ log-&gt;w_off = logger_offset(log-&gt;w_off + count); </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; 由于logger_entry是内核堆栈空间分配的，直接用memcpy拷贝就可以了。<br />
+</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 接着，通过一个while循环把iov的内容写入到日志缓冲区中，也就是日志的优先级别priority、日志Tag和日志主体Msg：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+while (nr_segs-- &gt; 0) { 
+ size_t len; 
+ ssize_t nr; 
+ 
+ /* figure out how much of this vector we can keep */ 
+ len = min_t(size_t, iov-&gt;iov_len, header.len - ret); 
+ 
+ /* write out this segment's payload */ 
+ nr = do_write_log_from_user(log, iov-&gt;iov_base, len); 
+ if (unlikely(nr &lt; 0)) { 
+  log-&gt;w_off = orig; 
+  mutex_unlock(&log-&gt;mutex); 
+  return nr; 
+ } 
+ 
+ iov++; 
+ ret += nr; 
+} </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 这里，我们还漏了一个重要的步骤：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+/* 
+ * Fix up any readers, pulling them forward to the first readable 
+ * entry after (what will be) the new write offset. We do this now 
+ * because if we partially fail, we can end up with clobbered log 
+ * entries that encroach on readable buffer. 
+ */ 
+fix_up_readers(log, sizeof(struct logger_entry) + header.len); </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;为什么要调用fix_up_reader这个函数呢？这个函数又是作什么用的呢？是这样的，由于日志缓冲区是循环使用的，即旧的日志记录如果没有及时读取，而缓冲区的内容又已经用完时，就需要覆盖旧的记录来容纳新的记录。而这部分将要被覆盖的内容，有可能是某些reader的下一次要读取的日志所在的位置，以及为新的reader准备的日志开始读取位置head所在的位置。因此，需要调整这些位置，使它们能够指向一个新的有效的位置。我们来看一下fix_up_reader函数的实现：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+/* 
+ * fix_up_readers - walk the list of all readers and "fix up" any who were 
+ * lapped by the writer; also do the same for the default "start head". 
+ * We do this by "pulling forward" the readers and start head to the first 
+ * entry after the new write head. 
+ * 
+ * The caller needs to hold log-&gt;mutex. 
+ */ 
+static void fix_up_readers(struct logger_log *log, size_t len) 
+{ 
+ size_t old = log-&gt;w_off; 
+ size_t new = logger_offset(old + len); 
+ struct logger_reader *reader; 
+ 
+ if (clock_interval(old, new, log-&gt;head)) 
+ log-&gt;head = get_next_entry(log, log-&gt;head, len); 
+ 
+ list_for_each_entry(reader, &log-&gt;readers, list) 
+ if (clock_interval(old, new, reader-&gt;r_off)) 
+  reader-&gt;r_off = get_next_entry(log, reader-&gt;r_off, len); 
+} </pre>
+</div>
+<p>&nbsp; 判断<span style="color: #0000ff">log-&gt;head</span>和所有读者reader的当前读偏移reader-&gt;r_off是否在被覆盖的区域内，如果是，就需要调用get_next_entry来取得下一个有效的记录的起始位置来调整当前位置：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+/* 
+ * get_next_entry - return the offset of the first valid entry at least 'len' 
+ * bytes after 'off'. 
+ * 
+ * Caller must hold log-&gt;mutex. 
+ */ 
+static size_t get_next_entry(struct logger_log *log, size_t off, size_t len) 
+{ 
+ size_t count = 0; 
+ 
+ do { 
+ size_t nr = get_entry_len(log, off); 
+ off = logger_offset(off + nr); 
+ count += nr; 
+ } while (count &lt; len); 
+ 
+ return off; 
+} </pre>
+</div>
+<p>&nbsp; 而判断log-&gt;head和所有读者reader的当前读偏移reader-&gt;r_off是否在被覆盖的区域内，是通过clock_interval函数来实现的：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+/* 
+ * clock_interval - is a &lt; c &lt; b in mod-space&#63; Put another way, does the line 
+ * from a to b cross c&#63; 
+ */ 
+static inline int clock_interval(size_t a, size_t b, size_t c) 
+{ 
+ if (b &lt; a) { 
+ if (a &lt; c || b &gt;= c) 
+  return 1; 
+ } else { 
+ if (a &lt; c && b &gt;= c) 
+  return 1; 
+ } 
+ 
+ return 0; 
+} </pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; 最后，日志写入完毕，还需要唤醒正在等待新日志的reader进程:&nbsp;</p>
+<p>&nbsp;&nbsp;<span style="color: #0000ff">&nbsp;&nbsp;&nbsp;&nbsp; /* wake up any blocked readers */<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wake_up_interruptible(&log-&gt;wq);</span></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 至此， Logger驱动程序的主要逻辑就分析完成了，还有其它的一些接口，如logger_poll、 logger_ioctl和logger_release函数，比较简单，读取可以自行分析。这里还需要提到的一点是，由于Logger驱动程序模块在退出系统时，是不会卸载的，所以这个模块没有module_exit函数，而对于模块里面定义的对象，也没有用对引用计数技术。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 这篇文章着重介绍了Android日志系统在内核空间的实现，在下一篇文章中，我们将接着介绍在用户空间中，提供给Android应用程序使用的Java和C/C++ LOG调用接口的实现过程。</p>
+<p>以上就是对Android源码 中Logger 源码的资料整理，后续继续补充相关资料，谢谢大家对本站的支持！</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/106201.html'>JS和css实现检测移动设备方向的变化并判断横竖屏幕</a><a>下一篇</a><a href='/php/biji/106203.html'>linux下通过iptables只允许指定ip地址访问指定端口的设置方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

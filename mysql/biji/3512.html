@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server 缓存命中和缓存未命中&amp;amp;缓存与缓冲间的差异_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server 缓存命中和缓存未命中&amp;amp;缓存与缓冲间的差异，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server 缓存命中和缓存未命中&amp;amp;缓存与缓冲间的差异</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:47:12                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server 缓存命中和缓存未命中&amp;amp;缓存与缓冲间的差异，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server 缓存命中和缓存未命中&amp;amp;缓存与缓冲间的差异，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>不论什么时候，只要系统带有多个设备，而这些设备的性能又各不相同，就存在从慢速设备到快速设备不断更换工作地点以改善系统性能的可能性，这就是缓存的基本思想。即数据从一个地点拷贝到另一个地点，使之检索起来更快。虽然这是一个简单概念，但却包含着许多奇思妙想。简单地说，为满足某种预期的未来需要所做的准备即缓存。缓存是一种人类的本性，为了保证充分的物品供应量，需要预先进行计划，然后选择一个能够提供最快服务的地方，存放它们，这就是所谓的可靠物资管理。它也是计算机系统的核心概念，即将需要的信息放在可以最快访问的地方，其描述如图。【图片暂缺】 缓存的概念可以用于几种设备，这些设备包括：&bull; 比正常内存更快的高速内存缓存。&bull; 比磁盘驱动器更快的、由内存芯片组成的磁盘缓存。&bull; 比通过Internet访问更快的、由磁盘实现的Internet缓存。本专题主要涉及的是磁盘缓存。通常，用于缓存的内存是易失内存，假如电源切断，存放在缓存中的数据内容将会丢失。从这个意义上说，缓存内存是一个临时存储，但磁盘设备和子系统所使用的缓存是非易失存储。易失（内存）和非易失存储关系如图所示【图片暂缺】
+<p><strong>本篇主题如下：</strong></p>
+<p align="left"><strong>缓存命中和缓存未命中</strong></p>
+<p align="left"><strong>缓存与缓冲间的差异</strong></p>
+<p align="left"><strong>缓存命中和缓存未命中</strong></p>
+<p align="left">当I / O操作开始从磁盘缓存而不是从非易失存储中检索数据时，（如磁盘设备或子系统）缓存命中发生。除了提供来自内存的快速响应之外，缓存命中还缩短了I / O路径的距离。如图所示。</p>【图片暂缺】
+<p align="left">另一种情况是，虽然搜索了缓存，但没有发现数据，因此数据必须从非易失存储读取，这就是缓存未命中。由于搜索缓存时需要花费时间，所以缓存未命中增加了I / O操作的时间。缓存未命中工作过程如图所示：</p>【图片暂缺】
+<p>如果缓存实现不理想，将产生很高的未命中率，由于每次缓存未命中都需要花费额外的时间，所以导致系统性能的下降。用于描述缓存相对精确度的术语叫缓存命中率，缓存命中率是缓存命中数除以I / O请求总数所得的结果。对于开放系统服务器，如UNIX、Win NT及NETWare系统等，通常的命中率率不超过50 %。顺便指出，由于大型计算机系统使用的数据访问方法不同，它能到达更高的命中率（90 %）。</p>
+<p align="left">缓存命中率的计算如下：</p>【图片暂缺】
+<p><strong>缓存与缓冲间的差异</strong></p>
+<p align="left">&ldquo;缓存&rdquo;和&ldquo;内存&rdquo;有时可以互换使用。然而，磁带驱动器中的内存通常并不是缓存，而是缓冲。虽然它们的物理组成是一样的，但缓冲只起临时存储数据的作用，由此数据从一个位置或设备传到另一个位置或设备。一般地，缓冲是在生命期较短的进程控制下工作，一旦数据传输完毕，这些进程将立即释放内存地址。一种常见类型的缓冲是F I F O缓冲，即一种先进先出结构，其结构如图所示：</p>【图片暂缺】
+<p>另一方面，缓存内存由一个或更多的系统算法所控制，这些算法在一个长时间里维护和管理着内存资源，缓存的数据可以长时间地保存在缓存中。</p>
+<p align="left">在协调性能有差异的控制器和设备工作方面，缓冲常常能够发挥作用，这种方式的缓冲可以看作是某种转换器。主机I / O控制器上的芯片可以快速地通过I / O路径传输数据，它们的性能可以达到纳秒级，而对于磁盘和磁带驱动器这样一类的机电存储设备，其数据的传输速度只能在微秒范围内。因此，设备制造商把缓冲内存放入设备中，以减少访问延迟，以适合主机控制器的性能。这样，主机控制器可以同时地在多个设备上实施重叠操作，图显示了这种重叠过程。</p>【图片暂缺】 另一方面，缓存利用更复杂的智能技术决定它将存储什么数据。缓冲是由相对简单的内存芯片构成，这些芯片不停地卸出和填充，但是磁盘缓存算法运用复杂的逻辑处理：那些数据应存放在缓存中，那些数据应从缓存中撤出。根据应用的不同，这些缓存的算法变化很大。
+<p align="left">缓存算法既可以在主机软件中实现，也可以在存储子系统或在主机控制器中实现。当缓存由一块电子线路实现时，它被称为缓存控制器，除了管理磁盘缓存内存中的内容外，它还可以控制子系统中的磁盘操作，这些操作的细节是下一章的主要论题。图显示了带有一个缓存控制器和缓存内存的磁盘缓存结构：</p>【图片暂缺】
+<p></p>
+<p align="left" target="_blank">之前在社区发布了一系列的文章，后来因为图片问题，很多的文章无法看了，朋友都反应了这个问题，现在发布出来，持续的更新，请大家顶起来：http://www.itpub.net/thread-1703788-1-1.html</p>
+<p align="left">按需下载 打包下载 //www.512pic.com/books/59793.html作者：小洋，燕洋天</p>
+
+<p>注：关于SQL Server 缓存命中和缓存未命中&amp;amp;缓存与缓冲间的差异的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3511.html'>SQL Server 存储过程参数及举例用法</a><a>下一篇</a><a href='/mysql/biji/3513.html'>SQL Server 判断某个字段包含大写字母的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

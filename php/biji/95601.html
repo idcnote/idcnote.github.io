@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>深入探寻seajs的模块化与加载方式_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="由于一直在使用，所以了解了下seajs的源代码。这里是我对下面几个问题的理解：<br />
+1、seajs的require(XXX)的方法是怎样实现模块加载的？<br />
+2、为什么需要预加载？<br />
+3、为什么需要构建工具" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">深入探寻seajs的模块化与加载方式</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>由于一直在使用，所以了解了下seajs的源代码。这里是我对下面几个问题的理解：<br />
+1、seajs的require(XXX)的方法是怎样实现模块加载的？<br />
+2、为什么需要预加载？<br />
+3、为什么需要构建工具</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>由于一直在使用，所以了解了下seajs的源代码。这里是我对下面几个问题的理解：</p>
+<p>1、seajs的require(XXX)的方法是怎样实现模块加载的？</p>
+<p>2、为什么需要预加载？</p>
+<p>3、为什么需要构建工具？</p>
+<p>4、构建前后的代码究竟有些什么区别，为什么要这么做？</p>
+<p><strong>问题1： seajs的require(XXX)的方法是怎样实现模块加载的？</strong></p>
+<p>代码逻辑比较绕，对源代码的理解放在文章的末尾，这里先简单梳理下模块加载的逻辑：</p>
+<p>1、从seajs.use方法入口，开始加载use到的模块。</p>
+<p>2、use到的模块这时mod缓存当中一定是不存在的。seajs创建一个新的mod,赋予一些初始的状态。</p>
+<p>3、执行mod.load方法</p>
+<p>4、一堆逻辑之后走到seajs.request方法，请求模块文件。模块加载完成之后，执行define方法。</p>
+<p>5、define方法分析提取模块的依赖模块，保存起来。缓存factory但不执行。</p>
+<p>6、模块的依赖模块再被加载，如果继续有依赖模块，则继续加载。直至所有被依赖的模块都加载完毕。</p>
+<p>7、所有的模块加载完毕之后，执行use方法的callback.</p>
+<p>8、模块内部逻辑从callback开始执行。require方法在这个过程当中才被执行。</p>
+<p><strong>问题2：为什么需要预加载？</strong></p>
+<p>我们看到seajs.use方法实际上是在所有依赖模块都加载完了之后才执行callback。可以理解成在业务逻辑代码在执行之前，必须先预加载所有被依赖的模块代码。那么为什么是一个这样必须先做预加载的逻辑？</p>
+<p>答案在于逻辑代码里面引用其他模块方法的这个require方法的执行方法：</p>
+<p>var mod = require(id);</p>
+<p>这个语法决定了mod的取得是个同步执行的过程，如果模块代码在此之前没有被预加载的话，就只能采用异步加载回调的方法来实现了，那么整个seajs的执行逻辑将完全会是另一个样子。因为异步你会搞不懂模块的执行顺序，逻辑会变的难以掌控。</p>
+<p><strong>问题3：为什么需要构建工具？ </strong></p>
+<p>可以看到没有构建前各个依赖模块都是单独加载的。这会产生过多的模块请求，对于页面的加载性能是不利的。构建工具本质上就是为了解决模块合并加载的问题。</p>
+<p><strong>问题4：构建前后的代码究竟有些什么区别，为什么要这么做？</strong></p>
+<p>构建工具究竟做了些什么。我们说它本质上是为了解决代码合并加载的问题，那么它所做的只是简单的将各个模块文件合并成一个文件？</p>
+<p>当然不是。测试一下，你如果只是简单把几个模块文件合并到一个文件以后，会发现这个文件根本没有办法正常执行。</p>
+<p>原因在于define方法的实现。</p>
+<p>seajs是推崇定义模块的时候只在define方法传入factory参数的。回顾define方法内部，当没有传入id（姑且等同于模块的url）时，会通过getCurrentScript()方法去取得当前正在执行的这个模块文件的url路径，然后把这个路径作为键值与模块本身一起缓存到cachedMods。这里很关键的一点是，整个seajs内部的这个模块缓存机制其实是依赖每个模块的url来做缓存的键值。require(id)方法，归根结底也是通过url键值到。require(id)方法，归根结底也是通过url键值到cachedMods里面去找相应的模块。这个键值不能重复不能出错，不然模块的对应关系就混乱了。如果把a、b、c几个模块文件简单合并到一个目标文件x之后，getCurrentScript()只能获取到x的路径，三个模块的键值就没法做出区别了，执行肯定出错。</p>
+<p>所以如果要把几个模块文件合并在一起，就必须为每个模块明确uri。也就是define方法必须都传入id参数。当id传入的时候，seajs会将这个id转换为url用作缓存的键值。</p>
+<p>如果只传id和factory，也就是 define(id, factory)，那么deps = undefined，define方法就会去执行parseDependencies(factory.toString())方法提取factory里面的依赖模块，后续会走到解析模块路径，线上单独加载各个模块的逻辑里面去，这个时候就失去了合并加载的意义了。</p>
+<p>所以合并加载，define方法必须正确的传入id，deps,factory三个参数才能正确执行。</p>
+<p>seajs 所谓CMD的模块定义方法，是提倡大家写模块的阶段都只传factory一个参数的，其他两个参数在后期代码构建的阶段来生成。上面解释了为什么这两参数在构建后是必须的。</p>
+<p>至于为什么提倡定义模块的时候只传factory，我看主要是因为手工传入的id和deps参数，极易出错，不便维护。工具可以提高效率并保证参数的正确。</p>
+<p><strong>附： 对seajs 主要代码逻辑的理解。</strong></p>
+<p>说明：源代码版本是Sea.js 2.3.0</p>
+<p><span style="color: #3366ff">1、先看看define方法做了些什么</span></p>
+<p>Module.define = function (id, deps, factory)</p>
+<p>define方法的时候，支持三个参数。其中id，deps是选填的。factory必须。代码里面通过以下逻辑来控制：</p>
+<p style="text-align: center"><o:lock v:ext="edit" aspectratio="t"></o:lock></p>
+<p>但其实deps是必须的，因为seajs必须知道每个模块依赖了哪些模块，不然无法执行加载。</p>
+<p>所以，当factory是函数，并且deps没有被主动传入的时候，就需要使用parseDependencies方法来分析出factory当中的依赖模块了。</p>
+<p style="text-align: center"></p>
+<p>parseDependencies方法做的事情主要就是用一个正则表达式把函数体里面所有require(XXX)里面的XXX提取出来，这也就是这个函数依赖到的所有模块了。</p>
+<p style="text-align: center"></p>
+<p>方法本身不复杂，但是这个正则表达式不简单：</p>
+<p>分析完deps之后,将模块定义存入缓存：</p>
+<p style="text-align: center"></p>
+<p>注意，我们会发现define方法纯粹只是分析模块、存储模块，并没有执行模块。</p>
+<p><span style="color: #3366ff">2、真正执行模块，是在require方法里面。我们接下来看require。</span></p>
+<p style="text-align: center"></p>
+<p style="text-align: center"></p>
+<p>简而言之require方法就是根据id在define定义存储的模块缓存中找到相应的模块，并执行它，获得模块定义返回的方法：</p>
+<p style="text-align: center"></p>
+<p>整个这个大步骤中，有一个很关键的步骤，有必要细说：</p>
+<p>Module.get(require.resolve(id))。</p>
+<p>require一个模块的时候，首先要找到这个模块。 Module.get方法就起这个作用。</p>
+<p style="text-align: center"></p>
+<p>cachedMods里面没有的话，就创建一个新的Module并缓存到cachedMods里面：</p>
+<p style="text-align: center"></p>
+<p>define和rquire方法这样看来不算复杂。seajs主要还是模块加载的逻辑有点复杂。</p>
+<p><span style="color: #3366ff">3、seajs真正执行的入口，是use方法：</span></p>
+<p style="text-align: center"></p>
+<p>通过use方法，从这里的ids开始触发模块的加载和执行。</p>
+<p style="text-align: center"></p>
+<p>可以看到加载的关键点在mod.load方法。</p>
+<p>load方法代码有点长，其中的主要逻辑是：判断mod的当前状态是否为已加载或者加载中。</p>
+<p style="text-align: center"></p>
+<p>在Module的舒适化函数中，我们可以看到status默认值是0.</p>
+<p style="text-align: center"></p>
+<p>所以没有加载过的新模块，到这里都是： mod.status = STATUS.LOADING 状态设置为加载中，并执行后续加载逻辑。</p>
+<p>接来下是获取模块的依赖urls</p>
+<p style="text-align: center"></p>
+<p>mod.resolve方法：</p>
+<p style="text-align: center"></p>
+<p>Module.resolve方法本质上就是把相对路径、配置的path、别名等转换成一个绝对路径。不贴代码了。</p>
+<p>更新模块加载状态。</p>
+<p style="text-align: center"></p>
+<p>加载模块的逻辑：</p>
+<p style="text-align: center"></p>
+<p>主要是m.fetch方法，里面其他逻辑这里略过。</p>
+<p style="text-align: center"></p>
+<p>可以看到 seajs.request最终会去执行模块文件的加载:</p>
+<p style="text-align: center"></p>
+<p>当所有依赖模块加载完了之后，执行mod的onload方法</p>
+<p style="text-align: center"></p>
+<p>这里是 mod.onload()方法</p>
+<p style="text-align: center"></p>
+<p>到此，seajs的核心逻辑就差不多都看到了。供参考，有理解不到位或者表达不准确的地方，欢迎一起探讨。</p>
+<p>以上所述就是本文的全部内容了，希望大家能够喜欢。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/95600.html'>PHP实现的连贯操作、链式操作实例</a><a>下一篇</a><a href='/php/biji/95602.html'>Java编写掷骰子游戏</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

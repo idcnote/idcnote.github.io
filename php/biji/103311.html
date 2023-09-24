@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>连接Linux的服务器时使用SSH密钥认证及解决自动断连问题_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="A机器（ssh连接发起端，即客户端）：<br />
+ <br />
+添加一个测试用户aaa<br />
+ <br />
+复制代码代码如下:<br />
+[root@A ~]# useradd aaa<br />
+ <br />
+su成aaa<br />
+ <br />
+复制代码代码如下:<br />
+[root@A ~]# su - aaa<br />
+[aaa@A ~]$<br />
+ <br />
+ssh" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">连接Linux的服务器时使用SSH密钥认证及解决自动断连问题</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>A机器（ssh连接发起端，即客户端）：<br />
+ <br />
+添加一个测试用户aaa<br />
+ <br />
+复制代码代码如下:<br />
+[root@A ~]# useradd aaa<br />
+ <br />
+su成aaa<br />
+ <br />
+复制代码代码如下:<br />
+[root@A ~]# su - aaa<br />
+[aaa@A ~]$<br />
+ <br />
+ssh</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>A机器（ssh连接发起端，即客户端）：<br />&nbsp;<br />添加一个测试用户aaa<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode104'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode104"><br />[root@A ~]# useradd aaa<br /> </div><br />su成aaa<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode105'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode105"><br />[root@A ~]# su - aaa<br />[aaa@A ~]$<br /> </div><br />ssh-keygen创建rsa密钥对<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode106'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode106"><br />[aaa@A ~]$ ssh-keygen -t rsa<br /> </div><br />Generating public/private rsa key pair.<br />Enter file in which to save the key (/home/aaa/.ssh/id_rsa):&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 密钥文件的保存位置<br />Created directory '/home/aaa/.ssh'.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 默认的密钥文件存放目录<br />Enter passphrase (empty for no passphrase):&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 密钥文件的保护密码<br />Enter same passphrase again:<br />Your identification has been saved in /home/aaa/.ssh/id_rsa.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 生成的私钥<br />Your public key has been saved in /home/aaa/.ssh/id_rsa.pub.&nbsp;&nbsp;&nbsp; 生成的公钥<br />The key fingerprint is:<br />81:d7:de:e7:cb:7c:4e:16:d6:76:da:9d:30:25:76:09 aaa@A.test.com<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode107'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode107"><br />[aaa@A ~]$ ll<br /> </div><br />total 32K<br />drwx------&nbsp; 3 aaa&nbsp; aaa&nbsp; 4.0K Sep 17 16:09 .<br />drwxr-xr-x&nbsp; 4 root root 4.0K Sep 17 16:09 ..<br />-rw-r--r--&nbsp; 1 aaa&nbsp; aaa&nbsp;&nbsp; 304 Sep 17 16:09 .bash_logout<br />-rw-r--r--&nbsp; 1 aaa&nbsp; aaa&nbsp;&nbsp; 191 Sep 17 16:09 .bash_profile<br />-rw-r--r--&nbsp; 1 aaa&nbsp; aaa&nbsp;&nbsp; 124 Sep 17 16:09 .bashrc<br />-rw-r--r--&nbsp; 1 aaa&nbsp; aaa&nbsp;&nbsp; 383 Sep 17 16:09 .emacs<br />drwx------&nbsp; 2 aaa&nbsp; aaa&nbsp; 4.0K Sep 17 16:09 .ssh&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 创建出的.ssh目录默认权限为700<br />&nbsp;<br />注意生成的私钥文件的默认权限是rw-------，即600（确保他人不能查看）<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode108'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode108"><br />[aaa@A ~]$ ll .ssh/<br /> </div><br />total 16K<br />drwx------&nbsp; 2 aaa aaa 4.0K Sep 17 16:09 .<br />drwx------&nbsp; 3 aaa aaa 4.0K Sep 17 16:09 ..<br />-rw-------&nbsp; 1 aaa aaa&nbsp; 951 Sep 17 16:09 id_rsa&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 私钥文件<br />-rw-r--r--&nbsp; 1 aaa aaa&nbsp; 231 Sep 17 16:09 id_rsa.pub&nbsp;&nbsp; 公钥文件</p>
+<p>B机器（ssh的被连接端，即服务端）：<br />&nbsp;<br />添加bbb用户<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode109'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode109"><br />[root@B ~]# useradd bbb<br /> </div><br />&nbsp;<br />su成bbb<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode110'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode110"><br />[root@B ~]# su - bbb<br /> </div><br />手工在家目录下建立.ssh目录（如果不使用ssh-keygen工具的话）<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode111'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode111"><br />[bbb@B ~]$ mkdir .ssh<br /> <br />[bbb@B ~]$ ls -al<br /> </div><br />total 28<br />drwx------&nbsp; 3 bbb&nbsp; bbb&nbsp; 4096 Sep 17 16:52 .<br />drwxr-xr-x&nbsp; 4 root root 4096 Sep 17 16:52 ..<br />-rw-r--r--&nbsp; 1 bbb&nbsp; bbb&nbsp;&nbsp; 304 Sep 17 16:52 .bash_logout<br />-rw-r--r--&nbsp; 1 bbb&nbsp; bbb&nbsp;&nbsp; 191 Sep 17 16:52 .bash_profile<br />-rw-r--r--&nbsp; 1 bbb&nbsp; bbb&nbsp;&nbsp; 124 Sep 17 16:52 .bashrc<br />drwxrwxr-x&nbsp; 2 bbb&nbsp; bbb&nbsp; 4096 Sep 17 16:52 .ssh<br />&nbsp;<br />修改.ssh目录的权限为700（非常重要！）<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode112'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode112"><br />[bbb@B ~]$ chmod 700 .ssh<br /> <br />[bbb@B ~]$ ls -al<br /> </div><br />total 28<br />drwx------&nbsp; 3 bbb&nbsp; bbb&nbsp; 4096 Sep 17 16:52 .<br />drwxr-xr-x&nbsp; 4 root root 4096 Sep 17 16:52 ..<br />-rw-r--r--&nbsp; 1 bbb&nbsp; bbb&nbsp;&nbsp; 304 Sep 17 16:52 .bash_logout<br />-rw-r--r--&nbsp; 1 bbb&nbsp; bbb&nbsp;&nbsp; 191 Sep 17 16:52 .bash_profile<br />-rw-r--r--&nbsp; 1 bbb&nbsp; bbb&nbsp;&nbsp; 124 Sep 17 16:52 .bashrc<br />drwx------&nbsp; 2 bbb&nbsp; bbb&nbsp; 4096 Sep 17 16:52 .ssh&nbsp;&nbsp;&nbsp;&nbsp; 确认权限为700<br />&nbsp;<br />在.ssh目录里创建authorized_keys文件，并将A机器上aaa用户的公钥(id_rsa.pub)内容写入此文件（关键操作！）<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode113'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode113"><br />[bbb@B ~]$ cd .ssh/<br /> <br />[bbb@B .ssh]$ vi authorized_keys<br /> </div><br />粘贴aaa的id_rsa.pub内容进来<br />&nbsp;<br />修改authorized_keys的权限为400（非常重要！）<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode114'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode114"><br />[bbb@B .ssh]$ chmod 400 authorized_keys<br /> <br />[bbb@B .ssh]$ ls -l authorized_keys<br />-r-------- 1 bbb bbb 231 Sep 17 16:53 authorized_keys 确认权限为400<br /> </div><br />&nbsp;<br />&nbsp;<br />配置结束。</p>
+<p>测试：从A机器上，在aaa用户下，使用bbb帐号登录B机器。<br />&nbsp;<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode115'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode115"><br />[aaa@A ~]$ ssh -l bbb xxx.xxx.xxx.xxx<br />Enter passphrase for key '/home/aaa/.ssh/id_rsa': 会提示输入私钥保护密码（在创建密钥对时输的密码，输入正确后进入系统）<br />[bbb@B ~]$<br /> </div><br />&nbsp; <br />安全的关键点在于如何安全地将id_rsa.pub的内容传递到服务端<br />&nbsp;<br />&nbsp;<br />测试完毕，清理系统(删除测试用户帐号及其家目录)<br />&nbsp;<br />&nbsp;<br />A机器上，exit到root下<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode116'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode116"><br />[root@A ~]# userdel -r aaa<br /> </div><br />B机器上，exit到root下<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode117'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode117"><br />[root@B ~]# userdel -r bbb<br /> </div></p>
+<p><strong>PS：SSH连接自动断开问题的解决<br /></strong>用putty/SecureCRT连续3分钟左右没有输入, 就自动断开, 然后必须重新登陆, 很麻烦.<br />在网上查了很多资料, 发现原因有多种, 环境变量TMOUT引起,ClientAliveCountMax和ClientAliveInterval设置问题或者甚至是防火墙的设置问题. 所以可以这么尝试:<br />1, echo $TMOUT<br />如果显示空白,表示没有设置, 等于使用默认值0, 一般情况下应该是不超时. 如果大于0, 可以在如/etc/profile之类文件中设置它为0.<br />Definition: TMOUT: If set to a value greater than zero, the value is interpreted as the number of seconds to wait for input after issuing the primary prompt. Bash terminates after waiting for that number of seconds if input does not arrive.</p>
+<p>2. ClientAliveInterval 60<br />在/etc/ssh/sshd_config中增加ClientAliveInterval 60, ClientAliveInterval指定了服务器端向客户端请求消息的时间间隔, 默认是0, 不发送.而ClientAliveInterval 60表示每分钟发送一次, 然后客户端响应, 这样就保持长连接了.这里比较怪的地方是:不是客户端主动发起保持连接的请求(如FTerm, CTerm等),而是需要服务器先主动.<br />另外,至于ClientAliveCountMax, 使用默认值3即可.ClientAliveCountMax表示服务器发出请求后客户端没有响应的次数达到一定值, 就自动断开. 正常情况下, 客户端不会不响应.<br />&nbsp;<br />&nbsp;<br />3. 启用putty keepalive<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode118'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode118"><br />putty -&gt; Connection -&gt; Seconds between keepalives ( 0 to turn off ), 默认为0, 改为60. <br /> </div><br />&nbsp; <br />4.SecureCRT设置反空闲<br />&nbsp;<br><div class="msgheader"><div class="right"><span style="CURSOR: pointer" onclick="copycode(getid('phpcode119'));"><u>复制代码</u></span></div>代码如下:</div><div class="msgborder" id="phpcode119"><br />option-&gt;session option-&gt;Terminal-&gt;Anti-idle-&gt;Send protocol NO-OP every__seconds<br /> </div><br />每隔几秒发送空字符串 保持链接不断开</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/103310.html'>Android 实现沉浸式状态栏的方法</a><a>下一篇</a><a href='/php/biji/103312.html'>文本域中换行符的替换示例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>逐步分析MySQL从库com_insert无变化的原因_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了逐步分析MySQL从库com_insert无变化的原因，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+大家都知道com_i" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">逐步分析MySQL从库com_insert无变化的原因</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:34:20                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了逐步分析MySQL从库com_insert无变化的原因，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+大家都知道com_i</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了逐步分析MySQL从库com_insert无变化的原因，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>大家都知道com_insert等com_xxx参数可以用来监控数据库实例的访问量，也就是我们常说的QPS。并且基于MySQL的复制原理，所有主库执行的操作都会在从库重放一遍保证数据一致，那么主库的com_insert和从库的com_insert理论上应该是相等的。如下面显示，第二列代表主库，第三列代表从库：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>com_select 22 1138
+com_update 36 37
+com_insert 133 135
+com_delete 0 0
+qcache_hits 0 0
+Com_replace 0 0
+Connections 13 24
+</code></pre>
+<p></p>
+<p>但是我们看另外一个业务：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>com_select 0 95
+com_update 0 0
+com_insert 92 0
+com_delete 20 0
+qcache_hits 0 6
+Com_replace 0 0
+Connections 0 6
+</code></pre>
+<p></p>
+<p>我们可以很明显的看出来，主库有92个写，但是从库0个写，这是为什么呢？</p>
+<p>这2个业务唯一的区别就是binlog_format的设置不一样。</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>第一个业务
+show global variables like &#39;%binlog_format%&#39;;
++---------------+-----------+
+| Variable_name | Value |
++---------------+-----------+
+| binlog_format | STATEMENT |
++---------------+-----------+</code></pre>
+<p></p>
+<p><code>第二个业务show global variables like &#39;%binlog_format%&#39;;+---------------+-------+| Variable_name | Value |+---------------+-------+| binlog_format | ROW |+---------------+-------+</code></p>
+<p></p>
+<p>我们来看下com_xxx的官方文档定义：</p>
+<pre>
+The Com_xxx statement counter variables indicate the number of times each xxx statement has been executed. There is one status variable for each type of statement. For example, Com_delete and Com_update count DELETE and UPDATE statements, respectively. Com_delete_multi and Com_update_multi are similar but apply to DELETE and UPDATE statements that use multiple-table syntax.</pre>
+<p>从上述文档，我们只能看到com_xxx是如何运作的，但是并不能解释为什么使用RBR之后com_insert就不变化了。</p>
+<p>接下来我们结合下面这段文档来一起看看。</p>
+<pre>
+You cannot examine the logs to see what statements were executed, nor can you see on the slave what statements were received from the master and executed.
+However, you can see what data was changed using mysqlbinlog with the options --base64-output=DECODE-ROWS and --verbose.</pre>
+<p>这2段话结合来看，原因应该是这样的：</p>
+<p>1、主库上接收的是statement的语句，所以com_insert符合触发条件，会随着业务增加。</p>
+<p>2、而从库是拿到主库的binlog后重放更新数据，但是主库的日志格式是row format，这就导致了binlog中记录的不是statement语句，而是data的变化记录。</p>
+<p>3、这样从库虽然依然能进行更新记录，但是无法解析出来这些data变化是一条statement语句导致的还是多条statment语句导致，所以就不在更新com_insert这个statment counter了。</p>
+<p>基本上推论符合现实情况，但是没有code证明，比较遗憾。</p>
+<p>另外，如果我们无法通过com_insert来监控从库的写入情况，那么我们应该监控那个status呢？</p>
+<p>个人建议对于row格式的实例，通过监控innodb_rows_inserted来监控写入情况。</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>show global status like &#39;innodb_rows_inserted&#39;;
++----------------------+------------+
+| Variable_name | Value |
++----------------------+------------+
+| Innodb_rows_inserted | 2666049650 |
++----------------------+------------+
+</code></pre>
+<p></p>
+<p>附：（两个文档的官方文档链接）</p>
+<p>http://dev.mysql.com/doc/refman/5.6/en/server-status-variables.html#statvar_Com_xxx</p>
+<p>http://dev.mysql.com/doc/refman/5.5/en/replication-sbr-rbr.html</p>
+
+<p>注：关于逐步分析MySQL从库com_insert无变化的原因的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2114.html'>MySQL存储引擎 InnoDB与MyISAM的区别</a><a>下一篇</a><a href='/mysql/biji/2116.html'>分享CentOS下MySQL最新版本5.6.13源码安装过程</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

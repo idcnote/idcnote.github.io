@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>详解Java如何实现基于Redis的分布式锁_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="前言<br />
+单JVM内同步好办， 直接用JDK提供的锁就可以了，但是跨进程同步靠这个肯定是不可能的，这种情况下肯定要借助第三方，我这里实现用Redis，当然还有很多其他的实现方式。其实基于R" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">详解Java如何实现基于Redis的分布式锁</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>前言<br />
+单JVM内同步好办， 直接用JDK提供的锁就可以了，但是跨进程同步靠这个肯定是不可能的，这种情况下肯定要借助第三方，我这里实现用Redis，当然还有很多其他的实现方式。其实基于R</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong><span style="color: #ff0000">前言</span></strong></p>
+<p>单JVM内同步好办， 直接用JDK提供的锁就可以了，但是跨进程同步靠这个肯定是不可能的，这种情况下肯定要借助第三方，我这里实现用Redis，当然还有很多其他的实现方式。其实基于Redis实现的原理还算比较简单的，在看代码之前建议大家先去看看原理，看懂了之后看代码应该就容易理解了。</p>
+<p>我这里不实现JDK的<code>java.util.concurrent.locks.Lock</code>接口，而是自定义一个，因为JDK的有个<code>newCondition</code>方法我这里暂时没实现。这个Lock提供了5个lock方法的变体，可以自行选择使用哪一个来获取锁，我的想法是最好用带超时返回的那几个方法，因为不这样的话，假如redis挂了，线程永远都在那死循环了(关于这里，应该还可以进一步优化，如果redis挂了，Jedis的操作肯定会抛异常之类的，可以定义个机制让redis挂了的时候通知使用这个lock的用户，或者说是线程)</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package cc.lixiaohui.lock;
+
+import java.util.concurrent.TimeUnit;
+
+public interface Lock {
+
+ /**
+ * 阻塞性的获取锁, 不响应中断
+ */
+ void lock;
+ 
+ /**
+ * 阻塞性的获取锁, 响应中断
+ * 
+ * @throws InterruptedException
+ */
+ void lockInterruptibly throws InterruptedException;
+ 
+ /**
+ * 尝试获取锁, 获取不到立即返回, 不阻塞
+ */
+ boolean tryLock;
+ 
+ /**
+ * 超时自动返回的阻塞性的获取锁, 不响应中断
+ * 
+ * @param time
+ * @param unit
+ * @return {@code true} 若成功获取到锁, {@code false} 若在指定时间内未&#65533;&#65533;&#65533;取到锁
+  * 
+ */
+ boolean tryLock(long time, TimeUnit unit);
+ 
+ /**
+ * 超时自动返回的阻塞性的获取锁, 响应中断
+ * 
+ * @param time
+ * @param unit
+ * @return {@code true} 若成功获取到锁, {@code false} 若在指定时间内未获取到锁
+ * @throws InterruptedException 在尝试获取锁的当前线程被中断
+ */
+ boolean tryLockInterruptibly(long time, TimeUnit unit) throws InterruptedException;
+ 
+ /**
+ * 释放锁
+ */
+ void unlock;
+ 
+}</pre>
+</div>
+<p>看其抽象实现：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package cc.lixiaohui.lock;
+
+import java.util.concurrent.TimeUnit;
+
+/**
+ * 锁的骨架实现, 真正的获取锁的步骤由子类去实现.
+ * 
+ * @author lixiaohui
+ *
+ */
+public abstract class AbstractLock implements Lock {
+
+ /**
+ * &lt;pre&gt;
+ * 这里需不需要保证可见性值得讨论, 因为是分布式的锁, 
+ * 1.同一个jvm的多个线程使用不同的锁对象其实也是可以的, 这种情况下不需要保证可见性 
+ * 2.同一个jvm的多个线程使用同一个锁对象, 那可见性就必须要保证了.
+ * &lt;/pre&gt;
+ */
+ protected volatile boolean locked;
+
+ /**
+ * 当前jvm内持有该锁的线程(if have one)
+ */
+ private Thread exclusiveOwnerThread;
+
+ public void lock {
+ try {
+ lock(false, 0, null, false);
+ } catch (InterruptedException e) {
+ // TODO ignore
+ }
+ }
+
+ public void lockInterruptibly throws InterruptedException {
+ lock(false, 0, null, true);
+ }
+
+ public boolean tryLock(long time, TimeUnit unit) {
+ try {
+ return lock(true, time, unit, false);
+ } catch (InterruptedException e) {
+ // TODO ignore
+ }
+ return false;
+ }
+
+ public boolean tryLockInterruptibly(long time, TimeUnit unit) throws InterruptedException {
+ return lock(true, time, unit, true);
+ }
+
+ public void unlock {
+ // TODO 检查当前线程是否持有锁
+ if (Thread.currentThread != getExclusiveOwnerThread) {
+ throw new IllegalMonitorStateException("current thread does not hold the lock");
+ }
+ 
+ unlock0;
+ setExclusiveOwnerThread(null);
+ }
+
+ protected void setExclusiveOwnerThread(Thread thread) {
+ exclusiveOwnerThread = thread;
+ }
+
+ protected final Thread getExclusiveOwnerThread {
+ return exclusiveOwnerThread;
+ }
+
+ protected abstract void unlock0;
+ 
+ /**
+ * 阻塞式获取锁的实现
+ * 
+ * @param useTimeout 
+ * @param time
+ * @param unit
+ * @param interrupt 是否响应中断
+ * @return
+ * @throws InterruptedException
+ */
+ protected abstract boolean lock(boolean useTimeout, long time, TimeUnit unit, boolean interrupt) throws InterruptedException;
+
+}</pre>
+</div>
+<p>基于Redis的最终实现，关键的获取锁，释放锁的代码在这个类的<code>lock</code>方法和<code>unlock0</code>方法里，大家可以只看这两个方法然后完全自己写一个：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package cc.lixiaohui.lock;
+
+import java.util.concurrent.TimeUnit;
+
+import redis.clients.jedis.Jedis;
+
+/**
+ * &lt;pre&gt;
+ * 基于Redis的SETNX操作实现的分布式锁
+ * 
+ * 获取锁时最好用lock(long time, TimeUnit unit), 以免网路问题而导致线程一直阻塞
+ * 
+ * &lt;a href="http://redis.io/commands/setnx"&gt;SETNC操作参考资料&lt;/a&gt;
+ * &lt;/pre&gt;
+ * 
+ * @author lixiaohui
+ *
+ */
+public class RedisBasedDistributedLock extends AbstractLock {
+ 
+ private Jedis jedis;
+ 
+ // 锁的名字
+ protected String lockKey;
+ 
+ // 锁的有效时长(毫秒)
+ protected long lockExpires;
+ 
+ public RedisBasedDistributedLock(Jedis jedis, String lockKey, long lockExpires) {
+ this.jedis = jedis;
+ this.lockKey = lockKey;
+ this.lockExpires = lockExpires;
+ }
+
+ // 阻塞式获取锁的实现
+ protected boolean lock(boolean useTimeout, long time, TimeUnit unit, boolean interrupt) throws InterruptedException{
+ if (interrupt) {
+ checkInterruption;
+ }
+ 
+ long start = System.currentTimeMillis;
+ long timeout = unit.toMillis(time); // if !useTimeout, then it's useless
+ 
+ while (useTimeout &#63; isTimeout(start, timeout) : true) {
+ if (interrupt) {
+ checkInterruption;
+ }
+ 
+ long lockExpireTime = System.currentTimeMillis + lockExpires + 1;//锁超时时间
+ String stringOfLockExpireTime = String.valueOf(lockExpireTime);
+ 
+ if (jedis.setnx(lockKey, stringOfLockExpireTime) == 1) { // 获取到锁
+ // TODO 成功获取到锁, 设置相关标识
+ locked = true;
+ setExclusiveOwnerThread(Thread.currentThread);
+ return true;
+ }
+ 
+ String value = jedis.get(lockKey);
+ if (value != null && isTimeExpired(value)) { // lock is expired
+ // 假设多个线程(非单jvm)同时走到这里
+ String oldValue = jedis.getSet(lockKey, stringOfLockExpireTime); // getset is atomic
+ // 但是走到这里时每个线程拿到的oldValue肯定不可能一样(因为getset是原子性的)
+ // 加入拿到的oldValue依然是expired的，那么就说明拿到锁了
+ if (oldValue != null && isTimeExpired(oldValue)) {
+  // TODO 成功获取到锁, 设置相关标识
+  locked = true;
+  setExclusiveOwnerThread(Thread.currentThread);
+  return true;
+ }
+ } else { 
+ // TODO lock is not expired, enter next loop retrying
+ }
+ }
+ return false;
+ }
+ 
+ public boolean tryLock {
+ long lockExpireTime = System.currentTimeMillis + lockExpires + 1;//锁超时时间
+ String stringOfLockExpireTime = String.valueOf(lockExpireTime);
+ 
+ if (jedis.setnx(lockKey, stringOfLockExpireTime) == 1) { // 获取到锁
+ // TODO 成功获取到锁, 设置相关标识
+ locked = true;
+ setExclusiveOwnerThread(Thread.currentThread);
+ return true;
+ }
+ 
+ String value = jedis.get(lockKey);
+ if (value != null && isTimeExpired(value)) { // lock is expired
+ // 假设多个线程(非单jvm)同时走到这里
+ String oldValue = jedis.getSet(lockKey, stringOfLockExpireTime); // getset is atomic
+ // 但是走到这里时每个线程拿到的oldValue肯定不可能一样(因为getset是原子性的)
+ // 假如拿到的oldValue依然是expired的，那么就说明拿到锁了
+ if (oldValue != null && isTimeExpired(oldValue)) {
+ // TODO 成功获取到锁, 设置相关标识
+ locked = true;
+ setExclusiveOwnerThread(Thread.currentThread);
+ return true;
+ }
+ } else { 
+ // TODO lock is not expired, enter next loop retrying
+ }
+ 
+ return false;
+ }
+ 
+ /**
+ * Queries if this lock is held by any thread.
+ * 
+ * @return {@code true} if any thread holds this lock and
+  *   {@code false} otherwise
+ */
+ public boolean isLocked {
+ if (locked) {
+ return true;
+ } else {
+ String value = jedis.get(lockKey);
+ // TODO 这里其实是有问题的, 想:当get方法返回value后, 假设这个value已经是过期的了,
+ // 而就在这瞬间, 另一个节点set了value, 这时锁是被别的线程(节点持有), 而接下来的判断
+ // 是检测不出这种情况的.不过这个问题应该不会导致其它的问题出现, 因为这个方法的目的本来就
+ // 不是同步控制, 它只是一种锁状态的报告.
+ return !isTimeExpired(value);
+ }
+ }
+
+ @Override
+ protected void unlock0 {
+ // TODO 判断锁是否过期
+ String value = jedis.get(lockKey);
+ if (!isTimeExpired(value)) {
+ doUnlock;
+ }
+ }
+
+ private void checkInterruption throws InterruptedException {
+ if(Thread.currentThread.isInterrupted) {
+ throw new InterruptedException;
+ }
+ }
+ 
+ private boolean isTimeExpired(String value) {
+ return Long.parseLong(value) &lt; System.currentTimeMillis;
+ }
+ 
+ private boolean isTimeout(long start, long timeout) {
+ return start + timeout &gt; System.currentTimeMillis;
+ }
+ 
+ private void doUnlock {
+ jedis.del(lockKey);
+ }
+
+}</pre>
+</div>
+<p>如果将来还换一种实现方式（比如<code>zookeeper</code>之类的），到时直接继承<code>AbstractLock</code>并实现l<code>ock(boolean useTimeout, long time, TimeUnit unit, boolean interrupt)</code>， <code>unlock0</code>方法即可(所谓抽象嘛)</p>
+<p><span style="color: #ff0000"><strong>测试</strong></span></p>
+<p>模拟全局ID增长器，设计一个<code>IDGenerator</code>类，该类负责生成全局递增ID，其代码如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package cc.lixiaohui.lock;
+
+import java.math.BigInteger;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * 模拟ID生成 
+ * @author lixiaohui
+ *
+ */
+public class IDGenerator {
+
+ private static BigInteger id = BigInteger.valueOf(0);
+
+ private final Lock lock;
+
+ private static final BigInteger INCREMENT = BigInteger.valueOf(1);
+
+ public IDGenerator(Lock lock) {
+ this.lock = lock;
+ }
+ 
+ public String getAndIncrement {
+ if (lock.tryLock(3, TimeUnit.SECONDS)) {
+ try {
+ // TODO 这里获取到锁, 访问临界区资源
+ return getAndIncrement0;
+ } finally {
+ lock.unlock;
+ }
+ }
+ return null;
+ //return getAndIncrement0;
+ }
+
+ private String getAndIncrement0 {
+ String s = id.toString;
+ id = id.add(INCREMENT);
+ return s;
+ }
+}</pre>
+</div>
+<p>测试主逻辑：同一个JVM内开两个线程死循环地（循环之间无间隔，有的话测试就没意义了）获取<code>ID</code>（我这里并不是死循环而是跑20s），获取到ID存到同一个<code>Set</code>里面，在存之前先检查该<code>ID</code>在<code>set</code>中是否存在，如果已存在，则让两个线程都停止。如果程序能正常跑完20s，那么说明这个分布式锁还算可以满足要求，如此测试的效果应该和不同JVM(也就是真正的分布式环境中)测试的效果是一样的，下面是测试类的代码：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package cc.lixiaohui.DistributedLock.DistributedLock;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import org.junit.Test;
+
+import redis.clients.jedis.Jedis;
+import cc.lixiaohui.lock.IDGenerator;
+import cc.lixiaohui.lock.Lock;
+import cc.lixiaohui.lock.RedisBasedDistributedLock;
+
+public class IDGeneratorTest {
+ 
+ private static Set&lt;String&gt; generatedIds = new HashSet&lt;String&gt;;
+ 
+ private static final String LOCK_KEY = "lock.lock";
+ private static final long LOCK_EXPIRE = 5 * 1000;
+ 
+ @Test
+ public void test throws InterruptedException {
+ Jedis jedis1 = new Jedis("localhost", 6379);
+ Lock lock1 = new RedisBasedDistributedLock(jedis1, LOCK_KEY, LOCK_EXPIRE);
+ IDGenerator g1 = new IDGenerator(lock1);
+ IDConsumeMission consume1 = new IDConsumeMission(g1, "consume1");
+ 
+ Jedis jedis2 = new Jedis("localhost", 6379);
+ Lock lock2 = new RedisBasedDistributedLock(jedis2, LOCK_KEY, LOCK_EXPIRE);
+ IDGenerator g2 = new IDGenerator(lock2);
+ IDConsumeMission consume2 = new IDConsumeMission(g2, "consume2");
+ 
+ Thread t1 = new Thread(consume1);
+ Thread t2 = new Thread(consume2);
+ t1.start;
+ t2.start;
+ 
+ Thread.sleep(20 * 1000); //让两个线程跑20秒
+ 
+ IDConsumeMission.stop;
+ 
+ t1.join;
+ t2.join;
+ }
+ 
+ static String time {
+ return String.valueOf(System.currentTimeMillis / 1000);
+ }
+ 
+ static class IDConsumeMission implements Runnable {
+
+ private IDGenerator idGenerator;
+ 
+ private String name;
+ 
+ private static volatile boolean stop;
+ 
+ public IDConsumeMission(IDGenerator idGenerator, String name) {
+ this.idGenerator = idGenerator;
+ this.name = name;
+ }
+ 
+ public static void stop {
+ stop = true;
+ }
+ 
+ public void run {
+ System.out.println(time + ": consume " + name + " start ");
+ while (!stop) {
+ String id = idGenerator.getAndIncrement;
+ if(generatedIds.contains(id)) {
+  System.out.println(time + ": duplicate id generated, id = " + id);
+  stop = true;
+  continue;
+ } 
+ 
+ generatedIds.add(id);
+ System.out.println(time + ": consume " + name + " add id = " + id);
+ }
+ System.out.println(time + ": consume " + name + " done ");
+ }
+ 
+ }
+ 
+}</pre>
+</div>
+<p>说明一点，我这里停止两个线程的方式并不是很好，我是为了方便才这么做的，因为只是测试，最好不要这么做。</p>
+<p><span style="color: #ff0000"><strong>测试结果</strong></span></p>
+<p>跑20s打印的东西太多，前面打印的被<code>clear</code>了，只有差不多跑完的时候才有，下面截图。说明了这个锁能正常工作：</p>
+<p style="text-align: center"></p>
+<p>当<code>IDGererator</code>没有加锁(即<code>IDGererator</code>的<code>getAndIncrement</code>方法内部获取<code>id</code>时不上锁)时,测试是不通过的，非常大的概率中途就会停止，下面是不加锁时的测试结果:</p>
+<p>这个1秒都不到：</p>
+<p style="text-align: center"></p>
+<p>这个也1秒都不到：</p>
+<p style="text-align: center"></p>
+<p><span style="color: #ff0000"><strong>结束语</strong></span></p>
+<p>好了，以上就是Java实现基于Redis的分布式锁的全部内容，各位如果发现问题希望能指正，希望这篇文章能对大家的学习和工作带来一定的帮助，如果有疑问可以留言交流。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/93638.html'>linux普通用户获取管理员权限</a><a>下一篇</a><a href='/php/biji/93640.html'>Android编程四大组件之Activity用法实例分析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

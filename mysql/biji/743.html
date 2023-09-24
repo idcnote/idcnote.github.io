@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL 利用frm文件和ibd文件恢复表数据的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL 利用frm文件和ibd文件恢复表数据的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL 利用frm文件和ibd文件恢复表数据的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:19:06                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL 利用frm文件和ibd文件恢复表数据的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL 利用frm文件和ibd文件恢复表数据的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<div id="navCategory">
+<h5 class="catalogue">目录</h5>
+<ul class="first_class_ul">
+	<li>frm文件和ibd文件简介</li>
+	<li>frm文件恢复表结构</li>
+	<li>ibd文件恢复表数据</li>
+	<li>简单总结一下</li>
+</ul>
+<p class="maodian"></p>
+<h2>frm文件和ibd文件简介</h2>
+<p> 在MySQL中，如果我们使用了默认的存储引擎innodb创建一张表，那么在文件夹下面就会出现表名.frm和表名.ibd两个文件，如果我们使用的是Myisam存储引擎，那么就会出现三个文件，这里我们给出例子：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@ /data/yeyz]#ll
+total 580
+-rw-rw---- 1 mysql mysql 8586 Apr 3 17:44 a.frm
+-rw-rw---- 1 mysql mysql  0 Apr 3 17:44 a.MYD
+-rw-rw---- 1 mysql mysql 1024 Apr 3 17:44 a.MYI
+-rw-rw---- 1 mysql mysql 8586 Apr 3 17:44 b.frm
+-rw-rw---- 1 mysql mysql 98304 Apr 3 17:45 b.ibd
+-rw-rw---- 1 mysql mysql 61 Nov 23 09:54 db.opt
+-rw-rw---- 1 mysql mysql 8556 Apr 29 21:37 tbl_test_2.frm
+-rw-rw---- 1 mysql mysql 98304 Apr 29 21:37 tbl_test_2.ibd
+-rw-rw---- 1 mysql mysql 8556 Apr 29 21:33 tbl_test.frm
+-rw-rw---- 1 mysql mysql 98304 Apr 29 21:33 tbl_test.ibd
+-rw-rw---- 1 mysql mysql 8614 Apr 29 21:40 test.frm
+-rw-rw---- 1 mysql mysql 98304 Apr 29 21:43 test.ibd
+-rw-rw---- 1 mysql mysql 8666 Apr 2 15:13 unstandard_ins.frm
+-rw-rw---- 1 mysql mysql 98304 Apr 3 11:46 unstandard_ins.ibd
+-rw-rw---- 1 mysql mysql 8586 Apr 3 17:44 yeyz.frm
+-rw-rw---- 1 mysql mysql 28 Apr 3 17:44 yeyz.MYD
+-rw-rw---- 1 mysql mysql 2048 Apr 3 17:44 yeyz.MYI</code></pre>
+<p>MySQL 利用frm文件和ibd文件恢复表数据</p>
+<p>其中ibd文件是innodb的表数据文件，而frm文件是innodb的表结构文件，mysiam存储引擎的表中，frm是表结构，MYI文件是索引文件，而MYD文件是数据文件，从这里也可以看出，innodb存储引擎的索引和数据是在一起的，而Myisam存储引擎索引和数据是分开的。</p>
+<p>需要注意的是，这个frm文件和ibd文件都是不能直接打开的。</p>
+<p>考虑这样一种需求，数据库需要快速恢复一个表中的数据，而这个表所在的库的数据量非常大，恢复起来可能耗费的时间也比较长，那么全库恢复肯定不是最佳的选择。那这种情况下怎么办呢？我们可以使用frm文件盒ibd文件来对数据进行恢复。下面我们分析分析这个过程。</p>
+<p class="maodian"></p>
+<h2>frm文件恢复表结构</h2>
+<p> 当然，表结构需要使用frm文件来恢复。我们第一反应想到的是，可以把这两个文件直接拷贝到一个新的数据库实例中，然后直接启动实例，这样可以么？当然是不行的。侄儿要是能行，估计DBA都可以下岗了。哈哈，废话不多说，来看操作过程。</p>
+<p> 首先，我们创建一个新的实例专门用来恢复数据，如果你使用线上的某一台机器来执行恢复，那你必须承担数据库重启的风险以及DML阻塞的风险，所以最好的方法还是使用一台专门的实例来进行恢复。那么我们如何从frm文件中拿到我们想要的表结构呢？</p>
+<p> 我拿线上的一个记录慢日志的表举个例子，为了写着方便，表名称我写成了&quot;aaa&quot;,这个表的结构是这样的：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql--root@localhost:test_recover 12:08:43&gt;&gt;show create table aaa\G
+*************************** 1. row ***************************
+  Table: aaa
+Create Table: CREATE TABLE `aaa` (
+ `maintain_id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增列',
+ `slowquery_filename` varchar(50) DEFAULT NULL COMMENT '慢日志文件名',
+ `slowquery_path` varchar(150) DEFAULT NULL COMMENT '慢日志全路径',
+ `slowquery_process` tinyint(20) unsigned NOT NULL DEFAULT '0' COMMENT '慢日志是否被解析',
+ `slowquery_uploadtime` datetime DEFAULT CURRENT_TIMESTAMP,
+ `slowquery_analyzetime` date DEFAULT NULL COMMENT '慢日志解析时间',
+ `slowquery_starttime` date DEFAULT NULL,
+ `slowquery_endtime` date DEFAULT NULL,
+ `instance_ip` varchar(15) DEFAULT NULL COMMENT '慢日志IP地址',
+ `instance_port` int(11) DEFAULT NULL COMMENT '慢日志端口号地址',
+ PRIMARY KEY (`maintain_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+1 row in set, 1 warning (0.01 sec)</code></pre>
+<p>MySQL 利用frm文件和ibd文件恢复表数据</p>
+<p> 要从frm文件中得到这样的一个表，我们要做的步骤如下：</p>
+<p>1、在实例上创建一个同名的表aaa，由于我们不知道这个表的结构，我们可以给它设定只有一个字段id，也就是</p>
+<p>create table aaa (id int);</p>
+<p>我们知道，这个时候会在对应的data目录下生成新的aaa.frm和aaa.ibd文件，然后我们使用我们备份的aaa.frm来替代之前的aaa.frm,然后重启数据库。</p>
+<p>是的，你没有看错，我们使用备份的表结构文件来替代它生成的表结构文件。</p>
+<p>2.看看重启之后错误日志输出的结果吧，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+2019-03-22T03:17:28.652390Z 16 
+[Warning] InnoDB: Table test_recover/store_goods_price contains 1 user 
+defined columns in InnoDB, but 12 columns in MySQL. Please check 
+INFORMATION_SCHEMA.INNODB_SYS_COLUMNS and http://dev.mysql.com/doc/refman/5.7/en/innodb-troubleshooting.html for how to resolve the issue.
+2019-04-02T07:56:31.558461Z 41 
+[Warning] InnoDB: Table test_recover/dv_control contains 1 user defined 
+columns in InnoDB, but 14 columns in MySQL. Please check
+ INFORMATION_SCHEMA.INNODB_SYS_COLUMNS and http://dev.mysql.com/doc/refman/5.7/en/innodb-troubleshooting.html for how to resolve the issue.
+2019-05-23T03:14:10.161122Z 92 
+[Warning] InnoDB: Table test_recover/aaa contains 1 
+user defined columns in InnoDB, but 10 columns in MySQL. Please check 
+INFORMATION_SCHEMA.INNODB_SYS_COLUMNS and http://dev.mysql.com/doc/refman/5.7/en/innodb-troubleshooting.html for how to resolve the issue.</code></pre>
+<p>MySQL 利用frm文件和ibd文件恢复表数据</p>
+<p> 可以看到，10-12行的错误日志里面提示我们这个表aaa只包含1个字段，但是frm中包含10个字段，字段的数量不符。</p>
+<p> 这和我们预料的结果符合，因为我们在创建表aaa的时候，只给了他1个字段id，而我们要恢复的aaa表有10个字段，肯定是无法从frm中读取的。此时你可能很容易就能想到，如果我们把这个aaa表的字段调成10个，那么最终的结果是什么呢？</p>
+<p>3.将aaa表的字段数量升级成10个，然后重新拷贝frm文件，修改配置文件中的参数innodb_force_recovery=6，我们看看最终的结果：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql--root:(none) 12:04:20&gt;&gt;use test_recover;
+Database changed
+mysql--root:test_recover 12:04:25&gt;&gt;create table aaa (id1 int,id2 int,id3 int,id4 int,id5 int,id6 int,id7 int,id8 int,id9 int,id10 int);
+Query OK, 0 rows affected (0.03 sec)
+
+mysql--root@localhost:test_recover 12:05:08&gt;&gt;show create table aaa\G
+*************************** 1. row ***************************
+  Table: aaa
+Create Table: CREATE TABLE `aaa` (
+ `id1` int(11) DEFAULT NULL,
+ `id2` int(11) DEFAULT NULL,
+ `id3` int(11) DEFAULT NULL,
+ `id4` int(11) DEFAULT NULL,
+ `id5` int(11) DEFAULT NULL,
+ `id6` int(11) DEFAULT NULL,
+ `id7` int(11) DEFAULT NULL,
+ `id8` int(11) DEFAULT NULL,
+ `id9` int(11) DEFAULT NULL,
+ `id10` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+1 row in set (0.00 sec)</code></pre>
+<p>MySQL 利用frm文件和ibd文件恢复表数据</p>
+<p> 然后我们重启实例，再次查看表aaa，可以看到结果如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql--root:test_recover 12:08:43&gt;&gt;show create table aaa\G
+*************************** 1. row ***************************
+  Table: aaa
+Create Table: CREATE TABLE `aaa` (
+ `maintain_id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增列',
+ `slowquery_filename` varchar(50) DEFAULT NULL COMMENT '慢日志文件名',
+ `slowquery_path` varchar(150) DEFAULT NULL COMMENT '慢日志全路径',
+ `slowquery_process` tinyint(20) unsigned NOT NULL DEFAULT '0' COMMENT '慢日志是否被解析',
+ `slowquery_uploadtime` datetime DEFAULT CURRENT_TIMESTAMP,
+ `slowquery_analyzetime` date DEFAULT NULL COMMENT '慢日志解析时间',
+ `slowquery_starttime` date DEFAULT NULL,
+ `slowquery_endtime` date DEFAULT NULL,
+ `instance_ip` varchar(15) DEFAULT NULL COMMENT '慢日志IP地址',
+ `instance_port` int(11) DEFAULT NULL COMMENT '慢日志端口号地址',
+ PRIMARY KEY (`maintain_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+1 row in set, 1 warning (0.01 sec)</code></pre>
+<p>MySQL 利用frm文件和ibd文件恢复表数据</p>
+<p> 可以看到，我们想要的表结构已经从frm文件中恢复出来了，需要注意的是，这个过程中我们并没有使用ibd文件。</p>
+<p>总结一下利用frm文件恢复表结构的步骤：</p>
+<p>1、首先创建一个同名的表，然后启动实例</p>
+<p>2、使用备份的frm文件替代生成的frm文件，重启实例</p>
+<p>3、查看错误日志，从错误日志中获取到备份的frm文件中的字段数量m</p>
+<p>4、重新创建同名表，保证字段数量为m，与备份表保持一致，然后重新拷贝备份的frm文件到对应目录</p>
+<p>5、修改实例的配置文件中的参数innodb_force_recovery=6，然后重启数据库，就可以看到对应的表结构创建语句，我们把它保存下来，下一步恢复数据的时候要用。这一步相当重要</p>
+<p>6、将参数innodb_force_recovery=6注释掉，重新使用默认的值，然后重启数据库，准备恢复表数据。</p>
+<p> 至此，表结构恢复完毕。</p>
+<p> 解释一下innodb_force_recovery参数，这个参数的最大值是6，在该等级下，仅支持一部分查询功能，DML都不支持，从名称就可以看出来，这是在一些强行恢复的场景下才会使用的参数，一般情况下这个参数可以不要，使用默认值就行。有兴趣更深了解的同学可以参考官方文档。</p>
+<p class="maodian"></p>
+<h2>ibd文件恢复表数据</h2>
+<p> 上一步执行完成之后，我们已经获取了对应的表结构，现在我们看看如何恢复表数据。</p>
+<p> 恢复表数据的方法比较简单，大体步骤如下：</p>
+<p>1、利用我们上一步中获取的建表语句，重新创建一张表，然后执行：</p>
+<p>flush table aaa for export;</p>
+<p>这个语法是将表里面的数据落盘，并获取该表的锁，为后面恢复做好准备。</p>
+<p>2、然后我们使用如下语句：</p>
+<p>alter table aaa discard tablespace;</p>
+<p>这个语句会删除当前的ibd文件。</p>
+<p>3、然后我们使用我们之前备份的ibd文件，将其拷贝到对应的实例目录下面</p>
+<p>4、最后在将ibd文件重新加载进来，使用如下语句：</p>
+<p>alter table aaa import tablespace;</p>
+<p>重启数据库，这样，我们的数据就恢复成功了。</p>
+<p class="maodian"></p>
+<h2>简单总结一下</h2>
+<p> 整个恢复的流程算是介绍完了，其中比较巧妙的地方就是从frm文件中获取表结构信息，我们使用了两次拼凑表创建语句的方法，最终得到了待恢复的表的表结构，然后使用alter table discard tablespace和alter table import tablespace的方法来恢复表中的数据。整个过程看着比较复杂，其实完全可以按照步骤抽象出来一个脚本，这样在下次恢复的时候，只需要输入要恢复的表的名称，就可以快速的恢复表结构和数据，不失为一种应急的数据恢复预案。</p>
+<p>以上就是MySQL 利用frm文件和ibd文件恢复表数据的详细内容，更多关于MySQL 恢复表数据的资料请关注512笔记其它相关文章！</p></div>
+
+<p>注：关于MySQL 利用frm文件和ibd文件恢复表数据的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/742.html'>MySQL 1303错误的解决方法(navicat)</a><a>下一篇</a><a href='/mysql/biji/744.html'>MySQL 转义字符使用说明</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

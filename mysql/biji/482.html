@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL恢复单库或单表,以及可能遇到的坑的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL恢复单库或单表,以及可能遇到的坑的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL恢复单库或单表,以及可能遇到的坑的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:16:39                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL恢复单库或单表,以及可能遇到的坑的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL恢复单库或单表,以及可能遇到的坑的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p></p>
+<h3>前言：</h3>
+<p></p>
+<p>MySQL 逻辑备份工具最常用的就是 mysqldump 了，一般我们都是备份整个实例或部分业务库。不清楚你有没有做过恢复，恢复场景可能就比较多了，比如我想恢复某个库或某个表等。那么如何从全备中恢复单库或单表，这其中又有哪些隐藏的坑呢？这篇文章我们一起来看下。</p>
+<p></p>
+<h3>1.如何恢复单库或单表</h3>
+<p></p>
+<p>前面文章有介绍过 MySQL 的备份与恢复。可能我们每个数据库实例中都不止一个库，一般备份都是备份整个实例，但恢复需求又是多种多样的，比如说我想只恢复某个库或某张表，这个时候应该怎么操作呢？</p>
+<p>如果你的实例数据量不大，可以在另外一个环境恢复出整个实例，然后再单独备份出所需库或表用来恢复。不过这种方法不够灵活，并且只适用数据量比较少的情况。</p>
+<p>其实从全备中恢复单库还是比较方便的，有个 --one-database 参数可以指定单库恢复，下面来具体演示下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+# 查看及备份所有库
+mysql&gt; show databases;
++--------------------+
+| Database      |
++--------------------+
+| information_schema |
+| mysql       |
+| performance_schema |
+| sbtest       |
+| sys        |
+| testdb       |
+| testdb2      |
++--------------------+
+
+mysqldump -uroot -pxxxx -R -E --single-transaction --all-databases &gt; all_db.sql
+
+# 删除testdb库 并进行单库恢复
+mysql&gt; drop database testdb;
+Query OK, 36 rows affected (2.06 sec)
+
+# 貌似恢复前 testdb库不存在的话要手动新建
+mysql -uroot -pxxxx --one-database testdb &lt; all_db.sql</code></pre>
+<p>MySQL如何恢复单库或单表,以及可能遇到的坑</p>
+<p>除了上述方法外，恢复单库或单表还可以采用手动筛选的方法。这个时候 Linux 下大名鼎鼎的 sed 和 grep 命令就派上用场了，我们可以利用这两个命令从全备中筛选出单库或单表的语句，筛选方法如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+# 从全备中恢复单库
+sed -n '/^-- Current Database: `testdb`/,/^-- Current Database: `/p' all_db.sql &gt; testdb.sql
+
+# 筛选出单表语句
+cat all_db.sql | sed -e '/./{H;$!d;}' -e 'x;/CREATE TABLE `test_tb`/!d;q' &gt; /tmp/test_tb_info.sql 
+cat all_db.sql | grep --ignore-case 'insert into `test_tb`' &gt; /tmp/test_tb_data.sql</code></pre>
+<p>MySQL如何恢复单库或单表,以及可能遇到的坑</p>
+<p>2.小心有坑</p>
+<p>对于上述手动筛选来恢复单库或单表的方法，看起来简单方便，其实隐藏着一个小坑，下面我们来具体演示下：</p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+# 备份整个实例
+mysqldump -uroot -pxxxx -R -E --single-transaction --all-databases &gt; all_db.sql
+
+# 手动备份下test_tb 然后删除test_tb
+mysql&gt; create table test_tb_bak like test_tb;
+Query OK, 0 rows affected (0.03 sec)
+
+mysql&gt; insert into test_tb_bak select * from test_tb;
+Query OK, 4 rows affected (0.02 sec)
+Records: 4 Duplicates: 0 Warnings: 0
+
+mysql&gt; drop table test_tb;
+Query OK, 0 rows affected (0.02 sec)
+
+# 从全备中筛选test_db建表及插数据语句
+cat all_db.sql | sed -e '/./{H;$!d;}' -e 'x;/CREATE TABLE `test_tb`/!d;q' &gt; test_tb_info.sql 
+cat all_db.sql | grep --ignore-case 'insert into `test_tb`' &gt; test_tb_data.sql
+
+# 查看得到的语句 貌似没问题
+cat test_tb_info.sql
+
+DROP TABLE IF EXISTS `test_tb`;
+/*!40101 SET @saved_cs_client   = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `test_tb` (
+ `inc_id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增主键',
+ `col1` int(11) NOT NULL,
+ `col2` varchar(20) DEFAULT NULL,
+ `col_dt` datetime DEFAULT NULL,
+ `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+ `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+ PRIMARY KEY (`inc_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COMMENT='测试表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+cat test_tb_data.sql
+
+INSERT INTO `test_tb` VALUES (1,1001,'dsfs','2020-08-04 12:12:36','2020-09-17 06:19:27','2020-09-17 06:19:27'),
+(2,1002,'vfsfs','2020-09-04 12:12:36','2020-09-17 06:19:27','2020-09-17 06:19:27'),
+(3,1003,'adsfsf',NULL,'2020-09-17 06:19:27','2020-09-17 06:19:27'),
+(4,1004,'walfd','2020-09-17 14:19:27','2020-09-17 06:19:27','2020-09-18 07:52:13');
+
+# 执行恢复单表操作
+mysql -uroot -pxxxx testdb &lt; test_tb_info.sql
+mysql -uroot -pxxxx testdb &lt; test_tb_data.sql
+
+# 查看恢复数据 并和备份表比对
+mysql&gt; select * from test_tb;
++--------+------+--------+---------------------+---------------------+---------------------+
+| inc_id | col1 | col2  | col_dt       | create_time     | update_time     |
++--------+------+--------+---------------------+---------------------+---------------------+
+|   1 | 1001 | dsfs  | 2020-08-04 12:12:36 | 2020-09-17 06:19:27 | 2020-09-17 06:19:27 |
+|   2 | 1002 | vfsfs | 2020-09-04 12:12:36 | 2020-09-17 06:19:27 | 2020-09-17 06:19:27 |
+|   3 | 1003 | adsfsf | NULL        | 2020-09-17 06:19:27 | 2020-09-17 06:19:27 |
+|   4 | 1004 | walfd | 2020-09-17 14:19:27 | 2020-09-17 06:19:27 | 2020-09-18 07:52:13 |
++--------+------+--------+---------------------+---------------------+---------------------+
+4 rows in set (0.00 sec)
+
+mysql&gt; select * from test_tb_bak;
++--------+------+--------+---------------------+---------------------+---------------------+
+| inc_id | col1 | col2  | col_dt       | create_time     | update_time     |
++--------+------+--------+---------------------+---------------------+---------------------+
+|   1 | 1001 | dsfs  | 2020-08-04 12:12:36 | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 |
+|   2 | 1002 | vfsfs | 2020-09-04 12:12:36 | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 |
+|   3 | 1003 | adsfsf | NULL        | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 |
+|   4 | 1004 | walfd | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 | 2020-09-18 15:52:13 |
++--------+------+--------+---------------------+---------------------+---------------------+
+4 rows in set (0.00 sec)</code></pre>
+<p>MySQL如何恢复单库或单表,以及可能遇到的坑</p>
+<p>如果你仔细观察的话，会发现恢复出来的数据有问题，貌似时间不太对，你再仔细看看，是不是有的时间差了8小时！详细探究下来，我们发现 timestamp 类型字段的时间数据恢复有问题，准确来讲备份文件中记录的是0时区，而我们系统一般采用东八区，所以才会出现误差8小时的问题。</p>
+<p>那么你会问了，为什么全部恢复不会出问题呢？问的好，我们看下备份文件就知道了。</p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+# 备份文件开头
+-- MySQL dump 10.13 Distrib 5.7.23, for Linux (x86_64)
+--
+-- Host: localhost  Database:
+-- ------------------------------------------------------
+-- Server version    5.7.23-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */; 
+注意上面两行
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+
+# 备份文件结尾
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2020-09-18 15:56:40</code></pre>
+<p>MySQL如何恢复单库或单表,以及可能遇到的坑</p>
+<p>仔细看备份文件，你会发现 mysqldump 备份出来的文件中，首先会将会话时区改为0，结尾处再改回原时区。这就代表着，备份文件中记录的时间戳数据都是以0时区为基础的。如果直接执行筛选出的SQL，就会造成0时区的时间戳插入的东八区的系统中，显然会造成时间相差8小时的问题。</p>
+<p>看到这里，不知道你是否看懂了呢，可能有过备份恢复经验的同学好理解些。解决上述问题的方法也很简单，那就是在执行SQL文件前，更改当前会话时区为0，再次来演示下：</p>
+<p>代码如下：</p>
+<pre>
+
+<code>
+# 清空test_db表数据
+mysql&gt; truncate table test_tb;
+Query OK, 0 rows affected (0.02 sec)
+
+# 文件开头增加时区声明
+vim test_tb_data.sql
+set session TIME_ZONE='+00:00';
+INSERT INTO `test_tb` VALUES (1,1001,'dsfs','2020-08-04 12:12:36','2020-09-17 06:19:27','2020-09-17 06:19:27'),
+(2,1002,'vfsfs','2020-09-04 12:12:36','2020-09-17 06:19:27','2020-09-17 06:19:27'),
+(3,1003,'adsfsf',NULL,'2020-09-17 06:19:27','2020-09-17 06:19:27'),
+(4,1004,'walfd','2020-09-17 14:19:27','2020-09-17 06:19:27','2020-09-18 07:52:13');
+
+# 执行恢复并比对 发现数据正确
+mysql&gt; select * from test_tb;
++--------+------+--------+---------------------+---------------------+---------------------+
+| inc_id | col1 | col2  | col_dt       | create_time     | update_time     |
++--------+------+--------+---------------------+---------------------+---------------------+
+|   1 | 1001 | dsfs  | 2020-08-04 12:12:36 | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 |
+|   2 | 1002 | vfsfs | 2020-09-04 12:12:36 | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 |
+|   3 | 1003 | adsfsf | NULL        | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 |
+|   4 | 1004 | walfd | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 | 2020-09-18 15:52:13 |
++--------+------+--------+---------------------+---------------------+---------------------+
+4 rows in set (0.00 sec)
+
+mysql&gt; select * from test_tb_bak;
++--------+------+--------+---------------------+---------------------+---------------------+
+| inc_id | col1 | col2  | col_dt       | create_time     | update_time     |
++--------+------+--------+---------------------+---------------------+---------------------+
+|   1 | 1001 | dsfs  | 2020-08-04 12:12:36 | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 |
+|   2 | 1002 | vfsfs | 2020-09-04 12:12:36 | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 |
+|   3 | 1003 | adsfsf | NULL        | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 |
+|   4 | 1004 | walfd | 2020-09-17 14:19:27 | 2020-09-17 14:19:27 | 2020-09-18 15:52:13 |
++--------+------+--------+---------------------+---------------------+---------------------+
+4 rows in set (0.00 sec)</code></pre>
+<p>MySQL如何恢复单库或单表,以及可能遇到的坑</p>
+<p></p>
+<h3>总结：</h3>
+<p></p>
+<p>我们在网络中很容易搜索出恢复单库或单表的方法，大多都有提到上述利用 sed 、grep 命令来手动筛选的方法。但大部分文章都未提及可能出现的问题，如果你的表字段有timestamp 类型，用这种方法要格外注意。无论面对哪种恢复需求，我们都要格外小心，不要造成越恢复越糟糕的情况，最好有个空实例演练下，然后再进行恢复。</p>
+<p>以上就是MySQL如何恢复单库或单表,以及可能遇到的坑的详细内容，更多关于MySQL 恢复单库或单表的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL恢复单库或单表,以及可能遇到的坑的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/481.html'>MySQL8.0.23免安装版配置的解决办法</a><a>下一篇</a><a href='/mysql/biji/483.html'>MySQL联表update数据的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

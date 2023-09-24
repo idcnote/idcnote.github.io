@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SqlServer应用之sys.dm_os_waiting_tasks 引发的疑问(上)_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SqlServer应用之sys.dm_os_waiting_tasks 引发的疑问(上)，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SqlServer应用之sys.dm_os_waiting_tasks 引发的疑问(上)</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:39:40                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SqlServer应用之sys.dm_os_waiting_tasks 引发的疑问(上)，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SqlServer应用之sys.dm_os_waiting_tasks 引发的疑问(上)，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>很多人在查看SQL语句等待的时候都是通过sys.dm_exec_requests查看,等待类型也是通过wait_type得出,sys.dm_os_waiting_tasks也可以看到session的等待那么有什么区别呢....</p>
+<p>　　　　废话不多说直接开整.</p>
+<p>　　　　测试版本2012</p>
+<p>　　　　sys.dm_os_waiting_tasks 的字段说明:</p>
+<p></p>
+<table border="1" cellpadding="0" cellspacing="0" style="background-color: rgb(204,204,204); width: 100%">
+	<tbody>
+		<tr>
+			<td>
+			<p></p>
+			<h3>waiting_task_address</h3>
+			<p></p></td>
+			<td>
+			<p></p>
+			<h3>varbinary(8)</h3>
+			<p></p></td>
+			<td>
+			<p>等待任务的地址。</p></td>
+		</tr>
+		<tr>
+			<td>
+			<p></p>
+			<h3>session_id</h3>
+			<p></p></td>
+			<td>
+			<p></p>
+			<h3>smallint</h3>
+			<p></p></td>
+			<td>
+			<p>与任务关联的会话的 ID。</p></td>
+		</tr>
+		<tr>
+			<td>
+			<p></p>
+			<h3>exec_context_id</h3>
+			<p></p></td>
+			<td>
+			<p></p>
+			<h3>int</h3>
+			<p></p></td>
+			<td>
+			<p>与任务关联的执行上下文的 ID。</p></td>
+		</tr>
+		<tr>
+			<td>
+			<p></p>
+			<h3>wait_duration_ms</h3>
+			<p></p></td>
+			<td>
+			<p></p>
+			<h3>int</h3>
+			<p></p></td>
+			<td>
+			<p>此等待类型的总等待时间（毫秒）。此时间包含 <strong>signal_wait_time。</strong></p></td>
+		</tr>
+		<tr>
+			<td>
+			<p></p>
+			<h3>wait_type</h3>
+			<p></p></td>
+			<td>
+			<p></p>
+			<h3>nvarchar(60)</h3>
+			<p></p></td>
+			<td>
+			<p>等待类型的名称。</p></td>
+		</tr>
+		<tr>
+			<td>
+			<p></p>
+			<h3>resource_address</h3>
+			<p></p></td>
+			<td>
+			<p></p>
+			<h3>varbinary(8)</h3>
+			<p></p></td>
+			<td>
+			<p>任务等待的资源的地址。</p></td>
+		</tr>
+		<tr>
+			<td>
+			<p></p>
+			<h3>blocking_task_address</h3>
+			<p></p></td>
+			<td>
+			<p></p>
+			<h3>varbinary(8)</h3>
+			<p></p></td>
+			<td>
+			<p>当前持有此资源的任务。</p></td>
+		</tr>
+		<tr>
+			<td>
+			<p></p>
+			<h3>blocking_session_id</h3>
+			<p></p></td>
+			<td>
+			<p></p>
+			<h3>smallint</h3>
+			<p></p></td>
+			<td>
+			<p>正在阻塞请求的会话的 ID。如果此列为 NULL，则表示请求未被阻塞，或锁定会话的会话信息不可用（或无法进行标识）。</p>
+			<p>-2 = 阻塞资源由孤立的分布式事务拥有。</p>
+			<p>-3 = 阻塞资源由延迟的恢复事务拥有。</p>
+			<p>-4 = 由于内部闩锁状态转换而无法确定阻塞闩锁所有者的会话 ID。</p></td>
+		</tr>
+		<tr>
+			<td>
+			<p></p>
+			<h3>blocking_exec_context_id</h3>
+			<p></p></td>
+			<td>
+			<p></p>
+			<h3>int</h3>
+			<p></p></td>
+			<td>
+			<p>正在阻塞的任务的执行上下文 ID。</p></td>
+		</tr>
+	</tbody>
+</table>
+<p>做个小例子：　　</p>
+<p>代码如下：</p>
+<pre>
+<code>
+-----开启事务更新一张表并且不提交。
+　　　　begin tran 
+　　　　update t1 set b = getdate()
+　　　　-----做一个查询 并且开启并行
+　　　　select * from t1 inner join t2 on t1.a = t2.a
+　　　　option (querytraceon 8649)
+
+</code></pre>
+<p>　　　　查询sys.dm_os_waiting_tasks 的结果，udate ：session 55, select : session 54,如图开一看到session 中出现了</p>
+<p>21条等待（虚机给了双核4线程），那么可以看出wait_type 为LCK_M_S的有四条，这个可以理解是开并行起了四个线程要扫描表t1全部等待状态，从 resource_description 字段信息中我们看一下是否是T1表的等待。　　　　　　　　</p>
+<p style="text-align: center">【图片暂缺】　　　　</p>
+<p>　　　　　从&rdquo;ridlock fileid=1 pageid=109 dbid=7 id=lock1f03c7700 mode=X associatedObjectId=72057594038910976&ldquo; 这个信息中我们知道ridlock fileid=1 pageid=109 dbid=7 　　</p>
+<p>　　　　dbcc traceon (3604)　　　　dbcc page(7,1,109,3)</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p style="text-align: center">　　　　【图片暂缺】</p>
+<p>确定了LCK_M_S的四条确实是扫描表所产生的等待，那么其他的CXPACKET等待是什么鬼？ 从规律中可以看出CXPACKET等待的分成四组每一组4条 exec_context_id分别是 5，6，7，8（四个等待扫表的线程），还有一个上图中的第十三行&ldquo;exchangeEvent id=Port1fe7a2200 WaitType=e_waitPortOpen nodeId=0&rdquo; 应该是调度的线程。</p>
+<p>　　　　sys.dm_os_waiting_tasks里在并行计划的执行中出现了 CXPACKET 和 LCK_M_S 那么我们来看一下 sys.dm_exec_requests 里是如何显示的（这里只取出试验用的字段）</p>
+<p style="text-align: center">　　　　【图片暂缺】</p>
+<p>　　　　blocking_session_id 竟然是0 ， wait_type 竟然是CXPACKET（并行等待，我们知道主要的等待原因不是这个），另外观察 发现这里面抓取的TASK_ADDRESS 是调度线程。经过其他实验得知 sys.dm_exec_requests 在并行的等待中无法获得真正的等待类型和资源。如果取消并行，执行一个串行计划两个视图得到的结果是一样的。</p>
+<p>　　　　例子中我们看出了sys.dm_exec_requests 和sys.dm_os_waiting_tasks 在实际使用中关于并行的区别，但不单单只有这一个疑问，4线程并行计划为什么一下会出现21条等待？并行计划怎么执行的？ 我们下篇继续说....</p>
+
+<p>注：关于SqlServer应用之sys.dm_os_waiting_tasks 引发的疑问(上)的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2687.html'>SQL Server中Check约束的学习教程</a><a>下一篇</a><a href='/mysql/biji/2689.html'>SQL Server 2005数据库还原错误的经典解析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL5.6升级5.7时出现主从延迟问题的深入分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL5.6升级5.7时出现主从延迟问题的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+最" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL5.6升级5.7时出现主从延迟问题的深入分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:16:25                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL5.6升级5.7时出现主从延迟问题的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+最</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL5.6升级5.7时出现主从延迟问题的深入分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>最近在做zabbix的数据库MySQL5.6升级5.7时，出现主从延迟问题，这个问题困扰了很久没有解决，昨天终于解决了，整理了一下整个排查过程，分享给大家。</p>
+<p>环境说明：</p>
+<p>mysql主库为5.6的版本，有四个从库，三个为5.6的版本，一个为5.7的版本，所有主从的库表结构均一致，5.7的从库出现大量延迟，5.6的没问题，业务为zabbix监控，基本全部为insert批量插入操作，每条insert SQL插入数据为400-1000行左右。</p>
+<p>问题：</p>
+<p>MySQL5.7的从库大量延迟，relaylog落盘正常，应用到数据库比较慢，磁盘IO和CPU没有压力，sync_binlog为20000或是0没有区别，max_allowed_packet=128M，innodb_flush_log_at_trx_commit=0，bulk_insert_buffer_size = 128M，binlog_format=row，sync_relay_log=10000,没有使用并行复制,没有开启SSL，没有开启GDID，没有开启半同步。</p>
+<p>排查过程：</p>
+<p>1：检查各个核对各个和性能相关的参数，没有发现异常。</p>
+<p>2：检查网卡、硬盘、更换服务器、数据库服务器重启均没有效果，5.7的延迟依然存在，排除硬件问题。</p>
+<p>3：5.7同步主库5.6的binlog到relaylog很快，正常，但是relaylog在5.7数据库中回放效率极低。</p>
+<p>4：对比5.6和5.7从库的show engine innodb status结果：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+=============5.6===============================
+---BUFFER POOL 1
+Buffer pool size 655359
+Buffer pool size, bytes 10737401856
+Free buffers 1019
+Database pages 649599
+Old database pages 239773
+Modified db pages 119309
+Pending reads 0
+Pending writes: LRU 0, flush list 0, single page 0
+Pages made young 10777670, not young 181119246
+13.90 youngs/s, 157.51 non-youngs/s
+Pages read 8853516, created 135760152, written 784514803
+20.96 reads/s, 58.17 creates/s, 507.02 writes/s
+Buffer pool hit rate 1000 / 1000, young-making rate 0 / 1000 not 2 / 1000
+Pages read ahead 0.00/s, evicted without access 0.00/s, Random read ahead 0.00/s
+LRU len: 649599, unzip_LRU len: 0
+I/O sum[209618]:cur[2], unzip sum[0]:cur[0]
+</code></pre>
+<p>MySQL5.6升级5.7时出现主从延迟问题排查过程</p>
+<p>代码如下：</p>
+<pre>
+<code>
+=============5.7==============================
+---BUFFER POOL 1
+Buffer pool size 819100
+Buffer pool size, bytes 13420134400
+Free buffers 1018
+Database pages 722328
+Old database pages 266620
+Modified db pages 99073
+Pending reads 0
+Pending writes: LRU 0, flush list 0, single page 0
+Pages made young 37153, not young 795
+0.00 youngs/s, 0.00 non-youngs/s
+Pages read 149632, created 572696, written 2706369
+0.00 reads/s, 0.00 creates/s, 0.00 writes/s
+Buffer pool hit rate 1000 / 1000, young-making rate 0 / 1000 not 0 / 1000
+Pages read ahead 0.00/s, evicted without access 0.00/s, Random read ahead 0.00/s
+LRU len: 722328, unzip_LRU len: 453903
+I/O sum[98685]:cur[0], unzip sum[882]:cur[6]
++++++++++++++++++++++++
+</code></pre>
+<p>MySQL5.6升级5.7时出现主从延迟问题排查过程</p>
+<p>对比发现5.7中unzip存在数值，5.6的没有，初步怀疑造成延迟的原因和压缩解压相关。</p>
+<p>5：使用perf top -p pidof mysqld查看5.7从库</p>
+<p>发现libz.so.1.2.7 [.] crc32的占比要高于mysqld，在6%左右，这个库和压缩解压相关。</p>
+<p>6：修改innodb_compression_level的等级为0（就是不启用压缩，默认为6，范围为0-9），观察无效果，延迟依然存在。只是</p>
+<p>libz的占比下去了，但libc-2.17.so的占比上去了，比mysqld高，在9%左右。使用pstack查看存在研所解压的等待的问题。</p>
+<p>7：检查zabbix的历史表，当时为了节约磁盘空间，对这些表做了压缩处理：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+CREATE TABLE trends (
+itemid bigint(20) unsigned NOT NULL,
+clock int(11) NOT NULL DEFAULT '0',
+num int(11) NOT NULL DEFAULT '0',
+value_min double(16,4) NOT NULL DEFAULT '0.0000',
+value_avg double(16,4) NOT NULL DEFAULT '0.0000',
+value_max double(16,4) NOT NULL DEFAULT '0.0000',
+PRIMARY KEY (itemid,clock),
+KEY clock (clock)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+</code></pre>
+<p>MySQL5.6升级5.7时出现主从延迟问题排查过程</p>
+<p>怀疑和ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8这个压缩参数相关。</p>
+<p>8：重建所有历史表，去掉ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8，，重新同步，延迟逐步降低，恢复。</p>
+<p>疑问：为什么相同的表结构，在5.7中会造成主从延迟而5.6没有？可能是压缩和解压在MySQL5.7中向下兼容性问题造成的，没有深究，但给官方提了一个BUG，让官方走源码层面去看看：http://bugs.mysql.com/100702。</p>
+<p>在生产中请慎用ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8。和业内几位专家交流，表示MySQL8.0之前的版本压缩不太靠谱，8.0的用ZSTD还好一点。</p>
+<p>到此这篇关于MySQL5.6升级5.7时出现主从延迟问题排查过程的文章就介绍到这了,更多相关MySQL5.6升级5.7主从延迟内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL5.6升级5.7时出现主从延迟问题的深入分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/453.html'>解决MySQL中文乱码问题</a><a>下一篇</a><a href='/mysql/biji/455.html'>MySQL持久化统计信息的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

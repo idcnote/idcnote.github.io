@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL not in、left join、IS NULL、NOT EXISTS 效率问题记录_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL not in、left join、IS NULL、NOT EXISTS 效率问题记录，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL not in、left join、IS NULL、NOT EXISTS 效率问题记录</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:23:58                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL not in、left join、IS NULL、NOT EXISTS 效率问题记录，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL not in、left join、IS NULL、NOT EXISTS 效率问题记录，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p><strong>NOT IN、JOIN、IS NULL、NOT EXISTS效率对比 </strong>语句一：select count(*) from A where A.a not in (select a from B)语句二：select count(*) from A left join B on A.a = B.a where B.a is null语句三：select count(*) from A where not exists (select a from B where A.a = B.a)知道以上三条语句的实际效果是相同的已经很久了，但是一直没有深究其间的效率对比。一直感觉上语句二是最快的。今天工作上因为要对一个数千万行数据的库进行数据清除，需要删掉两千多万行数据。大量的用到了以上三条语句所要实现的功能。本来用的是语句一，但是结果是执行速度1个小时32分，日志文件占用21GB。时间上虽然可以接受，但是对硬盘空间的占用确是个问题。因此将所有的语句一都换成语句二。本以为会更快。没想到执行40多分钟后，第一批50000行都没有删掉，反而让SQL SERVER崩溃掉了，结果令人诧异。试了试单独执行这条语句，查询近一千万行的表，语句一用了4秒，语句二却用了18秒，差距很大。语句三的效率与语句一接近。第二种写法是大忌，应该尽量避免。第一种和第三种写法本质上几乎一样。假设buffer pool足够大，写法二相对于写法一来说存在以下几点不足：（1）left join本身更耗资源（需要更多资源来处理产生的中间结果集）（2）left join的中间结果集的规模不会比表A小（3）写法二还需要对left join产生的中间结果做is null的条件筛选，而写法一则在两个集合join的同时完成了筛选，这部分开销是额外的这三点综合起来，在处理海量数据时就会产生比较明显的区别（主要是内存和CPU上的开销）。我怀疑楼主在测试时buffer pool可能已经处于饱和状态，这样的话，写法二的那些额外开销不得不借助磁盘上的虚拟内存，在SQL Server做换页时，由于涉及到较慢的I/O操作因此这种差距会更加明显。关于日志文件过大，这也是正常的，因为删除的记录多嘛。可以根据数据库的用途考虑将恢复模型设为simple，或者在删除结束后将日志truncate掉并把文件shrink下来。因为以前曾经作过一个对这个库进行无条件删除的脚本，就是要删除数据量较大的表中的所有数据，但是因为客户要求，不能使用truncate table，怕破坏已有的库结构。所以只能用delete删，当时也遇到了日志文件过大的问题，当时采用的方法是分批删除，在SQL2K中用set rowcount @chunk，在SQL2K5中用delete top @chunk。这样的操作不仅使删除时间大大减少，而且让日志量大大减少，只增长了1G左右。但是这次清除数据的工作需要加上条件，就是delete A from A where ....后面有条件的。再次使用分批删除的方法，却已经没效果了。不知您知不知道这是为什么。<strong>mysql not in 和 left join 效率问题记录 </strong>首先说明该条sql的功能是查询集合a不在集合b的数据。not in的写法
+<p>代码如下:</p>
+<pre>
+<code> 
+select add_tb.RUID 
+from (select distinct RUID 
+from UserMsg 
+where SubjectID =12 
+and CreateTime&gt;&#39;2009-8-14 15:30:00&#39; 
+and CreateTime&lt;=&#39;2009-8-17 16:00:00&#39; 
+) add_tb 
+where add_tb.RUID 
+not in (select distinct RUID 
+from UserMsg 
+where SubjectID =12 
+and CreateTime&lt;&#39;2009-8-14 15:30:00&#39; 
+) 
+</code></pre>返回444行记录用时 0.07secexplain 结果+----+--------------------+------------+----------------+---------------------------+------------+---------+------+------+------------------------------+| id | select_type | table | type | possible_keys | key | key_len | ref | rows |Extra |+----+--------------------+------------+----------------+---------------------------+------------+---------+------+------+------------------------------+| 1 | PRIMARY | &lt;derived2&gt; | ALL | NULL | NULL | NULL | NULL | 452 |Using where || 3 | DEPENDENT SUBQUERY | UserMsg | index_subquery | RUID,SubjectID,CreateTime | RUID | 96 | func | 2 |Using index; Using where || 2 | DERIVED | UserMsg | range | SubjectID,CreateTime | CreateTime | 9 | NULL | 1857 |Using where; Using temporary |+----+--------------------+------------+----------------+---------------------------+------------+---------+------+------+------------------------------+分析:该条查询速度快原因为id=2的sql查询出来的结果比较少，所以id=1sql所以运行速度比较快，id=2的使用了临时表，不知道这个时候是否使用索引？其中一种left join
+<p>代码如下:</p>
+<pre>
+<code> 
+select a.ruid,b.ruid 
+from(select distinct RUID 
+from UserMsg 
+where SubjectID =12 
+and CreateTime &gt;= &#39;2009-8-14 15:30:00&#39; 
+and CreateTime&lt;=&#39;2009-8-17 16:00:00&#39; 
+) a left join ( 
+select distinct RUID 
+from UserMsg 
+where SubjectID =12 and CreateTime&lt; &#39;2009-8-14 15:30:00&#39; 
+) b on a.ruid = b.ruid 
+where b.ruid is null 
+</code></pre>返回444行记录用时 0.39secexplain 结果+----+-------------+------------+-------+----------------------+------------+---------+------+------+------------------------------+| id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra|+----+-------------+------------+-------+----------------------+------------+---------+------+------+------------------------------+| 1 | PRIMARY | &lt;derived2&gt; | ALL | NULL | NULL | NULL | NULL | 452 ||| 1 | PRIMARY | &lt;derived3&gt; | ALL | NULL | NULL | NULL | NULL | 1112 | Using where; Not exists|| 3 | DERIVED | UserMsg | ref | SubjectID,CreateTime | SubjectID | 5 | | 6667 | Using where; Usingtemporary || 2 | DERIVED | UserMsg | range | SubjectID,CreateTime | CreateTime | 9 | NULL | 1838 | Using where; Usingtemporary |+----+-------------+------------+-------+----------------------+------------+---------+------+------+------------------------------+分析:使用了两个临时表，并且两个临时表做了笛卡尔积，导致不能使用索引并且数据量很大另外一种left join
+<p>代码如下:</p>
+<pre>
+<code> 
+select distinct a.RUID 
+from UserMsg a 
+left join UserMsg b 
+on a.ruid = b.ruid 
+and b.subjectID =12 and b.createTime &lt; &#39;2009-8-14 15:30:00&#39; 
+where a.subjectID =12 
+and a.createTime &gt;= &#39;2009-8-14 15:30:00&#39; 
+and a.createtime &lt;=&#39;2009-8-17 16:00:00&#39; 
+and b.ruid is null; 
+</code></pre>返回444行记录用时 0.07secexplain 结果+----+-------------+-------+-------+---------------------------+------------+---------+--------------+------+-----------------------------------+| id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra|+----+-------------+-------+-------+---------------------------+------------+---------+--------------+------+-----------------------------------+| 1 | SIMPLE | a | range | SubjectID,CreateTime | CreateTime | 9 | NULL | 1839 | Using where;Using temporary || 1 | SIMPLE | b | ref | RUID,SubjectID,CreateTime | RUID | 96 | dream.a.RUID | 2 | Using where;Not exists; Distinct |+----+-------------+-------+-------+---------------------------+------------+---------+--------------+------+-----------------------------------+分析：两次查询都是用上了索引，并且查询时同时进行的，所以查询效率应该很高使用not exists的sql
+<p>代码如下:</p>
+<pre>
+<code> 
+select distinct a.ruid 
+from UserMsg a 
+where a.subjectID =12 
+and a.createTime &gt;= &#39;2009-8-14 15:30:00&#39; 
+and a.createTime &lt;=&#39;2009-8-17 16:00:00&#39; 
+and not exists ( 
+select distinct RUID 
+from UserMsg 
+where subjectID =12 and createTime &lt; &#39;2009-8-14 15:30:00&#39; 
+and ruid=a.ruid 
+) 
+</code></pre>返回444行记录用时 0.08secexplain 结果+----+--------------------+---------+-------+---------------------------+------------+---------+--------------+------+------------------------------+| id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra|+----+--------------------+---------+-------+---------------------------+------------+---------+--------------+------+------------------------------+| 1 | PRIMARY | a | range | SubjectID,CreateTime | CreateTime | 9 | NULL | 1839 | Usingwhere; Using temporary || 2 | DEPENDENT SUBQUERY | UserMsg | ref | RUID,SubjectID,CreateTime | RUID | 96 | dream.a.RUID | 2 | Usingwhere |+----+--------------------+---------+-------+---------------------------+------------+---------+--------------+------+------------------------------+分析：同上基本上是一样的，只是分解了2个查询顺序执行，查询效率低于第3个为了验证数据查询效率，将上述查询中的subjectID =12的限制条件去掉，结果统计查询时间如下0.20s21.31s0.25s0.43slaserhe帮忙分析问题总结
+<p>代码如下:</p>
+<pre>
+<code> 
+select a.ruid,b.ruid 
+from( select distinct RUID 
+from UserMsg 
+where CreateTime &gt;= &#39;2009-8-14 15:30:00&#39; 
+and CreateTime&lt;=&#39;2009-8-17 16:00:00&#39; 
+) a left join UserMsg b 
+on a.ruid = b.ruid 
+and b.createTime &lt; &#39;2009-8-14 15:30:00&#39; 
+where b.ruid is null; 
+</code></pre>执行时间0.13s+----+-------------+------------+-------+-----------------+------------+---------+--------+------+------------------------------+| id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra|+----+-------------+------------+-------+-----------------+------------+---------+--------+------+------------------------------+| 1 | PRIMARY | &lt;derived2&gt; | ALL | NULL | NULL | NULL | NULL | 1248 ||| 1 | PRIMARY | b | ref | RUID,CreateTime | RUID | 96 | a.RUID | 2 | Using where; Not exists|| 2 | DERIVED | UserMsg | range | CreateTime | CreateTime | 9 | NULL | 3553 | Using where; Usingtemporary |+----+-------------+------------+-------+-----------------+------------+---------+--------+------+------------------------------+执行效率类似与not in的效率数据库优化的基本原则：让笛卡尔积发生在尽可能小的集合之间，mysql在join的时候可以直接通过索引来扫描，而嵌入到子查询里头，查询规划器就不晓得用合适的索引了。一个SQL在数据库里是这么优化的：首先SQL会分析成一堆分析树，一个树状数据结构，然后在这个数据结构里，查询规划器会查找有没有合适的索引，然后根据具体情况做一个排列组合，然后计算这个排列组合中的每一种的开销（类似explain的输出的计算机可读版本），然后比较里面开销最小的，选取并执行之。那么：explain select a.ruid,b.ruid from(select distinct RUID from UserMsg where CreateTime &gt;= &#39;2009-8-14 15:30:00&#39;and CreateTime&lt;=&#39;2009-8-17 16:00:00&#39; ) a left join UserMsg b on a.ruid = b.ruid and b.createTime &lt; &#39;2009-8-14 15:30:00&#39;where b.ruid is null;和explain select add_tb.RUID-&gt; from (select distinct RUID-&gt; from UserMsg-&gt; where CreateTime&gt;&#39;2009-8-14 15:30:00&#39;-&gt; and CreateTime&lt;=&#39;2009-8-17 16:00:00&#39;-&gt; ) add_tb-&gt; where add_tb.RUID-&gt; not in (select distinct RUID-&gt; from UserMsg-&gt; where CreateTime&lt;&#39;2009-8-14 15:30:00&#39;-&gt; );explain+----+--------------------+------------+----------------+-----------------+------------+---------+------+------+------------------------------+| id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra|+----+--------------------+------------+----------------+-----------------+------------+---------+------+------+------------------------------+| 1 | PRIMARY | &lt;derived2&gt; | ALL | NULL | NULL | NULL | NULL | 1248 | Using where|| 3 | DEPENDENT SUBQUERY | UserMsg | index_subquery | RUID,CreateTime | RUID | 96 | func | 2 | Using index;Using where || 2 | DERIVED | UserMsg | range | CreateTime | CreateTime | 9 | NULL | 3509 | Using where;Using temporary |+----+--------------------+------------+----------------+-----------------+------------+---------+------+------+------------------------------+开销是完全一样的，开销可以从 rows 那个字段得出（基本上是rows那个字段各个行的数值的乘积，也就是笛卡尔积）但是呢：下面这个：explain select a.ruid,b.ruid from(select distinct RUID from UserMsg where CreateTime &gt;= &#39;2009-8-14 15:30:00&#39;and CreateTime&lt;=&#39;2009-8-17 16:00:00&#39; ) a left join ( select distinct RUID from UserMsg where createTime &lt; &#39;2009-8-1415:30:00&#39; ) b on a.ruid = b.ruid where b.ruid is null;执行时间21.31s+----+-------------+------------+-------+---------------+------------+---------+------+-------+------------------------------+| id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra|+----+-------------+------------+-------+---------------+------------+---------+------+-------+------------------------------+| 1 | PRIMARY | &lt;derived2&gt; | ALL | NULL | NULL | NULL | NULL | 1248 ||| 1 | PRIMARY | &lt;derived3&gt; | ALL | NULL | NULL | NULL | NULL | 30308 | Using where; Not exists|| 3 | DERIVED | UserMsg | ALL | CreateTime | NULL | NULL | NULL | 69366 | Using where; Using temporary|| 2 | DERIVED | UserMsg | range | CreateTime | CreateTime | 9 | NULL | 3510 | Using where; Using temporary|+----+-------------+------------+-------+---------------+------------+---------+------+-------+------------------------------+我就有些不明白为何是四行并且中间两行巨大无比按理说查询规划器应该能把这个查询优化得跟前面的两个一样的（至少在我熟悉的pgsql数据库里我有信心是一样的）但mysql里头不是所以我感觉查询规划器里头可能还是糙了点我前面说过优化的基本原则就是，让笛卡尔积发生在尽可能小的集合之间那么上面最后一种写法至少没有违反这个原则虽然b 表因为符合条件的非常多，基本上不会用索引但是并不应该妨碍查询优化器看到外面的join on条件，从而和前面两个SQL一样，选取主键进行join不过我前面说过查询规划器的作用理论上来讲遍历一遍所有可能，计算一下开销是合理的我感觉这里最后一种写法没有遍历完整所有可能可能的原因是子查询的实现还是比较简单？子查询对数据库的确是个挑战因为基本都是递归的东西所以在这个环节有点毛病并不奇怪其实你仔细想想，最后一种写法无非是我们第一种写法的一个变种，关键在表b的where 条件放在哪里放在里面，就不会用索引去join放在外面就会这个本身就是排列组合的一个可能
+
+<p>注：关于MySQL not in、left join、IS NULL、NOT EXISTS 效率问题记录的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1250.html'>MySQL 自动增加设定基值的语句</a><a>下一篇</a><a href='/mysql/biji/1252.html'>MySQL连接的空闲时间超过8小时后 MySQL自动断开该连接解决方案</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

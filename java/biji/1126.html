@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>ThreadLocal原理浅析_java教程_IDC笔记</title>
+    <meta name="keywords" content=",java教程" />
+    <meta name="description" content="Thread、ThreadLocalMap、Entry三者关系其实研究下来他的源码实现，其实也没想象的那么复杂，其最主要有以下几点：1、Java可以通过Thread.currentThread()来获得当前的Thread的实" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java入门			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/start/184.html">第一个Java程序</a></li><li><a href="/java/start/185.html">如何运行Java程序</a></li><li><a href="/java/start/186.html">Java标识符与关键字</a></li><li><a href="/java/start/187.html">Java注释</a></li><li><a href="/java/start/188.html">Java常量</a></li><li><a href="/java/start/189.html">Java基本数据类型</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java运算符和表达式			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/operators/190.html">Java运算符和表达式</a></li><li><a href="/java/operators/191.html">Java算数运算符实例讲解</a></li><li><a href="/java/operators/192.html">Java关系运算符实例讲解</a></li><li><a href="/java/operators/193.html">Java逻辑运算符实例讲解</a></li><li><a href="/java/operators/194.html">Java位运算符实例讲解</a></li><li><a href="/java/operators/195.html">Java赋值运算符实例讲解</a></li><li><a href="/java/operators/196.html">Java条件运算符实例讲解</a></li><li><a href="/java/operators/197.html">Java instanceof运算符实例讲解</a></li><li><a href="/java/operators/198.html">Java运算符的优先级和结合性</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java流程控制			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/control/200.html">Java if条件分支语句</a></li><li><a href="/java/control/199.html">Java语句</a></li><li><a href="/java/control/201.html">Java switch开关语句</a></li><li><a href="/java/control/203.html">Java while循环语句</a></li><li><a href="/java/control/202.html">Java for循环语句</a></li><li><a href="/java/control/205.html">Java break语句</a></li><li><a href="/java/control/204.html">Java do-while循环语句</a></li><li><a href="/java/control/206.html">Java continue语句</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/objects/209.html">Java方法</a></li><li><a href="/java/objects/208.html">Java成员变量</a></li><li><a href="/java/objects/207.html">Java类</a></li><li><a href="/java/objects/211.html">Java创建对象</a></li><li><a href="/java/objects/210.html">Java类的构造方法</a></li><li><a href="/java/objects/213.html">Java对象的引用和实体</a></li><li><a href="/java/objects/212.html">Java使用对象</a></li><li><a href="/java/objects/216.html">Java实例变量和类变量</a></li><li><a href="/java/objects/215.html">Java参数传值</a></li><li><a href="/java/objects/214.html">Java类与程序的基本结构</a></li><li><a href="/java/objects/217.html">Java实例方法和类方法</a></li><li><a href="/java/objects/218.html">Java方法重载</a></li><li><a href="/java/objects/222.html">Java访问权限</a></li><li><a href="/java/objects/221.html">Java import语句</a></li><li><a href="/java/objects/220.html">Java包</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java子类与继承			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java接口与实现			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java内部类与异常类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java常用实用类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+	    <a href="/java/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>JAVA笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">ThreadLocal原理浅析</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>Thread、ThreadLocalMap、Entry三者关系其实研究下来他的源码实现，其实也没想象的那么复杂，其最主要有以下几点：1、Java可以通过Thread.currentThread()来获得当前的Thread的实</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><img src="/d/file/p/20221028/5d90686e470be451.jpg" /></p>
+<p><strong>Thread、ThreadLocalMap、Entry三者关系</strong></p>
+<p>其实研究下来他的源码实现，其实也没想象的那么复杂，其最主要有以下几点：</p>
+<p>1、Java可以通过Thread.currentThread()来获得当前的Thread的实例对象。既然能拿到这Thread对象实例，那么我们就可以操作该实例（的属性），比如为该Thread对象设置一个值什么。</p>
+<p>2、每一个Thread对象都有一个ThradLocalMap实例，该实例有一个一个Entry组成的数组，Entry对象有两个主要属性：value和ThreadLocal的弱引用，其中value这个属性就是值设置给当前线程所持有，也是ThreadLocal的核心属性：</p>
+<pre class="brush:php;toolbar:false">
+static class Entry extends WeakReference&lt;ThreadLocal&lt;?&gt;&gt; {
+    /** The value associated with this ThreadLocal. */
+    Object value;
+
+    Entry(ThreadLocal&lt;?&gt; k, Object v) {
+        super(k);
+        value = v;
+    }
+}</pre>
+<p>注意Entry继承自WeakReference,其key就是ThreadLocal对象！（图1）</p>
+<p><img alt="java-1.png" src="/d/file/p/20221028/1569744684169213.png" title="1569744684169213.png" /></p>
+<p>结合1和2两个知识点，我们就可以知道我们拿到Thread对象之后,就可以操控当前线程对象的ThreadLocalMap对象，然后把想要保存的value交给ThreadLocalMap的Entry的value属性，Thread,ThreadLocalMap,value三者之间的关系可以用下图表示(图2）：</p>
+<p><img alt="java-2.png" src="/d/file/p/20221028/1569744706723298.png" title="1569744706723298.png" /></p>
+<p>通过上图我们可以得出这么一个结论：一个Thread对象持有一个ThreadLocalMap对象，然后呢，一个ThreadLoalMap对象又包含了多个ThreadLlocal对象及ThreadLocal对象所在线程的value！！！一言以蔽之： 一个Thread对象可以持有多个ThreadLocal对象的变量值value</p>
+<p>那么ThreadLocal和Thread又有啥关系呢？二者是怎能对value进行读取的呢？下面就根据源码来简单的分析下。</p>
+<p><strong>ThreadLocal和Thread的关联</strong></p>
+<p>先看看ThreadLocal的set方法：</p>
+<pre class="brush:php;toolbar:false">
+ public void set(T value) {
+         //获取当前线程
+        Thread t = Thread.currentThread();
+        //获取当前线程持有的ThreadLocalMap
+        ThreadLocal.ThreadLocalMap map = getMap(t);
+        //将value设置给threadlocalMap
+        if (map != null)
+            map.set(this, value);
+        else
+            createMap(t, value);
+    }</pre>
+<p>set方法很逻辑很简单(j结合上图2看更好理解）：</p>
+<p>1、通过currentThread方法拿到当前Thread对象</p>
+<p>2、获取当前Thread对象的ThreadLoalMap对象</p>
+<p>3、将value连同ThreadLocal对象自己组成一个Entry对象保存在</p>
+<p>ThreadLoalMap的Entry类型的数组中。</p>
+<p><strong>在来看看ThreadLocal的get方法:</strong></p>
+<pre class="brush:php;toolbar:false">
+public T get() {
+    //获取当前线程
+    Thread t = Thread.currentThread();
+    //获取当前线程的ThreadLocalMap对象
+    ThreadLocalMap map = getMap(t);
+    if (map != null) {
+        //获取与ThreadLocal对象想关联的value
+        ThreadLocalMap.Entry e = map.getEntry(this);
+        if (e != null) {
+            @SuppressWarnings(&quot;unchecked&quot;)
+            //获取值
+            T result = (T)e.value;
+            return result;
+        }
+    }
+    //为空返回初始化值
+    return setInitialValue();
+}</pre>
+<p>可以发展get的整体逻辑也很简单：</p>
+<p>1、获取当前Thread对象</p>
+<p>2、获取当前Thread对象的ThreadLocalMap对象</p>
+<p>3、从ThreadLocalMap中获取与ThreadLocal相关联的Entry对象，具体的就是以ThreadLocal为key获取。</p>
+<p>4、获取步骤3的Entry的value属性，并返回之。</p>
+<p>通过整体观察get和set方法可以得出如下结论：ThreadLocal对象调用set方法就是往Thread对象的ThreadLocalMap里面添加值；ThreadLocal对象调用get方法就是从Thread对象的ThreadLocalMap里面获取值。核心就是操纵Thread对象的ThreadLocalMap对象进行value的读和写。原理就这么简单。</p>
+<p>那么位于不同线程的不同ThreadLocal对象，在其他线程里保存值是一个什么样的关系呢？可以通过下图来清晰的描述出来：</p>
+<p><img alt="java-3.png" src="/d/file/p/20221028/1569744904746934.png" title="1569744904746934.png" /></p>
+<p><strong>ThreadLocal的使用实例</strong></p>
+<p>我们在知道在Android中一个线程只有一个Looper对象，那么是怎么做到的呢？就是ThreadLocal发挥了作用，看看Looper的prepare方法：</p>
+<pre class="brush:php;toolbar:false">
+//定义一个静态的ThreadLocal变量
+static final ThreadLocal&lt;Looper&gt; sThreadLocal = new ThreadLocal&lt;Looper&gt;(); 
+
+private static void prepare(boolean quitAllowed) {
+        //一个Thread只能关联一个Looper对象
+        if (sThreadLocal.get() != null) {
+            throw new RuntimeException(&quot;Only one Looper may be created per thread&quot;);
+        }
+        sThreadLocal.set(new Looper(quitAllowed));
+    }</pre>
+<p>观察prepare方法可以知道，先通过sThreadLocal的get方法判断当前线程是否已经拥有了一个Looper对象，如果有就抛出一个异常；如果当前线程还没有设置Looper对象，则调用ThreadLocal的set方法，初始化一个Looper对象交给当前线程：</p>
+<pre class="brush:php;toolbar:false">
+sThreadLocal.set(new Looper(quitAllowed));</pre>
+<p>这样就确保了一个线程只有一个Looper对象。</p>
+<p>到此为止，关于ThreadLocal的原理已经基本分析完毕，至于内部是怎么set和get的，博主并没有做太细的分析，因为没必要，了解ThreadLocal的工作原因以及使用场景即可。</p><!-- .entry-wrapper --></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span>[!--zhushi--]</span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/java/biji/1125.html'>Java内存模型图文详解</a><a>下一篇</a><a href='/java/biji/1127.html'>关于random类与scanner类的实例讲解</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

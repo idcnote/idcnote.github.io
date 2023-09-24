@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Linux下Varnish缓存配置优化的解决办法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了Linux下Varnish缓存配置优化的简单示例，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+感兴趣的小伙伴，下面一起跟随php教程的小玲来看看吧！Varnish是一" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/122.html"></a></li><li><a href="/php/phpbiji/123.html"></a></li><li><a href="/php/phpbiji/124.html"></a></li><li><a href="/php/phpbiji/125.html"></a></li><li><a href="/php/phpbiji/126.html"></a></li><li><a href="/php/phpbiji/127.html"></a></li><li><a href="/php/phpbiji/128.html"></a></li><li><a href="/php/phpbiji/129.html"></a></li><li><a href="/php/phpbiji/130.html"></a></li><li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Linux下Varnish缓存配置优化的解决办法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了Linux下Varnish缓存配置优化的简单示例，具有一定的参考价值，可以用来参考一下。<br />
+<br />
+感兴趣的小伙伴，下面一起跟随php教程的小玲来看看吧！Varnish是一</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了Linux下Varnish缓存配置优化的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随php教程的小玲来看看吧！</p>Varnish是一款高性能的开源HTTP加速器，挪威最大的在线报纸 Verdens Gang 使用3台Varnish代替了原来的12台Squid，性能比以前更好。但与老牌的squid相比，各有各的优劣势，网上大量的相对比较只是在其个人对自己熟悉的应用的最大使用上的发挥而已，可能squid到了有能力的人手上才足以发挥最强大的威力Varnish采用了&ldquo;Visual Page Cache&rdquo;技术，在内存的利用上，Varnish比Squid具有优势，它避免了Squid频繁在内存、磁盘中交换文件，性能要比Squid高。通过Varnish管理端口，可以使用正则表达式快速、批量地清除部分缓存，这一点是Squid不能具备的。本人就varnish的一些见解与配置方法做简单的介绍与笔记<font style="COLOR: #ff0000">实验环境：Red Hat Enterprise Linux Server release 5.4 (Tikanga) </font>内核2.6.18-164.el5yum install pcre-devel ##预先安装一个软件包，不然会提示错误tar zxvf varnish-2.1.3.tar.gzcd varnish-2.1.3./configure --prefix=/usr/local/varnish-2.1.3make &amp;&amp; make install编辑配置文件，有模版，但太多注释，最好自己新建一个vim /usr/local/varnish-2.1.3/etc/varnish/varnish.conf<font style="COLOR: #ff0000">############下面附上配置文件的内容及注释#######################</font>#http请求处理过程#1,receive请求入口状态，根据vcl判断pass还是lookup本地查询#lookup，在hash表中查找数据，若找到则进入hit状态，否则进入fetch状态#pass，选择后台，进入fetch状态#fetch，对请求进行后端的获取，发送请求，获得数据，并进行本地存储#deliver，将数据发送给客户端，进入done#done,处理结束<font style="COLOR: #ff0000">##########配置后端服务器##############</font>
+<p>代码如下:</p>
+<pre>
+
+<code>backend linuxidc01 {
+      .host = "192.168.1.142";
+      .port = "7070";
+      .probe = {
+      .timeout = 5s;         
+      .interval = 2s;          
+      .window = 10;         
+      .threshold = 8;     
+      }
+   }
+backend linuxidc02 {
+      .host = "192.168.1.141";
+      .port = "7070";
+      .probe = {
+      .timeout = 5s;
+      .interval = 2s;
+      .window = 10;
+      .threshold = 8;
+      }
+   }
+</code></pre><font style="COLOR: #ff0000">##############配置后端服务器组，进行健康检测6秒，使用random方式设置权重#################另一种方式round-robin则默认轮询机制####################</font>
+<p>代码如下:</p>
+<pre>
+
+<code>director linuxidc15474 random
+        { .retries = 6;
+            { .backend = linuxidc02;
+              .weight = 2;
+             }
+            { .backend = linuxidc01;
+               .weight = 2;
+            } 
+        }
+</code></pre><font style="COLOR: #ff0000">##########定义访问列表，允许下列地址清除varnish缓存#######################</font>
+<p>代码如下:</p>
+<pre>
+
+<code>acl local  {
+         "localhost";
+         "127.0.0.1";
+          }
+</code></pre><font style="COLOR: #ff0000">########从url判断针对哪类后面服务器及缓存配置############################</font>
+<p>代码如下:</p>
+<pre>
+
+<code>sub vcl_recv 
+{
+       if (req.http.host ~ "^linuxidc15474.vicp.net")  #匹配域名跳转后台服务器
+            { set req.backend = linuxidc15474; }
+         else { error 404 "Unknown HostName!"; }
+        if (req.request == "PURGE")    #不允许非访问控制列表内的IP清除varnish缓存 
+             { if (!client.ip ~ local)
+                 {
+                  error 405 "Not Allowed.";  
+                  return (lookup);   
+                 }
+             }
+        #清除url中有jpg等文件的cookie
+        if (req.request == "GET" &amp;&amp; req.url ~ "\.(jpg|png|gif|swf|jpeg|ico)$")
+            {
+              unset req.http.cookie;
+             }   
+        #判断req.http.X-Forwarded-For 如果前端有多重反向代理，这样可以获取客户端IP地址。
+        if (req.http.x-forwarded-for)
+           {
+              set req.http.X-Forwarded-For = req.http.X-Forwarded-For ", " client.ip;
+           }
+        else { set req.http.X-Forwarded-For = client.ip; }
+##varnish实现图片的防盗链
+#        if (req.http.referer ~ "http://.*) 
+#          {
+#             if ( !(req.http.referer ~ "http://.*vicp\.net" ||
+#                   req.http.referer ~ "http://.*linuxidc15474\.net" ) )
+#                 {
+#                   set req.http.host = "linuxidc15474.vicp.net";
+#                   set req.url = "/referer.jpg"; 
+#                 }
+#              return(lookup);
+#          }
+#         else {return(pass);}
+       if (req.request != "GET" &amp;&amp; 
+           req.request != "HEAD" &amp;&amp; 
+           req.request != "PUT" &amp;&amp; 
+           req.request != "POST" &amp;&amp; 
+           req.request != "TRACE" &amp;&amp; 
+           req.request != "OPTIONS" &amp;&amp; 
+           req.request != "DELETE") 
+        { return (pipe); }
+        #对非GET|HEAD请求的直接转发给后端服务器
+        if (req.request != "GET" &amp;&amp; req.request != "HEAD")
+            { return (pass); }
+        ##对GET请求，且url里以.php和.php?结尾的，直接转发给后端服务器
+        if (req.request == "GET" &amp;&amp; req.url ~ "\.(php)($|\?)")
+            { return (pass); }
+        ##对请求中有验证及cookie，直接转发给后端服务器
+        if (req.http.Authorization || req.http.Cookie)
+            { return (pass);}
+         {
+           ##除以上的访问请求，从缓存中查找
+           return (lookup);
+         }
+       ##指定的font目录不进行缓存
+       if (req.url ~ "^/fonts/")
+           { return (pass); }
+}
+sub vcl_pipe 
+            { return (pipe); }
+##进入pass模式，请求被送往后端，后端返回数据给客户端，但不进入缓存处理 
+sub vcl_pass 
+            { return (pass); }
+sub vcl_hash
+      {
+          set req.hash += req.url; 
+        if (req.http.host) 
+           { set req.hash += req.http.host; } 
+        else { set req.hash += server.ip; } 
+      return (hash); 
+      }
+##在lookup后如果在cache中找到请求的缓存，一般以下面几个关键词结束
+sub vcl_hit 
+          { 
+              if (!obj.cacheable) 
+                { return (pass); } 
+               return (deliver); 
+          } 
+##lookup后没有找到缓存时调用，以下面几个关键词结束，及调用fetch参数重新测试是否加入缓存
+sub vcl_miss 
+     { return (fetch); }
+#让varnish服务器缓存的类型，从后端取得数据后调用
+sub vcl_fetch 
+  {    if (!beresp.cacheable) 
+            { return (pass); } 
+        if (beresp.http.Set-Cookie) 
+           { return (pass); } 
+       ##WEB服务器指明不缓存的内容，varnish服务器不缓存
+       if (beresp.http.Pragma ~ "no-cache" || beresp.http.Cache-Control ~ "no-cache" || beresp.http.Cache-Control ~ "private") 
+          { return (pass); }
+       ##对访问中get有包含jpg,png等格式的文件进行缓存，缓存时间为7天，s为秒
+      if (req.request == "GET" &amp;&amp; req.url ~ "\.(js|css|mp3|jpg|png|gif|swf|jpeg|ico)$") 
+         { set beresp.ttl = 7d; }
+      ##对访问get中包含htm等静态页面，缓存300秒 
+      if (req.request == "GET" &amp;&amp; req.url ~ "\/[0-9]\.htm$") 
+         { set beresp.ttl = 300s; }
+           return (deliver); 
+   }
+####添加在页面head头信息中查看缓存命中情况########
+sub vcl_deliver 
+ {
+       set resp.http.x-hits = obj.hits ; 
+       if (obj.hits &gt; 0) 
+              { set resp.http.X-Cache = "HIT cqtel-bbs"; } 
+       else { set resp.http.X-Cache = "MISS cqtel-bbs"; } 
+  }
+</code></pre><font style="COLOR: #ff0000">#########################以上为 varnish的配置文件##########################</font><strong>创建用户：</strong>groupadd wwwuseradd www -g www创建 varnish_cache的缓存位置mkdir /data/varnish_cache启动varnishulimit -SHn 8192 ####设置文件描述符，因为我的机子性能并不好，可以按照自己的配置去设置/usr/local/varnish-2.1.3/sbin/varnishd -u www -g www -f /usr/local/varnish-2.1.3/etc/varnish/varnish.conf -a 0.0.0.0:80 -s file,/data/varnish_cache/varnish_cache.data,100M -w 1024,8192,10 -t 3600 -T 127.0.0.1:3500####-u 以什么用运行 -g 以什么组运行 -f varnish配置文件 -a 绑定IP和端口 -s varnish缓存文件位置与大小 -w 最小，最大线程和超时时间 -T varnish管理端口，主要用来清除缓存<strong>#结束varnishd进程</strong>pkill varnishd启动varnishncsa用来将Varnish访问日志写入日志文件：/usr/local/varnish-2.1.3/bin/varnishncsa -w /data/logs/varnish.log &amp;每天0点运行，按天切割Varnish日志，生成一个压缩文件，同时删除上个月旧日志的脚本（/var/logs/cutlog.sh）：vim /usr/local/varnish-2.1.3/etc/varnish/cut_varnish_log.sh写入以下脚本：#!/bin/sh# This file run at 00:00date=$(date -d &quot;yesterday&quot; +&quot;%Y-%m-%d&quot;)pkill -9 varnishncsamv /data/logs/varnish.log /data/logs/${date}.log/usr/local/varnish-2.1.3/bin/varnishncsa -w /data/logs/varnish.log &amp;mkdir -p /data/logs/varnish/gzip -c /data/logs/${date}.log &gt; /data/logs/varnish/${date}.log.gzrm -f /data/logs/${date}.logrm -f /data/logs/varnish/$(date -d &quot;-1 month&quot; +&quot;%Y-%m*&quot;).log.gz定时任务：crontab -e00 00 * * * /usr/local/varnish-2.1.3/etc/varnish/cut_varnish_log.sh优化Linux内核参数vi /etc/sysctl.confnet.ipv4.tcp_fin_timeout = 30net.ipv4.tcp_keepalive_time = 300net.ipv4.tcp_syncookies = 1net.ipv4.tcp_tw_reuse = 1net.ipv4.tcp_tw_recycle = 1net.ipv4.ip_local_port_range = 5000 65000使配置生效/sbin/sysctl -p通过Varnish管理端口，使用正则表达式批量清除缓存清除所有缓存/usr/local/varnish-2.1.3/bin/varnishadm -T 127.0.0.1:3500 url.purge *$清除image目录下所有缓存/usr/local/varnish-2.1.3/bin/varnishadm -T 127.0.0.1:3500 url.purge /image/127.0.0.1:3500 为被清除缓存服务器地址 www.linuxidc.com 为被清除的域名 /static/image/tt.jsp 为被清除的url地址列表/usr/local/varnish-2.1.3/bin/varnishadm -T 127.0.0.1:3500 purge &quot;req.http.host ~ www.linuxidc.com$ &amp;&amp; req.url ~ /static/image/tt.jsp&quot;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++一个清除Squid缓存的PHP函数
+<p>代码如下:</p>
+<pre>
+
+<code>&lt;?php
+/*   php教程 www.512Pic.com   */
+   
+function purge($ip, $url)   
+{   
+    $errstr = '';   
+    $errno = '';   
+    $fp = fsockopen ($ip, 80, $errno, $errstr, 2);   
+    if (!$fp)   
+    {   
+         return false;   
+    }   
+    else  
+    {   
+        $out = "PURGE $url HTTP/1.1\r\n";   
+        $out .= "Host:blog.s135.com\r\n";   
+        $out .= "Connection: close\r\n\r\n";   
+        fputs ($fp, $out);   
+        $out = fgets($fp , 4096);   
+        fclose ($fp);   
+        return true;   
+    }   
+}   
+
+purge("192.168.0.4", "/index.php");   
+?&gt; 
+</code></pre>++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++配置开机自动启动Varnishvim /etc/rc.d/rc.local在末行写入以下内容：ulimit -SHn 8192/usr/local/varnish-2.1.3/sbin/varnishd -u www -g www -f /usr/local/varnish-2.1.3/etc/varnish/varnish.conf -a 0.0.0.0:80 -s file,/data/varnish_cache/varnish_cache.data,100M -w 1024,8192,10 -t 3600 -T 127.0.0.1:3500/usr/local/varnish-2.1.3/bin/varnishncsa -w /data/logs/varnish.log &amp;查看Varnish服务器连接数与命中率：/usr/local/varnish-2.1.3/bin/varnishstat以上为varnish的状态，1675 0.00 0.06 Client requests received 为服务端接收的客户端请求次数179 0.00 0.01 Cache hits 为命中缓存，从缓存中取得数据返回给客户端的次数，即命中率11 0.00 0.00 Cache misses 为跳过pass缓存，从后端服务应用中取得数据返回给用户的次数用help看看可以使用哪些Varnish命令：/usr/local/varnish-2.1.3/bin/varnishadm -T 127.0.0.1:3500 help
+
+<p>注：关于Linux下Varnish缓存配置优化的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/110525.html'>PHP 异步执行方法,模拟多线程的解决办法</a><a>下一篇</a><a href='/php/biji/110535.html'>PHP利用number_format() 函数通过千位分组来格式化数字的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

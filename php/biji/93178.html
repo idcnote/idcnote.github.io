@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>PHP中怎样保持SESSION不过期 原理及方案介绍_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="PHP中如何保持SESSION以及由此引发的一些思考  最近的一个项目，里面有一个比较大的表单，用户完成它需要很多时间，很多用户花了千辛万苦完成之后，一提交发现SESSION过期，系统退出" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">PHP中怎样保持SESSION不过期 原理及方案介绍</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>PHP中如何保持SESSION以及由此引发的一些思考  最近的一个项目，里面有一个比较大的表单，用户完成它需要很多时间，很多用户花了千辛万苦完成之后，一提交发现SESSION过期，系统退出</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><P>PHP中如何保持SESSION以及由此引发的一些思考&nbsp; 最近的一个项目，里面有一个比较大的表单，用户完成它需要很多时间，很多用户花了千辛万苦完成之后，一提交发现SESSION过期，系统退出了，所以引起了研究如何设置SESSION以及保持SESSION在线的需要，下面是一些心得体会。</P>
+<P><STRONG><FONT style="COLOR: #ff0000">什么是SESSION？<BR></FONT></STRONG>按照WIKI的解释，SESSION是存在于两个通信设备间的交互信息，在某一时间建立，经过一定的时间后失效。常见的SESSION有：TCP SESSION、WEB SESSION（HTTP SESSION）、LOGIN SESSION等。<br><br>根据OSI模型中，会话实现的位置不同，SESSION主要分为几种，一种是应用层会话，包括WEB SESSION（HTTP　SESSION）和telnet远程登录session；会话层实现的，包括Session Initiation Protocol（SIP）和Internet Phone Call；在传输层实现的有TCP　SESSION。<br><br>本文主要讨论WEB SESSION，其一般有两种：<STRONG>客户端SESSION和服务器端SESSION</STRONG>，后一种最常见的属于Java Beans提供的。</P>
+<P><STRONG><FONT style="COLOR: #ff0000">SESSION是做什么的？<BR></FONT></STRONG>在计算机领域，特别是网络方面，SESSION使用的特别广泛，也可以称为是对话（Dialogue）、会话等，一般是指在两个通信设备间存储的状态，有时也发生在用户和计算机之间（Login　SESSION）。</P>
+<P>区别于无状态的通信，SESSION通常用来存储通信状态，因此通信的双方至少有一方需要存储SESSION的历史记录，从而实现两者间的通信。</P>
+<P><STRONG><FONT style="COLOR: #ff0000">SESSION（WEB　SESSION）是怎么实现的？<BR></FONT></STRONG>浏览器和服务器之间进行HTTP通信时，通常会包含一个　HTTP Cookie 来标识状态，通常会有一个唯一的　SESSIONID　，SESSION通常记录着用户的一些验证信息和级别。<br><br>在几中编程语言中最常用的Http Session Token是，JSESSIONID（JSP），PHPSESSID（PHP），ASPSESSIONID（ASP），这个标识通常由哈希函数产生，能够 唯一表示这个用户的身份，在服务器和客户端通信时，作为GET或者POST的参数存储在客户端。</P>
+<P><FONT style="BACKGROUND-COLOR: #ffff00">SESSION的实现方式通常有两种，服务器端SESSION和客户端SESSION，两种方式各有优缺点。</FONT></P>
+<P>服务器端SESSION实现容易并且效率比较高，但是遇到负载均衡或者高可用性需求的时候，处理起来就比较困难，对于那种内生系统不存在存储设备的时候， 也是不可用的。负载均衡可以通过共享文件系统或者强制客户只能登录到一台服务器上来实现，但是这样会降低效率。对于没有存储的设备，也可以通过使用 RAM（参考参考资料6）来解决服务器端SESSION的实现，这种方法这对哪些客户端链接有限的系统有效（诸如路由或者接入点设备）。</P>
+<P>客户端SESSION的使用可以解决服务器端SESSION的一些问题，比如避免了负载均衡的算法等，但是同时也会产生一些自身的问题。客户端 SESSION使用Cookie和加密技术来在不同的请求间保存状态。在每一个动态页面结束后，会统计当前的SESSION，并把它发回客户端。每次成功 请求后，会把cookie再发送到服务器端，来让服务器“记起”这个用户的身份。客户端SESSION最重要的问题就是安全问题，一旦cookie被劫持 或者篡改了，用户的信息的安全性就丧失了。</P>
+<P><STRONG><FONT style="COLOR: #ff0000">PHP中如何设置SESSION？<BR></FONT></STRONG>搭建好PHP的开发环境后，通过phpinfo()可以查看到与SESSION有关的部分包括：<BR>SESSION模块，在PHP V5.2.9版本中，一共有25个变量。其中，平时设置中常会用到的几个有：<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="8913" class="copybut" id="copybut8913" onclick="doCopy('code8913')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code8913"><BR>session.cookie_lifetime 设置存储SESSIONID的cookie过期时间<BR>session.name SESSION的COOKIE名称，默认为PHPSESSID<BR>session.save_handler SESSION的存储方式，默认为FILE<BR>session.save_path Fedora下面默认存储在/var/lib/php/session<BR>session.gc_probability<BR>session.gc_divisor<BR>session.gc_maxlifetime 这三个选项用来处理GC机制发生的机率<BR>session.cache_limiter （nocache,private,private_no_expire,public）<BR>session.cache_expire 这两个选项是用来缓存SESSION的页面<BR></div><BR>先来考虑第一个问题，SESSION多久会过期，他是如何过期的？如果要在PHP程序中使用SESSION，一定要先引用 session_start()，这个函数一执行，就会在SESSION的存储目录（如果使用了file handler)生成一个SESSION文件，里面内容是空的，同时浏览器会见里一个name为PHPSESSID的cookie，里面存储着一个 hash出来的SESSION的名字。</P>
+<P>SESSION的过期依赖于一个垃圾回收机制（Garbage Collection），SESSION创建后作为一个文件存放在服务器上，客户端脚本每访问一次SESSION中的变量，SESSION文件的访问时间 就会进行更新。每次访问都是根据客户端存储的SESSIONID去请求服务器中存储的唯一的SESSION，当客户端的cookie过期后，就无法知道要 访问的是哪一个SESSION，尽管此时服务器上的SESSION文件还没有被过期收回，这样就会造成服务器资源的浪费。</P>
+<P>但是同时，如果我们希望用户的session马上过期的话，我们就可以通过设置cookie的办法来实现。SESSION的回收是在每次访问页面的时候进 行的，回收的机率由session.gc_probability，session_gc_divisor指定，默认士1/100。如果设置为1，则每次 超过了SESSION的生存周期去访问的话，SESSION一定会被回收。<br><br><STRONG><FONT style="COLOR: #ff0000">两种需求：<BR></FONT></STRONG><FONT style="BACKGROUND-COLOR: #ffff00">1、保持SESSION不过期或延长SESSION过期时间；<BR>2、使SESSION立即过期。</FONT></P>
+<P>1、保持SESSION不过期和延长SESSION过期时间非常必要，特别是在内部应用系统中或者有很大的表单的时候。想想你的老板在填写一个表单，刚好 碰上午饭时间，留着这个表单等吃饭回来，填写完剩余的内容，提交后他看到什么，一般来说都是一个登录界面。想要提高用户体验，关键是要让老板的表单不出问 题，我们就必须延长SESSION的生存周期。</P>
+<P>保持SESSION不过期和延长SESSION过期时间，可以通过设置session.gc_maxlifetime来实现，不过首先需要保证客户端的 cookie不会在gc执行回收之前失效。通过设置一个较长的gc_maxlifetime可以实现延长session的生存周期，可是对于不是所有请求 都会保持很久的应用来说，这么做对于服务器配置显然不是一个最佳的选择。<BR>我们知道SESSION的回收机制是根据SESSION文件的最后访问时间来判断的，如果超过了maxlifetime，则根据回收机率进行回收。所以我们只需要定期的去访问一下SESSION就可以了，而这可以通过刷新页面来实现，根据这个思路，解决的方法就有了。</P>
+<P><FONT style="BACKGROUND-COLOR: #ffff00">通过JS定期的去访问页面；<BR>利用Iframe定期的刷新页面；</FONT></P>
+<P>直接利用程序发送HTTP请求，这样就可以避免在页面中嵌入其他的元素；</P>
+<P>下面是利用JS发送请求实现的保持SESSION不过期的实现方法，这样我们就只需要在需要SESSION保持长时间的页面（比如大表单页面）。<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="627" class="copybut" id="copybut627" onclick="doCopy('code627')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code627"><BR>&lt;script type=”text/javascript”&gt;<BR>&nbsp;function keepMeAlive(imgName){<BR>myImg = document.getElementById(imgName);<BR>&nbsp;if(myImg) myImg.src = myImg.src.replace(/\?.*$/, ‘?' + Math.random());<BR>}<BR>window.setInterval(“keepMeAlive(‘phpImg');”, 4000);<BR>&nbsp;&lt;/script&gt;<BR></div><BR>&lt;img id=”phpImg” src=”http://www.phpplot.com/phpplot/session/sess_refresh.php?” width=”1″ height=”1″ /&gt;<BR>其中URL后加入一个随机数是为了避免这个链接的请求被浏览器缓存。</P>
+<P>2、使SESSION立即过期的方法就比较多了，我们可以session_destroy()，也可以用上面的思路，请求一个session_destroy的页面。</P>
+<P><STRONG><FONT style="COLOR: #ff0000">SESSION安全吗？<BR></FONT></STRONG>PHP的手册中明确写出：SESSION并不能保证储存在SESSION中的信息一定只能被他的创建者所看到。<br><br>如果想要安全的处理一些远程的操作，那么HTTPS是唯一的选择。最基本的，不要认为一个用户信息在SESSION中存在就认为这个用户一定就是他本人， 虽然SESSION中的信息会给你他已经经过了用户名和密码验证的假象。所以，如果需要做一些修改密码或者类似的事情的时候，让用户重新输入密码是一个比 较好的选择。<br><br>早期的Apache版本并没有采用COOKIE的方式来存储PHPSESSID，而是采用的URL-rewrite，也就是每个URL后面都会加上 PHPSESSID=&lt;sessionid&gt;来表明它属于那个激活的SESSION，新版的Apache已经将这个属性设置为默认关闭。<BR><div class="codetitle"><span><a style="CURSOR: pointer" data="78601" class="copybut" id="copybut78601" onclick="doCopy('code78601')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code78601"><BR>session.use_trans_id = 0; <BR></div><BR>所以从这个意义上来讲，延长SESSION的时间过长或者保持SESSION一直在线对于安全来说始终不是一件好事情。终极的解决办法就是用户提交跳转到 登录窗口，登录后又能够回到填写页面，并且所有的数据都还在。这个的实现方式现在用Ajax来解决应该没什么困难，每隔一定时间就把当前的用户数据 POST到一个存储位置，不管是XML或者JSON。</P>
+<P><STRONG>拾遗：<BR><FONT style="COLOR: #ff0000">对于客户端不支持JavaScript的情况可以采用的方法：<BR></FONT></STRONG><FONT style="BACKGROUND-COLOR: #ffff00">1、写一个浮层，显示在最顶层，如果用户未禁用JS，则让浮层消失；<BR>2、将所有的INPUT都设置为disable，然后再用JS设置为enabled；<BR></FONT>以上这两种方式都是在JS被禁用的时候，所有功能都不能用，如何在JS被禁用的情况下使我们的应用仍然正常工作，这个貌似就比较困难。实现这个的所花的时间和所收到的效果大家要权衡一下。<BR></P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/93177.html'>javascript读取xml实现javascript分页</a><a>下一篇</a><a href='/php/biji/93179.html'>javascript与jquery中跳出循环的区别总结</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

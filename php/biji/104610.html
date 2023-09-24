@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>深入解析Java中的Classloader的运行机制_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="java有两种类型的classload,一种是user-defined的，一种是jvm内置的bootstrap class loader，所有user-defined的class loader都是java.lang.ClassLoader的子类.<br />
+而jvm内置的cla" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">深入解析Java中的Classloader的运行机制</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>java有两种类型的classload,一种是user-defined的，一种是jvm内置的bootstrap class loader，所有user-defined的class loader都是java.lang.ClassLoader的子类.<br />
+而jvm内置的cla</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>java有两种类型的classload,一种是user-defined的，一种是jvm内置的bootstrap class loader，所有user-defined的class loader都是java.lang.ClassLoader的子类.</p>
+<p>而jvm内置的class loader有3种，分别是 Bootstrap ClassLoader， Extension ClassLoader（即ExtClassLoader），System ClassLoader(即AppClassLoader).</p>
+<p>而jvm加载时的双亲委派 就不说了，javaeye上有很多文章都有介绍.. <br />
+可以分别看一下他们的构造器，其中Bootstrap ClassLoader是用c写的. <br />
+java.lang.ClassLoader</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+  protected ClassLoader(ClassLoader parent) {
+ SecurityManager security = System.getSecurityManager();
+ if (security != null) {
+   security.checkCreateClassLoader();
+ }
+//给父loader赋值.
+ this.parent = parent;
+ initialized = true;
+  }
+  protected ClassLoader() {
+ SecurityManager security = System.getSecurityManager();
+ if (security != null) {
+   security.checkCreateClassLoader();
+ }
+//这边将会把AppClassLoader付给父loader
+ this.parent = getSystemClassLoader();
+ initialized = true;
+  }
+
+</pre>
+</div>
+<p><br />
+这个构造器有带参数的，和不带构造器的2个。带参数的构造器传入的是这个 class loader的父loader,而不带参数的构造器则会把getSystemClassLoader()所返回的class loader当作他自己的父装载器.下面我们来看getSystemClassLoader()的代码</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public static ClassLoader getSystemClassLoader() {
+//所返回的class loader在这个方法里面被赋值
+ initSystemClassLoader();
+ if (scl == null) {
+   return null;
+ }
+ SecurityManager sm = System.getSecurityManager();
+ if (sm != null) {
+   ClassLoader ccl = getCallerClassLoader();
+   if (ccl != null && ccl != scl && !scl.isAncestor(ccl)) {
+ sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
+   }
+ }
+ return scl;
+  }
+
+  private static synchronized void initSystemClassLoader() {
+ if (!sclSet) {
+   if (scl != null)
+ throw new IllegalStateException("recursive invocation");
+      sun.misc.Launcher l = sun.misc.Launcher.getLauncher();
+   if (l != null) {
+ Throwable oops = null;
+//在这边被赋值
+ scl = l.getClassLoader();
+     ...................................
+.......................................
+ }
+   }
+   sclSet = true;
+ }
+  }
+
+</pre>
+</div>
+<p>这边的父class loader就是scl，也就是l.getClassLoader()所得到的,getClassLoader(),接下来看Launcher的源码：<br />
+private static Launcher launcher = new Launcher();</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+  public static Launcher getLauncher() {
+ return launcher;
+  }
+
+  private ClassLoader loader;
+
+  public Launcher() {
+ // Create the extension class loader
+ ClassLoader extcl;
+ try {
+//这里传入构造器的parent为空
+   extcl = ExtClassLoader.getExtClassLoader();
+ } catch (IOException e) {
+   throw new InternalError(
+ "Could not create extension class loader");
+ }
+
+ // Now create the class loader to use to launch the application
+ try {
+//这边可以看到默认的loader就是AppClassLoader,也就是说getSystemClassLoader返回的就是AppClassLoader
+   loader = AppClassLoader.getAppClassLoader(extcl);
+ } catch (IOException e) {
+   throw new InternalError(
+ "Could not create application class loader");
+ }
+//每一个当前线程一个classload,以防止多线程中的classload引起的混乱(这个是我自己理解的，呵呵)
+ // Also set the context class loader for the primordial thread.
+ Thread.currentThread().setContextClassLoader(loader);
+
+ ...................................
+................................................
+  }
+
+  /*
+   * Returns the class loader used to launch the main application.
+   */
+  public ClassLoader getClassLoader() {
+ return loader;
+  }
+
+</pre>
+</div>
+<p>从中我们看到AppClassLoader的父loader是ExtClassLoader,而ExtClassLoader的父loader是什么呢？我们在来看ExtClassLoader的构造器: <br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public ExtClassLoader(File[] dirs) throws IOException {
+   super(getExtURLs(dirs), null, factory);
+   this.dirs = dirs;
+ }
+</pre>
+</div>
+<p>他的父loader为空，而他的顶级父类是java.lang.ClassLoader而当传入的parent为null时，我们使用 ExtClassLoader load一个类时，系统会调用Bootstrap ClassLoader.</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+protected synchronized Class&lt;&#63;&gt; loadClass(String name, boolean resolve)
+ throws ClassNotFoundException
+  {
+ // First, check if the class has already been loaded
+ Class c = findLoadedClass(name);
+ if (c == null) {
+   try {
+ if (parent != null) {
+//先调用父loader来load.
+   c = parent.loadClass(name, false);
+ } else {
+//调用Bootstrap ClassLoader来load
+   c = findBootstrapClass0(name);
+ }
+   } catch (ClassNotFoundException e) {
+     // If still not found, then invoke findClass in order
+     // to find the class.
+     c = findClass(name);
+   }
+ }
+ if (resolve) {
+   resolveClass(c);
+ }
+ return c;
+  }
+
+</pre>
+</div>
+<p>而这里findBootstrapClass0也就是调用Bootstrap ClassLoader这个最核心的class loader来load class.</p>
+<p>最终我们可以看到getSystemClassLoader() 返回的class loader就是AppClassLoader.</p>
+<p><strong>Java Classloader机制解析</strong></p>
+<p><strong>JDK默认ClassLoader<br />
+</strong>JDK 默认提供了如下几种ClassLoader</p>
+<p>Bootstrp loader<br />
+Bootstrp加载器是用C++语言写的，它是在Java虚拟机启动后初始化的，它主要负责加载%JAVA_HOME%/jre/lib,-Xbootclasspath参数指定的路径以及%JAVA_HOME%/jre/classes中的类。</p>
+<p>ExtClassLoader&nbsp; <br />
+Bootstrp loader加载ExtClassLoader,并且将ExtClassLoader的父加载器设置为Bootstrp loader.ExtClassLoader是用Java写的，具体来说就是 sun.misc.Launcher$ExtClassLoader，ExtClassLoader主要加载%JAVA_HOME%/jre/lib/ext，此路径下的所有classes目录以及java.ext.dirs系统变量指定的路径中类库。</p>
+<p>AppClassLoader <br />
+Bootstrp loader加载完ExtClassLoader后，就会加载AppClassLoader,并且将AppClassLoader的父加载器指定为 ExtClassLoader。AppClassLoader也是用Java写成的，它的实现类是 sun.misc.Launcher$AppClassLoader，另外我们知道ClassLoader中有个getSystemClassLoader方法,此方法返回的正是AppclassLoader.AppClassLoader主要负责加载classpath所指定的位置的类或者是jar文档，它也是Java程序默认的类加载器。</p>
+<p>综上所述，它们之间的关系可以通过下图形象的描述：<br />
+</p>
+<p></p>
+<p><strong>双亲委托模型<br />
+</strong>Java中ClassLoader的加载采用了双亲委托机制，采用双亲委托机制加载类的时候采用如下的几个步骤：</p>
+<p>当前ClassLoader首先从自己已经加载的类中查询是否此类已经加载，如果已经加载则直接返回原来已经加载的类。</p>
+<p>每个类加载器都有自己的加载缓存，当一个类被加载了以后就会放入缓存，等下次加载的时候就可以直接返回了。</p>
+<p>当前classLoader的缓存中没有找到被加载的类的时候，委托父类加载器去加载，父类加载器采用同样的策略，首先查看自己的缓存，然后委托父类的父类去加载，一直到bootstrp ClassLoader.</p>
+<p>当所有的父类加载器都没有加载的时候，再由当前的类加载器加载，并将其放入它自己的缓存中，以便下次有加载请求的时候直接返回。</p>
+<p>说到这里大家可能会想，Java为什么要采用这样的委托机制？理解这个问题，我们引入另外一个关于Classloader的概念“命名空间”， 它是指要确定某一个类，需要类的全限定名以及加载此类的ClassLoader来共同确定。也就是说即使两个类的全限定名是相同的，但是因为不同的 ClassLoader加载了此类，那么在JVM中它是不同的类。明白了命名空间以后，我们再来看看委托模型。采用了委托模型以后加大了不同的 ClassLoader的交互能力，比如上面说的，我们JDK本生提供的类库，比如hashmap,linkedlist等等，这些类由bootstrp 类加载器加载了以后，无论你程序中有多少个类加载器，那么这些类其实都是可以共享的，这样就避免了不同的类加载器加载了同样名字的不同类以后造成混乱。</p>
+<p><strong>如何自定义ClassLoader<br />
+</strong>Java除了上面所说的默认提供的classloader以外，它还容许应用程序可以自定义classloader，那么要想自定义classloader我们需要通过继承java.lang.ClassLoader来实现,接下来我们就来看看再自定义Classloader的时候，我们需要注意的几个重要的方法：</p>
+<p>1.loadClass 方法</p>
+<p>loadClass method declare</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public Class&lt;&#63;&gt; loadClass(String name) throws ClassNotFoundException
+
+</pre>
+</div>
+<p>上面是loadClass方法的原型声明，上面所说的双亲委托机制的实现其实就实在此方法中实现的。下面我们就来看看此方法的代码来看看它到底如何实现双亲委托的。</p>
+<p>loadClass method implement</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public Class&lt;&#63;&gt; loadClass(String name) throws ClassNotFoundException
+ { 
+return loadClass(name, false);
+}
+</pre>
+</div>
+<p>从上面可以看出loadClass方法调用了loadcClass(name,false)方法，那么接下来我们再来看看另外一个loadClass方法的实现。</p>
+<p>Class loadClass(String name, boolean resolve)</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+protected synchronized Class&lt;&#63;&gt; loadClass(String name, boolean resolve) throws ClassNotFoundException  
+ { // First, check if the class has already been loaded Class c = findLoadedClass(name);
+//检查class是否已经被加载过了 if (c == null)
+ {   
+ try {   
+if (parent != null) {     
+ c = parent.loadClass(name, false); //如果没有被加载，且指定了父类加载器，则委托父加载器加载。  
+ } else {    
+ c = findBootstrapClass0(name);//如果没有父类加载器，则委托bootstrap加载器加载   } 
+   } catch (ClassNotFoundException e) {     
+ // If still not found, then invoke findClass in order     
+// to find the class.     
+ c = findClass(name);//如果父类加载没有加载到，则通过自己的findClass来加载。   } 
+ } 
+ if (resolve) 
+{   
+ resolveClass(c); 
+ } 
+return c;
+}
+</pre>
+</div>
+<p>上面的代码，我加了注释通过注释可以清晰看出loadClass的双亲委托机制是如何工作的。 这里我们需要注意一点就是public Class&lt;&#63;&gt; loadClass(String name) throws ClassNotFoundException没有被标记为final，也就意味着我们是可以override这个方法的，也就是说双亲委托机制是可以打破的。另外上面注意到有个findClass方法，接下来我们就来说说这个方法到底是搞末子的。</p>
+<p>2.findClass</p>
+<p>我们查看java.lang.ClassLoader的源代码，我们发现findClass的实现如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+protected Class&lt;&#63;&gt; findClass(String name) throws ClassNotFoundException
+ { 
+throw new ClassNotFoundException(name);
+}
+</pre>
+</div>
+<p>我们可以看出此方法默认的实现是直接抛出异常，其实这个方法就是留给我们应用程序来override的。那么具体的实现就看你的实现逻辑了，你可以从磁盘读取，也可以从网络上获取class文件的字节流，获取class二进制了以后就可以交给defineClass来实现进一步的加载。defineClass我们再下面再来描述。 ok，通过上面的分析，我们可以得出如下结论：</p>
+<p>我们在写自己的ClassLoader的时候，如果想遵循双亲委托机制，则只需要override findClass.</p>
+<p>3.defineClass</p>
+<p>我们首先还是来看看defineClass的源码：</p>
+<p>defineClass</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+protected final Class&lt;&#63;&gt; defineClass(String name, byte[] b, int off, int len) 
+throws ClassFormatError
+{   
+ return defineClass(name, b, off, len, null);
+}
+</pre>
+</div>
+<p>从上面的代码我们看出此方法被定义为了final，这也就意味着此方法不能被Override，其实这也是jvm留给我们的唯一的入口，通过这个唯 一的入口，jvm保证了类文件必须符合Java虚拟机规范规定的类的定义。此方法最后会调用native的方法来实现真正的类的加载工作。</p>
+<p>Ok,通过上面的描述，我们来思考下面一个问题：<br />
+假如我们自己写了一个java.lang.String的类，我们是否可以替换调JDK本身的类？</p>
+<p>答案是否定的。我们不能实现。为什么呢？我看很多网上解释是说双亲委托机制解决这个问题，其实不是非常的准确。因为双亲委托机制是可以打破的，你完全可以自己写一个classLoader来加载自己写的java.lang.String类，但是你会发现也不会加载成功，具体就是因为针对java.*开头的类，jvm的实现中已经保证了必须由bootstrp来加载。</p>
+<p><strong>不遵循“双亲委托机制”的场景<br />
+</strong>上面说了双亲委托机制主要是为了实现不同的ClassLoader之间加载的类的交互问题，被大家公用的类就交由父加载器去加载，但是Java中确实也存在父类加载器加载的类需要用到子加载器加载的类的情况。下面我们就来说说这种情况的发生。</p>
+<p>Java中有一个SPI(Service Provider Interface)标准,使用了SPI的库，比如JDBC，JNDI等，我们都知道JDBC需要第三方提供的驱动才可以，而驱动的jar包是放在我们应 用程序本身的classpath的，而jdbc 本身的api是jdk提供的一部分，它已经被bootstrp加载了，那第三方厂商提供的实现类怎么加载呢？这里面JAVA引入了线程上下文类加载的概 念，线程类加载器默认会从父线程继承，如果没有指定的话，默认就是系统类加载器（AppClassLoader）,这样的话当加载第三方驱动的时候，就可 以通过线程的上下文类加载器来加载。<br />
+另外为了实现更灵活的类加载器OSGI以及一些Java app server也打破了双亲委托机制。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/104609.html'>同步调用和异步调用WebService</a><a>下一篇</a><a href='/php/biji/104611.html'>在PHP中运行Linux命令并启动SSH服务的例子</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

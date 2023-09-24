@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>深入分析Android系统中SparseArray的源码_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="前言<br />
+<br />
+昨晚想在Android应用中增加一个int映射到String的字典表，使用HashMap实现的时候，Eclipse给出了一个警告，昨晚项目上线紧张，我直接给忽略了，今天看了一下具体的Eclipse提示" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">深入分析Android系统中SparseArray的源码</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>前言<br />
+<br />
+昨晚想在Android应用中增加一个int映射到String的字典表，使用HashMap实现的时候，Eclipse给出了一个警告，昨晚项目上线紧张，我直接给忽略了，今天看了一下具体的Eclipse提示</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>前言<br />
+</strong>昨晚想在Android应用中增加一个int映射到String的字典表，使用HashMap实现的时候，Eclipse给出了一个警告，昨晚项目上线紧张，我直接给忽略了，今天看了一下具体的Eclipse提示如下：</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+  Use new SparseArray&lt;String&gt; (...) instead for better performance 
+
+</pre>
+</div>
+<p>这个警告的意思是使用SparseArray来替代，以获取更好的性能。</p>
+<p><strong>源码<br />
+</strong>因为SparseArray整体代码比较简单，先把源码展示出来，然后再分析为什么使用SparseArray会比使用HashMap有更好的性能。</p>
+<p>&nbsp;&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public class SparseArray&lt;E&gt; implements Cloneable { 
+    private static final Object DELETED = new Object(); 
+    private boolean mGarbage = false; 
+   
+    private int[] mKeys; 
+    private Object[] mValues; 
+    private int mSize; 
+   
+    /** 
+     * Creates a new SparseArray containing no mappings. 
+     */ 
+    public SparseArray() { 
+      this(10); 
+    } 
+   
+    /** 
+     * Creates a new SparseArray containing no mappings that will not 
+     * require any additional memory allocation to store the specified 
+     * number of mappings. If you supply an initial capacity of 0, the 
+     * sparse array will be initialized with a light-weight representation 
+     * not requiring any additional array allocations. 
+     */ 
+    public SparseArray(int initialCapacity) { 
+      if (initialCapacity == 0) { 
+        mKeys = ContainerHelpers.EMPTY_INTS; 
+        mValues = ContainerHelpers.EMPTY_OBJECTS; 
+      } else { 
+        initialCapacity = ArrayUtils.idealIntArraySize(initialCapacity); 
+        mKeys = new int[initialCapacity]; 
+        mValues = new Object[initialCapacity]; 
+      } 
+      mSize = 0; 
+    } 
+   
+    @Override 
+    @SuppressWarnings("unchecked") 
+    public SparseArray&lt;E&gt; clone() { 
+      SparseArray&lt;E&gt; clone = null; 
+      try { 
+        clone = (SparseArray&lt;E&gt;) super.clone(); 
+        clone.mKeys = mKeys.clone(); 
+        clone.mValues = mValues.clone(); 
+      } catch (CloneNotSupportedException cnse) { 
+        /* ignore */ 
+      } 
+      return clone; 
+    } 
+   
+    /** 
+     * Gets the Object mapped from the specified key, or &lt;code&gt;null&lt;/code&gt; 
+     * if no such mapping has been made. 
+     */ 
+    public E get(int key) { 
+      return get(key, null); 
+    } 
+   
+    /** 
+     * Gets the Object mapped from the specified key, or the specified Object 
+     * if no such mapping has been made. 
+     */ 
+    @SuppressWarnings("unchecked") 
+    public E get(int key, E valueIfKeyNotFound) { 
+      int i = ContainerHelpers.binarySearch(mKeys, mSize, key); 
+   
+      if (i &lt; 0 || mValues[i] == DELETED) { 
+        return valueIfKeyNotFound; 
+      } else { 
+        return (E) mValues[i]; 
+      } 
+    } 
+   
+    /** 
+     * Removes the mapping from the specified key, if there was any. 
+     */ 
+    public void delete(int key) { 
+      int i = ContainerHelpers.binarySearch(mKeys, mSize, key); 
+   
+      if (i &gt;= 0) { 
+        if (mValues[i] != DELETED) { 
+          mValues[i] = DELETED; 
+          mGarbage = true; 
+        } 
+      } 
+    } 
+   
+    /** 
+     * Alias for {@link #delete(int)}. 
+     */ 
+    public void remove(int key) { 
+      delete(key); 
+    } 
+   
+    /** 
+     * Removes the mapping at the specified index. 
+     */ 
+    public void removeAt(int index) { 
+      if (mValues[index] != DELETED) { 
+        mValues[index] = DELETED; 
+        mGarbage = true; 
+      } 
+    } 
+   
+    /** 
+     * Remove a range of mappings as a batch. 
+     * 
+     * @param index Index to begin at 
+     * @param size Number of mappings to remove 
+     */ 
+    public void removeAtRange(int index, int size) { 
+      final int end = Math.min(mSize, index + size); 
+      for (int i = index; i &lt; end; i++) { 
+        removeAt(i); 
+      } 
+    } 
+   
+    private void gc() { 
+      // Log.e("SparseArray", "gc start with " + mSize); 
+   
+      int n = mSize; 
+      int o = 0; 
+      int[] keys = mKeys; 
+      Object[] values = mValues; 
+   
+      for (int i = 0; i &lt; n; i++) { 
+        Object val = values[i]; 
+   
+        if (val != DELETED) { 
+          if (i != o) { 
+            keys[o] = keys[i]; 
+            values[o] = val; 
+            values[i] = null; 
+          } 
+   
+          o++; 
+        } 
+      } 
+   
+      mGarbage = false; 
+      mSize = o; 
+   
+      // Log.e("SparseArray", "gc end with " + mSize); 
+    } 
+   
+    /** 
+     * Adds a mapping from the specified key to the specified value, 
+     * replacing the previous mapping from the specified key if there 
+     * was one. 
+     */ 
+    public void put(int key, E value) { 
+      int i = ContainerHelpers.binarySearch(mKeys, mSize, key); 
+   
+      if (i &gt;= 0) { 
+        mValues[i] = value; 
+      } else { 
+        i = ~i; 
+   
+        if (i &lt; mSize && mValues[i] == DELETED) { 
+          mKeys[i] = key; 
+          mValues[i] = value; 
+          return; 
+        } 
+   
+        if (mGarbage && mSize &gt;= mKeys.length) { 
+          gc(); 
+   
+          // Search again because indices may have changed. 
+          i = ~ContainerHelpers.binarySearch(mKeys, mSize, key); 
+        } 
+   
+        if (mSize &gt;= mKeys.length) { 
+          int n = ArrayUtils.idealIntArraySize(mSize + 1); 
+   
+          int[] nkeys = new int[n]; 
+          Object[] nvalues = new Object[n]; 
+   
+          // Log.e("SparseArray", "grow " + mKeys.length + " to " + n); 
+          System.arraycopy(mKeys, 0, nkeys, 0, mKeys.length); 
+          System.arraycopy(mValues, 0, nvalues, 0, mValues.length); 
+   
+          mKeys = nkeys; 
+          mValues = nvalues; 
+        } 
+   
+        if (mSize - i != 0) { 
+          // Log.e("SparseArray", "move " + (mSize - i)); 
+          System.arraycopy(mKeys, i, mKeys, i + 1, mSize - i); 
+          System.arraycopy(mValues, i, mValues, i + 1, mSize - i); 
+        } 
+   
+        mKeys[i] = key; 
+        mValues[i] = value; 
+        mSize++; 
+      } 
+    } 
+   
+    /** 
+     * Returns the number of key-value mappings that this SparseArray 
+     * currently stores. 
+     */ 
+    public int size() { 
+      if (mGarbage) { 
+        gc(); 
+      } 
+   
+      return mSize; 
+    } 
+   
+    /** 
+     * Given an index in the range &lt;code&gt;0...size()-1&lt;/code&gt;, returns 
+     * the key from the &lt;code&gt;index&lt;/code&gt;th key-value mapping that this 
+     * SparseArray stores. 
+     * 
+     * &lt;p&gt;The keys corresponding to indices in ascending order are guaranteed to 
+     * be in ascending order, e.g., &lt;code&gt;keyAt(0)&lt;/code&gt; will return the 
+     * smallest key and &lt;code&gt;keyAt(size()-1)&lt;/code&gt; will return the largest 
+     * key.&lt;/p&gt; 
+     */ 
+    public int keyAt(int index) { 
+      if (mGarbage) { 
+        gc(); 
+      } 
+   
+      return mKeys[index]; 
+    } 
+   
+    /** 
+     * Given an index in the range &lt;code&gt;0...size()-1&lt;/code&gt;, returns 
+     * the value from the &lt;code&gt;index&lt;/code&gt;th key-value mapping that this 
+     * SparseArray stores. 
+     * 
+     * &lt;p&gt;The values corresponding to indices in ascending order are guaranteed 
+     * to be associated with keys in ascending order, e.g., 
+     * &lt;code&gt;valueAt(0)&lt;/code&gt; will return the value associated with the 
+     * smallest key and &lt;code&gt;valueAt(size()-1)&lt;/code&gt; will return the value 
+     * associated with the largest key.&lt;/p&gt; 
+     */ 
+    @SuppressWarnings("unchecked") 
+    public E valueAt(int index) { 
+      if (mGarbage) { 
+        gc(); 
+      } 
+   
+      return (E) mValues[index]; 
+    } 
+   
+    /** 
+     * Given an index in the range &lt;code&gt;0...size()-1&lt;/code&gt;, sets a new 
+     * value for the &lt;code&gt;index&lt;/code&gt;th key-value mapping that this 
+     * SparseArray stores. 
+     */ 
+    public void setValueAt(int index, E value) { 
+      if (mGarbage) { 
+        gc(); 
+      } 
+   
+      mValues[index] = value; 
+    } 
+   
+    /** 
+     * Returns the index for which {@link #keyAt} would return the 
+     * specified key, or a negative number if the specified 
+     * key is not mapped. 
+     */ 
+    public int indexOfKey(int key) { 
+      if (mGarbage) { 
+        gc(); 
+      } 
+   
+      return ContainerHelpers.binarySearch(mKeys, mSize, key); 
+    } 
+   
+    /** 
+     * Returns an index for which {@link #valueAt} would return the 
+     * specified key, or a negative number if no keys map to the 
+     * specified value. 
+     * &lt;p&gt;Beware that this is a linear search, unlike lookups by key, 
+     * and that multiple keys can map to the same value and this will 
+     * find only one of them. 
+     * &lt;p&gt;Note also that unlike most collections' {@code indexOf} methods, 
+     * this method compares values using {@code ==} rather than {@code equals}. 
+     */ 
+    public int indexOfValue(E value) { 
+      if (mGarbage) { 
+        gc(); 
+      } 
+   
+      for (int i = 0; i &lt; mSize; i++) 
+        if (mValues[i] == value) 
+          return i; 
+   
+      return -1; 
+    } 
+   
+    /** 
+     * Removes all key-value mappings from this SparseArray. 
+     */ 
+    public void clear() { 
+      int n = mSize; 
+      Object[] values = mValues; 
+   
+      for (int i = 0; i &lt; n; i++) { 
+        values[i] = null; 
+      } 
+   
+      mSize = 0; 
+      mGarbage = false; 
+    } 
+   
+    /** 
+     * Puts a key/value pair into the array, optimizing for the case where 
+     * the key is greater than all existing keys in the array. 
+     */ 
+    public void append(int key, E value) { 
+      if (mSize != 0 && key &lt;= mKeys[mSize - 1]) { 
+        put(key, value); 
+        return; 
+      } 
+   
+      if (mGarbage && mSize &gt;= mKeys.length) { 
+        gc(); 
+      } 
+   
+      int pos = mSize; 
+      if (pos &gt;= mKeys.length) { 
+        int n = ArrayUtils.idealIntArraySize(pos + 1); 
+   
+        int[] nkeys = new int[n]; 
+        Object[] nvalues = new Object[n]; 
+   
+        // Log.e("SparseArray", "grow " + mKeys.length + " to " + n); 
+        System.arraycopy(mKeys, 0, nkeys, 0, mKeys.length); 
+        System.arraycopy(mValues, 0, nvalues, 0, mValues.length); 
+   
+        mKeys = nkeys; 
+        mValues = nvalues; 
+      } 
+   
+      mKeys[pos] = key; 
+      mValues[pos] = value; 
+      mSize = pos + 1; 
+    } 
+   
+    /** 
+     * {@inheritDoc} 
+     * 
+     * &lt;p&gt;This implementation composes a string by iterating over its mappings. If 
+     * this map contains itself as a value, the string "(this Map)" 
+     * will appear in its place. 
+     */ 
+    @Override 
+    public String toString() { 
+      if (size() &lt;= 0) { 
+        return "{}"; 
+      } 
+   
+      StringBuilder buffer = new StringBuilder(mSize * 28); 
+      buffer.append('{'); 
+      for (int i=0; i&lt;mSize; i++) { 
+        if (i &gt; 0) { 
+          buffer.append(", "); 
+        } 
+        int key = keyAt(i); 
+        buffer.append(key); 
+        buffer.append('='); 
+        Object value = valueAt(i); 
+        if (value != this) { 
+          buffer.append(value); 
+        } else { 
+          buffer.append("(this Map)"); 
+        } 
+      } 
+      buffer.append('}'); 
+      return buffer.toString(); 
+    } 
+  } 
+</pre>
+</div>
+<p><br />
+首先，看一下SparseArray的构造函数：</p>
+<p>&nbsp;&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ /** 
+   * Creates a new SparseArray containing no mappings. 
+   */ 
+  public SparseArray() { 
+    this(10); 
+  } 
+   
+  /** 
+   * Creates a new SparseArray containing no mappings that will not 
+   * require any additional memory allocation to store the specified 
+   * number of mappings. If you supply an initial capacity of 0, the 
+   * sparse array will be initialized with a light-weight representation 
+   * not requiring any additional array allocations. 
+   */ 
+  public SparseArray(int initialCapacity) { 
+    if (initialCapacity == 0) { 
+      mKeys = ContainerHelpers.EMPTY_INTS; 
+      mValues = ContainerHelpers.EMPTY_OBJECTS; 
+    } else { 
+      initialCapacity = ArrayUtils.idealIntArraySize(initialCapacity); 
+      mKeys = new int[initialCapacity]; 
+      mValues = new Object[initialCapacity]; 
+    } 
+    mSize = 0; 
+  } 
+</pre>
+</div>
+<p>从构造方法可以看出，这里也是预先设置了容器的大小，默认大小为10。</p>
+<p>再来看一下添加数据操作：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+  /** 
+   * Adds a mapping from the specified key to the specified value, 
+   * replacing the previous mapping from the specified key if there 
+   * was one. 
+   */ 
+  public void put(int key, E value) { 
+    int i = ContainerHelpers.binarySearch(mKeys, mSize, key); 
+   
+    if (i &gt;= 0) { 
+      mValues[i] = value; 
+    } else { 
+      i = ~i; 
+   
+      if (i &lt; mSize && mValues[i] == DELETED) { 
+        mKeys[i] = key; 
+        mValues[i] = value; 
+        return; 
+      } 
+   
+      if (mGarbage && mSize &gt;= mKeys.length) { 
+        gc(); 
+   
+        // Search again because indices may have changed. 
+        i = ~ContainerHelpers.binarySearch(mKeys, mSize, key); 
+      } 
+   
+      if (mSize &gt;= mKeys.length) { 
+        int n = ArrayUtils.idealIntArraySize(mSize + 1); 
+   
+        int[] nkeys = new int[n]; 
+        Object[] nvalues = new Object[n]; 
+   
+        // Log.e("SparseArray", "grow " + mKeys.length + " to " + n); 
+        System.arraycopy(mKeys, 0, nkeys, 0, mKeys.length); 
+        System.arraycopy(mValues, 0, nvalues, 0, mValues.length); 
+   
+        mKeys = nkeys; 
+        mValues = nvalues; 
+      } 
+   
+      if (mSize - i != 0) { 
+        // Log.e("SparseArray", "move " + (mSize - i)); 
+        System.arraycopy(mKeys, i, mKeys, i + 1, mSize - i); 
+        System.arraycopy(mValues, i, mValues, i + 1, mSize - i); 
+      } 
+   
+      mKeys[i] = key; 
+      mValues[i] = value; 
+      mSize++; 
+    } 
+  } 
+
+</pre>
+</div>
+<p><br />
+再看查数据的方法：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+  /** 
+   * Gets the Object mapped from the specified key, or &lt;code&gt;null&lt;/code&gt; 
+   * if no such mapping has been made. 
+   */ 
+  public E get(int key) { 
+    return get(key, null); 
+  } 
+   
+  /** 
+   * Gets the Object mapped from the specified key, or the specified Object 
+   * if no such mapping has been made. 
+   */ 
+  @SuppressWarnings("unchecked") 
+  public E get(int key, E valueIfKeyNotFound) { 
+    int i = ContainerHelpers.binarySearch(mKeys, mSize, key); 
+   
+    if (i &lt; 0 || mValues[i] == DELETED) { 
+      return valueIfKeyNotFound; 
+    } else { 
+      return (E) mValues[i]; 
+    } 
+  } 
+
+</pre>
+</div>
+<p><br />
+可以看到，在put数据和get数据的过程中，都统一调用了一个二分查找算法，其实这也就是SparseArray能够提升效率的核心。</p>
+<p>&nbsp;&nbsp;&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ static int binarySearch(int[] array, int size, int value) { 
+    int lo = 0; 
+    int hi = size - 1; 
+   
+    while (lo &lt;= hi) { 
+      final int mid = (lo + hi) &gt;&gt;&gt; 1; 
+      final int midVal = array[mid]; 
+   
+      if (midVal &lt; value) { 
+        lo = mid + 1; 
+      } else if (midVal &gt; value) { 
+        hi = mid - 1; 
+      } else { 
+        return mid; // value found 
+      } 
+    } 
+    return ~lo; // value not present 
+  } 
+</pre>
+</div>
+<p>个人认为（lo + hi） &gt;&gt;&gt; 1的方法有些怪异，直接用 lo + (hi - lo) / 2更好一些。<br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/85421.html'>Win7屏幕颜色不合适怎么更改屏幕配色? win7更改配色方案的教程</a><a>下一篇</a><a href='/php/biji/85423.html'>零售光盘版Win10曝光：仍提供U盘安装介质</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

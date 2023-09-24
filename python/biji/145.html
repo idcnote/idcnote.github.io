@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MYSQL——事务，索引原理与慢查询优化_IDC笔记</title>
+    <meta name="keywords" content=",Python教程"/>
+    <meta name="description" content="一、事务
+1、数据库事务是指：作为单个逻辑工作单元执行的一系列操作（SQL语句）。这些操作要么全部执行，要么全部不执行
+2、事务管理是每个数据库（oracle、mysql、db等）都必须实现的"/>
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author"/>
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python入门			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/python/1.html">Python环境搭建</a></li><li><a href="/python/python/2.html">Python解释器及IDLE教程</a></li><li><a href="/python/python/3.html">Pycharm安装及使用教程</a></li><li><a href="/python/python/4.html">学习方向及教程规划</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python基础语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/basic/5.html">第一个Python实例</a></li><li><a href="/python/basic/6.html">Python编码规范</a></li><li><a href="/python/basic/7.html">Python标识符和关键字</a></li><li><a href="/python/basic/9.html">Python基本数据类型介绍</a></li><li><a href="/python/basic/8.html">Python变量</a></li><li><a href="/python/basic/10.html">基本数据类型之字符串</a></li><li><a href="/python/basic/11.html">布尔类型和强制类型转换</a></li><li><a href="/python/basic/12.html">Python的输入和输出方法</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python入门语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/syntax/13.html">python算术运算符和关系运算符</a></li><li><a href="/python/syntax/14.html">python算术运算符和关系运算符</a></li><li><a href="/python/syntax/15.html">python位运算符</a></li><li><a href="/python/syntax/16.html">Python控制结构详解</a></li><li><a href="/python/syntax/17.html">python基础ifelse选择结构详解</a></li><li><a href="/python/syntax/18.html">python选择结构的嵌套</a></li><li><a href="/python/syntax/20.html">Python基础for循环语句详解</a></li><li><a href="/python/syntax/19.html">Pyhon基础while循环语句详解</a></li><li><a href="/python/syntax/21.html">python循环嵌套</a></li><li><a href="/python/syntax/24.html">Python序列的加法和乘法操作详解</a></li><li><a href="/python/syntax/23.html">Python序列详解（包括索引和切片）</a></li><li><a href="/python/syntax/22.html">python基础break语句详解</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python核心语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/core/25.html">Python序列常用的内置函数详解</a></li><li><a href="/python/core/26.html">Python列表list的基础操作与代码实现</a></li><li><a href="/python/core/27.html">Python列表list操作(遍历查找增加删除修改)实例详解</a></li><li><a href="/python/core/28.html">列表的排序和逆序</a></li><li><a href="/python/core/29.html">列表推导式</a></li><li><a href="/python/core/30.html">python二维列表</a></li><li><a href="/python/core/31.html">python元组的操作详解</a></li><li><a href="/python/core/32.html">python字典及基础操作</a></li><li><a href="/python/core/33.html">python字典常用函数（clear、get、items、keys、values、pop）</a></li><li><a href="/python/core/34.html">字典-混合字典和字典推导式</a></li><li><a href="/python/core/35.html">python集合类型介绍</a></li><li><a href="/python/core/36.html">集合的运算（交集、并集和差集）</a></li><li><a href="/python/core/37.html">Python字符串基础操作</a></li><li><a href="/python/core/38.html">Python字符串常用方法</a></li><li><a href="/python/core/39.html">字符串的测试方法</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/functions/42.html">python函数的创建和调用</a></li><li><a href="/python/functions/43.html">python函数的参数传递</a></li><li><a href="/python/functions/44.html">python函数的返回值</a></li><li><a href="/python/functions/46.html">python匿名函数</a></li><li><a href="/python/functions/47.html">python三大基础函数</a></li><li><a href="/python/functions/48.html">python递归函数</a></li><li><a href="/python/functions/49.html">python内置函数</a></li><li><a href="/python/functions/45.html">python变量的作用域</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 面向对象编程			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/programming/50.html">python面向对象编程</a></li><li><a href="/python/programming/51.html">python类的定义和构造方法及参数传递</a></li><li><a href="/python/programming/52.html">python类方法</a></li><li><a href="/python/programming/53.html">python继承实例讲解</a></li><li><a href="/python/programming/54.html">模块概述</a></li><li><a href="/python/programming/55.html">Python创建和引入模块实例详解</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python模块			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/modular/56.html">Python引入math模块及库函数大全</a></li><li><a href="/python/modular/57.html">random模块</a></li><li><a href="/python/modular/58.html">datetime模块</a></li><li><a href="/python/modular/59.html">Python如何安装第三方模块？</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 异常处理和程序调试			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/exception/60.html">异常问题和常见异常</a></li><li><a href="/python/exception/61.html">Python异常处理语句try,except实例详解</a></li><li><a href="/python/exception/62.html">Python异常处理语句实例详解二</a></li><li><a href="/python/exception/63.html">Python程序调试图文教程</a></li><li><a href="/python/exception/64.html">使用assert断言对Ptyhon程序调试分析</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 文件及目录操作			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/file/65.html">python文件操作</a></li><li><a href="/python/file/66.html">python读取文件</a></li><li><a href="/python/file/67.html">python中os模块和os.path模块</a></li><li><a href="/python/file/68.html">目录管理</a></li><li><a href="/python/file/69.html">Python项目管理操作</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> GUI编程			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/program/70.html">GUI编程</a></li><li><a href="/python/program/71.html">Tkinter模块(1)-简介和Label</a></li><li><a href="/python/program/72.html">Tkinter模块(2)-Frame和Button</a></li><li><a href="/python/program/73.html">Tkinter模块(3)-Entry</a></li><li><a href="/python/program/74.html">Tkinter模块(4)-Radio和Check</a></li><li><a href="/python/program/75.html">Tkinter模块(5)-Canvas</a></li><li><a href="/python/program/76.html">Tkinter模块(6)-练习</a></li><li><a href="/python/program/77.html">wxPython模块(1)-简介和初始化</a></li><li><a href="/python/program/78.html">wxPython模块(2)-文本控件</a></li><li><a href="/python/program/79.html">wxPython模块(3)-按钮和复选框</a></li><li><a href="/python/program/80.html">wxPython(4)-布局</a></li><li><a href="/python/program/81.html">wxPython(5)-事件管理</a></li><li><a href="/python/program/82.html">wxPython(6)-下拉列表和菜单</a></li><li><a href="/python/program/83.html">综合案例</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 进程和线程			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/processes/84.html">Python进程和线程的区别</a></li><li><a href="/python/processes/85.html">Python如何创建线程</a></li><li><a href="/python/processes/87.html">Python临界区与线程安全（线程通信）</a></li><li><a href="/python/processes/86.html">Python线程管理</a></li><li><a href="/python/processes/89.html">Python进程间通信代码详解</a></li><li><a href="/python/processes/88.html">Python创建进程的方式详解</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 数据库管理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/database/91.html">MySQL下载安装图文教程</a></li><li><a href="/python/database/90.html">数据库概述</a></li><li><a href="/python/database/92.html">Navicat for MySQL管理软件安装使用图文教程</a></li><li><a href="/python/database/93.html">对象和游标</a></li><li><a href="/python/database/95.html">SQlite数据库(2)</a></li><li><a href="/python/database/94.html">SQlite数据库(1)</a></li><li><a href="/python/database/96.html">PyMySQL数据库的使用</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Python算法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/algorithm/97.html">python枚举算法</a></li><li><a href="/python/algorithm/98.html">python递归算法</a></li><li><a href="/python/algorithm/99.html">python分治算法</a></li><li><a href="/python/algorithm/101.html">python试探算法</a></li><li><a href="/python/algorithm/100.html">python贪心算法</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> 爬虫			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/python/reptile/102.html">python爬虫概述</a></li><li><a href="/python/reptile/103.html">python爬虫协议</a></li><li><a href="/python/reptile/104.html">python爬虫技术基础(1)-网络请求</a></li><li><a href="/python/reptile/106.html">python正则表达式(1)</a></li><li><a href="/python/reptile/105.html">python爬虫技术基础(2)header是处理及网络超时</a></li><li><a href="/python/reptile/108.html">BeautifulSoup(1)</a></li><li><a href="/python/reptile/107.html">python正则表达式(2)</a></li><li><a href="/python/reptile/109.html">BeautifulSoup(2)</a></li><li><a href="/python/reptile/110.html">Python爬虫入门抓取天气信息</a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/python/biji" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>Python笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MYSQL——事务，索引原理与慢查询优化</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>一、事务
+1、数据库事务是指：作为单个逻辑工作单元执行的一系列操作（SQL语句）。这些操作要么全部执行，要么全部不执行
+2、事务管理是每个数据库（oracle、mysql、db等）都必须实现的</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><h1><span style="font-size: 16px; font-family: "Microsoft YaHei";"><strong><span style="color: #ff00ff;">一、事务</span></strong></span></h1>
+<p><span style="font-size: 12px; font-family: "Microsoft YaHei"; color: #000000;">1、数据库事务是指：作为单个逻辑工作单元执行的一系列操作（SQL语句）。这些操作要么全部执行，要么全部不执行</span></p>
+<p><span style="font-size: 12px; font-family: "Microsoft YaHei"; color: #000000;">2、事务管理是每个数据库（oracle、mysql、db等）都必须实现的。</span></p>
+<p><span style="font-size: 12px; font-family: "Microsoft YaHei"; color: #000000;">3、作用：保证了对数据操作的安全性</span></p>
+<p> </p>
+<div class="cnblogs_code">
+<pre><span style="color: #008000;">#</span><span style="color: #008000;">还钱的例子</span>
+<span style="color: #000000;">     A用银行卡给B的支付宝转账1000
+          </span>1<span style="color: #000000;"> 将A银行卡账户的数据减1000块
+          </span>2<span style="color: #000000;"> 将B支付宝账户的数据加1000块
+      
+         在操作多条数据的时候可能会出现某几条操作不成功的情况 ,一条不成功就不会成功</span></pre>
+</div>
+<p> </p>
+<p>4、 事务的四大特性</p>
+<div class="cnblogs_code">
+<pre><span style="color: #000000;">ACID
+  A:原子性（atomicity)
+      一个事务是一个不可分割的单位，事务中包含的诸多操作
+      要么同时成功要么同时失败
+  C:一致性（consistency)
+      事务必须是使数据库从一个一致性的状态变到另外一个一致性的状态
+      一致性跟原子性是密切相关的
+  I:隔离性（isolation）
+      一个事务的执行不能被其他事务干扰
+      （即一个事务内部的操作及使用到的数据对并发的其他事务是隔离的，并发执行的事务之间也是互相不干扰的）
+  D:持久性（durability）
+      也叫</span><span style="color: #800000;">"</span><span style="color: #800000;">永久性</span><span style="color: #800000;">"</span><span style="color: #000000;">
+      一个事务一旦提交成功执行成功 那么它对数据库中数据的修改应该是永久的
+      接下来的其他操作或者故障不应该对其有任何的影响</span></pre>
+</div>
+<p>5、如何使用事务</p>
+<div class="cnblogs_code">
+<pre><span style="color: #008000;">#</span><span style="color: #008000;"> 事务相关的关键字</span>
+  <span style="color: #008000;">#</span><span style="color: #008000;"> 1 开启事务</span>
+<span style="color: #000000;">  start transaction;
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 2 回滚(回到事务执行之前的状态)</span>
+<span style="color: #000000;">  rollback;
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 3 确认(确认之后就无法回滚了)</span>
+<span style="color: #000000;">  commit;
+  
+  </span><span style="color: #800000;">"""</span><span style="color: #800000;">模拟转账功能</span><span style="color: #800000;">"""</span><span style="color: #000000;">
+  create table user(
+      id int primary key auto_increment,
+      name char(</span>16<span style="color: #000000;">),
+      balance int
+  );
+  insert into user(name,balance) values
+  (</span><span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span>,1000<span style="color: #000000;">),
+  (</span><span style="color: #800000;">"</span><span style="color: #800000;">egon</span><span style="color: #800000;">"</span>,1000<span style="color: #000000;">),
+  (</span><span style="color: #800000;">"</span><span style="color: #800000;">tank</span><span style="color: #800000;">"</span>,1000<span style="color: #000000;">);
+  
+  
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 1 先开启事务</span>
+<span style="color: #000000;">  start transaction;
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 2 多条sql语句</span>
+  update user set balance=900 where name=<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span><span style="color: #000000;">;
+  update user set balance</span>=1010 where name=<span style="color: #800000;">"</span><span style="color: #800000;">egon</span><span style="color: #800000;">"</span><span style="color: #000000;">;
+  update user set balance</span>=1090 where name=<span style="color: #800000;">"</span><span style="color: #800000;">tank</span><span style="color: #800000;">"</span><span style="color: #000000;">;
+  
+  </span><span style="color: #800000;">"""</span><span style="color: #800000;">
+  总结
+      当你想让多条sql语句保持一致性 要么同时成功要么同时失败 
+      你就应该考虑使用事务
+  </span><span style="color: #800000;">"""</span></pre>
+</div>
+<p> </p>
+<p> </p>
+<h1><span style="font-size: 16px; font-family: "Microsoft YaHei";"><strong><span style="color: #ff00ff;">二、索引原理与慢查询优化</span></strong></span></h1>
+<p><span style="font-size: 12px; font-family: "Microsoft YaHei"; color: #000000;">  ps:数据都是存在与硬盘上的，查询数据不可避免的需要进行IO操作<br><br>  1、 索引:就是一种数据结构，类似于书的目录。意味着以后在查询数据的应该先找目录再找数据，而不是一页一页的翻书，从而提升查询速度降低IO操作<br><br>  2、索引在MySQL中也叫“键”,是存储引擎用于快速查找记录的一种数据结构<br><br>
+　　  * primary key<br>
+　　  * unique key<br>
+ 　　 * index key<br><br>
+  注意 ： foreign key不是用来加速查询用的，不在我们的而研究范围之内</span></p>
+<p><span style="font-size: 12px; font-family: "Microsoft YaHei"; color: #000000;">上面的三种key，前面两种除了可以增加查询速度之外各自还具有约束条件，而最后一种index key没有任何的约束条件，只是用来帮助你快速查询数据</span></p>
+<p><span style="font-size: 12px; font-family: "Microsoft YaHei"; color: #000000;">3、本质<br><br>
+  通过不断的缩小想要的数据范围筛选出最终的结果，同时将随机事件(一页一页的翻)<br> 变成顺序事件(先找目录、再找数据)<br> 也就是说有了索引机制，我们可以总是用一种固定的方式查找数据<br> 4、一张表中可以有多个索引(多个目录)</span></p>
+<p><span style="font-size: 12px; font-family: "Microsoft YaHei"; color: #000000;"> 5、 索引虽然能够帮助你加快查询速度但是也有缺点</span></p>
+<p><span style="font-size: 12px; font-family: "Microsoft YaHei"; color: #000000;"> 　　1 当表中有大量数据存在的前提下 创建索引速度会很慢<br>
+ 　　2 在索引创建完毕之后 对表的查询性能会大幅度的提升 但是写的性能也会大幅度的降低<br><br>   ps:索引不要随意的创建！！！</span></p>
+<p><span style="font-size: 12px; font-family: "Microsoft YaHei"; color: #000000;">6、b+树</span></p>
+<p> </p>
+<div class="cnblogs_code">
+<pre>为什么说B+<span style="color: #000000;">树比B树更适合做操作系统的数据库索引和文件索引？
+
+（</span>1）B+<span style="color: #000000;">树的磁盘读写的代价更低
+
+B</span>+<span style="color: #000000;">树内部结点没有指向关键字具体信息的指针，这样内部结点相对B树更小。
+
+（</span>2）B+<span style="color: #000000;">树的查询更加的稳定
+
+因为非终端结点并不是最终指向文件内容的结点，仅仅是作为叶子结点中关键字的索引。这样所有的关键字的查找都会走一条从根结点到叶子结点的路径。所有的关键字查询长度都是相同的，查询效率相当。</span></pre>
+</div>
+<p> </p>
+<p> </p>
+<p> </p>
+<div class="cnblogs_code">
+<pre><span style="color: #008000;">#</span><span style="color: #008000;">## b+树</span>
+
+  <span style="color: #800000;">"""</span><span style="color: #800000;">
+  只有叶子节点存放的是真实的数据 其他节点存放的是虚拟数据 仅仅是用来指路的
+  树的层级越高查询数据所需要经历的步骤就越多(树有几层查询数据就需要几步)，所以要想查询快，树的层数越少越好
+  
+  一个磁盘块存储是有限制的
+  为什么建议你将id字段作为索引
+      占得空间少 一个磁盘块能够存储的数据多
+      那么久降低了树的高度 从而减少查询次数
+  </span><span style="color: #800000;">"""</span>
+ 
+
+  <span style="color: #008000;">#</span><span style="color: #008000;">## 聚集索引(primary key)</span>
+
+  <span style="color: #800000;">"""</span><span style="color: #800000;">
+  聚集索引指的就是主键 
+  Innodb  只有两个文件  直接将主键存放在了idb表中 
+  MyIsam  三个文件  单独将索引存在一个文件
+  </span><span style="color: #800000;">"""</span>
+
+  <span style="color: #008000;">#</span><span style="color: #008000;">## 辅助索引(unique,index)</span>
+<span style="color: #000000;">
+  查询数据的时候不可能一直使用到主键，也有可能会用到name,password等其他字段
+
+  那么这个时候你是没有办法利用聚集索引。这个时候你就可以根据情况给其他字段设置辅助索引(也是一个b</span>+<span style="color: #000000;">树）
+
+
+  </span><span style="color: #800000;">"""</span><span style="color: #800000;">
+  叶子节点存放的是数据对应的主键值
+      先按照辅助索引拿到数据的主键值
+      之后还是需要去主键的聚集索引里面查询数据
+  </span><span style="color: #800000;">"""</span>
+  
+
+  <span style="color: #008000;">#</span><span style="color: #008000;">## 覆盖索引</span>
+<span style="color: #000000;">
+  在辅助索引的叶子节点就已经拿到了需要的数据
+
+  
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 给name设置辅助索引</span>
+  select name <span style="color: #0000ff;">from</span> user where name=<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span><span style="color: #000000;">;
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 非覆盖索引</span>
+  select age <span style="color: #0000ff;">from</span> user where name=<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span><span style="color: #000000;">;
+  </span></pre>
+</div>
+<p>7、测试索引是否有效的代码</p>
+<div class="cnblogs_code">
+<pre> <span style="color: #008000;">#</span><span style="color: #008000;">1. 准备表</span>
+<span style="color: #000000;">  create table s1(
+  id int,
+  name varchar(</span>20<span style="color: #000000;">),
+  gender char(</span>6<span style="color: #000000;">),
+  email varchar(</span>50<span style="color: #000000;">)
+  );
+  
+  </span><span style="color: #008000;">#</span><span style="color: #008000;">2. 创建存储过程，实现批量插入记录</span>
+  delimiter $$ <span style="color: #008000;">#</span><span style="color: #008000;">声明存储过程的结束符号为$$</span>
+<span style="color: #000000;">  create procedure auto_insert1()
+  BEGIN
+      declare i int default </span>1<span style="color: #000000;">;
+      </span><span style="color: #0000ff;">while</span>(i&lt;3000000<span style="color: #000000;">)do
+          insert into s1 values(i,</span><span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span>,<span style="color: #800000;">"</span><span style="color: #800000;">male</span><span style="color: #800000;">"</span>,concat(<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span>,i,<span style="color: #800000;">"</span><span style="color: #800000;">@oldboy</span><span style="color: #800000;">"</span><span style="color: #000000;">));
+          set i</span>=i+1<span style="color: #000000;">;
+      end </span><span style="color: #0000ff;">while</span><span style="color: #000000;">;
+  END$$ </span><span style="color: #008000;">#</span><span style="color: #008000;">$$结束</span>
+  delimiter ; <span style="color: #008000;">#</span><span style="color: #008000;">重新声明分号为结束符号</span>
+  
+  <span style="color: #008000;">#</span><span style="color: #008000;">3. 查看存储过程</span>
+<span style="color: #000000;">  show create procedure auto_insert1G 
+  
+  </span><span style="color: #008000;">#</span><span style="color: #008000;">4. 调用存储过程</span>
+<span style="color: #000000;">  call auto_insert1();
+  ​```
+  
+  ​``` mysql 
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 表没有任何索引的情况下</span>
+  select * <span style="color: #0000ff;">from</span> s1 where id=30000<span style="color: #000000;">;
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 避免打印带来的时间损耗</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where id = 30000<span style="color: #000000;">;
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where id = 1<span style="color: #000000;">;
+  
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 给id做一个主键</span>
+  alter table s1 add primary key(id);  <span style="color: #008000;">#</span><span style="color: #008000;"> 速度很慢</span>
+<span style="color: #000000;">  
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where id = 1;  <span style="color: #008000;">#</span><span style="color: #008000;"> 速度相较于未建索引之前两者差着数量级</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where name = <span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span>  <span style="color: #008000;">#</span><span style="color: #008000;"> 速度仍然很慢</span>
+  
+  
+  <span style="color: #800000;">"""</span><span style="color: #800000;">
+  范围问题
+  </span><span style="color: #800000;">"""</span>
+  <span style="color: #008000;">#</span><span style="color: #008000;"> 并不是加了索引，以后查询的时候按照这个字段速度就一定快   </span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where id &gt; 1;  <span style="color: #008000;">#</span><span style="color: #008000;"> 速度相较于id = 1慢了很多</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where id &gt;1 <span style="color: #0000ff;">and</span> id &lt; 3<span style="color: #000000;">;
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where id &gt; 1 <span style="color: #0000ff;">and</span> id &lt; 10000<span style="color: #000000;">;
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where id != 3<span style="color: #000000;">;
+  
+  alter table s1 drop primary key;  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 删除主键 单独再来研究name字段</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where name = <span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span>;  <span style="color: #008000;">#</span><span style="color: #008000;"> 又慢了</span>
+<span style="color: #000000;">  
+  create index idx_name on s1(name);  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 给s1表的name字段创建索引</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where name = <span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span>  <span style="color: #008000;">#</span><span style="color: #008000;"> 仍然很慢！！！</span>
+  <span style="color: #800000;">"""</span><span style="color: #800000;">
+  再来看b+树的原理，数据需要区分度比较高，而我们这张表全是jason，根本无法区分
+  那这个树其实就建成了“一根棍子”
+  </span><span style="color: #800000;">"""</span><span style="color: #000000;">
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where name = <span style="color: #800000;">"</span><span style="color: #800000;">xxx</span><span style="color: #800000;">"</span><span style="color: #000000;">;  
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 这个会很快，我就是一根棍，第一个不匹配直接不需要再往下走了</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where name like <span style="color: #800000;">"</span><span style="color: #800000;">xxx</span><span style="color: #800000;">"</span><span style="color: #000000;">;
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where name like <span style="color: #800000;">"</span><span style="color: #800000;">xxx%</span><span style="color: #800000;">"</span><span style="color: #000000;">;
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where name like <span style="color: #800000;">"</span><span style="color: #800000;">%xxx</span><span style="color: #800000;">"</span>;  <span style="color: #008000;">#</span><span style="color: #008000;"> 慢 最左匹配特性</span>
+  
+  <span style="color: #008000;">#</span><span style="color: #008000;"> 区分度低的字段不能建索引</span>
+<span style="color: #000000;">  drop index idx_name on s1;
+  
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 给id字段建普通的索引</span>
+<span style="color: #000000;">  create index idx_id on s1(id);
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where id = 3;  <span style="color: #008000;">#</span><span style="color: #008000;"> 快了</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where id*12 = 3;  <span style="color: #008000;">#</span><span style="color: #008000;"> 慢了  索引的字段一定不要参与计算</span>
+<span style="color: #000000;">  
+  drop index idx_id on s1;
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where name=<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> gender = <span style="color: #800000;">"</span><span style="color: #800000;">male</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> id = 3 <span style="color: #0000ff;">and</span> email = <span style="color: #800000;">"</span><span style="color: #800000;">xxx</span><span style="color: #800000;">"</span><span style="color: #000000;">;
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 针对上面这种连续多个and的操作，mysql会从左到右先找区分度比较高的索引字段，先将整体范围降下来再去比较其他条件</span>
+<span style="color: #000000;">  create index idx_name on s1(name);
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where name=<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> gender = <span style="color: #800000;">"</span><span style="color: #800000;">male</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> id = 3 <span style="color: #0000ff;">and</span> email = <span style="color: #800000;">"</span><span style="color: #800000;">xxx</span><span style="color: #800000;">"</span>;  <span style="color: #008000;">#</span><span style="color: #008000;"> 并没有加速</span>
+<span style="color: #000000;">  
+  drop index idx_name on s1;
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 给name，gender这种区分度不高的字段加上索引并不难加快查询速度</span>
+<span style="color: #000000;">  
+  create index idx_id on s1(id);
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where name=<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> gender = <span style="color: #800000;">"</span><span style="color: #800000;">male</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> id = 3 <span style="color: #0000ff;">and</span> email = <span style="color: #800000;">"</span><span style="color: #800000;">xxx</span><span style="color: #800000;">"</span>;  <span style="color: #008000;">#</span><span style="color: #008000;"> 快了  先通过id已经讲数据快速锁定成了一条了</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where name=<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> gender = <span style="color: #800000;">"</span><span style="color: #800000;">male</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> id &gt; 3 <span style="color: #0000ff;">and</span> email = <span style="color: #800000;">"</span><span style="color: #800000;">xxx</span><span style="color: #800000;">"</span>;  <span style="color: #008000;">#</span><span style="color: #008000;"> 慢了  基于id查出来的数据仍然很多，然后还要去比较其他字段</span>
+<span style="color: #000000;">  
+  drop index idx_id on s1
+  
+  create index idx_email on s1(email);
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where name=<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> gender = <span style="color: #800000;">"</span><span style="color: #800000;">male</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> id &gt; 3 <span style="color: #0000ff;">and</span> email = <span style="color: #800000;">"</span><span style="color: #800000;">xxx</span><span style="color: #800000;">"</span>;  <span style="color: #008000;">#</span><span style="color: #008000;"> 快 通过email字段一剑封喉 </span>
+<span style="color: #008000;">#</span><span style="color: #008000;">### 联合索引</span>
+<span style="color: #000000;">
+  select count(id) </span><span style="color: #0000ff;">from</span> s1 where name=<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> gender = <span style="color: #800000;">"</span><span style="color: #800000;">male</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> id &gt; 3 <span style="color: #0000ff;">and</span> email = <span style="color: #800000;">"</span><span style="color: #800000;">xxx</span><span style="color: #800000;">"</span><span style="color: #000000;">;  
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 如果上述四个字段区分度都很高，那给谁建都能加速查询</span>
+  <span style="color: #008000;">#</span><span style="color: #008000;"> 给email加然而不用email字段</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where name=<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> gender = <span style="color: #800000;">"</span><span style="color: #800000;">male</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> id &gt; 3<span style="color: #000000;">; 
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 给name加然而不用name字段</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where gender = <span style="color: #800000;">"</span><span style="color: #800000;">male</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> id &gt; 3<span style="color: #000000;">; 
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 给gender加然而不用gender字段</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where id &gt; 3<span style="color: #000000;">; 
+  
+  </span><span style="color: #008000;">#</span><span style="color: #008000;"> 带来的问题是所有的字段都建了索引然而都没有用到，还需要花费四次建立的时间</span>
+  create index idx_all on s1(email,name,gender,id);  <span style="color: #008000;">#</span><span style="color: #008000;"> 最左匹配原则，区分度高的往左放</span>
+  select count(id) <span style="color: #0000ff;">from</span> s1 where name=<span style="color: #800000;">"</span><span style="color: #800000;">jason</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> gender = <span style="color: #800000;">"</span><span style="color: #800000;">male</span><span style="color: #800000;">"</span> <span style="color: #0000ff;">and</span> id &gt; 3 <span style="color: #0000ff;">and</span> email = <span style="color: #800000;">"</span><span style="color: #800000;">xxx</span><span style="color: #800000;">"</span>;  <span style="color: #008000;">#</span><span style="color: #008000;"> 速度变快</span>
+</pre>
+</div>
+<p>8、查询优化神器-explain</p>
+<div class="cnblogs_code">
+<pre><span style="color: #000000;">执行计划：让mysql预估执行操作(一般正确)
+    all </span>&lt; index &lt; range &lt; index_merge &lt; ref_or_null &lt; ref &lt; eq_ref &lt; system/<span style="color: #000000;">const
+    id,email
+    
+    慢：
+        select </span>* <span style="color: #0000ff;">from</span> userinfo3 where name=<span style="color: #800000;">"</span><span style="color: #800000;">alex</span><span style="color: #800000;">"</span><span style="color: #000000;">
+        
+        explain select </span>* <span style="color: #0000ff;">from</span> userinfo3 where name=<span style="color: #800000;">"</span><span style="color: #800000;">alex</span><span style="color: #800000;">"</span><span style="color: #000000;">
+        type: ALL(全表扫描)
+            select </span>* <span style="color: #0000ff;">from</span> userinfo3 limit 1<span style="color: #000000;">;
+    快：
+        select </span>* <span style="color: #0000ff;">from</span> userinfo3 where email=<span style="color: #800000;">"</span><span style="color: #800000;">alex</span><span style="color: #800000;">"</span><span style="color: #000000;">
+        type: const(走索引)</span></pre>
+</div>
+<p>9、慢查询优化的基本步骤</p>
+<div class="cnblogs_code">
+<pre><span style="color: #000000;">0.先运行看看是否真的很慢，注意设置SQL_NO_CACHE
+</span>1<span style="color: #000000;">.where条件单表查，锁定最小返回记录表。这句话的意思是把查询语句的where都应用到表中返回的记录数最小的表开始查起，单表每个字段分别查询，看哪个字段的区分度最高
+</span>2<span style="color: #000000;">.explain查看执行计划，是否与1预期一致（从锁定记录较少的表开始查询）
+</span>3<span style="color: #000000;">.order by limit 形式的sql语句让排序的表优先查
+</span>4<span style="color: #000000;">.了解业务方使用场景
+</span>5<span style="color: #000000;">.加索引时参照建索引的几大原则
+</span>6.观察结果，不符合预期继续从0分析</pre>
+</div>
+<p>10、慢日志管理</p>
+<div class="cnblogs_code">
+<pre><span style="color: #000000;">慢日志
+            </span>- 执行时间 &gt; 10
+            -<span style="color: #000000;"> 未命中索引
+            </span>-<span style="color: #000000;"> 日志文件路径
+            
+        配置：
+            </span>-<span style="color: #000000;"> 内存
+                show variables like </span><span style="color: #800000;">"</span><span style="color: #800000;">%query%</span><span style="color: #800000;">"</span><span style="color: #000000;">;
+                show variables like </span><span style="color: #800000;">"</span><span style="color: #800000;">%queries%</span><span style="color: #800000;">"</span><span style="color: #000000;">;
+                set </span><span style="color: #0000ff;">global</span> 变量名 =<span style="color: #000000;"> 值
+            </span>-<span style="color: #000000;"> 配置文件
+                mysqld </span>--defaults-file=<span style="color: #800000;">"</span><span style="color: #800000;">E:wupeiqimysql-5.7.16-winx64mysql-5.7.16-winx64my-default.ini</span><span style="color: #800000;">"</span><span style="color: #000000;">
+                
+                my.conf内容：
+                    slow_query_log </span>=<span style="color: #000000;"> ON
+                    slow_query_log_file </span>= D:/<span style="color: #000000;">....
+                    
+                注意：修改配置文件之后，需要重启服务</span></pre>
+</div>
+<p> </p>
+        
+                                                                                                        
+                                                </div></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span>[!--zhushi--]</span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/python/biji/144.html'>shell编程</a><a>下一篇</a><a href='/python/biji/146.html'>Django 解决跨域访问API失败问题</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

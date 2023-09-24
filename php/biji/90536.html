@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>PostgreSQL教程(八)：索引详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="一、索引的类型：<br />
+    PostgreSQL提供了多　　种索引类型：B-Tree、Hash、GiST和GIN，由于它们使用了不同的算法，因此每种索引类型都有其适合的查询类型，缺省时，CREATE INDEX命令将创" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">PostgreSQL教程(八)：索引详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>一、索引的类型：<br />
+    PostgreSQL提供了多　　种索引类型：B-Tree、Hash、GiST和GIN，由于它们使用了不同的算法，因此每种索引类型都有其适合的查询类型，缺省时，CREATE INDEX命令将创</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>一、索引的类型：</strong></p>
+<p>&nbsp;&nbsp;&nbsp; PostgreSQL提供了多　　种索引类型：B-Tree、Hash、GiST和GIN，由于它们使用了不同的算法，因此每种索引类型都有其适合的查询类型，缺省时，CREATE INDEX命令将创建B-Tree索引。<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; 1. B-Tree:<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="43914" class="copybut" id="copybut43914" onclick="doCopy('code43914')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code43914"><br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE test1 (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; id integer,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; content varchar<br />
+&nbsp;&nbsp;&nbsp; );<br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX test1_id_index ON test1 (id); <br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; B-Tree索引主要用于等于和范围查询，特别是当索引列包含操作符" &lt;、&lt;=、=、&gt;=和&gt;"作为查询条件时，PostgreSQL的查询规划器都会考虑使用B-Tree索引。在使用BETWEEN、IN、IS NULL和IS NOT NULL的查询中，PostgreSQL也可以使用B-Tree索引。然而对于基于模式匹配操作符的查询，如LIKE、ILIKE、~和 ~*，仅当模式存在一个常量，且该常量位于模式字符串的开头时，如col LIKE 'foo%'或col ~ '^foo'，索引才会生效，否则将会执行全表扫描，如：col LIKE '%bar'。 <br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; 2. Hash：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="35628" class="copybut" id="copybut35628" onclick="doCopy('code35628')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code35628"><br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX name ON table USING hash (column);<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 散列(Hash)索引只能处理简单的等于比较。当索引列使用等于操作符进行比较时，查询规划器会考虑使用散列索引。<br />
+&nbsp;&nbsp;&nbsp; 这里需要额外说明的是，PostgreSQL散列索引的性能不比B-Tree索引强，但是散列索引的尺寸和构造时间则更差。另外，由于散列索引操作目前没有记录WAL日志，因此一旦发生了数据库崩溃，我们将不得不用REINDEX重建散列索引。<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; 3. GiST：<br />
+&nbsp;&nbsp;&nbsp; GiST索引不是一种单独的索引类型，而是一种架构，可以在该架构上实现很多不同的索引策略。从而可以使GiST索引根据不同的索引策略，而使用特定的操作符类型。 <br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; 4. GIN：<br />
+&nbsp;&nbsp;&nbsp; GIN索引是反转索引，它可以处理包含多个键的值(比如数组)。与GiST类似，GIN同样支持用户定义的索引策略，从而可以使GIN索引根据不同的索引策略，而使用特定的操作符类型。作为示例，PostgreSQL的标准发布中包含了用于一维数组的GIN操作符类型，如：&lt;@、@&gt;、=、&&等。</p>
+<p><strong>二、复合索引：</strong></p>
+<p>&nbsp;&nbsp;&nbsp; PostgreSQL中的索引可以定义在数据表的多个字段上，如：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="13602" class="copybut" id="copybut13602" onclick="doCopy('code13602')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code13602"><br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE test2 (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; major int,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; minor int,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; name varchar<br />
+&nbsp;&nbsp;&nbsp; }<br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX test2_mm_idx ON test2 (major, minor);<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 在当前的版本中，只有B-tree、GiST和GIN支持复合索引，其中最多可以声明32个字段。<br />
+&nbsp;&nbsp;&nbsp; 1. B-Tree类型的复合索引：<br />
+&nbsp;&nbsp;&nbsp; 在B-Tree类型的复合索引中，该索引字段的任意子集均可用于查询条件，不过，只有当复合索引中的第一个索引字段(最左边)被包含其中时，才可以获得最高效率。<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; 2. GiST类型的复合索引：<br />
+&nbsp;&nbsp;&nbsp; 在GiST类型的复合索引中，只有当第一个索引字段被包含在查询条件中时，才能决定该查询会扫描多少索引数据，而其他索引字段上的条件只是会限制索引返回的条目。假如第一个索引字段上的大多数数据都有相同的键值，那么此时应用GiST索引就会比较低效。</p>
+<p>&nbsp;&nbsp;&nbsp; 3. GIN类型的复合索引：<br />
+&nbsp;&nbsp;&nbsp; 与B-Tree和GiST索引不同的是，GIN复合索引不会受到查询条件中使用了哪些索引字段子集的影响，无论是哪种组合，都会得到相同的效率。</p>
+<p>&nbsp;&nbsp;&nbsp; 使用复合索引应该谨慎。在大多数情况下，单一字段上的索引就已经足够了，并且还节约时间和空间。除非表的使用模式非常固定，否则超过三个字段的索引几乎没什么用处。</p>
+<p><strong>三、组合多个索引：</strong></p>
+<p>&nbsp;&nbsp;&nbsp; PostgreSQL可以在查询时组合多个索引(包括同一索引的多次使用)，来处理单个索引扫描不能实现的场合。与此同时，系统还可以在多个索引扫描之间组成AND和OR的条件。比如，一个类似WHERE x = 42 OR x = 47 OR x = 53 OR x = 99的查询，可以被分解成四个独立的基于x字段索引的扫描，每个扫描使用一个查询子句，之后再将这些扫描结果OR在一起并生成最终的结果。另外一个例子是，如果我们在x和y上分别存在独立的索引，那么一个类似WHERE x = 5 AND y = 6的查询，就会分别基于这两个字段的索引进行扫描，之后再将各自扫描的结果进行AND操作并生成最终的结果行。</p>
+<p>&nbsp;&nbsp;&nbsp; 为了组合多个索引，系统扫描每个需要的索引，然后在内存里组织一个BITMAP，它将给出索引扫描出的数据在数据表中的物理位置。然后，再根据查询的需要，把这些位图进行AND或者OR的操作并得出最终的BITMAP。最后，检索数据表并返回数据行。表的数据行是按照物理顺序进行访问的，因为这是位图的布局，这就意味着任何原来的索引的排序都将消失。如果查询中有ORDER BY子句，那么还将会有一个额外的排序步骤。因为这个原因，以及每个额外的索引扫描都会增加额外的时间，这样规划器有时候就会选择使用简单的索引扫描，即使有多个索引可用也会如此。&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>&nbsp;&nbsp;&nbsp; <br />
+<strong>四、唯一索引：</strong></p>
+<p>&nbsp;&nbsp;&nbsp; 目前，只有B-Tree索引可以被声明为唯一索引。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="53123" class="copybut" id="copybut53123" onclick="doCopy('code53123')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code53123"><br />
+&nbsp;&nbsp;&nbsp; CREATE UNIQUE INDEX name ON table (column [, ...]);<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 如果索引声明为唯一索引，那么就不允许出现多个索引值相同的行。我们认为NULL值相互间不相等。<br />
+&nbsp;&nbsp;&nbsp; <br />
+<strong>五、表达式索引：</strong></p>
+<p>&nbsp;&nbsp;&nbsp; 表达式索引主要用于在查询条件中存在基于某个字段的函数或表达式的结果与其他值进行比较的情况，如：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="34560" class="copybut" id="copybut34560" onclick="doCopy('code34560')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code34560"><br />
+&nbsp;&nbsp;&nbsp; SELECT * FROM test1 WHERE lower(col1) = 'value';<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 此时，如果我们仅仅是在col1字段上建立索引，那么该查询在执行时一定不会使用该索引，而是直接进行全表扫描。如果该表的数据量较大，那么执行该查询也将会需要很长时间。解决该问题的办法非常简单，在test1表上建立基于col1字段的表达式索引，如：<br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX test1_lower_col1_idx ON test1 (lower(col1));<br />
+&nbsp;&nbsp;&nbsp; 如果我们把该索引声明为UNIQUE，那么它会禁止创建那种col1数值只是大小写有区别的数据行，以及col1数值完全相同的数据行。因此，在表达式上的索引可以用于强制那些无法定义为简单唯一约束的约束。现在让我们再看一个应用表达式索引的例子。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="16806" class="copybut" id="copybut16806" onclick="doCopy('code16806')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code16806"><br />
+&nbsp;&nbsp;&nbsp; SELECT * FROM people WHERE (first_name || ' ' || last_name) = 'John Smith';<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 和上面的例子一样，尽管我们可能会为first_name和last_name分别创建独立索引，或者是基于这两个字段的复合索引，在执行该查询语句时，这些索引均不会被使用，该查询能够使用的索引只有我们下面创建的表达式索引。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="43509" class="copybut" id="copybut43509" onclick="doCopy('code43509')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code43509"><br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX people_names ON people ((first_name || ' ' || last_name));<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX命令的语法通常要求在索引表达式周围书写圆括弧，就像我们在第二个例子里显示的那样。如果表达式只是一个函数调用，那么可以省略，就像我们在第一个例子里显示的那样。</p>
+<p>&nbsp;&nbsp;&nbsp; 从索引维护的角度来看，索引表达式要相对低效一些，因为在插入数据或者更新数据的时候，都必须为该行计算表达式的结果，并将该结果直接存储到索引里。然而在查询时，PostgreSQL就会把它们看做WHERE idxcol = 'constant'，因此搜索的速度等效于基于简单索引的查询。通常而言，我们只是应该在检索速度比插入和更新速度更重要的场景下使用表达式索引。&nbsp;<br />
+&nbsp;&nbsp;&nbsp; <br />
+<strong>六、部分索引：</strong></p>
+<p>&nbsp;&nbsp;&nbsp; 部分索引(partial index)是建立在一个表的子集上的索引，而该子集是由一个条件表达式定义的(叫做部分索引的谓词)。该索引只包含表中那些满足这个谓词的行。<br />
+&nbsp;&nbsp;&nbsp; 由于不是在所有的情况下都需要更新索引，因此部分索引会提高数据插入和数据更新的效率。然而又因为部分索引比普通索引要小，因此可以更好的提高确实需要索引部分的查询效率。见以下三个示例：<br />
+&nbsp;&nbsp;&nbsp; 1. 索引字段和谓词条件字段一致：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="63399" class="copybut" id="copybut63399" onclick="doCopy('code63399')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code63399"><br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX access_log_client_ip_ix ON access_log(client_ip)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE NOT (client_ip &gt; inet '192.168.100.0' AND client_ip &lt; inet '192.168.100.255');<br />
+</div><br />
+&nbsp;&nbsp;&nbsp; 下面的查询将会用到该部分索引：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="30287" class="copybut" id="copybut30287" onclick="doCopy('code30287')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code30287"><br />
+&nbsp;&nbsp;&nbsp; SELECT * FROM access_log WHERE url = '/index.html' AND client_ip = inet '212.78.10.32';<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 下面的查询将不会用该部分索引：<br />
+&nbsp;&nbsp;&nbsp; 一个不能使用这个索引的查询可以是∶<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="29624" class="copybut" id="copybut29624" onclick="doCopy('code29624')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code29624"><br />
+&nbsp;&nbsp;&nbsp; SELECT * FROM access_log WHERE client_ip = inet '192.168.100.23';<br />
+</div><br />
+&nbsp;&nbsp;&nbsp; 2. 索引字段和谓词条件字段不一致：<br />
+&nbsp;&nbsp;&nbsp; PostgreSQL支持带任意谓词的部分索引，唯一的约束是谓词的字段也要来自于同样的数据表。注意，如果你希望你的查询语句能够用到部分索引，那么就要求该查询语句的条件部分必须和部分索引的谓词完全匹配。 准确说，只有在PostgreSQL能够识别出该查询的WHERE条件在数学上涵盖了该索引的谓词时，这个部分索引才能被用于该查询。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="5057" class="copybut" id="copybut5057" onclick="doCopy('code5057')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code5057"><br />
+&nbsp;&nbsp;&nbsp; CREATE INDEX orders_unbilled_index ON orders(order_nr) WHERE billed is not true;<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 下面的查询一定会用到该部分索引：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="78758" class="copybut" id="copybut78758" onclick="doCopy('code78758')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code78758"><br />
+&nbsp;&nbsp;&nbsp; SELECT * FROM orders WHERE billed is not true AND order_nr &lt; 10000;<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 那么对于如下查询呢？<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="31096" class="copybut" id="copybut31096" onclick="doCopy('code31096')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code31096"><br />
+&nbsp;&nbsp;&nbsp; SELECT * FROM orders WHERE billed is not true AND amount &gt; 5000.00;<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 这个查询将不像上面那个查询这么高效，毕竟查询的条件语句中没有用到索引字段，然而查询条件"billed is not true"却和部分索引的谓词完全匹配，因此PostgreSQL将扫描整个索引。这样只有在索引数据相对较少的情况下，该查询才能更有效一些。</p>
+<p>&nbsp;&nbsp;&nbsp; 下面的查询将不会用到部分索引。<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="74081" class="copybut" id="copybut74081" onclick="doCopy('code74081')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code74081"><br />
+&nbsp;&nbsp;&nbsp; SELECT * FROM orders WHERE order_nr = 3501;<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; 3. 数据表子集的唯一性约束：<br />
+&nbsp;<div class="codetitle"><span><a style="CURSOR: pointer" data="98243" class="copybut" id="copybut98243" onclick="doCopy('code98243')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code98243"><br />
+&nbsp;&nbsp;&nbsp; CREATE TABLE tests (<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; subject text,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; target text,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; success boolean,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...<br />
+&nbsp;&nbsp;&nbsp; );<br />
+&nbsp;&nbsp;&nbsp; CREATE UNIQUE INDEX tests_success_constraint ON tests(subject, target) WHERE success;<br />
+&nbsp;</div><br />
+&nbsp;&nbsp;&nbsp; 该部分索引将只会对success字段值为true的数据进行唯一性约束。在实际的应用中，如果成功的数据较少，而不成功的数据较多时，该实现方法将会非常高效。<br />
+&nbsp;&nbsp;&nbsp;&nbsp; <br />
+<strong>七、检查索引的使用：</strong></p>
+<p>&nbsp;&nbsp;&nbsp; 见以下四条建议：<br />
+&nbsp;&nbsp;&nbsp; 1. 总是先运行ANALYZE。<br />
+&nbsp;&nbsp;&nbsp; 该命令将会收集表中数值分布状况的统计。在估算一个查询返回的行数时需要这个信息，而规划器则需要这个行数以便给每个可能的查询规划赋予真实的开销值。如果缺乏任何真实的统计信息，那么就会使用一些缺省数值，这样肯定是不准确的。因此，如果还没有运行ANALYZE就检查一个索引的使用状况，那将会是一次失败的检查。 <br />
+&nbsp;&nbsp;&nbsp; 2. 使用真实的数据做实验。<br />
+&nbsp;&nbsp;&nbsp; 用测试数据填充数据表，那么该表的索引将只会基于测试数据来评估该如何使用索引，而不是对所有的数据都如此使用。比如从100000行中选1000行，规划器可能会考虑使用索引，那么如果从100行中选1行就很难说也会使用索引了。因为100行的数据很可能是存储在一个磁盘页面中，然而没有任何查询规划能比通过顺序访问一个磁盘页面更加高效了。与此同时，在模拟测试数据时也要注意，如果这些数据是非常相似的数据、完全随机的数据，或按照排序顺序插入的数据，都会令统计信息偏离实际数据应该具有的特征。&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; 3. 如果索引没有得到使用，那么在测试中强制它的使用也许会有些价值。有一些运行时参数可以关闭各种各样的查询规划。<br />
+&nbsp;&nbsp;&nbsp; 4. 强制使用索引用法将会导致两种可能：一是系统选择是正确的，使用索引实际上并不合适，二是查询计划的开销计算并不能反映现实情况。这样你就应该对使用和不使用索引的查询进行计时，这个时候EXPLAIN ANALYZE命令就很有用了。</p>
+<p></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/90535.html'>微软推送Win10更新KB3144756：修复浏览器卡住/游戏界面冻结及麦克风无法访问等问题</a><a>下一篇</a><a href='/php/biji/90537.html'>php使用正则表达式提取字符串中尖括号、小括号、中括号、大括号中的字符串</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

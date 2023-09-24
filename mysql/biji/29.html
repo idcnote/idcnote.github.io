@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>解决MySQL OOM（内存溢出）的问题_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了解决MySQL OOM（内存溢出）的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+OOM全称&quot;Out Of Memo" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">解决MySQL OOM（内存溢出）的问题</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:12:30                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了解决MySQL OOM（内存溢出）的问题，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+OOM全称&quot;Out Of Memo</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了解决MySQL OOM（内存溢出）的问题，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>OOM全称&quot;Out Of Memory&quot;，即内存溢出。</p>
+<blockquote>
+<p>内存溢出已经是软件开发历史上存在了近40年的&ldquo;老大难&rdquo;问题。在操作系统上运行各种软件时，软件所需申请的内存远远超出了物理内存所承受的大小，就叫内存溢出。</p></blockquote>
+<p>内存溢出产生原因多种多样，当内存严重不足时，内核有两种选择：</p>
+<ol>
+	<li>直接panic</li>
+	<li>杀掉部分进程，释放一些内核。</li>
+</ol>
+<p>大部分情况下，会杀掉导致OOM的进程，然后系统恢复。通常我们会添加对内存的监控报警，例如：当memory或swap使用超过90%时，触发报警通知，需要及时介入排查。</p>
+<p>如果已经出现OOM，则可以通过dmesg命令查看，CentOS7版本以上支持 -T选项，能将时间戳转成时间格式，方便查看具体时间：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@localhost ~]# free -m    total  used  free  shared buffers  cachedMem:  128937  128527  409   1  166  1279-/+ buffers/cache:  127081  1855Swap:  16383  16252  131</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>通过日志可以看出哪些进程、占用多少内存等信息，并会Kill掉占用内存较大的进程。</p>
+<p>内存问题的排查思路</p>
+<p>一、操作系统内存检查</p>
+<p>已MySQL为例，OOM后，mysqld进程被Killed，内存会被释放。mysqld_safe安全进程会将mysqld拉起，此时查看到的系统内存会是一个正常值。如果内存使用很高，但还未OOM，系统内存使用情况可能为下面情况：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@localhost ~]# free -m    total  used  free  shared buffers  cachedMem:  128937  128527  409   1  166  1279-/+ buffers/cache:  127081  1855Swap:  16383  16252  131</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>可以看出此时的内存使用已经很高了，物理内存和swap虚拟内存几乎都被用完，buffers和cached也不多，随时可能出现OOM的情况。</p>
+<p>首先，通过top命名查看占用内存最大的进程：</p>
+<p>shift+o可以选择排序方式，n代表%MEM。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@localhost ~]# topMem: 132031556k total, 131418864k used, 612692k free, 212104k buffersSwap: 16777212k total,  0k used, 16777212k free, 14648144k cached
+ PID USER  PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND14920 mysql  20 0 125g 109g 6164 S 6.6 87.0 27357:08 mysqld 
+</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>可以看出mysqld进程占用内存最大，也可以这样查：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@localhost ~]# ps -e -o 'pid,comm,args,pcpu,rsz,vsz,stime,user,uid' | grep -E 'PID|mysql' |grep -v grep PID COMMAND   COMMAND      %CPU RSZ VSZ STIME USER  UID25339 mysqld   /export/servers/mysql/bin/m 9.4 115001324 130738976 2017 mysql 50032070 mysqld_safe  /bin/sh /export/servers/mys 0.0 296 106308 2017 root   0</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>RSZ为进程占用私有内存大小，单位Kb。VSZ为映射的虚拟内存大小，单位Kb。</p>
+<p>通过RSZ/total 也可以算出占用总内存比例。</p>
+<p>二、查看给mysql分配的内存</p>
+<p>mysql内部主要内存可通过下面语句查出：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+MYSQL &gt;SET @giga_bytes = 1024*1024*1024;SELECT (@@key_buffer_size + @@query_cache_size + @@tmp_table_size + @@innodb_buffer_pool_size + @@innodb_additional_mem_pool_size + @@innodb_log_buffer_size + (select count(HOST) from information_schema.processlist)/*@@max_connections*/*(@@read_buffer_size + @@read_rnd_buffer_size + @@sort_buffer_size + @@join_buffer_size + @@binlog_cache_size + @@thread_stack)) / @giga_bytes AS MAX_MEMORY_GB;</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>每个参数配置大小：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+*************************** 1. row ***************************    @@key_buffer_size: 67108864    @@query_cache_size: 0     @@tmp_table_size: 268435456  @@innodb_buffer_pool_size: 38654705664@@innodb_additional_mem_pool_size: 134217728   @@innodb_log_buffer_size: 8388608    @@max_connections: 3000    @@read_buffer_size: 4194304   @@read_rnd_buffer_size: 4194304    @@sort_buffer_size: 2097152    @@join_buffer_size: 2097152    @@binlog_cache_size: 32768     @@thread_stack: 262144</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>每个参数配置说明：</p>
+<table>
+	<tbody>
+		<tr>
+			<td>innodb_buffer_pool_size</td>
+			<td>占用内存最大的参数</td>
+		</tr>
+		<tr>
+			<td>innodb_additional_mem_pool_size</td>
+			<td>额外内存，mysql5.7以后移除</td>
+		</tr>
+		<tr>
+			<td>innodb_log_buffer_size</td>
+			<td>重做日志缓存大小</td>
+		</tr>
+		<tr>
+			<td>key_buffer_size</td>
+			<td>只用于MyISAM引擎，不需要太大</td>
+		</tr>
+		<tr>
+			<td>tmp_table_size&zwj;</td>
+			<td>临时表缓存大小</td>
+		</tr>
+		<tr>
+			<td>query_cache_size</td>
+			<td>查询缓存，建议关闭</td>
+		</tr>
+		<tr>
+			<td>max_connections</td>
+			<td>最大连接数</td>
+		</tr>
+		<tr>
+			<td>read_buffer_size read_rnd_buffer_size sort_buffer_size join_buffer_size binlog_cache_size thread_stack</td>
+			<td>这些参数都跟线程有关，所占内存为这些参数的和*最大连接数。连接数越多占用内存也就越多，建议不超过512K，binlog_cache_size采用系统默认32K，thread_stack默认256K即可</td>
+		</tr>
+	</tbody>
+</table>
+<p>需要给mysql分配多大内存，直接跟以上参数有关。太大会导致内存不足，太小会影响性能，如何分配合理值，还需根据业务情况来定。但业务场景较多，每个业务配置都不一样，会造成运维成本较高。所以能定制出一套适用于绝大多数场景的配置模板就可以了。</p>
+<p>1、如果mysql分配的内存比系统内存大</p>
+<p>比如系统内存128G，mysql分配的内存已经大于128G，但是系统本身和其它程序也需要内存，甚至mysqldump同样需要内存，所以这样就很容易造成系统内存不足，从而导致OOM。这时我们要查出哪些参数设置比较大，适当降低内存分配。</p>
+<p>innodb_buffer_pool在mysql中占有最大内存，将innodb_buffer_pool_size调小可以有效降低OOM问题。但如果设置太小会导致内存刷脏页频率增加，IO增多，从而降低性能。通常我们认为innodb_buffer_pool_size为系统内存的60%~75%最优。</p>
+<p>查看buffer_pool的使用情况：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+MYSQL &gt;select POOL_ID,POOL_SIZE,FREE_BUFFERS,DATABASE_PAGES,OLD_DATABASE_PAGES,MODIFIED_DATABASE_PAGES,PAGES_MADE_YOUNG,PAGES_NOT_MADE_YOUNG from information_schema.INNODB_BUFFER_POOL_STATS;+---------+-----------+--------------+----------------+--------------------+-------------------------+------------------+----------------------+| POOL_ID | POOL_SIZE | FREE_BUFFERS | DATABASE_PAGES | OLD_DATABASE_PAGES | MODIFIED_DATABASE_PAGES | PAGES_MADE_YOUNG | PAGES_NOT_MADE_YOUNG |+---------+-----------+--------------+----------------+--------------------+-------------------------+------------------+----------------------+|  0 | 611669 |   1024 |   610644 |    225393 |      0 |   309881 |     0 ||  1 | 611669 |   1024 |   610645 |    225393 |      0 |   309816 |     0 ||  2 | 611669 |   1024 |   610645 |    225393 |      0 |   309756 |     0 |+---------+-----------+--------------+----------------+--------------------+-------------------------+------------------+----------------------+</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>可以看出buffer_pool分了3个实例，POOL_SIZE为每个实例大小，这里为页个数，我们知道mysql页的默认大小为16K，所以单个实例的真正大小为611669*16K，5.6以后要求FREE_BUFFERS至少保留1024个页，少于1024个页时会强制刷脏数据，后面的值可以看出脏页情况。另外如果PAGES_MADE_YOUNG远大于PAGES_NOT_MADE_YOUNG页数，那么此时内存使用就可能比较大，可以适当降低innodb_buffer_pool_size大小。</p>
+<p>另一篇文章也有对buffer_pool的介绍：一条命令解读InnoDB存储引擎&mdash;show engine innodb status</p>
+<p>如果innodb_buffer_pool_size不是很大，但内存还是很高，也可能是由于并发线程太多导致，需要确认是不是应用异常，还是需要调整max_connections最大连接。如果连接太多，每个连接也会占用独立的内存，read、sort、join缓存都是session级别，连接越多需要内存就越多，所以这些参数也不能设置太大。</p>
+<p>需要注意的是一些参数不支持动态修改，只能先修改配置文件然后重启mysql才能生效，所以在mysql启动之前，一定要把参数值确认好。</p>
+<p>2、如果mysql分配的内存比系统内存小</p>
+<p>如果mysql参数设置都比较合理，但是仍然出现oom，那么可能是由于mysql在系统层面所需内存不足导致，因为mysql读取表时，如果同时有多个session引用一个表则会创建多个表对象，这样虽然减少了内部表锁的争用，但是会加大内存使用量。</p>
+<p>首先，可以通过lsof -p pid查看进程打开的系统文件数，pid为mysqld的进程号。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@localhost ~]# ps -ef | grep mysqld[root@localhost ~]# lsof -p 3455COMMAND PID USER FD TYPE DEVICE SIZE/OFF  NODE NAMEmysqld 30012 mysql cwd DIR  8,3  12288 58982404 /mysql/datamysqld 30012 mysql mem REG  8,1  599392 272082 /lib64/libm-2.12.somysqld 30012 mysql mem REG  8,1  91096 272089 /lib64/libz.so.1.2.3mysqld 30012 mysql mem REG  8,1  93320 272083 /lib64/libgcc_s-4.4.7-20120601.so.1mysqld 30012 mysql mem REG  8,1  43392 272095 /lib64/libcrypt-2.12.somysqld 30012 mysql 10uW REG  8,3 536870912 59015176 /mysql/data/ib_logfile0mysqld 30012 mysql 11uW REG  8,3 536870912 59015177 /mysql/data/ib_logfile1mysqld 30012 mysql 12uW REG  8,3 536870912 59015178 /mysql/data/ib_logfile2mysqld 30012 mysql 13uW REG  8,3 675282944 59001816 /mysql/data/test/table6.ibdmysqld 30012 mysql 14uW REG  8,3 2155872256 58985613 /mysql/data/test/table487.ibdmysqld 30012 mysql 15u REG  8,3   0 58982414 /mysql/tmp/ibhNDzPM (deleted)mysqld 30012 mysql 16uW REG  8,3 2306867200 58983861 /mysql/data/test/table327.ibdmysqld 30012 mysql 17uW REG  8,3 4169138176 58985467 /mysql/data/test/table615.ibdmysqld 30012 mysql 18uW REG  8,3 79691776 59020641 /mysql/data/test/table_v199_20170920.ibdmysqld 30012 mysql 19uW REG  8,3 67108864 59015043 /mysql/data/test/table_v39_20170920.ibdmysqld 30012 mysql 20uW REG  8,3 75497472 59014992 /mysql/data/test/table_v7_20170920.ibdmysqld 30012 mysql 21uW REG  8,3 83886080 59019735 /mysql/data/test/table_v167_20170920.ibdmysqld 30012 mysql 22uW REG  8,3 1367343104 58997684 /mysql/data/popfin6/table_uuid6.ibdmysqld 30012 mysql 23uW REG  8,3 1275068416 58984491 /mysql/data/test/table_uuid7.ibd...[root@localhost ~]# lsof -p 3455 |grep ibd|wc -l54869</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>查看mysql服务打开文件数限制：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+MySQL &gt;show global variables like 'open_files_limit';+------------------+-------+| Variable_name | Value |+------------------+-------+| open_files_limit | 65535 |+------------------+-------+</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>查看操作系统打开文件数限制：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@localhost ~]# ulimit -amax memory size   (kbytes, -m) unlimitedopen files      (-n) 65535</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>如果此时打开的文件很多，内存也会占用很多。</p>
+<p>其次，还需看一下table_open_cache，当打开一个表后会把这个表的文件描述符缓存下来。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+MYSQL &gt;show global variables like 'table_open_cache';+------------------+-------+| Variable_name | Value |+------------------+-------+| table_open_cache | 16384 |+------------------+-------+MYSQL &gt;show global status like '%open%tables%';+------------------------+--------+| Variable_name   | Value |+------------------------+--------+| Open_tables   | 16384 || Opened_tables   | 401374 |+------------------------+--------+</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>通过以上两个值来判断 table_open_cache 是否到达瓶颈。当缓存中的值open_tables 临近到了 table_open_cache 值的时候，说明表缓存池快要满了，但Opened_tables 还在一直有新的增长，这说明还有很多未被缓存的表。</p>
+<p>用show open tables from schema命令，可以查看table_open_cache中缓存的表，重复打开的表仅显示一个</p>
+<p>代码如下：</p>
+<pre>
+<code>
+MYSQL &gt;show open tables from sysbenchtest;+--------------+----------+--------+-------------+| Database  | Table | In_use | Name_locked |+--------------+----------+--------+-------------+| sysbenchtest | sbtest1 |  1 |   0 || sysbenchtest | sbtest2 |  0 |   0 || sysbenchtest | sbtest3 |  0 |   0 || sysbenchtest | sbtest4 |  0 |   0 || sysbenchtest | sbtest5 |  0 |   0 |</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>In_use显示当前正在使用此表的线程数，如果大于0也意味着此表被锁。</p>
+<p>Name_locked只适用于DROP和RENAME，在执行DROP或RENAME时，table_open_cache中的表文件描述符会被移除，所以不会看到除0以外的其他值。</p>
+<p>一般在库表比较多的情况下（分库分表）很容易出现内存占用较大的情况。如果要解决根源，还是需要对库表进行拆分。</p>
+<p>3、MYSQL内部其他内存</p>
+<p>information_schema下的表都使用的都是MEMORY存储引擎，数据只在内存中保留，启动时加载，关闭后释放。</p>
+<p>查看除系统库外是否有MEMORY引擎表：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+MySQL &gt;select * from information_schema.tables where engine='MEMORY' and TABLE_SCHEMA !='information_schema';</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>如果业务有使用MEMORY存储引擎的，尽量改成innodb引擎。</p>
+<p>4、MYSQL事件内存指标</p>
+<p>从MySQL5.7开始，在performance_schema中会记录内存分配。</p>
+<p>查看哪些指标启动了内存收集功能：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+MySQL &gt;select * from performance_schema.setup_instruments where NAME LIKE 'memory/%';</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>启动需要收集内存的指标：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+MySQL &gt;UPDATE performance_schema.setup_instruments SET ENABLED = 'YES' WHERE NAME LIKE 'memory/%';</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>指标的内存收集结果会汇总到到sys库下的视图中：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+MySQL root@[sys]&gt;show tables like 'memory%';+-----------------------------------+| Tables_in_sys (memory%)   |+-----------------------------------+| memory_by_host_by_current_bytes || memory_by_thread_by_current_bytes || memory_by_user_by_current_bytes || memory_global_by_current_bytes || memory_global_total    |+-----------------------------------+</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>这些视图总结了内存使用情况，按事件类型分组，默认降序排列：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+MySQL &gt;select event_name,current_count,current_alloc,high_alloc from sys.memory_global_by_current_bytes where current_count &gt; 0;+--------------------------------------------------------------------------------+---------------+---------------+-------------+| event_name                  | current_count | current_alloc | high_alloc |+--------------------------------------------------------------------------------+---------------+---------------+-------------+| memory/performance_schema/table_handles          |   10 | 90.62 MiB  | 90.62 MiB || memory/performance_schema/events_statements_summary_by_thread_by_event_name |    3 | 26.01 MiB  | 26.01 MiB || memory/performance_schema/memory_summary_by_thread_by_event_name    |    3 | 16.88 MiB  | 16.88 MiB || memory/performance_schema/events_statements_history_long      |    1 | 13.66 MiB  | 13.66 MiB || memory/performance_schema/events_statements_history       |    3 | 10.49 MiB  | 10.49 MiB || memory/performance_schema/events_statements_current       |    3 | 10.49 MiB  | 10.49 MiB |...</code></pre>
+<p>MySQL OOM（内存溢出）的解决思路</p>
+<p>总结：</p>
+<p>通过以上排查能大体知道哪些占用内存较多，针对内存占用较多的地方再做具体优化。正像文章开头所说的，内存溢出已经是软件开发历史上存在了近40年的&ldquo;老大难&rdquo;问题，更何况数据库环境更加复杂，SQL语法、数据类型、数据大小等这些因素都与内存有关，所以在设计使用上更要多想内存溢出问题。</p>
+<p>以上就是MySQL OOM（内存溢出）的解决思路的详细内容，更多关于MySQL OOM（内存溢出）的解决的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于解决MySQL OOM（内存溢出）的问题的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/28.html'>MySQL编码不一致可能引起的一些问题解决办法</a><a>下一篇</a><a href='/mysql/biji/30.html'>MySQL ddl语句用法详细说明</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

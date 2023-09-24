@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server 监控数据/日志文件增长实现方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server 监控数据/日志文件增长实现方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+前几天,在所有" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server 监控数据/日志文件增长实现方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:44:52                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server 监控数据/日志文件增长实现方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+前几天,在所有</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server 监控数据/日志文件增长实现方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>前几天,在所有数据库服务器部署了监控磁盘空间的存储过程和作业后（MS SQL 监控磁盘空间告警），今天突然收到了两封告警邮件，好吧，存储规划是一方面，但是，是不是要分析一下是什么原因造成磁盘空间不足的呢？会不会是因为突然暴增的日志文件，抑或是系统业务猛增导致数据量暴增，还是历史数据累计原因....分析总得有数据来支撑吧，但是现在只有那些数据文件的当前大小信息，没有数据文件的历史增长变化信息，所以，今天就想实现这么一个功能，每天（频率可以调整）去收集一下数据文件的信息，放到一个表里面，这样方便我们分析数据文件的增长演变例程，甚至你可以将数据文件的增长幅度和业务变化关联起来分析....那么接下来就是我的设计思路和实现代码，目前只是简单实现，以后将继续优化,丰富一些功能。首先我们创建一个表DiskCapacityHistory，用来保存数据库文件的历史增长变化信息：</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>USE msdb;
+GO
+
+IF EXISTS (SELECT 1 FROM dbo.sysobjects WHERE id = OBJECT_ID(N&#39;&#39;) AND xtype=&#39;U&#39;)
+ DROP TABLE DiskCapacityHistory;
+GO</code></pre>
+<p></p>
+<p><code>CREATE TABLE dbo.DiskCapacityHistory( [Date_CD] INT , [DataBaseID] INT , [FileID] INT , [DataBaseName] sysname , [LogicalName] VARCHAR(32) , [FileTypeDesc] NVARCHAR(60) , [PhysicalName] NVARCHAR(260) 　, [StateDesc] NVARCHAR(60) 　 , [MaxSize] NVARCHAR(32) , [GrowthType] NVARCHAR(8) , [IsReadOnly] INT , [IsPercentGrowth] SMALLINT , [Size] FLOAT , [Growth_MOM_RAT] FLOAT , [Growth_YOY_RAT] FLOAT , CONSTRAINT PK_DiskCapacityHistory PRIMARY KEY(Date_CD, DataBaseID, FileID));</code></p>
+<p>代码如下:</p>
+<pre>
+
+<code>EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39;
+ , @value = &#39;日期编码&#39;
+ , @level0type = N&#39;SCHEMA&#39;
+ , @level0name = N&#39;dbo&#39;
+ , @level1type = N&#39;TABLE&#39;
+ , @level1name = N&#39;DiskCapacityHistory&#39;
+ , @level2type = N&#39;COLUMN&#39;
+ , @level2name = N&#39;Date_CD&#39;;
+
+EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39;
+ , @value = &#39;数据库标识&#39;
+ , @level0type = N&#39;SCHEMA&#39;
+ , @level0name = N&#39;dbo&#39;
+ , @level1type = N&#39;TABLE&#39;
+ , @level1name = N&#39;DiskCapacityHistory&#39;
+ , @level2type = N&#39;COLUMN&#39;
+ , @level2name = N&#39;DataBaseID&#39;;
+
+EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39;
+ , @value = &#39;文件标识&#39;
+ , @level0type = N&#39;SCHEMA&#39;
+ , @level0name = N&#39;dbo&#39;
+ , @level1type = N&#39;TABLE&#39;
+ , @level1name = N&#39;DiskCapacityHistory&#39;
+ , @level2type = N&#39;COLUMN&#39;
+ , @level2name = N&#39;FileID&#39;;</code></pre>
+<p></p>
+<p><code>EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39; , @value = &#39;数据库名称&#39; , @level0type = N&#39;SCHEMA&#39; , @level0name = N&#39;dbo&#39; , @level1type = N&#39;TABLE&#39; , @level1name = N&#39;DiskCapacityHistory&#39; , @level2type = N&#39;COLUMN&#39; , @level2name = N&#39;DataBaseName&#39;;EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39; , @value = &#39;数据库逻辑名称&#39; , @level0type = N&#39;SCHEMA&#39; , @level0name = N&#39;dbo&#39; , @level1type = N&#39;TABLE&#39; , @level1name = N&#39;DiskCapacityHistory&#39; , @level2type = N&#39;COLUMN&#39; , @level2name = N&#39;LogicalName&#39;;EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39; , @value = &#39;文件类型描述&#39; , @level0type = N&#39;SCHEMA&#39; , @level0name = N&#39;dbo&#39; , @level1type = N&#39;TABLE&#39; , @level1name = N&#39;DiskCapacityHistory&#39; , @level2type = N&#39;COLUMN&#39; , @level2name = N&#39;FileTypeDesc&#39;; </code></p>
+<p><code>EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39; , @value = &#39;物理数据库文件&#39; , @level0type = N&#39;SCHEMA&#39; , @level0name = N&#39;dbo&#39; , @level1type = N&#39;TABLE&#39; , @level1name = N&#39;DiskCapacityHistory&#39; , @level2type = N&#39;COLUMN&#39; , @level2name = N&#39;PhysicalName&#39;;EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39; , @value = &#39;文件最大大小&#39; , @level0type = N&#39;SCHEMA&#39; , @level0name = N&#39;dbo&#39; , @level1type = N&#39;TABLE&#39; , @level1name = N&#39;DiskCapacityHistory&#39; , @level2type = N&#39;COLUMN&#39; , @level2name = N&#39;MaxSize&#39;;EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39; , @value = &#39;文件增长类型&#39; , @level0type = N&#39;SCHEMA&#39; , @level0name = N&#39;dbo&#39; , @level1type = N&#39;TABLE&#39; , @level1name = N&#39;DiskCapacityHistory&#39; , @level2type = N&#39;COLUMN&#39; , @level2name = N&#39;GrowthType&#39;;EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39; , @value = &#39;是否只读类型&#39; , @level0type = N&#39;SCHEMA&#39; , @level0name = N&#39;dbo&#39; , @level1type = N&#39;TABLE&#39; , @level1name = N&#39;DiskCapacityHistory&#39; , @level2type = N&#39;COLUMN&#39; , @level2name = N&#39;IsReadOnly&#39;;EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39; , @value = &#39;是否按百分比增长&#39; , @level0type = N&#39;SCHEMA&#39; , @level0name = N&#39;dbo&#39; , @level1type = N&#39;TABLE&#39; , @level1name = N&#39;DiskCapacityHistory&#39; , @level2type = N&#39;COLUMN&#39; , @level2name = N&#39;IsPercentGrowth&#39;;</code></p>
+<p><code>EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39; , @value = &#39;数据文件大小(GB)&#39; , @level0type = N&#39;SCHEMA&#39; , @level0name = N&#39;dbo&#39; , @level1type = N&#39;TABLE&#39; , @level1name = N&#39;DiskCapacityHistory&#39; , @level2type = N&#39;COLUMN&#39; , @level2name = N&#39;Size&#39;;EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39; , @value = &#39;文件增长环比(%)&#39; , @level0type = N&#39;SCHEMA&#39; , @level0name = N&#39;dbo&#39; , @level1type = N&#39;TABLE&#39; , @level1name = N&#39;DiskCapacityHistory&#39; , @level2type = N&#39;COLUMN&#39; , @level2name = N&#39;Growth_MOM_RAT&#39;;EXEC sys.sp_addextendedproperty @name = N&#39;MS_Description&#39; , @value = &#39;文件增长同比(%)&#39; , @level0type = N&#39;SCHEMA&#39; , @level0name = N&#39;dbo&#39; , @level1type = N&#39;TABLE&#39; , @level1name = N&#39;DiskCapacityHistory&#39; , @level2type = N&#39;COLUMN&#39; , @level2name = N&#39;Growth_YOY_RAT&#39;;GO</code></p>
+<p><code>IF OBJECT_ID(N&#39;sp_diskcapacity_cal&#39;) IS NOT NULL DROP PROCEDURE sp_diskcapacity_cal;GO</code></p>
+<p></p>
+<p>接下来，我们创建存储过程，负责来收集、统计这些数据库的文件的相关信息。关于环比/同比,正常情况一般是:环比: (指标当前值 - 指标值(上个月同一天))/ 指标值(上个月同一天) 。同比: (指标当前值 - 指标值(去年月同一天))/ 指标值(去年月同一天) 。其实如果关注每天的数据文件变化情况，这个代码里面的环比、同比其实意义不大，其实我们可以这样定义环比、同比：环比： （指标当前值 - 指标值（昨天）)/指标值（昨天）。同比： （指标当前值 - 指标值 （上个月））/指标值（上个月）当然，你也可以把这四个指标都加上，对比参考，侧重点不同而已。</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>IF OBJECT_ID(N&#39;sp_diskcapacity_cal&#39;)IS NOT NULL
+ DROP PROCEDURE sp_diskcapacity_cal;
+GO
+
+CREATE PROCEDURE dbo.sp_diskcapacity_cal
+AS
+BEGIN
+
+ INSERT INTO dbo.DiskCapacityHistory
+ (
+ [Date_CD] ,
+ [DataBaseID] ,
+ [FileID] ,
+ [DataBaseName] ,
+ [LogicalName] ,
+ [FileTypeDesc] ,
+ [PhysicalName] ,
+ [StateDesc] ,
+ [MaxSize] ,
+ [GrowthType] ,
+ [IsReadOnly] ,
+ [IsPercentGrowth] ,
+ [Size] 
+ )
+ SELECT CAST(REPLACE(CONVERT(varchar(10),GETDATE(),120),&#39;-&#39;,&#39;&#39;) AS INT)
+ AS DateCD ,
+ database_id AS DataBaseId ,
+ file_id AS FileID ,
+ DB_NAME(database_id) AS DataBaseName ,
+ name AS LogicalName ,
+ type_desc AS FileTypeDesc ,
+ physical_name AS PhysicalName ,
+ state_desc AS StateDesc ,
+ CASE WHEN max_size = 0 THEN N&#39;不允许增长&#39;
+ WHEN max_size = -1 THEN N&#39;自动增长&#39;
+ ELSE LTRIM(STR(max_size * 8.0 / 1024 / 1024, 14, 2)) + &#39;G&#39;
+ END AS MaxSize ,
+ CASE WHEN is_percent_growth = 1
+ THEN RTRIM(CAST(Growth AS CHAR(10))) + &#39;%&#39;
+ ELSE RTRIM(CAST(Growth AS CHAR(10))) + &#39;M&#39;
+ END AS Growth ,
+ Is_Read_Only AS IsReadOnly ,
+ Is_Percent_Growth AS IsPercentGrowth ,
+ CAST(size * 8.0 / 1024 / 1024 AS DECIMAL(8, 4)) AS Size
+ FROM sys.master_files;
+
+ 
+ MERGE INTO dbo.DiskCapacityHistory DM USING
+ (
+ SELECT M.Date_CD ,
+ M.DataBaseID ,
+ M.FileID ,
+ CASE WHEN N.SIZE IS NULL OR N.SIZE = 0 THEN 0 ELSE
+ (M.SIZE - N.SIZE)/N.SIZE END AS Growth_MOM_RAT
+ FROM dbo.DiskCapacityHistory M
+ LEFT JOIN dbo.DiskCapacityHistory N ON
+ CAST(CAST(M.Date_CD AS CHAR(8)) AS DATE) = DATEADD(MONTH, 1, CAST(CAST(N.Date_CD AS CHAR(8)) AS DATE))
+ AND M.DataBaseID = N.DataBaseID AND M.FileID = N.FileID
+ WHERE M.Date_CD = CAST(REPLACE(CONVERT(varchar(10),GETDATE(),120),&#39;-&#39;,&#39;&#39;) AS INT)
+ ) TMP
+ ON
+ (
+ DM.Date_CD = TMP.Date_CD AND
+ DM.DatabaseId = TMP.DataBaseId AND
+ DM.FileId = TMP.FileId
+ )
+ WHEN MATCHED THEN UPDATE SET
+ DM.Growth_MOM_RAT = TMP.Growth_MOM_RAT;
+END 
+GO
+</code></pre>
+<p></p>
+<p>顺便吐槽一下：由于前两年一直使用ORACLE数据库，很少接触SQL SERVER，在实现上面功能的时候，我深深的体会到了ORACLE和SQL SERVER的巨大差距，如果用PL/SQL实现，那非常方便快捷，但是用T-SQL让我遇到了几个相当痛苦地方，下面顺便记录对比一下吧：</p>
+<p>一：由于我采用INT来保存日期数据，那么需要在DATE类型和INT类型之间转换，我们来对比一下两者的差别吧：1.1 DATE类型转换为整型:T-SQL：SELECT CAST(REPLACE(CONVERT(varchar(10),GETDATE(),120),&#39;-&#39;,&#39;&#39;) AS INT);PL/SQL：SELECT TO_CHAR(Date_CD, &#39;YYYYMMDD&#39;) FROM DUAL;1.2 整型转换为DATE类型（字段DATE_CD）T-SQL： SELECT CAST(CAST(DATE_CD AS CHAR(8)) AS DATE) FROM TEST;PL/SQL： SELECT TO_DATE(DATE_CD, &#39;YYYY-MM-DD&#39;) FROM TEST;结论: 纯属个人感受,从上面的脚本的简单性,方便性上,感觉ORACLE完胜SQL SERVER二：计算数据文件增长同比、环比值 1：SQL SERVER 2005 没有MERGE语句功能，上面的脚本得改写成</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>UPDATEdbo.DiskCapacityHistory
+SET GROWTH_MOM_RAT =( SELECTCASE WHEN N.SIZE IS NULL
+ OR N.SIZE = 0 THEN 0
+ ELSE ( dbo.DiskCapacityHistory.SIZE
+ - N.SIZE ) / N.SIZE
+ END AS Growth_MOM_RAT
+ FROM dbo.DiskCapacityHistory N
+ WHERE CAST(CAST(dbo.DiskCapacityHistory.Date_CD AS CHAR(8)) AS DATE) = DATEADD(MONTH,
+ 1,
+ CAST(CAST(N.Date_CD AS CHAR(8)) AS DATE))
+ AND dbo.DiskCapacityHistory.DataBaseID = N.DataBaseID
+ AND dbo.DiskCapacityHistory.FileID = N.FileID
+ )
+WHEREdbo.DiskCapacityHistory.Date_CD = CAST(REPLACE(CONVERT(VARCHAR(10), GETDATE(), 120),
+ &#39;-&#39;, &#39;&#39;) AS INT)
+
+UPDATEdbo.DiskCapacityHistory
+SET GROWTH_YOY_RAT =( SELECTCASE WHEN N.SIZE IS NULL
+ OR N.SIZE = 0 THEN 0
+ ELSE ( dbo.DiskCapacityHistory.SIZE
+ - N.SIZE ) / N.SIZE
+ END AS Growth_YOY_RAT
+ FROM dbo.DiskCapacityHistory N
+ WHERE CAST(CAST(dbo.DiskCapacityHistory.Date_CD AS CHAR(8)) AS DATE) = DATEADD(MONTH,
+ 12,
+ CAST(CAST(N.Date_CD AS CHAR(8)) AS DATE))
+ AND dbo.DiskCapacityHistory.DataBaseID = N.DataBaseID
+ AND dbo.DiskCapacityHistory.FileID = N.FileID
+ )
+WHEREdbo.DiskCapacityHistory.Date_CD = CAST(REPLACE(CONVERT(VARCHAR(10), GETDATE(), 120),
+ &#39;-&#39;, &#39;&#39;) AS INT)
+</code></pre>
+<p></p>
+<p>或</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>CREATE TABLE #DiskCapacityHistory
+ (
+ DATE_CD INT ,
+ DataBaseID INT ,
+ FileID INT ,
+ Growth_MOM_RAT FLOAT
+ ) ;
+
+ INSERTINTO #DiskCapacityHistory
+ SELECT M.DATE_CD ,
+ M.DataBaseID ,
+ M.FileID ,
+ CASE WHEN N.SIZE IS NULL
+ OR N.SIZE = 0 THEN 0
+ ELSE ( M.SIZE - N.SIZE ) / N.SIZE
+ END AS Growth_MOM_RAT
+ FROM dbo.DiskCapacityHistory M ,
+ dbo.DiskCapacityHistory N
+ WHERE CAST(CAST(M.Date_CD AS CHAR(8)) AS DATE) = DATEADD(MONTH, 1,
+ CAST(CAST(N.Date_CD AS CHAR(8)) AS DATE))
+ AND M.DataBaseID = N.DataBaseID
+ AND M.FileID = N.FileID
+ AND M.Date_CD = CAST(REPLACE(CONVERT(VARCHAR(10), GETDATE()
+ - 1, 120), &#39;-&#39;, &#39;&#39;) AS INT)
+
+ UPDATE dbo.DiskCapacityHistory
+ SET Growth_MOM_RAT = M.Growth_MOM_RAT
+ FROM #DiskCapacityHistory M
+ WHERE dbo.DiskCapacityHistory.DATE_CD = M.DATE_CD
+ AND dbo.DiskCapacityHistory.DataBaseID = M.DataBaseID
+ AND dbo.DiskCapacityHistory.FileID = M.FileID ;
+</code></pre>
+<p></p>
+<p>2: 幸好SQL 2008还把ORACLE的MERGE的功能给模仿了过来，但是T-SQL缺少ORACLE数据库强大的分析函数LAG，如果有这个，我计算环比，同比就非常方便了，一个SQL就搞定了，下面是个例子，本想把ORACLE的SQL也做个例子展现，但是又要建表、造数，折腾起来比较麻烦。</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+
+<code>MERGE INTO DM.TM_WGGBO_IDCTOBUSVOLDTL_DAY DM
+USING (
+ SELECT *
+ FROM (
+ SELECT DATE_CD,
+ CITY_ID,
+ IDC_NODE,
+ VOL_TYPE,
+ LAG(IDC_VOL_RAT ) OVER(PARTITION BY CITY_ID,IDC_NODE,VOL_TYPE,SUBSTR(DATE_CD,7,2) ORDER BY SUBSTR(DATE_CD,0,6)) AS IDC_MOM_RAT ,
+ LAG(IDC_VOL_RAT ) OVER(PARTITION BY CITY_ID,IDC_NODE,VOL_TYPE,SUBSTR(DATE_CD,5,4) ORDER BY SUBSTR(DATE_CD,0,4)) AS IDC_YOY_RAT ,
+
+ FROM DM.TM_WGGBO_IDCTOBUSVOLDTL_DAY
+ ) T
+ WHERE EXISTS(SELECT 1 FROM ETL.T_IDCVOL_DAY_${ssid} WHERE DATE_CD = T.DATE_CD)
+ ) TEMP
+ ON (
+ DM.DATE_CD = TEMP.DATE_CD AND
+ DM.CITY_ID = TEMP.CITY_ID AND
+ DM.IDC_NODE = TEMP.IDC_NODE AND
+ DM.VOL_TYPE = TEMP.VOL_TYPE
+ )
+WHEN MATCHED THEN
+ UPDATE
+ SET DM.IDC_MOM_RAT = TEMP.IDC_MOM_RAT ,
+ DM.IDC_YOY_RAT = TEMP.IDC_YOY_RAT 
+
+COMMIT;
+</code></pre>作者：潇湘隐者出处：http://www.cnblogs.com/kerrycode/
+<p></p>
+
+<p>注：关于SQL Server 监控数据/日志文件增长实现方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3259.html'>关于SQL 存储过程入门基础(变量)</a><a>下一篇</a><a href='/mysql/biji/3261.html'>SQL Server 服务器验证改为混合验证模式示例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

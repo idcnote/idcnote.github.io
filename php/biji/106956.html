@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>浅谈Java自动装箱与拆箱及其陷阱_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="在本文中，笔者向大家介绍下Java中一个非常重要也非常有趣的特性，就是自动装箱与拆箱，并从源码中解读自动装箱与拆箱的原理，同时这种特性也留有一个陷阱。开发者如果不注意，就会很" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">浅谈Java自动装箱与拆箱及其陷阱</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>在本文中，笔者向大家介绍下Java中一个非常重要也非常有趣的特性，就是自动装箱与拆箱，并从源码中解读自动装箱与拆箱的原理，同时这种特性也留有一个陷阱。开发者如果不注意，就会很</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>在本文中，笔者向大家介绍下Java中一个非常重要也非常有趣的特性，就是自动装箱与拆箱，并从源码中解读自动装箱与拆箱的原理，同时这种特性也留有一个陷阱。开发者如果不注意，就会很容易跌入这个陷阱。</p>
+<p><span style="color: #ff0000"><strong>自动装箱(Autoboxing)</strong></span></p>
+<p><strong>定义</strong></p>
+<p>大家在平时编写Java程序时，都常常以以下方式来定义一个Integer对象:</p>
+<p>Integer i=100;</p>
+<p>从上面的代码中，大家可以得知，i为一个Integer类型的引用，100为Java中的基础数据类型(primitive data type)。而这种直接将一个基础数据类型传给其相应的封装类(wrapper class)的做法，便是自动装箱(Autoboxing)。</p>
+<p>在jdk 1.5中，自动装箱首次被引入。而在jdk 1.5之前，如果你想要定义一个value为100的Integer对象，则需要这样做：</p>
+<p>Integer i=new Integer (100);</p>
+<p><strong>原理</strong></p>
+<p>我们在以上代码“Integer i=100;”处打一个断点，跟踪一下。<br />
+</p>
+<p style="text-align: center">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;</p>
+<p>接下来，我们可以看到，程序跳转到了Integer类的valueOf(int i)方法中</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+/**
+   * Returns a &lt;tt&gt;Integer&lt;/tt&gt; instance representing the specified
+   * &lt;tt&gt;int&lt;/tt&gt; value.
+   * If a new &lt;tt&gt;Integer&lt;/tt&gt; instance is not required, this method
+   * should generally be used in preference to the constructor
+   * {@link #Integer(int)}, as this method is likely to yield
+   * significantly better space and time performance by caching
+   * frequently requested values.
+   *
+   * @param i an &lt;code&gt;int&lt;/code&gt; value.
+   * @return a &lt;tt&gt;Integer&lt;/tt&gt; instance representing &lt;tt&gt;i&lt;/tt&gt;.
+   * @since 1.5
+   */
+  public static Integer valueOf(int i) {
+    if(i &gt;= -128 && i &lt;= IntegerCache.high)
+      return IntegerCache.cache[i + 128];
+    else
+      return new Integer(i);
+  }
+</pre>
+</div>
+<p>换句话说，装箱就是jdk自己帮你完成了调用Integer.valueOf(100)。</p>
+<p>拆箱(Unboxing)</p>
+<p><strong>定义</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+Integer integer100=100;
+int int100=integer100;</pre>
+</div>
+<p>从上面的代码中，大家可看出integer100为一个Integer类型的引用，int100为一个int类型的原始数据类型。但是，我们可以将一个Integer类型的对象赋值给其相应原始数据类型的变量。这便是拆箱。</p>
+<p>拆箱与装箱是相反的操作。装箱是将一个原始数据类型赋值给相应封装类的变量。而拆箱则是将一个封装类的变量赋值给相应原始数据类型的变量。装箱、拆箱的名字也取得相当贴切。</p>
+<p><strong>原理</strong></p>
+<p>笔者相信大家也都猜到了，拆箱过程中jdk为我们做了什么。我们还是通过实验来证明我们的猜想吧。</p>
+<p>在以上代码的第二行代码打上断点，即在“int int100=integer100;”上打上断点，跟踪一下。</p>
+<p>我们可以看到，程序跳转到了Integer的intValue()方法。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+/**
+   * Returns the value of this &lt;code&gt;Integer&lt;/code&gt; as an
+   * &lt;code&gt;int&lt;/code&gt;.
+   */
+  public int intValue() {
+	return value;
+  }
+
+</pre>
+</div>
+<p>也就是，jdk帮我们完成了对intValue()方法的调用。对于以上的实验而言，便是调用integer100的intValue()方法，将其返回值赋给了int100。</p>
+<p><span style="color: #ff0000"><strong>扩展</strong></span></p>
+<p><strong>实验1</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+Integer integer400=400;
+int int400=400;
+System.out.println(integer400==int400);
+</pre>
+</div>
+<p>在以上代码的第三行中，integer400与int400执行了==运行。而这两个是不同类型的变量，到底是integer400拆箱了，还是int400装箱了呢？运行结果是什么呢？</p>
+<p>&nbsp;==运算是判断两个对象的地址是否相等或者判断两个基础数据类型的值是否相等。所以，大家很容易推测到，如果integer400拆箱了，则说明对比的是两个基础类型的值，那此时必然相等，运行结果为true；如果int400装箱了，则说明对比的是两个对象的地址是否相等，那此时地址必然不相等，运行结果为false。（至于为什么笔者对它们赋值为400，就是后面将要讲到的陷阱有关）。</p>
+<p>我们实际的运行结果为true。所以是integer400拆箱了。对代码跟踪的结果也证明这一点。</p>
+<p><strong>实验2</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+Integer integer100=100;
+int int100=100;
+System.out.println(integer100.equals(int100));
+</pre>
+</div>
+<p>在以上代码的第三行中，integer100的方法equals的参数为int100。我们知道equals方法的参数为Object，而不是基础数据类型，因而在这里必然是int100装箱了。对代码跟踪的结果也证明了这一点。</p>
+<p>其实，如果一个方法中参数类型为原始数据类型，所传入的参数类型为其封装类，则会自动对其进行拆箱；相应地，如果一个方法中参数类型为封装类型，所传入的参数类型为其原始数据类型，则会自动对其进行装箱。</p>
+<p><strong>实验3</strong></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+Integer integer100 = 100;
+int int100 = 100;
+Long long200 = 200l;
+System.out.println(integer100 + int100);
+System.out.println(long200 == (integer100 + int100));
+System.out.println(long200.equals(integer100 + int100));
+
+</pre>
+</div>
+<p>在第一个实验中，我们已经得知，当一个基础数据类型与封装类进行==运算时，会将封装类进行拆箱。那如果+、-、*、/呢？我们在这个实验中，就可知道。</p>
+<p>如果+运算，会将基础数据类型装箱，那么：</p>
+<p>&#8226;第4行中，integer100+int100就会得到一个类型为Integer且value为200的对象o，并执行这个对象的toString()方法，并输出”200”；</p>
+<p>&#8226;第5行中，integer100+int100就会得到一个类型为Integer且value为200的对象o，==运算将这个对象与long200对象进行对比，显然，将会输出false；</p>
+<p>&#8226;第6行中，integer100+int100就会得到一个类型为Integer且value为200的对象o，Long的equals方法将long200与o对比，因为两都是不同类型的封装类，因而输出false；</p>
+<p>如果+运算，会将封装类进行拆箱，那么:</p>
+<p>&#8226;第4行中，integer100+int100就会得到一个类型为int且value为200的基础数据类型b，再将b进行装箱得到o，执行这个对象的toString()方法，并输出”200”；</p>
+<p>&#8226;第5行中，integer100+int100就会得到一个类型为int且value为200的基础数据类型b1，==运算将long200进行拆箱得到b2，显然b1==b2，输出true；</p>
+<p>&#8226;第6行中，integer100+int100就会得到一个类型为int且value为200的基础数据类型b，Long的equals方法将b进行装箱，但装箱所得到的是类型为Integer的对象o，因为o与long200为不同的类型的对象，所以输出false；</p>
+<p>程序运行的结果为:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>200<br />
+true<br />
+false</p>
+<p>因而，第二种推测是正确，即在+运算时，会将封装类进行拆箱。</p>
+<p><span style="background-color: #ccffcc"><strong>陷阱</strong></span></p>
+<p><span style="color: #ff00ff"><strong>陷阱1</strong></span></p>
+<p>Integer integer100=null;<br />
+int int100=integer100;</p>
+<p>这两行代码是完全合法的，完全能够通过编译的，但是在运行时，就会抛出空指针异常。其中，integer100为Integer类型的对象，它当然可以指向null。但在第二行时，就会对integer100进行拆箱，也就是对一个null对象执行intValue()方法，当然会抛出空指针异常。所以，有拆箱操作时一定要特别注意封装类对象是否为null。</p>
+<p><span style="color: #ff00ff"><strong>陷阱2</strong></span></p>
+<p>Integer i1=100;<br />
+Integer i2=100;<br />
+Integer i3=300;<br />
+Integer i4=300;<br />
+System.out.println(i1==i2);<br />
+System.out.println(i3==i4);</p>
+<p>因为i1、i2、i3、i4都是Integer类型的，所以我们想，运行结果应该都是false。但是，真实的运行结果为“System.out.println(i1==i2);”为 true，但是“System.out.println(i3==i4);”为false。也就意味着,i1与i2这两个Integer类型的引用指向了同一个对象，而i3与i4指向了不同的对象。为什么呢？不都是调用Integer.valueOf(int i)方法吗？</p>
+<p>让我们再看看Integer.valueOf(int i)方法。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+/**
+   * Returns a &lt;tt&gt;Integer&lt;/tt&gt; instance representing the specified
+   * &lt;tt&gt;int&lt;/tt&gt; value.
+   * If a new &lt;tt&gt;Integer&lt;/tt&gt; instance is not required, this method
+   * should generally be used in preference to the constructor
+   * {@link #Integer(int)}, as this method is likely to yield
+   * significantly better space and time performance by caching
+   * frequently requested values.
+   *
+   * @param i an &lt;code&gt;int&lt;/code&gt; value.
+   * @return a &lt;tt&gt;Integer&lt;/tt&gt; instance representing &lt;tt&gt;i&lt;/tt&gt;.
+   * @since 1.5
+   */
+  public static Integer valueOf(int i) {
+    if(i &gt;= -128 && i &lt;= IntegerCache.high)
+      return IntegerCache.cache[i + 128];
+    else
+      return new Integer(i);
+  }
+</pre>
+</div>
+<p>我们可以看到当i&gt;=-128且i&lt;=IntegerCache.high时，直接返回IntegerCache.cache[i + 128]。其中，IntegerCache为Integer的内部静态类，其原码如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+private static class IntegerCache {
+    static final int high;
+    static final Integer cache[];
+
+    static {
+      final int low = -128;
+
+      // high value may be configured by property
+      int h = 127;
+      if (integerCacheHighPropValue != null) {
+        // Use Long.decode here to avoid invoking methods that
+        // require Integer's autoboxing cache to be initialized
+        int i = Long.decode(integerCacheHighPropValue).intValue();
+        i = Math.max(i, 127);
+        // Maximum array size is Integer.MAX_VALUE
+        h = Math.min(i, Integer.MAX_VALUE - -low);
+      }
+      high = h;
+
+      cache = new Integer[(high - low) + 1];
+      int j = low;
+      for(int k = 0; k &lt; cache.length; k++)
+        cache[k] = new Integer(j++);
+    }
+
+    private IntegerCache() {}
+  }
+</pre>
+</div>
+<p>我们可以清楚地看到，IntegerCache有静态成员变量cache，为一个拥有256个元素的数组。在IntegerCache中也对cache进行了初始化，即第i个元素是值为i-128的Integer对象。而-128至127是最常用的Integer对象，这样的做法也在很大程度上提高了性能。也正因为如此，“Integeri1=100;Integer i2=100;”，i1与i2得到是相同的对象。</p>
+<p>对比扩展中的第二个实验，我们得知，当封装类与基础类型进行==运行时，封装类会进行拆箱，拆箱结果与基础类型对比值；而两个封装类进行==运行时，与其它的对象进行==运行一样，对比两个对象的地址，也即判断是否两个引用是否指向同一个对象。</p>
+<p>以上这篇浅谈Java自动装箱与拆箱及其陷阱就是小编分享给大家的全部内容了，希望能给大家一个参考，也希望大家多多支持phpstudy。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/106955.html'>Win10任务栏右下角时钟图标消失不见的解决方法</a><a>下一篇</a><a href='/php/biji/106957.html'>Hibernate分页的两种实现方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

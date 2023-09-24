@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Linux下安装MySQL多实例作为数据备份服务器实现多主到一从多实例的备份_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了Linux下安装MySQL多实例作为数据备份服务器实现多主到一从多实例的备份，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Linux下安装MySQL多实例作为数据备份服务器实现多主到一从多实例的备份</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:20:12                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了Linux下安装MySQL多实例作为数据备份服务器实现多主到一从多实例的备份，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了Linux下安装MySQL多实例作为数据备份服务器实现多主到一从多实例的备份，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>1、从MYSQL官方下载MYSQL的源码版本【一定要是源码版本】2、按以下代码键入LINUX命令行
+<p>代码如下:</p>
+<pre>
+<code> 
+[注] 添加mysql组和用户 
+#groupadd mysql 
+#useradd -g mysql mysql 
+[注] 解包到/usr/local 
+# tar -xzf mysql-standard-4.1.9-pc-linux-gnu-i686.tar.gz -C /usr/local 
+[注] 建立软链接，方便操作（此处给此连接命名为mysql001，也可为其它的名字） 
+#cd /usr/local 
+#ln -s mysql-standard-5.0.15-linux-i686-glibc23 mysql001 
+#cd mysql001 
+#scripts/mysql_install_db 
+#chown -R root . 
+#chown -R mysql data 
+#chgrp -R mysql . 
+[注] 复制data，以供单版本多实例分配 
+#cp -a data data_1 
+#cp -a data data_2 
+[注] 添加多实例配置文件 
+#cd /usr/local/mysql001/bin 
+#cat &gt;my_multi.cnf 
+[注] 以下是my_multi.cnf的配置信息，可依此复制 
+[mysqld_multi] 
+mysqld = /usr/local/mysql001/bin/mysqld_safe 
+mysqladmin = /usr/local/mysql001/bin/mysqladmin 
+user = root 
+password = root 
+[mysqld1] 
+socket = /tmp/mysql_001.sock 
+port = 3301 
+pid-file = /usr/local/mysql001/data_1/hostname.pid 
+datadir = /usr/local/mysql001/data_1 
+log = /usr/local/mysql001/data_1/hostname.log 
+user = mysql 
+# slave setting 
+server-id = 2 
+master-host = 192.168.1.85 
+master-port = 3306 
+master-user = backup 
+master-password = 123456 
+replicate-do-db = gs_database 
+replicate-do-db = gs_log 
+master-connect-retry=30 
+[mysqld2] 
+socket = /tmp/mysql_5_2.sock 
+port = 3302 
+pid-file = /usr/local/mysql001/data_2/hostname.pid 
+datadir = /usr/local/mysql001/data_2 
+log = /usr/local/mysql001/data_2/hostname.log 
+user = mysql 
+# slave setting 
+server-id = 3 
+master-host = 192.168.1.69 
+master-port = 3306 
+master-user = backup 
+master-password = 123 
+replicate-do-db = gs_databaes 
+replicate-do-db = gs_log 
+master-connect-retry=30 
+</code></pre>CTRL+D退出。
+<p>代码如下:</p>
+<pre>
+<code> 
+#vi /etc/profile # 添加系统环境变量。 
+export MYSQL_HOME=/usr/local/mysql001/bin 
+export PATH=$PATH:$MYSQL_HOME 
+</code></pre>重启系统让环境变量生效。添加至开机自动启动【此处可不添加，依个人情况决定是否需要设置开机自动启动】
+<p>代码如下:</p>
+<pre>
+<code> 
+vi /etc/rc.local 
+# 添加 
+mysqld_multi --defaults-extra-file=/usr/local/src/mysql_dir/bin/my_multi.cnf start 1,2 
+</code></pre>3、其它一些技巧# 访问某个实例：mysql -u root -S /tmp/mysql_5_1.sock -p# 设置各个实例密码：mysqladmin -u root password &#39;root&#39; -S /tmp/mysql_5_1.sock# 手动启动各个实例：mysqld_multi --defaults-extra-file=/usr/local/src/mysql_dir/bin/my_multi.cnf start 1,2# 停止各个实例：mysqld_multi --defaults-extra-file=/usr/local/src/mysql_dir/bin/my_multi.cnf stop 1,2# 参考文章http://blog.liuts.com/post/13/由于第一次接触LINUX，花了三天时间才算有所成就，发出来希望可以给大伙带来方便
+
+<p>注：关于Linux下安装MySQL多实例作为数据备份服务器实现多主到一从多实例的备份的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/857.html'>MySQL MySQLadmin客户端用法详细说明</a><a>下一篇</a><a href='/mysql/biji/859.html'>.Net Core导入千万级数据至MySQL的步骤示例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

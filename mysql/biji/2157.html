@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL主从复制的原理及配置方法（比较详细）_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL主从复制的原理及配置方法（比较详细），具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+一、复制的原理
+My" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL主从复制的原理及配置方法（比较详细）</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:34:42                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL主从复制的原理及配置方法（比较详细），具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+一、复制的原理
+My</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL主从复制的原理及配置方法（比较详细），具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p><strong>一、复制的原理</strong></p>
+<p>MySQL 复制基于主服务器在二进制日志中跟踪所有对数据库的更改(更新、删除等等)。每个从服务器从主服务器接收主服务器已经记录到其二进制日志的保存的更新，以便从服务器可以对其数据拷贝执行相同的更新。</p>
+<p>将主服务器的数据拷贝到从服务器的一个途径是使用LOAD DATA FROM MASTER语句。请注意LOAD DATA FROM MASTER目前只在所有表使用MyISAM存储引擎的主服务器上工作。并且，该语句将获得全局读锁定。</p>
+<p>MySQL 使用3个线程来执行复制功能,其中1个在主服务器上，另两个在从服务器上。当发出START SLAVE时，从服务器创建一个I/O线程，以连接主服务器并让它发送记录在其二进制日志中的语句。主服务器创建一个线程将二进制日志中的内容发送到从服务器。该线程可以识别为主服务器上SHOW PROCESSLIST的输出中的Binlog Dump线程。从服务器I/O线程读取主服务器Binlog Dump线程发送的内容并将该数据拷贝到从服务器数据目录中的本地文件中，即中继日志。第3个线程是SQL线程，是从服务器创建用于读取中继日志并执行日志中包含的更新。有多个从服务器的主服务器创建为每个当前连接的从服务器创建一个线程；每个从服务器有自己的I/O和SQL线程。</p>
+<p><strong>二、复制线程的状态</strong></p>
+<p><strong>1.复制主线程的状态</strong></p>
+<p>代码如下:</p>
+<pre>
+
+<code>Sending binlog event to slave
+二进制日志由各种事件组成，一个事件通常为一个更新加一些其它信息。线程已经从二进制日志读取了一个事件并且正将它发送到从服务器。
+Finished reading one binlog; switching to next binlog
+线程已经读完二进制日志文件并且正打开下一个要发送到从服务器的日志文件。
+Has sent all binlog to slave; waiting for binlog to be updated
+线程已经从二进制日志读取所有主要的更新并已经发送到了从服务器。线程现在正空闲，等待由主服务器上新的更新导致的出现在二进制日志中的新事件。
+Waiting to finalize termination
+线程停止时发生的一个很简单的状态。</code></pre>
+<p></p>
+<p><strong>2.复制从I/O线程状态</strong></p>
+<p>代码如下:</p>
+<pre>
+<code>Connecting to master
+线程正试图连接主服务器。</code></pre>
+<p></p>
+<p><code>Checking master version建立同主服务器之间的连接后立即临时出现的状态。</code></p>
+<p><code>Registering slave on master建立同主服务器之间的连接后立即临时出现的状态。</code></p>
+<p><code>Requesting binlog dump建立同主服务器之间的连接后立即临时出现的状态。线程向主服务器发送一条请求，索取从请求的二进制日志文件名和位置开始的二进制日志的内容。</code></p>
+<p><code>Waiting to reconnect after a failed binlog dump request如果二进制日志转储请求失败(由于没有连接)，线程进入睡眠状态，然后定期尝试重新连接。可以使用&ndash;master-connect-retry选项指定重试之间的间隔。</code></p>
+<p><code>Reconnecting after a failed binlog dump request线程正尝试重新连接主服务器。</code></p>
+<p><code>Waiting for master to send event线程已经连接上主服务器，正等待二进制日志事件到达。如果主服务器正空闲，会持续较长的时间。如果等待持续slave_read_timeout秒，则发生超时。此时，线程认为连接被中断并企图重新连接。</code></p>
+<p><code>Queueing master event to the relay log线程已经读取一个事件，正将它复制到中继日志供SQL线程来处理。</code></p>
+<p><code>Waiting to reconnect after a failed master event read读取时(由于没有连接)出现错误。线程企图重新连接前将睡眠master-connect-retry秒。</code></p>
+<p><code>Reconnecting after a failed master event read线程正尝试重新连接主服务器。当连接重新建立后，状态变为Waiting for master to send event。</code></p>
+<p><code>Waiting for the slave SQL thread to free enough relay log space正使用一个非零relay_log_space_limit值，中继日志已经增长到其组合大小超过该值。I/O线程正等待直到SQL线程处理中继日志内容并删除部分中继日志文件来释放足够的空间。</code></p>
+<p><code>Waiting for slave mutex on exit线程停止时发生的一个很简单的状态。</code></p>
+<p></p>
+<p><strong>3.复制从SQL线程状态</strong></p>
+<p>代码如下:</p>
+<pre>
+
+<code>Reading event from the relay log
+线程已经从中继日志读取一个事件，可以对事件进行处理了。</code></pre>
+<p></p>
+<p><code>Has read all relay log; waiting for the slave I/O thread to update it线程已经处理了中继日志文件中的所有事件，现在正等待I/O线程将新事件写入中继日志。</code></p>
+<p><code>Waiting for slave mutex on exit线程停止时发生的一个很简单的状态。</code></p>
+<p></p>
+<p><strong>三、复制传递和状态文件</strong></p>
+<p>从服务器靠中继日志来接收从主服务器上传回来的日志。并依靠状态文件来记录已经从主服务器接收了哪些日志，已经恢复了哪些日志。</p>
+<p>中继日志与二进制日志的格式相同，并且可以用mysqlbinlog读取。SQL线程执行完中继日志中的所有事件并且不再需要之后，立即自动删除它。可以采用&ndash;relay-log和&ndash;relay-log-index服务器选项覆盖默认中继日志和索引文件名。其中索引文件名的作用是记录目前正在使用中继日志。</p>
+<p>在下面的条件下将创建新的中继日志：1.每次I/O线程启动时创建一个新的中继日志。2.当日志被刷新时；例如，用FLUSH LOGS或mysqladmin flush-logs。3.当当前的中继日志文件变得太大时。&ldquo;太大&rdquo;含义的确定方法：max_relay_log_size，如果max_relay_log_size &gt; 0max_binlog_size，如果max_relay_log_size = 0状态文件名默认为master.info和relay-log.info。其中IO线程更新master.info文件，SQL线程更新relay-log.info文件。文件中的行和SHOW SLAVE STATUS显示的列的对应关系为：master.info文件：</p>
+<p>代码如下:</p>
+<pre>
+<code>行 描述
+1 文件中的行号
+2 Master_Log_File
+3 Read_Master_Log_Pos
+4 Master_Host
+5 Master_User
+6 密码(不由SHOW SLAVE STATUS显示)
+7 Master_Port
+8 Connect_Retry
+9 Master_SSL_Allowed
+10 Master_SSL_CA_File
+11 Master_SSL_CA_Path
+12 Master_SSL_Cert
+13 Master_SSL_Cipher
+14 Master_SSL_Key</code></pre>
+<p></p>
+<p>relay-log.info文件：</p>
+<p>代码如下:</p>
+<pre>
+<code>行 描述
+1 Relay_Log_File
+2 Relay_Log_Pos
+3 Relay_Master_Log_File
+4 Exec_Master_Log_Pos</code></pre>
+<p></p>
+<p>当备份从服务器的数据时，你还应备份这两个小文件以及中继日志文件。它们用来在恢复从服务器的数据后继续进行复制。如果丢失了中继日志但仍然有 relay-log.info文件，你可以通过检查该文件来确定SQL线程已经执行的主服务器中二进制日志的程度。然后可以用 Master_Log_File和Master_LOG_POS选项执行CHANGE MASTER TO来告诉从服务器重新从该点读取二进制日志。当然，要求二进制日志仍然在主服务器上。所以最好建议将自动删除中继日志的特性关闭，手工写shell角本来防止空间满的问题。</p>
+<p><strong>四、复制的配置步骤</strong></p>
+<p>1.创建专门用于复制的用户(建议这样做)，从服务器采用该帐户登陆主服务器：</p>
+<p>代码如下:</p>
+<pre>
+
+<code>GRANT REPLICATION SLAVE ON *.* TO &#39;rep&#39;@&#39;%&#39; IDENTIFIED BY &#39;logzgh&#39; ;
+</code></pre>如果你计划从从属服务器主机使用LOAD TABLE FROM MASTER或LOAD DATA FROM MASTER语句，你需要授予该账户其它权限：授予账户SUPER和RELOAD全局权限。为所有想要装载的表授予SELECT权限。任何该 账户不能SELECT的主服务器上的表被LOAD DATA FROM MASTER忽略掉。
+<p></p>
+<p>2.将数据库文件移到从服务器上情况一：若只用到MyISAM表</p>
+<p>代码如下:</p>
+<pre>
+<code>mysql&gt; FLUSH TABLES WITH READ LOCK;</code></pre>(刷新所有表并且阻止其它写入，不要退出该客户端，以保持读锁有效。若退出，读锁就会释放。)比较简单的办法就是把数据目录打包压缩。
+<p></p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+<code>$ tar -cvf /home/mysql/snapshot.tar ./data (在master上)
+$ tar -xvf /home/mysql/snapshot.tar (在slave上)</code></pre>
+<p></p>
+<p>可能不需要同步 mysql 数据库，因为在slave上的权限表和master不一样。这时，解开压缩包的时候要排除它。同时在压缩包中也不要包含任何日志文件，和状态文件master.info、relay-log.info。</p>
+<p></p>
+<p>代码如下:</p>
+<pre>
+<code>mysql&gt; SHOW MASTER STATUS;
++&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+
+| File | Position | Binlog_Do_DB | Binlog_Ignore_DB |
++&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+
+| mysql-bin.000058 | 45036137 | | |
++&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+&mdash;&mdash;&mdash;-+&mdash;&mdash;&mdash;&mdash;&ndash;+&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+</code></pre>
+<p></p><code> </code>
+<p><code>mysql&gt; UNLOCK TABLES;</code></p>
+<p></p>
+<p>情况二：若用到InnoDB表方法一：使用InnoDB Hot Backup工具。它无需在master上请求任何锁就能做到快照的一致性，并且在后面中在slave上要用到的快照中已经记录了日志文件名以及偏移位置。方法二：记录当前日志文件及偏移位置，在master关闭前执行：</p>
+<p>代码如下:</p>
+<pre>
+<code>mysql&gt; FLUSH TABLES WITH READ LOCK;
+mysql&gt; SHOW MASTER STATUS;</code></pre>尽快记下显示结果中的日志文件及偏移位置。然后，在不解锁的情况下关闭master，确保master上的快照和记录的结果一致。关闭master服务器，$ mysqladmin -u root shutdown拷贝 InnoDB 数据文件，日志文件，以及表结构定义文件(.frm文件)。情况三：可以同时用于MyISAM和InnoDB表在master上做SQL转储而无需如上所述备份二进制日志。运行mysqldump &ndash;master-data命令，然后把结果文件转储到slave上。不过，这比拷贝二进制日志慢点。
+<p></p>
+<p>3.修改my.cnf文件在master上my.cnf文件：(重启生效)</p>
+<p>代码如下:</p>
+<pre>
+<code>[mysqld]
+log_bin
+server_id=1 (值是 1 到 2^32-1 之间的正整数)</code></pre>在slave上my.cnf文件：
+<p>代码如下:</p>
+<pre>
+<code>[mysqld]
+server_id=2 (ID必须和master的ID不同。若有多个slave，则每个slave都必须有唯一的id。)</code></pre>
+<p></p>
+<p>配置slave的扩展选项</p>
+<p>代码如下:</p>
+<pre>
+<code>master_host=db-master.mycompany.com
+master_port=3306
+master_user=rep
+master_password=freitag
+master_connect_retry=60 (若master宕机或者slave连接断开，slave会定期尝试连接到master上，重试的间隔由该选项来控制，默认值是60秒。)
+report_host=db-slave.mycompany.com
+slave_net_timeout=3600 (slave默认会在3600秒后，若还没收到来自master的数据，则会当作网络断开的情况来处理。)</code></pre>
+<p></p>
+<p>服务器认为master.info的优先级比配置文件my.cnf高，第一次启动slave时，master.info不存在，它从my.cnf中读取选项值，然后把它们保存在master.info中。下次重启slave时，它只读取master.info的内容，而不会读取my.cnf中的选项值。想要使用不同的选项值，可以删除master.info后重启slave，或者使用CHANGE MASTER TO语句(推荐)重置选项值。4.启动从服务器线程</p>
+<p>代码如下:</p>
+<pre>
+<code>mysqld_safe &ndash;user=mysql &ndash;skip-slave-start &amp; (启动MySQL服务器，但不启动slave)
+设置master_log_file等参数
+mysql&gt; CHANGE MASTER TO MASTER_HOST=&#39;qa-sandbox-1&prime;,
+MASTER_USER=&#39;rep&#39;,
+MASTER_PASSWORD=&#39;logzgh&#39;,
+MASTER_LOG_FILE=&#39;mysql-bin.000007&prime;,
+MASTER_LOG_POS=471632;</code></pre>
+<p></p><code> </code>
+<p><code>mysql&gt; START SLAVE；</code></p>执行这些程序后，从服务器应连接主服务器，并补充自从快照以来发生的任何更新。如果你忘记设置主服务器的server-id值，从服务器不能连接主服务器。
+<p></p>
+<p>注释：为了保证事务InnoDB复制设置的最大可能的耐受性和一致性，应在主服务器的my.cnf文件中使用innodb_flush_log_at_trx_commit=1和sync-binlog=1。</p>
+<p>代码如下:</p>
+<pre>
+
+<code>mysql&gt; show variables; (检查是否read-only，该选项令slave除了slave线程或者拥有SUPER权限用户之外的都不能更新数据，确保slave不会接受来自其他客户端的更新。)
+mysql&gt; show processlist; (检查是否slave-start)</code></pre>
+<p></p>
+<p>在启动mysql的同时启动slave：</p>
+<p>代码如下:</p>
+<pre>
+<code>mysqld_safe –user=mysql –read-only &amp; (启动MySQL服务器，同时启动slave的I/O线程)</code></pre>
+<p></p><code class="hljs"> </code>
+<p><code>mysql&gt; SHOW SLAVE STATUSG;</code></p>
+<p></p>
+<p>5.切换slave为master，在slave上：</p>
+<p>代码如下:</p>
+<pre>
+<code>mysql&gt; STOP SLAVE;
+mysql&gt; RESET MASTER;</code></pre><strong>五.复制启动选项</strong>
+<p></p>
+<p>&ndash;read_only该选项让从服务器只允许来自从服务器线程或具有SUPER权限的用户的更新。可以确保从服务器不接受来自客户的更新。</p>
+<p>&ndash;replicate_do_db=db_name告诉从服务器只做默认数据库(由USE所选择)为db_name的语句的复制。要指定多个数据库，应多次使用该选项，每个数据库使用一次。请注意不复制跨数据库的语句</p>
+<p>&ndash;replicate_do_table=db_name.tbl_name告诉从服务器线程只做对指定表的复制。要指定多个表，应多次使用该选项，每个表使用一次。同&ndash;replicate-do-db对比，允许跨数据库更新。</p>
+<p>&ndash;replicate_ignore_db=db_name告诉从服务器不要复制默认数据库(由USE所选择)为db_name的语句。要想忽略多个数据库，应多次使用该选项，每个数据库使用一次。</p>
+<p>&ndash;replicate-ignore-table=db_name.tbl_name告诉从服务器线程不要复制更新指定表的任何语句(即使该语句可能更新其它的表)。要想忽略多个表，应多次使用该选项，每个表使用一次。</p>
+<p>&ndash;replicate_wild_do_table=db_name.tbl_name告诉从服务器线程限制复制更新的表匹配指定的数据库和表名模式的语句。模式可以包含&lsquo;%&#39;和&lsquo;_&#39;通配符，与LIKE模式匹配操作符具有相同的含义。要指定多个表，应多次使用该选项，每个表使用一次。该选项可以跨数据库进行更新。</p>
+<p>&ndash;replicate_wild_ignore_table=db_name.tbl_name告诉从服务器线程不要复制表匹配给出的通配符模式的语句。要想忽略多个表，应多次使用该选项，每个表使用一次。该选项可以跨数据库进行更新。</p>
+<p>&ndash;replicate_rewrite_db=from_name-&gt;to_name告诉从服务器如果默认数据库(由USE所选择)为主服务器上的from_name，则翻译为to_name。只影响含有表的语句</p>
+<p>&ndash;report_host=slave_name从服务器注册过程中报告给主服务器的主机名或IP地址。该值出现在主服务器上SHOW SLAVE HOSTS的输出中。如果不想让从服务器自己在主服务器上注册，则不设置该值。</p>
+<p>&ndash;report_port=slave_port连接从服务器的TCP/IP端口号，从服务器注册过程中报告给主服务器。</p>
+<p>&ndash;skip_slave_start告诉从服务器当服务器启动时不启动从服务器线程。使用START SLAVE语句在以后启动线程。</p>
+<p>&ndash;slave_skip_errors=[err_code1,err_code2,&hellip; | all]通常情况，当出现错误时复制停止，这样给你一个机会手动解决数据中的不一致性问题。该选项告诉从服务器SQL线程当语句返回任何选项值中所列的错误时继续复制。例如：&ndash;slave-skip-errors=1062,1053&ndash;slave-skip-errors=all</p>
+<p><strong>六、不停机配置复制的方法</strong></p>
+<p>方法一：如果你在某时间点做过主服务器备份并且记录了相应快照的二进制日志名和偏移量(通过SHOW MASTER STATUS命令的输出)，采用下面的步骤：</p>
+<p>1. 确保从服务器分配了一个唯一的服务器ID号。2. 将备份文件拷到从服务器上。3. 在从服务器上执行下面的语句，为每个选项填入适当的值：</p>
+<p>代码如下:</p>
+<pre>
+<code>mysql&gt; CHANGE MASTER TO
+-&gt; MASTER_HOST=&#39;master_host_name&#39;,
+-&gt; MASTER_USER=&#39;master_user_name&#39;,
+-&gt; MASTER_PASSWORD=&#39;master_pass&#39;,
+-&gt; MASTER_LOG_FILE=&#39;recorded_log_file_name&#39;,
+-&gt; MASTER_LOG_POS=recorded_log_position;</code></pre>
+<p></p>
+<p>4.在从服务器上执行START SLAVE语句。</p>
+<p>如果你没有备份主服务器，这里是一个创建备份的快速程序。所有步骤都应该在主服务器主机上执行。</p>
+<p>1. 发出该语句：</p>
+<p>代码如下:</p>
+<pre>
+<code>mysql&gt; FLUSH TABLES WITH READ LOCK；</code></pre>2. 仍然加锁时，执行该命令（或它的变体）：
+<p>代码如下:</p>
+<pre>
+<code>shell&gt; tar zcf /tmp/backup.tar.gz /var/lib/mysql</code></pre>并拷到从服务器上。3. 发出该语句并且确保记录了以后用到的输出：
+<p>代码如下:</p>
+<pre>
+<code>mysql&gt;SHOW MASTER STATUS；</code></pre>4. 释放锁：
+<p>代码如下:</p>
+<pre>
+<code>mysql&gt; UNLOCK TABLES；</code></pre>
+<p></p>
+<p>方法二：</p>
+<p>一个可选择的方法是，转储主服务器的SQL来代替前面步骤中的二进制复制。要这样做，你可以在主服务器上使用mysqldump &ndash;master-data，以后装载SQL转储到到你的从服务器。然而，这比进行二进制复制速度慢。</p>
+<p><strong>七、其他</strong></p>
+<p>1.不能从使用新二进制日志格式的主服务器向使用旧二进制日志格式的从服务器复制。2.升级从服务器时，应先关闭从服务器，升级到相应5.1.x版本，然后重启从服务器并重新开始复制。5.1版本的从服务器能够读取升级前写入的旧的中继日志并执行日志中包含的语句。升级后从服务器创建的中继日志为5.1格式。</p>
+<p>3.必须在主服务器和从服务器上总是使用相同的全局字符集和校对规则(&ndash;default-character-set、&ndash;default- collation)。否则，会在从服务器上遇到复制键值错误，因为在主服务器的字符集中被认为是唯一的键值在从服务器的字符集中可能不是唯一的。4.Q：从服务器需要始终连接到主服务器吗？A：不，不需要。从服务器可以宕机或断开连接几个小时甚至几天，重新连接后获得更新信息。</p>
+<p>5.Q：我怎样知道从服务器与主服务器的最新比较? 换句话说，我怎样知道从服务器复制的最后一个查询的日期？A：你可以查看SHOW SLAVE STATUS语句的Seconds_Behind_Master列的结果。</p>
+<p>6. Q：我怎样强制主服务器阻塞更新直到从服务器同步？A：使用下面的步骤：1. 在主服务器上，执行这些语句：</p>
+<p>代码如下:</p>
+<pre>
+<code>mysql&gt; FLUSH TABLES WITH READ LOCK;
+mysql&gt; SHOW MASTER STATUS;</code></pre>记录SHOW语句的输出的日志名和偏移量。这些是复制坐标。
+<p></p>
+<p>2.在从服务器上，发出下面的语句，其中Master_POS_WAIT()函数的参量是前面步骤中的得到的复制坐标值：mysql&gt; SELECT MASTER_POS_WAIT(&#39;log_name&#39;, log_offset);SELECT语句阻塞直到从服务器达到指定的日志文件和偏移量。此时，从服务器与主服务器同步，语句返回。</p>
+<p>3.在主服务器上，发出下面的语句允许主服务器重新开始处理更新：</p>
+<p>代码如下:</p>
+<pre>
+<code>mysql&gt; UNLOCK TABLES；</code></pre>
+<p></p>
+<p>7.Q：怎样通过复制来提高系统的性能？A：你应将一个服务器设置为主服务器并且将所有写指向该服务器。然后根据预算配置尽可能多的从服务器以及栈空间，并且在主服务器和从服务器之间分发读取操作。你也可以用&ndash;skip-innodb、&ndash;skip-bdb、&ndash;low-priority-updates以及&ndash;delay-key- write=ALL选项启动从服务器，以便在从服务器端提高速度。在这种情况下，为了提高速度，从服务器使用非事务MyISAM表来代替InnoDB和 BDB表。</p>
+
+<p>注：关于MySQL主从复制的原理及配置方法（比较详细）的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2156.html'>MySQL SELECT FOR UPDATE语句使用示例</a><a>下一篇</a><a href='/mysql/biji/2158.html'>MySQL ON DUPLICATE KEY UPDATE语句示例</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

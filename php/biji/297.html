@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Asp.Net 网站优化系列之数据库优化措施 使用主从库（全）_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="网站规模到了一定程度之后，该分的也分了，该优化的也做了优化，但是还是不能满足业务上对性能的要求；这时候我们可以考虑使用主从库。<br />
+<br />
+主从库是两台服务器上的两个数据库，主库以最" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/122.html"></a></li><li><a href="/php/phpbiji/123.html"></a></li><li><a href="/php/phpbiji/124.html"></a></li><li><a href="/php/phpbiji/125.html"></a></li><li><a href="/php/phpbiji/126.html"></a></li><li><a href="/php/phpbiji/127.html"></a></li><li><a href="/php/phpbiji/128.html"></a></li><li><a href="/php/phpbiji/129.html"></a></li><li><a href="/php/phpbiji/130.html"></a></li><li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Asp.Net 网站优化系列之数据库优化措施 使用主从库（全）</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>网站规模到了一定程度之后，该分的也分了，该优化的也做了优化，但是还是不能满足业务上对性能的要求；这时候我们可以考虑使用主从库。<br />
+<br />
+主从库是两台服务器上的两个数据库，主库以最</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span>网站规模到了一定程度之后，该分的也分了，该优化的也做了优化，但是还是不能满足业务上对性能的要求；这时候我们可以考虑使用主从库。
+<P></P>
+<P>主从库是两台服务器上的两个数据库，主库以最快的速度做增删改操作+最新数据的查询操作；从库负责查询较旧数据，做一些对实效性要求较小的分析，报表生成的工作。这样做将数据库的压力分担到两台服务器上从而保证整个系统响应的及时性。</P>
+<P>SQL Server提供了复制机制来帮我们实现主从库的机制。我们看下如何在sql server 2005中实践：</P>
+<P>实践前需要新创建一个Test的数据库，这个库中建一个测试表。</P>
+<P>1. 打开sql server企业管理器，在对象资源管理器里面选择复制à本地发布，右键选择新建发布<BR> </P>
+<P>2. 打开新建发布向导，点下一步，选择发布数据的数据库<BR><br><br>3. 我们选择Test数据库，并点击下一步，选择发布类型<BR><br><br>这里我们选择的是事务性发布，事务性发布保证数据在做更新之后尽可能快的分发到订阅服务器上。有关其他几种发布类型的使用场景请参考msdn<BR>4. 点击下一步，选择要发布的对象，这里我们只对表进行发布<BR> <BR>5. 点击下一步进入筛选数据设置，这里我们要复制表的所有数据所以不做设置<BR> <BR>6. 点击下一步，指定何时运行快照，我们选择初始话数据，并选择默认的运行快照频率<BR> <BR>7. 继续下一步，设置快照代理的运行账户，我们选择sql server agent账户<BR> <BR>8. 点击下一步选择创建发布，再次点击下一步设置发布的名称<BR> <BR>9. 点击完成，完成发布的设置，并创建发布，现在在本地发布出新添加了我们创建的发布<BR> </P>
+<P>现在成功创建了发布，我们还需要创建订阅：在本地订阅文件夹上右击新建订阅，通过向导可以很容易的创建订阅，创建订阅时可以选择以发布者推送或者订阅者主动的方式创建。具体步骤如下：<BR>1. 通过右键菜单打开新建订阅，点击下一步，选择我们刚刚创建的发布作为订阅源 </P>
+<P><BR>2. 选择是以推送还是以主动请求的方式同步数据，我们选择主动订阅<BR> <BR>3. 设置执行分发代理的账户<BR> <BR>4. 设置代理请求同步的频率<BR> <BR>5. 设定是否立即做数据的初始化操作<BR> <BR>6. 完成创建订阅</P>
+<P></P>
+<P>创建完成之后，我们可以通过在主库表中插入n条数据，然后在从库中查询的方式验证复制是否成功。</P>
+<P>在Sql server2005中的复制创建起来很简单，我们需要根据业务需要设定复制的类型和同步的频率，下面我们谈谈如何有效的在程序中使用主从库。<br><br>主从库之间是一种发布订阅的关系，发布者和订阅者之间并非实时同步的，通常会有几分钟的延时，更有甚者会有几个小时的延时。所以我们需要通过合理的使用来避开有延时这个问题。 <br><br>我们希望主库尽可能的少参与查询，来提高写的及时性；同时要让从库在不影响读出数据的准确及时的前提下尽可能的分担主库的压力。 <br><br>主从两个库需要在配置文件中配置两个连接字符串，CONN_Master和CONN_Slave。我们需要设定一些规则决定当前的查询应该从主库查还是需要从从库查。这个规则没有定式，只能根据业务需要来确定。下面我举几个例子来说明： <br><br>1. 以豆瓣读书书的详细页为假定场景，你可以点击这里看下页面的结构（我不是豆瓣的技术，在这里只是拿这个页面举例） <BR>我们来分析呈现这个页面需要的数据和这些数据的实效性要求 <BR>1） 书的详细信息 时效性要求：要求及时 <BR>2） 豆瓣成员的常用标签 实效性：不需要很及时 <BR>3） 喜欢读这本书的人也喜欢读的书 属于分析数据，不需要很及时 <BR>4） 最新书评 要求及时 <BR>5） 读这本书的几个用户 及时性不高 <BR>6） 喜欢这本书的人常去的小组 属于分析数据不需要很及时 <BR>从上面的分析可以看出只有1），4）两项数据需要从主库读，而2），3），5），6）为非及时数据从从库读取即可。当然我们可以对这些实效性不高的数据做缓存处理。 <br><br>2. 以论坛帖子列表页面为假定场景，玩论坛的人都喜欢顶贴，把自己的帖子顶到第一页让更多的人关注，而对于50页之后的帖子则反读的人很少；我们可以根据这个业务逻辑特征来决定在用户访问前50页帖子列表数据时从主库读，而当用户访问超过50页之后的数据时则从从库进行查询。 <br><br>3. 以订单为例，通常超过三个月的订单就不会再有变化了，假定我们把订单号设计为日期格式时，根据订单号去查询订单时就可以根据订单号来决定该访问主库还是从库。 <br><br>举了几个适用的场景，我们以第三个场景为例，写一段简单的示意代码看下 <BR><div class="codetitle"><span style="CURSOR: pointer" onclick="doCopy('code17728')"><U>复制代码</U></span> 代码如下:</div><div class="codebody" id="code17728"> <BR>//orderNo 的格式为 20100528120105000001 即yyyyMMddHHmmss + 序号 <BR>public OrderInfo GetOrder(string orderNo) { <BR>string connString = ConnStringGetter.GetForOrder(orderNo); <BR>using (SqlConnection conn = new SqlConnection(connString)) <BR>{ <BR>... <BR>} <BR>} <br><br>public class ConnStringGetter <BR>{ <BR>public static string GetForOrder(string orderNo) { <BR>int year = int.Parse(orderNo.Substring(0,4)); <BR>int money = int.Parse(orderNo.Substring(4,2)); <BR>int date = int.Parse(orderNo.Substring(6,2)); <BR>DateTime orderTime = new DateTime(year, money, date); <br><br>TimeSpan ts = DateTime.Now - orderTime; <BR>//根据订单的时间决定使用主库还是从库 <BR>if (ts.TotalDays &gt; 30) return ConfigurationManager.ConnectionStrings["CONN_Slave"].ConnectionString; <BR>return ConfigurationManager.ConnectionStrings["CONN_Master"].ConnectionString; <BR>} <BR>} <BR></div> <br><br>正确的使用主从库，可以很好的提升系统的性能。使用主库还是从库的选择权决定在业务逻辑的手里。</P>网站规模到了一定程度之后，该分的也分了，该优化的也做了优化，但是还是不能满足业务上对性能的要求；这时候我们可以考虑使用主从库。
+<P></P>
+<P>主从库是两台服务器上的两个数据库，主库以最快的速度做增删改操作+最新数据的查询操作；从库负责查询较旧数据，做一些对实效性要求较小的分析，报表生成的工作。这样做将数据库的压力分担到两台服务器上从而保证整个系统响应的及时性。</P>
+<P>SQL Server提供了复制机制来帮我们实现主从库的机制。我们看下如何在sql server 2005中实践：</P>
+<P>实践前需要新创建一个Test的数据库，这个库中建一个测试表。</P>
+<P>1. 打开sql server企业管理器，在对象资源管理器里面选择复制à本地发布，右键选择新建发布<BR> </P>
+<P>2. 打开新建发布向导，点下一步，选择发布数据的数据库<BR><br><br>3. 我们选择Test数据库，并点击下一步，选择发布类型<BR><br><br>这里我们选择的是事务性发布，事务性发布保证数据在做更新之后尽可能快的分发到订阅服务器上。有关其他几种发布类型的使用场景请参考msdn<BR>4. 点击下一步，选择要发布的对象，这里我们只对表进行发布<BR> <BR>5. 点击下一步进入筛选数据设置，这里我们要复制表的所有数据所以不做设置<BR> <BR>6. 点击下一步，指定何时运行快照，我们选择初始话数据，并选择默认的运行快照频率<BR> <BR>7. 继续下一步，设置快照代理的运行账户，我们选择sql server agent账户<BR> <BR>8. 点击下一步选择创建发布，再次点击下一步设置发布的名称<BR> <BR>9. 点击完成，完成发布的设置，并创建发布，现在在本地发布出新添加了我们创建的发布<BR> </P>
+<P>现在成功创建了发布，我们还需要创建订阅：在本地订阅文件夹上右击新建订阅，通过向导可以很容易的创建订阅，创建订阅时可以选择以发布者推送或者订阅者主动的方式创建。具体步骤如下：<BR>1. 通过右键菜单打开新建订阅，点击下一步，选择我们刚刚创建的发布作为订阅源 </P>
+<P><BR>2. 选择是以推送还是以主动请求的方式同步数据，我们选择主动订阅<BR> <BR>3. 设置执行分发代理的账户<BR> <BR>4. 设置代理请求同步的频率<BR> <BR>5. 设定是否立即做数据的初始化操作<BR> <BR>6. 完成创建订阅</P>
+<P></P>
+<P>创建完成之后，我们可以通过在主库表中插入n条数据，然后在从库中查询的方式验证复制是否成功。</P>
+<P>在Sql server2005中的复制创建起来很简单，我们需要根据业务需要设定复制的类型和同步的频率，下面我们谈谈如何有效的在程序中使用主从库。<br><br>主从库之间是一种发布订阅的关系，发布者和订阅者之间并非实时同步的，通常会有几分钟的延时，更有甚者会有几个小时的延时。所以我们需要通过合理的使用来避开有延时这个问题。 <br><br>我们希望主库尽可能的少参与查询，来提高写的及时性；同时要让从库在不影响读出数据的准确及时的前提下尽可能的分担主库的压力。 <br><br>主从两个库需要在配置文件中配置两个连接字符串，CONN_Master和CONN_Slave。我们需要设定一些规则决定当前的查询应该从主库查还是需要从从库查。这个规则没有定式，只能根据业务需要来确定。下面我举几个例子来说明： <br><br>1. 以豆瓣读书书的详细页为假定场景，你可以点击这里看下页面的结构（我不是豆瓣的技术，在这里只是拿这个页面举例） <BR>我们来分析呈现这个页面需要的数据和这些数据的实效性要求 <BR>1） 书的详细信息 时效性要求：要求及时 <BR>2） 豆瓣成员的常用标签 实效性：不需要很及时 <BR>3） 喜欢读这本书的人也喜欢读的书 属于分析数据，不需要很及时 <BR>4） 最新书评 要求及时 <BR>5） 读这本书的几个用户 及时性不高 <BR>6） 喜欢这本书的人常去的小组 属于分析数据不需要很及时 <BR>从上面的分析可以看出只有1），4）两项数据需要从主库读，而2），3），5），6）为非及时数据从从库读取即可。当然我们可以对这些实效性不高的数据做缓存处理。 <br><br>2. 以论坛帖子列表页面为假定场景，玩论坛的人都喜欢顶贴，把自己的帖子顶到第一页让更多的人关注，而对于50页之后的帖子则反读的人很少；我们可以根据这个业务逻辑特征来决定在用户访问前50页帖子列表数据时从主库读，而当用户访问超过50页之后的数据时则从从库进行查询。 <br><br>3. 以订单为例，通常超过三个月的订单就不会再有变化了，假定我们把订单号设计为日期格式时，根据订单号去查询订单时就可以根据订单号来决定该访问主库还是从库。 <br><br>举了几个适用的场景，我们以第三个场景为例，写一段简单的示意代码看下 <BR><span class="codetitle"><span style="CURSOR: pointer" onclick="doCopy('code17728')"><U>复制代码</U></span> 代码如下:</span><span class="codebody" id="code17728"> <BR>//orderNo 的格式为 20100528120105000001 即yyyyMMddHHmmss + 序号 <BR>public OrderInfo GetOrder(string orderNo) { <BR>string connString = ConnStringGetter.GetForOrder(orderNo); <BR>using (SqlConnection conn = new SqlConnection(connString)) <BR>{ <BR>... <BR>} <BR>} <br><br>public class ConnStringGetter <BR>{ <BR>public static string GetForOrder(string orderNo) { <BR>int year = int.Parse(orderNo.Substring(0,4)); <BR>int money = int.Parse(orderNo.Substring(4,2)); <BR>int date = int.Parse(orderNo.Substring(6,2)); <BR>DateTime orderTime = new DateTime(year, money, date); <br><br>TimeSpan ts = DateTime.Now - orderTime; <BR>//根据订单的时间决定使用主库还是从库 <BR>if (ts.TotalDays &gt; 30) return ConfigurationManager.ConnectionStrings["CONN_Slave"].ConnectionString; <BR>return ConfigurationManager.ConnectionStrings["CONN_Master"].ConnectionString; <BR>} <BR>} <BR></span> <br><br>正确的使用主从库，可以很好的提升系统的性能。使用主库还是从库的选择权决定在业务逻辑的手里。</P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/296.html'>Oracle8网站应用简介（NT+IIS+ASP+ORACLE）</a><a>下一篇</a><a href='/php/biji/298.html'>用CSS控制鼠标样式的显示</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

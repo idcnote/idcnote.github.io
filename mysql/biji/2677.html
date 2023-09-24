@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server统计信息更新时采样百分比对数据预估准确性的影响_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server统计信息更新时采样百分比对数据预估准确性的影响，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server统计信息更新时采样百分比对数据预估准确性的影响</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:39:33                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server统计信息更新时采样百分比对数据预估准确性的影响，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server统计信息更新时采样百分比对数据预估准确性的影响，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p></p>
+<h3>为什么要写统计信息</h3>
+<p></p>
+<p>最近看到园子里有人写统计信息，楼主也来凑热闹。</p>
+<p>话说经常做数据库的，尤其是做开发的或者优化的，统计信息造成的性能问题应该说是司空见惯。</p>
+<p>当然解决办法也并非一成不变，&ldquo;一招鲜吃遍天&rdquo;的做法已经行不通了（题外话：整个时代不都是这样子吗）</p>
+<p>当然，还是那句话，既然写了就不能太俗套，写点不一样的，本文通过分析一个类似实际案例来解读统计信息的更新的相关问题。</p>
+<p>对于实际问题，不但要解决问题，更重要的是要从理论上深入分析，才能更好地驾驭数据库。</p>
+<p></p>
+<h3>何时更新统计信息</h3>
+<p></p>
+<p>（1）查询执行缓慢，或者查询语句突然执行缓慢。这种场景很可能是由于统计信息没有及时更新而遭遇了参数嗅探的问题。</p>
+<p>（2）当大量数据更新（INSERT/DELETE/UPDATE）到升序或者降序的列时，这种情况下，统计信息直方图可能没有及时更新。</p>
+<p>（3）建议在除索引维护（当你重建、整理碎片或者重组索引时，数据分布不会改变）外的维护工作之后更新统计信息。</p>
+<p>（4）数据库的数据更改频繁，建议最低限度每天更新一次统计信息。数据仓库可以适当降低更新统计信息的频率。</p>
+<p>（5）当执行计划出现统计信息缺失警告时，需要手动建立统计信息</p>
+<p></p>
+<h3>统计信息基础</h3>
+<p></p>
+<p>首先说一个老掉牙的话题，统计信息的更新阈值：</p>
+<p>1，表格从没有数据变成有大于等于1条数据。</p>
+<p>2，对于数据量小于500行的表格，当统计信息的第一个字段数据累计变化量大于500以后。</p>
+<p>3，对于数据量大于500行的表格，当统计信息的第一个字段数据累计变化量大于500 + (20%&times;表格数据总量)以后。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>做个查询，触发统计信息更新，rowmodct归0（继续累积直到下一个触发的阈值，触发更新之后再次归0）</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>关于统计信息&ldquo;过期&rdquo;的问题</h3>
+<p></p>
+<p>下面开始正文，网络上很多关于统计信息的文章，提到统计信息，很多都是统计信息过期的问题，然后跟新之后怎么怎么样</p>
+<p>尤其在触发统计信息自动更新阈值的第三个区间：也就是说数据累计变化超过20%之后才能自动触发统计信息的更新</p>
+<p>这一点对于大表来说通常影响是比较大的，比如1000W的表，变化超过20%也+500也就是200W+500行之后才触发统计信息更新，这个阈值区间的自动触发阈值，绝大多数情况是不能接受的，于是对于统计信息的诊断就变成了是否&ldquo;过期&rdquo;</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>判断统计信息是否过期，然后通过更新统计信息来促使执行计划更加准确地预估行数，这一点本无可厚非</p>
+<p>但是，问题也就出在这里了：那么怎么更新统计信息？一成不变的做法是否可行，这才是问题的重点。</p>
+<p>当然肯定有人说，我就是按照默认方式更新的，更新完之后SQL也变得更加优化了什么的</p>
+<p>通过update statistics TableName StatisticName更新某一个索引的统计信息，</p>
+<p>或者update statistics TableName更新全表的统计信息</p>
+<p>这种情况下往往是小表上可以这么做，当然对于大表或者小表没有一个标准值，一切要结合事实来说明问题</p>
+<p></p>
+<h3>下面开始本文的主题：</h3>
+<p></p>
+<p>抽象并简化出业务中的一个实际案例，创建这么一张表，类似于订单和订单明细表（主子表），</p>
+<p>这里你可以想象成是一个订单表的子表，Id字段是唯一的，有一个ParentID字段，是非唯一的，</p>
+<p>ParentID类似于主表的Id，测试数据按照一个主表Id对应50条子表明细的规律插入数据</p>
+<p>代码如下：</p>
+<pre>
+<code>
+CREATE TABLE [dbo].[TestStaitisticsSample](
+ [Id] [int] IDENTITY(1,1) NOT NULL,
+ [ParentId] [int] NULL,
+ [OtherColumn] [varchar](50) NULL
+) 
+
+
+declare @i int=0
+while(@i&lt;100000000)
+begin
+
+ insert into [TestStaitisticsSample](ParentId,OtherColumn)values(@i,NEWID())
+ /*
+ 中间插入50条，也即一个主表Id对应50条子表明细
+ */
+ insert into [TestStaitisticsSample](ParentId,OtherColumn)values(@i,NEWID())
+
+ set @i=@i+1
+end
+go
+
+create nonclustered index [idx_ParentId] ON [dbo].[TestStaitisticsSample]
+(
+ [ParentId] 
+)
+go</code></pre>
+<p>本来打算插入1亿条的，中间我让他执行我睡午觉去了，醒来之后发现SSMS挂掉了，挂掉了算了，数据也接近1亿了，能说明问题就够了</p>
+<p>现在数据分布的非常明确，就是一个ParentId有50条数据，这一点首先要澄清。</p>
+<p>测试数据写入，以及所创建完成之后来更新idx_ParentId 索引上的统计信息，就按照默认的方式来更新，然后来观察统计信息</p>
+<p></p>
+<h3>默认方式更新统计信息（未指定采样密度）</h3>
+<p></p>
+<p>表里现在是8000W多一点记录，默认更新统计信息时取样行数是462239行，那么这个统计信息靠谱吗？</p>
+<p>上面说了，造数据的时候，我一个ParentId对应的是50行记录，这一点非常明确，他这里统计出来的多少？</p>
+<p>1，对于取样的RANG_HI_Key值，比如51632，预估了862.212行</p>
+<p>2，对于AVG_RANG_ROW，比如45189到51632之间的每个Id的数据对应的数据行，预估是6682.490行</p>
+<p>之前造数据的时候每个Id都是50行，这里的预估靠谱吗，这个误差是无法接受的，</p>
+<p>很多时候，对于大表，采用默认（未指定采样密度）的情况下，默认的采样密度并不足以准确地描述数据分布情况</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>指定一个采样密度的方式更新统计信息（20%采样）</h3>
+<p></p>
+<p>这一次用20%的采样密度，可以看到取样的行数是15898626行</p>
+<p>1，对于取样的RANG_HI_Key值，比如216305，他给我预估了24.9295行</p>
+<p>2，对于AVG_RANG_ROW，比如186302到216305之间的每个Id的行数，预估是197.4439行</p>
+<p>观察比如上面默认的取样密度，这一次不管是RANG_HI_Key还是AVG_RANG_ROW得预估，都有不一个非常高的下降，开始趋于接近于真实的数据分布（每个Id有50行数据）</p>
+<p>整体上看，但是这个误差还是比较大的，如果继续提高采样密度，看看有什么变化？</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p></p>
+<h3>指定一个采样密度的方式更新统计信息（70%采样）　</h3>
+<p></p>
+<p>这一次用70%的采样密度，可以看到取样行数是55962290行</p>
+<p>1，对于取样的RANG_HI_Key值，比如1978668，预估了71.15906行</p>
+<p>2，对于AVG_RANG_ROW，比如1124024到1978668之间的每个Id，预估为61.89334行</p>
+<p>可以说，对于绝大多数值得预估（AVG_RANG_ROW），都愈发接近于真实值</p>
+<p style="text-align: center">　　【图片暂缺】</p>
+<p></p>
+<h3>指定一个采样密度的方式更新统计信息（100%采样）</h3>
+<p></p>
+<p>可以看到，取样行数等于总行数，也就是所谓的全部（100%）取样</p>
+<p>看一下预估结果：</p>
+<p>比如Id=3981622，预估是50行，3981622与4131988之间的Id的行数，预估为49.99874行，基本上等于真实数据分布</p>
+<p>这个就不做过多解释了，基本上跟真实值是一样的，只是AVG_RANG_ROW有一点非常非常小的误差。</p>
+<p style="text-align: center">【图片暂缺】</p>
+<p>取样密度高低与统计信息准确性的关系</p>
+<p>至于为什么默认取样密度和较低取样密度情况下，误差很大的情况我简单解释一下，也非常容易理解，因为&ldquo;子表&rdquo;中存储主表ID的ParentId值允许重复，在存在重复值的情况下，如果采样密度不够，极有可能造成&ldquo;以偏概全&rdquo;的情况</p>
+<p>比如对10W行数据取样1W行，原本10W行数剧中有2000个不重复的ParentId值，如果是10%的取样，在1W行取样数据中，因为密度不够大，只找到了20个不重复的ParentId值，那么就会认为每一行ParentId对应500行数据，这根实际的分布的每个ParentId有一个非常大的误差范围</p>
+<p>如果提高采样密度，那么这个误差就会越来越小。　　</p>
+<p>更新统计信息的时候，高比例的取样是否可取（可行）　</p>
+<p>因此在观察统计信息是否过期，决定更新统计信息的时候，一定要注意取样的密度，就是说表中有多少行数据，统计信息更新的时候取了多少采样行，密度有多高。</p>
+<p>当然，肯定有人质疑，那你说采样密度越高，也就是取样行数越高越准确，那么我就100%取样。</p>
+<p>这样行不行？</p>
+<p>还要分情况看，对于几百万或者十几万的小表来说，当然没有问题，这也是为什么数据库越小，表数据越少越容易掩盖问题的原因。</p>
+<p>对于大表，上亿的，甚至是十几亿的，你按照100%采样试一试？　</p>
+<p></p>
+<h3>举个实际例子：</h3>
+<p></p>
+<p>我这里对一个稍微大一点的表做个全表统计信息的更新，测试环境，服务器没负载，存储是比普通的机械硬盘要强很多的SAN存储</p>
+<p>采用full scan，也就是100%采样的更新操作，看一下，仅仅这一样表的update statistic操作就花费了51分钟</p>
+<p>试想一下，对一个数百GB甚至数TB的库来说，你敢这么搞一下。</p>
+<p style="text-align: center">　　【图片暂缺】</p>
+<p>扯一句，这个中秋节过的，折腾了大半天，话说做测试过程中电脑有开始有点卡，</p>
+<p>做完测试之后停掉SQLServer服务，瞬间内存释放了7个G，可见这些个操作还是比较耗内存的</p>
+<p>　【图片暂缺】　　</p>
+<p></p>
+<h3>总结：</h3>
+<p></p>
+<p>本文通过对于某些场景下，在对较大的表的索引统计信息更新时，采样密度的分析，阐述了不同采样密度下，对统计信息预估的准确性的影响。</p>
+<p>当然对于小表，一些都好说。</p>
+<p>随着单表数据量的增加，统计信息的更新策略也要做相应的调整，</p>
+<p>不光要看统计信息是否&ldquo;过期&rdquo;，更重要的是注意统计信息更新时究竟取样了全表的多少行数据做统计。</p>
+<p>对于大表，采用FULL SCAN或者100%采样往往是不可行的，这时候就需要做出权衡，做到既能准确地预估，又能够以合理的代价执行。</p>
+<p>好了，以上就是这篇文章的全部内容了，希望本文的内容对大家的学习或者工作具有一定的参考学习价值，如果有疑问大家可以留言交流，谢谢大家对512笔记的支持</p>
+
+<p>注：关于SQL Server统计信息更新时采样百分比对数据预估准确性的影响的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2676.html'>SQL Server日志进行收缩的解决办法</a><a>下一篇</a><a href='/mysql/biji/2678.html'>SQL Server跨数据库实现数据交流的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

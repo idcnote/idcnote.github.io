@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL8.0 异步复制的三种的深入分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL8.0 异步复制的三种的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+本实验中分别" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL8.0 异步复制的三种的深入分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:14:48                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL8.0 异步复制的三种的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+本实验中分别</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL8.0 异步复制的三种的深入分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>本实验中分别针对空库、脱机、联机三种方式，配置一主两从的mysql标准异步复制。只做整服务器级别的复制，不考虑对个别库表或使用过滤复制的情况。</p>
+<p>实验环境</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@slave2 ~]# cat /etc/hosts
+192.168.2.138 master
+192.168.2.192 slave1
+192.168.2.130 slave2
+mysql&gt; select version();
++-----------+
+| version() |
++-----------+
+| 8.0.16  |
++-----------+
+1 row in set (0.00 sec)
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p></p>
+<h3>一、空库</h3>
+<p></p>
+<p>1.查看主库二进制信息</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File       | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql-bin.000004 |   155 |       |         |          |
++------------------+----------+--------------+------------------+-------------------+
+1 row in set (0.00 sec)
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>2.在主库上建立复制用户</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; create user 'repl'@'%' identified with mysql_native_password by 'wwwwww';
+Query OK, 0 rows affected (0.03 sec)
+mysql&gt; grant replication client,replication slave on *.* to 'repl'@'%';
+Query OK, 0 rows affected (0.04 sec)
+mysql&gt; flush privileges;
+Query OK, 0 rows affected (0.00 sec)
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>3.在从库创建主库信息</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; stop slave;
+mysql&gt; change master to master_host='192.168.2.138', master_port=3306, master_user='repl', master_password='wwwwww', master_log_file='mysql-bin.000004', master_log_pos=155;
+Query OK, 0 rows affected, 2 warnings (0.00 sec)
+mysql&gt; start slave;
+Query OK, 0 rows affected (0.00 sec)
+mysql&gt; show slave status\G
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>刚才我们并没有在从库上建立repl用户，但由于create user语句是在起始位置点后执行的，因此可以正常复制到从库，查询mysql.user表即可确认。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+sql&gt; select * from mysql.user where user='repl'\G
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p></p>
+<h3>二、脱机</h3>
+<p></p>
+<p>如果数据库已经存在应用数据，但允许一个可接受的脱机时间窗口做复制，这种场景下常用的做法是先直接将主库的数据目录整体拷贝到从库，再启动复制。具体步骤如下。</p>
+<p>1.在master节点创建测试库和测试表</p>
+<p>代码如下：</p>
+<pre>
+<code>
+CREATE DATABASE test;
+Query OK, 1 row affected (0.04 sec)
+mysql&gt; USE test;
+Database changed
+mysql&gt; CREATE TABLE t(id int(10));
+Query OK, 0 rows affected (0.09 sec)
+mysql&gt; INSERT INTO t VALUES (111);
+Query OK, 1 row affected (0.05 sec)
+mysql&gt; INSERT INTO t VALUES (222);
+Query OK, 1 row affected (0.00 sec)
+mysql&gt; INSERT INTO t VALUES (333);
+Query OK, 1 row affected (0.00 sec)
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>2.在主库创建复制用户</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; create user 'repl'@'%' identified with mysql_native_password by 'wwwwww';
+Query OK, 0 rows affected (0.03 sec)
+mysql&gt; grant replication client,replication slave on *.* to 'repl'@'%';
+Query OK, 0 rows affected (0.04 sec)
+mysql&gt; flush privileges;
+Query OK, 0 rows affected (0.00 sec)</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>3.停止复制的所有实例，在master、slave1、slave2分别执行</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@master ~]# ln -s /usr/local/mysql/bin/mysqladmin /usr/bin/mysqladmin
+[root@master ~]# mysqladmin -hlocalhost -uroot -pwwwwww shutdown
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>4.复制数据至slave1、slave2</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@master data]# cd /data
+[root@master data]# scp -r mysql/ slave1:/data/
+[root@master data]# scp -r mysql/ slave2:/data/
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>5.在slave1、slave2从库执行命令,删除auto.cnf文件</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@slave1 mysql]# cd /data/mysql
+[root@slave1 mysql]# rm -rf auto.cnf
+[root@slave2 mysql]# cd /data/mysql
+[root@slave2 mysql]# rm -rf auto.cnf
+ 
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>6.重启实例，在三个节点都需要执行</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@master data]# service mysqld start
+Starting MySQL.. SUCCESS!
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>7.在主库查看二进制日志</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File       | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql-bin.000005 |   155 |       |         |          |
++------------------+----------+--------------+------------------+-------------------+
+1 row in set (0.00 sec)
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>8.在slave1、slave2从库执行命令</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; stop slave;
+Query OK, 0 rows affected (0.01 sec)
+mysql&gt; change master to master_host='192.168.2.138', master_port=3306, master_user='repl', master_password='wwwwww', master_log_file='mysql-bin.000005', master_log_pos=155;
+Query OK, 0 rows affected, 2 warnings (0.02 sec)
+mysql&gt; start slave;
+Query OK, 0 rows affected (0.03 sec)
+mysql&gt; show slave status\G
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>9.在slave1、slave2从库执行命令查看库和表是否同步过来</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; use test;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+Database changed
+mysql&gt; show tables;
++----------------+
+| Tables_in_test |
++----------------+
+| t       |
++----------------+
+1 row in set (0.00 sec)
+mysql&gt; select * from t;
++------+
+| id  |
++------+
+| 111 |
+| 222 |
+| 333 |
++------+
+3 rows in set (0.00 sec)
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p></p>
+<h3>三、mysqldump联机</h3>
+<p></p>
+<p>脱机建立复制的需求太过理想化，大多数情况下，复制是被要求在不影响线上业务的情况下，联机创建的，而且还要求对线上库的影响越小越好。例如，复制过程化中对主库加锁会影响对主库的访问，因此通常是不被允许的。这种场景下有两种备选的复制方案：使用mysqldump程序或使用如XtraBackup的第三方工具。这两种方案有各自的适用场合。使用mysqldump联机建立复制的过程如下。</p>
+<p>1.在主库创建测试的数据库和表</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; CREATE DATABASE test;
+Query OK, 1 row affected (0.04 sec)
+mysql&gt; use test;
+Database changed
+mysql&gt; CREATE TABLE t(id int(10));
+Query OK, 0 rows affected (0.10 sec)
+mysql&gt; INSERT INTO t VALUES(111);
+Query OK, 1 row affected (0.09 sec)
+mysql&gt; INSERT INTO t VALUES(222);
+Query OK, 1 row affected (0.00 sec)
+mysql&gt; INSERT INTO t VALUES(333);
+Query OK, 1 row affected (0.05 sec)
+mysql&gt; INSERT INTO t VALUES(444);
+Query OK, 1 row affected (0.00 sec)</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>2.在主库创建复制用户</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; create user 'repl'@'%' identified with mysql_native_password by 'wwwwww';
+Query OK, 0 rows affected (0.01 sec)
+mysql&gt; grant replication client,replication slave on *.* to 'repl'@'%';
+Query OK, 0 rows affected (0.01 sec)
+mysql&gt; flush privileges;
+Query OK, 0 rows affected (0.01 sec)
+ 
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>3.在slave1、slave2从库创建主库信息</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; change master to master_host='192.168.2.138', master_port=3306, master_user='repl', master_password='wwwwww';
+Query OK, 0 rows affected, 2 warnings (0.04 sec)
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>4.在slave1、slave2从库使用mysqldump命令复制数据</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@slave2 ~]# mysqldump --single-transaction --all-databases --master-data=1 --host=192.168.2.138 --user=root --password=wwwwww --apply-slave-statements | mysql -uroot -pwwwwww -hlocalhost
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysqldump: [Warning] Using a password on the command line interface can be insecure.
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>参数说明</p>
+<p>&ndash;single-transaction参数可以对Innodb表执行非锁定导出。此选项将事务隔离模式设置为REPEATABLE READ，并在转储数据之前向服务器发送START TRANSACTION SQL语句。它仅适用于Innodb等事务表，因为它会在发出START TRANSACTION时转储数据库的一致状态，而不会阻塞任何应用程序。因此这里假定：1. 所有的应用数据表都使用Innodb引擎。2. 所有系统表数据在备份过程中不会发生变化。</p>
+<p>&ndash;master-data参数会导致转储输出包含类似 CHANGE MASTER TO MASTER_LOG_FILE=&lsquo;binlog.000004&#39;, MASTER_LOG_POS=1480; 的SQL语句，该语句指示主库的二进制日志坐标（文件名和位置）。如果选项值为2，则CHANGE MASTER TO语句将写为SQL注释，因此仅提供信息，不会执行。如果参数值为1，则该语句不会写为注释，并在重新加载转储文件时执行。如果未指定选项值，则默认值为1。</p>
+<p>&ndash;apply-slave-statements参数会在CHANGE MASTER TO语句之前添加STOP SLAVE语句，并在输出结尾处添加START SLAVE语句，用来自动开启复制。</p>
+<p>通过管道操作符，导出导入一步进行，不需要中间落盘生成文件。</p>
+<p>5.在从库确认复制状态</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show slave status\G
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>6.在从库查看库和表是否复制成功</p>
+<p>代码如下：</p>
+<pre>
+<code>
+use test;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+Database changed
+mysql&gt; select * from t;
++------+
+| id  |
++------+
+| 111 |
+| 222 |
+| 333 |
+| 444 |
+| 555 |
++------+
+5 rows in set (0.00 sec)
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>mysqldump方式的优点是可以进行部分复制，如在配置文件中定义replicate-do-table=db1.*，则用这种方法可以只复制db1库而忽略其它复制事件。缺点是由于mysqldump会生成主库转储数据的SQL语句，实际是一种逻辑备份方式所以速度较慢，不适用于大库。</p>
+<p></p>
+<h3>四、XtraBackup联机复制</h3>
+<p></p>
+<p>联机建立复制的另一种可选方案是使用XtraBackup。XtraBackup是Percona公司的开源项目，用以实现类似Innodb官方的热备份工具InnoDB Hot Backup的功能，它支持在线热备份，备份时不影响数据读写。到目前为止，最新的版本为Percona XtraBackup 8.0.6，可以从https://www.percona.com/downloads/下载安装包。XtraBackup有很多功能和优点，例如支持全备、增量备份、部分备份；支持压缩备份；备份不影响数据读写、事务等，但是也有缺陷不足：例如不支持脱机备份、不支持直接备份到磁带设备、不支持Cloud Back，MyISAM的备份也会阻塞。不过这些小瑕疵不影响XtraBackup成为一款流行的MySQL备份工具。另外，注意XtraBackup只支持Linux平台，不支持Windows平台。下面演示用XtraBackup联机搭建主从复制的过程，主库已经建立了用于执行复制的用户repl。</p>
+<p>在主库创建复制用户</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; create user 'repl'@'%' identified with mysql_native_password by 'wwwwww';
+Query OK, 0 rows affected (0.01 sec)
+mysql&gt; grant replication client,replication slave on *.* to 'repl'@'%';
+Query OK, 0 rows affected (0.01 sec)
+mysql&gt; flush privileges;
+Query OK, 0 rows affected (0.01 sec)
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>1.在主库和从库都安装XtraBackupv</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@master ~]# yum -y install libev
+[root@master home]# yum localinstall percona-xtrabackup-80-8.0.6-1.el7.x86_64.rpm -y
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>2.配置主库到从库的SSH免密码连接</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@master home]# ssh-keygen 
+Generating public/private rsa key pair.
+Enter file in which to save the key (/root/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /root/.ssh/id_rsa.
+Your public key has been saved in /root/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:GBLbrw17UVck8RyCa/fbYyLkSNZIRc5p+jPQmpkD+bI root@master
+The key's randomart image is:
++---[RSA 2048]----+
+|  .   .o+o+ |
+|   +  +..* . |
+|  o o  o*. o |
+|   . +.o*..  |
+|   ooS+oo .  |
+|    =o=Bo . |
+|   o.=B++  o |
+|    .o..oo..o.|
+|    E  . o .|
++----[SHA256]-----+
+[root@master home]# ssh-copy-id 192.168.2.138
+[root@master home]# ssh-copy-id 192.168.2.192
+[root@master home]# ssh-copy-id 192.168.2.130
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>3.停止从库，并删除从库里面的数据</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@slave1 home]# service mysql stop
+[root@slave2 home]# service mysql stop
+[root@slave1 home]# rm -rf /data/mysql/*
+[root@slave2 home]# rm -rf /data/mysql/*
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>4.备份数据并传输</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@master tmp]# xtrabackup -uroot -pwwwwww --socket=/data/mysql/mysql.sock --no-lock --backup --compress --stream=xbstream --parallel=4 --target-dir=./ | ssh root@192.168.2.192 "xbstream -x -C /data/mysql/ --decompress"
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>执行过程中报错，</p>
+<p>190606 01:21:47 &gt;&gt; log scanned up to (19597291)</p>
+<p>190606 01:21:47 Selecting LSN and binary log position from p_s.log_status</p>
+<blockquote>
+<p>Error: failed to fetch query result SELECT server_uuid, local, replication, storage_engines FROM performance_schema.log_status: Access denied; you need (at least one of) the BACKUP_ADMIN privilege(s) for this operation</p></blockquote>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; grant BACKUP_ADMIN on *.* to 'root'@'%';
+Query OK, 0 rows affected (0.01 sec)
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>行如下命令，删除192.168.2.192:/data/mysql/*的内容，再次执行命令，发现已经正确了。成功执行如下所示：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>这条命令连接主库，进行并行压缩流式备份，同时将备份通过管道操作符传输到从库，并直接解压缩到从库的数据目录。所有操作一条命令完成，不需要中间落盘生成文件。</p>
+<p>5.在从库恢复备份</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@slave1 /]# xtrabackup --prepare --target-dir=/data/mysql
+[root@slave2 /]# xtrabackup --prepare --target-dir=/data/mysql
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>6.在从库查看二进制bin-log日志</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@slave1 mysql]# cat xtrabackup_binlog_info 
+mysql-bin.000008    155
+[root@slave2 mysql]# cat xtrabackup_binlog_info 
+mysql-bin.000009    155
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>7.启动从库</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[root@slave1 data]# service mysqld start
+Starting MySQL... SUCCESS! 
+[root@slave2 data]# service mysqld start
+Starting MySQL... SUCCESS!
+</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>8.创建主库信息，其中的master_log_file和master_log_pos值来自第6步</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; change master to master_host='192.168.2.138', master_port=3306, master_user='repl', master_password='wwwwww', master_log_file='mysql-bin.000008', master_log_pos=155;
+Query OK, 0 rows affected, 2 warnings (0.04 sec)
+mysql&gt; start slave;
+Query OK, 0 rows affected (0.00 sec)
+mysql&gt; show slave status\G</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>9.在从库测试数据</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; use test;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+Database changed
+mysql&gt; select * from t;
++------+
+| id  |
++------+
+| 111 |
+| 222 |
+| 333 |
+| 444 |
+| 555 |
++------+
+5 rows in set (0.00 sec)</code></pre>
+<p>浅谈MySQL8.0 异步复制的三种方式</p>
+<p>XtraBackup是物理复制，性能比mysqldump高的多，而且对主库的影响极小，非常适用于从头联机创建高负载、大数据量、全实例从库的场景。</p>
+<p>到此这篇关于浅谈MySQL8.0 异步复制的三种方式的文章就介绍到这了,更多相关MySQL8.0 异步复制内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL8.0 异步复制的三种的深入分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/282.html'>MySQL从库维护的解决办法</a><a>下一篇</a><a href='/mysql/biji/284.html'>MySQL 字段默认值设置的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

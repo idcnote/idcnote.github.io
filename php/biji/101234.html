@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>详解Java编程中线程同步以及定时启动线程的方法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="使用wait()与notify()实现线程间协作<br />
+<br />
+1. wait()与notify()/notifyAll()<br />
+<br />
+调用sleep()和yield()的时候锁并没有被释放，而调用wait()将释放锁。这样另一个任务（线程）可以获得当" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">详解Java编程中线程同步以及定时启动线程的方法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>使用wait()与notify()实现线程间协作<br />
+<br />
+1. wait()与notify()/notifyAll()<br />
+<br />
+调用sleep()和yield()的时候锁并没有被释放，而调用wait()将释放锁。这样另一个任务（线程）可以获得当</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>使用wait()与notify()实现线程间协作<br />
+1. wait()与notify()/notifyAll()<br />
+</strong>调用sleep()和yield()的时候锁并没有被释放，而调用wait()将释放锁。这样另一个任务（线程）可以获得当前对象的锁，从而进入它的synchronized方法中。可以通过notify()/notifyAll()，或者时间到期，从wait()中恢复执行。<br />
+只能在同步控制方法或同步块中调用wait()、notify()和notifyAll()。如果在非同步的方法里调用这些方法，在运行时会抛出IllegalMonitorStateException异常。<br />
+<strong>2.模拟单个线程对多个线程的唤醒<br />
+</strong>模拟线程之间的协作。Game类有2个同步方法prepare()和go()。标志位start用于判断当前线程是否需要wait()。Game类的实例首先启动所有的Athele类实例，使其进入wait()状态，在一段时间后，改变标志位并notifyAll()所有处于wait状态的Athele线程。<br />
+Game.java<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package concurrency;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
+class Athlete implements Runnable {
+  private final int id;
+  private Game game;
+
+  public Athlete(int id, Game game) {
+   this.id = id;
+   this.game = game;
+  }
+
+  public boolean equals(Object o) {
+   if (!(o instanceof Athlete))
+    return false;
+   Athlete athlete = (Athlete) o;
+   return id == athlete.id;
+  }
+
+  public String toString() {
+   return "Athlete&lt;" + id + "&gt;";
+  }
+
+  public int hashCode() {
+   return new Integer(id).hashCode();
+  }
+
+  public void run() {
+   try {
+    game.prepare(this);
+   } catch (InterruptedException e) {
+    System.out.println(this + " quit the game");
+   }
+  }
+ }
+
+public class Game implements Runnable {
+  private Set&lt;Athlete&gt; players = new HashSet&lt;Athlete&gt;();
+  private boolean start = false;
+
+  public void addPlayer(Athlete one) {
+   players.add(one);
+  }
+
+  public void removePlayer(Athlete one) {
+   players.remove(one);
+  }
+
+  public Collection&lt;Athlete&gt; getPlayers() {
+   return Collections.unmodifiableSet(players);
+  }
+
+  public void prepare(Athlete athlete) throws InterruptedException {
+   System.out.println(athlete + " ready!");
+   synchronized (this) {
+    while (!start)
+    wait();
+    if (start)
+     System.out.println(athlete + " go!");
+   }
+  }
+
+  public synchronized void go() {
+   notifyAll();
+  }
+  
+  public void ready() {
+   Iterator&lt;Athlete&gt; iter = getPlayers().iterator();
+   while (iter.hasNext())
+    new Thread(iter.next()).start();
+  }
+
+  public void run() {
+   start = false;
+   System.out.println("Ready......");
+   System.out.println("Ready......");
+   System.out.println("Ready......");
+   ready();
+   start = true;
+   System.out.println("Go!");
+   go();
+  }
+
+  public static void main(String[] args) {
+   Game game = new Game();
+   for (int i = 0; i &lt; 10; i++)
+    game.addPlayer(new Athlete(i, game));
+   new Thread(game).start();
+  }
+}
+
+</pre>
+</div>
+<p>结果：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+Ready......
+Ready......
+Ready......
+Athlete&lt;0&gt; ready!
+Athlete&lt;1&gt; ready!
+Athlete&lt;2&gt; ready!
+Athlete&lt;3&gt; ready!
+Athlete&lt;4&gt; ready!
+Athlete&lt;5&gt; ready!
+Athlete&lt;6&gt; ready!
+Athlete&lt;7&gt; ready!
+Athlete&lt;8&gt; ready!
+Athlete&lt;9&gt; ready!
+Go!
+Athlete&lt;9&gt; go!
+Athlete&lt;8&gt; go!
+Athlete&lt;7&gt; go!
+Athlete&lt;6&gt; go!
+Athlete&lt;5&gt; go!
+Athlete&lt;4&gt; go!
+Athlete&lt;3&gt; go!
+Athlete&lt;2&gt; go!
+Athlete&lt;1&gt; go!
+Athlete&lt;0&gt; go!
+</pre>
+</div>
+<p><strong>3.模拟忙等待过程<br />
+</strong>MyObject类的实例是被观察者，当观察事件发生时，它会通知一个Monitor类的实例（通知的方式是改变一个标志位）。而此Monitor类的实例是通过忙等待来不断的检查标志位是否变化。<br />
+BusyWaiting.java<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+import java.util.concurrent.TimeUnit;
+
+class MyObject implements Runnable {
+  private Monitor monitor;
+
+  public MyObject(Monitor monitor) {
+   this.monitor = monitor;
+  }
+
+  public void run() {
+   try {
+    TimeUnit.SECONDS.sleep(3);
+    System.out.println("i'm going.");
+    monitor.gotMessage();
+   } catch (InterruptedException e) {
+    e.printStackTrace();
+   }
+  }
+}
+
+class Monitor implements Runnable {
+  private volatile boolean go = false;
+
+  public void gotMessage() throws InterruptedException {
+   go = true;
+  }
+
+  public void watching() {
+   while (go == false)
+    ;
+   System.out.println("He has gone.");
+  }
+
+  public void run() {
+   watching();
+  }
+}
+
+public class BusyWaiting {
+  public static void main(String[] args) {
+   Monitor monitor = new Monitor();
+   MyObject o = new MyObject(monitor);
+   new Thread(o).start();
+   new Thread(monitor).start();
+  }
+}
+
+</pre>
+</div>
+<p>结果：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+i'm going.
+He has gone.
+</pre>
+</div>
+<p><strong>4.使用wait()与notify()改写上面的例子<br />
+</strong>下面的例子通过wait()来取代忙等待机制，当收到通知消息时，notify当前Monitor类线程。<br />
+Wait.java<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package concurrency.wait;
+
+import java.util.concurrent.TimeUnit;
+
+class MyObject implements Runnable {
+  private Monitor monitor;
+
+  public MyObject(Monitor monitor) {
+   this.monitor = monitor;
+  }
+
+</pre>
+</div>
+<p><strong>定时启动线程<br />
+</strong>这里提供两种在指定时间后启动线程的方法。一是通过java.util.concurrent.DelayQueue实现；二是通过java.util.concurrent.ScheduledThreadPoolExecutor实现。<br />
+<strong>1. java.util.concurrent.DelayQueue<br />
+</strong>类DelayQueue是一个无界阻塞队列，只有在延迟期满时才能从中提取元素。它接受实现Delayed接口的实例作为元素。<br />
+&lt;&lt;interface&gt;&gt;Delayed.java<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package java.util.concurrent;
+import java.util.*;
+public interface Delayed extends Comparable&lt;Delayed&gt; {
+  long getDelay(TimeUnit unit);
+}
+</pre>
+</div>
+<p>getDelay()返回与此对象相关的剩余延迟时间，以给定的时间单位表示。此接口的实现必须定义一个 compareTo 方法，该方法提供与此接口的 getDelay 方法一致的排序。</p>
+<p>DelayQueue队列的头部是延迟期满后保存时间最长的 Delayed 元素。当一个元素的getDelay(TimeUnit.NANOSECONDS) 方法返回一个小于等于 0 的值时，将发生到期。<br />
+<strong>2.设计带有时间延迟特性的队列<br />
+</strong>类DelayedTasker维护一个DelayQueue&lt;DelayedTask&gt; queue，其中DelayedTask实现了Delayed接口，并由一个内部类定义。外部类和内部类都实现Runnable接口，对于外部类来说，它的run方法是按定义的时间先后取出队列中的任务，而这些任务即内部类的实例，内部类的run方法定义每个线程具体逻辑。</p>
+<p>这个设计的实质是定义了一个具有时间特性的线程任务列表，而且该列表可以是任意长度的。每次添加任务时指定启动时间即可。<br />
+DelayedTasker.java<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.zj.timedtask;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Random;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+public class DelayedTasker implements Runnable {
+  DelayQueue&lt;DelayedTask&gt; queue = new DelayQueue&lt;DelayedTask&gt;();
+
+  public void addTask(DelayedTask e) {
+    queue.put(e);
+  }
+
+  public void removeTask() {
+    queue.poll();
+  }
+
+  public Collection&lt;DelayedTask&gt; getAllTasks() {
+    return Collections.unmodifiableCollection(queue);
+  }
+
+  public int getTaskQuantity() {
+    return queue.size();
+  }
+
+  public void run() {
+    while (!queue.isEmpty())
+      try {
+       queue.take().run();
+      } catch (InterruptedException e) {
+       System.out.println("Interrupted");
+      }
+    System.out.println("Finished DelayedTask");
+  }
+
+  public static class DelayedTask implements Delayed, Runnable {
+    private static int counter = 0;
+    private final int id = counter++;
+    private final int delta;
+    private final long trigger;
+
+    public DelayedTask(int delayInSeconds) {
+      delta = delayInSeconds;
+      trigger = System.nanoTime() + NANOSECONDS.convert(delta, SECONDS);
+    }
+
+    public long getDelay(TimeUnit unit) {
+      return unit.convert(trigger - System.nanoTime(), NANOSECONDS);
+    }
+
+    public int compareTo(Delayed arg) {
+      DelayedTask that = (DelayedTask) arg;
+      if (trigger &lt; that.trigger)
+       return -1;
+      if (trigger &gt; that.trigger)
+       return 1;
+      return 0;
+    }
+
+    public void run() {
+      //run all that you want to do
+      System.out.println(this);
+    }
+
+    public String toString() {
+      return "[" + delta + "s]" + "Task" + id;
+    }
+  }
+
+  public static void main(String[] args) {
+    Random rand = new Random();
+    ExecutorService exec = Executors.newCachedThreadPool();
+    DelayedTasker tasker = new DelayedTasker();
+    for (int i = 0; i &lt; 10; i++)
+      tasker.addTask(new DelayedTask(rand.nextInt(5)));
+    exec.execute(tasker);
+    exec.shutdown();
+  }
+}
+
+</pre>
+</div>
+<p>结果：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+[0s]Task 1
+[0s]Task 2
+[0s]Task 3
+[1s]Task 6
+[2s]Task 5
+[3s]Task 8
+[4s]Task 0
+[4s]Task 4
+[4s]Task 7
+[4s]Task 9
+Finished DelayedTask
+</pre>
+</div>
+<p><strong>3. java.util.concurrent.ScheduledThreadPoolExecutor<br />
+</strong>该类可以另行安排在给定的延迟后运行任务（线程），或者定期（重复）执行任务。在构造子中需要知道线程池的大小。最主要的方法是：</p>
+<p>[1] schedule<br />
+public ScheduledFuture&lt;&#63;&gt; schedule(Runnable command, long delay,TimeUnit unit)<br />
+创建并执行在给定延迟后启用的一次性操作。<br />
+指定者：<br />
+-接口 ScheduledExecutorService 中的 schedule;<br />
+参数：<br />
+-command - 要执行的任务 ;<br />
+-delay - 从现在开始延迟执行的时间 ;<br />
+-unit - 延迟参数的时间单位 ;<br />
+返回：<br />
+-表示挂起任务完成的 ScheduledFuture，并且其 get() 方法在完成后将返回 null。<br />
+&nbsp;<br />
+[2] scheduleAtFixedRate<br />
+public ScheduledFuture&lt;&#63;&gt; scheduleAtFixedRate(<br />
+Runnable command,long initialDelay,long period,TimeUnit unit)<br />
+创建并执行一个在给定初始延迟后首次启用的定期操作，后续操作具有给定的周期；也就是将在 initialDelay 后开始执行，然后在 initialDelay+period 后执行，接着在 initialDelay + 2 * period 后执行，依此类推。如果任务的任何一个执行遇到异常，则后续执行都会被取消。否则，只能通过执行程序的取消或终止方法来终止该任务。如果此任务的任何一个执行要花费比其周期更长的时间，则将推迟后续执行，但不会同时执行。<br />
+指定者：<br />
+-接口 ScheduledExecutorService 中的 scheduleAtFixedRate;<br />
+参数：<br />
+-command - 要执行的任务 ;<br />
+-initialDelay - 首次执行的延迟时间 ;<br />
+-period - 连续执行之间的周期 ;<br />
+-unit - initialDelay 和 period 参数的时间单位 ;<br />
+返回：<br />
+-表示挂起任务完成的 ScheduledFuture，并且其 get() 方法在取消后将抛出异常。<br />
+<strong>4.设计带有时间延迟特性的线程执行者<br />
+</strong>类ScheduleTasked关联一个ScheduledThreadPoolExcutor，可以指定线程池的大小。通过schedule方法知道线程及延迟的时间，通过shutdown方法关闭线程池。对于具体任务（线程）的逻辑具有一定的灵活性（相比前一中设计，前一种设计必须事先定义线程的逻辑，但可以通过继承或装饰修改线程具体逻辑设计）。<br />
+ScheduleTasker.java<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+package com.zj.timedtask;
+
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+public class ScheduleTasker {
+  private int corePoolSize = 10;
+  ScheduledThreadPoolExecutor scheduler;
+
+  public ScheduleTasker() {
+    scheduler = new ScheduledThreadPoolExecutor(corePoolSize);
+  }
+
+  public ScheduleTasker(int quantity) {
+    corePoolSize = quantity;
+    scheduler = new ScheduledThreadPoolExecutor(corePoolSize);
+  }
+
+  public void schedule(Runnable event, long delay) {
+    scheduler.schedule(event, delay, TimeUnit.SECONDS);
+  }
+
+  public void shutdown() {
+    scheduler.shutdown();
+  }
+
+  public static void main(String[] args) {
+    ScheduleTasker tasker = new ScheduleTasker();
+    tasker.schedule(new Runnable() {
+      public void run() {
+       System.out.println("[1s]Task 1");
+      }
+    }, 1);
+    tasker.schedule(new Runnable() {
+      public void run() {
+       System.out.println("[2s]Task 2");
+      }
+    }, 2);
+    tasker.schedule(new Runnable() {
+      public void run() {
+       System.out.println("[4s]Task 3");
+      }
+    }, 4);
+    tasker.schedule(new Runnable() {
+      public void run() {
+       System.out.println("[10s]Task 4");
+      }
+    }, 10);
+
+    tasker.shutdown();
+  }
+}
+
+</pre>
+</div>
+<p>结果：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+[1s]Task 1
+[2s]Task 2
+[4s]Task 3
+[10s]Task 4
+  public void run() {
+   try {
+    TimeUnit.SECONDS.sleep(3);
+    System.out.println("i'm going.");
+    monitor.gotMessage();
+   } catch (InterruptedException e) {
+    e.printStackTrace();
+   }
+  }
+}
+</pre>
+</div>
+<div class="phpstudycode">
+<pre class="brush:java;">
+class Monitor implements Runnable {
+  private volatile boolean go = false;
+
+  public synchronized void gotMessage() throws InterruptedException {
+   go = true;
+   notify();
+  }
+
+  public synchronized void watching() throws InterruptedException {
+   while (go == false)
+    wait();
+   System.out.println("He has gone.");
+  }
+
+  public void run() {
+   try {
+    watching();
+   } catch (InterruptedException e) {
+    e.printStackTrace();
+   }
+  }
+}
+
+public class Wait {
+  public static void main(String[] args) {
+   Monitor monitor = new Monitor();
+   MyObject o = new MyObject(monitor);
+   new Thread(o).start();
+   new Thread(monitor).start();
+  }
+}
+
+</pre>
+</div>
+<p>结果：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+i'm going.
+He has gone.</pre>
+</div>
+<p></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/101233.html'>Android提高之使用NDK把彩图转换灰度图的方法</a><a>下一篇</a><a href='/php/biji/101235.html'>手机开发必备技巧：javascript及CSS功能代码分享</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

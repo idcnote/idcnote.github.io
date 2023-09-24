@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Android中SparseArray性能优化的使用方法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="之前一篇文章研究完横向二级菜单，发现其中使用了SparseArray去替换HashMap的使用.于是乎自己查了一些相关资料,自己同时对性能进行了一些测试。首先先说一下SparseArray的原" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Android中SparseArray性能优化的使用方法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>之前一篇文章研究完横向二级菜单，发现其中使用了SparseArray去替换HashMap的使用.于是乎自己查了一些相关资料,自己同时对性能进行了一些测试。首先先说一下SparseArray的原</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>之前一篇文章研究完<strong>横向二级菜单</strong>，发现其中使用了SparseArray去替换HashMap的使用.于是乎自己查了一些相关资料,自己同时对性能进行了一些测试。首先先说一下SparseArray的原理.</p>
+<p>&nbsp; SparseArray(稀疏数组).他是Android内部特有的api,标准的jdk是没有这个类的.在Android内部用来替代HashMap&lt;Integer,E&gt;这种形式,使用SparseArray更加节省内存空间的使用,SparseArray也是以key和value对数据进行保存的.使用的时候只需要指定value的类型即可.并且key不需要封装成对象类型.</p>
+<p>&nbsp; 楼主根据亲测,SparseArray存储数据占用的内存空间确实比HashMap要小一些.一会放出测试的数据在进行分析。我们首先看一下二者的结构特性.</p>
+<p><strong>&nbsp; HashMap是数组和链表的结合体,被称为链表散列.</strong></p>
+<p style="text-align: center"></p>
+<p>&nbsp; <span style="color: #800000"><strong>SparseArray是单纯数组的结合.</strong></span>被称为稀疏数组,对数据保存的时候,不会有额外的开销.结构如下：</p>
+<p style="text-align: center"></p>
+<p>&nbsp; 这就是二者的结构,我们需要看一下二者到底有什么差异...</p>
+<p>&nbsp; 首先是插入：</p>
+<p>&nbsp; HashMap的正序插入：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ HashMap&lt;Integer, String&gt;map = new HashMap&lt;Integer, String&gt;();
+ long start_map = System.currentTimeMillis();
+ for(int i=0;i&lt;MAX;i++){
+   map.put(i, String.valueOf(i));
+ }
+ long map_memory = Runtime.getRuntime().totalMemory();
+ long end_map = System.currentTimeMillis()-start_map;
+ System.out.println("&lt;---Map的插入时间---&gt;"+end_map+"&lt;---Map占用的内存---&gt;"+map_memory);
+
+</pre>
+</div>
+<p>&nbsp;执行后的结果:<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ &lt;---Map的插入时间---&gt;914
+ &lt;---Map占用的内存---&gt;28598272
+</pre>
+</div>
+<p>SparseArray的正序插入：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ SparseArray&lt;String&gt;sparse = new SparseArray&lt;String&gt;();
+ long start_sparse = System.currentTimeMillis();
+ for(int i=0;i&lt;MAX;i++){
+    sparse.put(i, String.valueOf(i));
+ }
+ long sparse_memory = Runtime.getRuntime().totalMemory();
+ long end_sparse = System.currentTimeMillis()-start_sparse;
+ System.out.println("&lt;---Sparse的插入时间---&gt;"+end_sparse+"&lt;---Sparse占用的内存---&gt;"+sparse_memory);
+
+//执行后的结果：
+&lt;---Sparse的插入时间---&gt;611
+&lt;---Sparse占用的内存---&gt;23281664
+
+</pre>
+</div>
+<p>&nbsp;&nbsp; 我们可以看到100000条数据量正序插入时SparseArray的效率要比HashMap的效率要高.并且占用的内存也比HashMap要小一些..这里的正序插入表示的是i的值是从小到大进行的一个递增..序列取决于i的值，而不是for循环内部如何执行...</p>
+<p>&nbsp; 通过运行后的结果我们可以发现，SparseArray在正序插入的时候，效率要比HashMap要快得多，并且还节省了一部分内存。网上有很多的说法关于二者的效率问题，很多人都会误认为SparseArray要比HashMap的插入和查找的效率要快，还有人则是认为Hash查找当然要比SparseArray中的二分查找要快得多.</p>
+<p>&nbsp; 其实我认为Android中在保存&lt;Integer,Value&gt;的时候推荐使用SparseArray的本质目的不是由于效率的原因，而是内存的原因.我们确实看到了插入的时候SparseArray要比HashMap要快.但是这仅仅是正序插入.我们来看看倒序插入的情况.</p>
+<p>&nbsp; HashMap倒序插入：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ System.out.println("&lt;------------- 数据量100000 散列程度小 Map 倒序插入---------------&gt;");
+ HashMap&lt;Integer, String&gt;map_2 = new HashMap&lt;Integer, String&gt;();
+ long start_map_2 = System.currentTimeMillis();
+ for(int i=MAX-1;i&gt;=0;i--){
+   map_2.put(MAX-i-1, String.valueOf(MAX-i-1));
+ }
+ long map_memory_2 = Runtime.getRuntime().totalMemory();
+ long end_map_2 = System.currentTimeMillis()-start_map_2;
+ System.out.println("&lt;---Map的插入时间---&gt;"+end_map_2+"&lt;---Map占用的内存---&gt;"+map_memory_2);
+ 
+ //执行后的结果：
+ &lt;------------- 数据量100000 Map 倒序插入---------------&gt;
+ &lt;---Map的插入时间---&gt;836&lt;---Map占用的内存---&gt;28598272
+</pre>
+</div>
+<p>&nbsp; SparseArray倒序插入：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+System.out.println("&lt;------------- 数据量100000 散列程度小 SparseArray 倒序插入---------------&gt;");
+SparseArray&lt;String&gt;sparse_2 = new SparseArray&lt;String&gt;();
+long start_sparse_2 = System.currentTimeMillis();
+for(int i=MAX-1;i&gt;=0;i--){
+  sparse_2.put(i, String.valueOf(MAX-i-1));
+}
+long sparse_memory_2 = Runtime.getRuntime().totalMemory();
+long end_sparse_2 = System.currentTimeMillis()-start_sparse_2;
+System.out.println("&lt;---Sparse的插入时间---&gt;"+end_sparse_2+"&lt;---Sparse占用的内存---&gt;"+sparse_memory_2);
+//执行后的结果
+&lt;------------- 数据量100000 SparseArray 倒序插入---------------&gt;
+&lt;---Sparse的插入时间---&gt;20222&lt;---Sparse占用的内存---&gt;23281664
+
+</pre>
+</div>
+<p>&nbsp;通过上面的运行结果,我们仍然可以看到,SparseArray与HashMap无论是怎样进行插入,数据量相同时,前者都要比后者要省下一部分内存,但是效率呢？我们可以看到,在倒序插入的时候,SparseArray的插入时间和HashMap的插入时间远远不是一个数量级.由于SparseArray每次在插入的时候都要使用二分查找判断是否有相同的值被插入.因此这种倒序的情况是SparseArray效率最差的时候.</p>
+<p>&nbsp;SparseArray的插入源码我们简单的看一下..</p>
+<p></p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ public void put(int key, E value) {
+    int i = ContainerHelpers.binarySearch(mKeys, mSize, key); //二分查找.
+
+    if (i &gt;= 0) { //如果当前这个i在数组中存在,那么表示插入了相同的key值,只需要将value的值进行覆盖..
+      mValues[i] = value;
+    } else { //如果数组内部不存在的话,那么返回的数值必然是负数.
+      i = ~i; //因此需要取i的相反数.
+      //i值小于mSize表示在这之前. mKey和mValue数组已经被申请了空间.只是键值被删除了.那么当再次保存新的值的时候.不需要额外的开辟新的内存空间.直接对数组进行赋值即可.
+      if (i &lt; mSize && mValues[i] == DELETED) {
+        mKeys[i] = key;
+        mValues[i] = value;
+        return;
+      }
+      //当需要的空间要超出,但是mKey中存在无用的数值,那么需要调用gc()函数.
+      if (mGarbage && mSize &gt;= mKeys.length) {
+        gc();
+        
+        // Search again because indices may have changed.
+        i = ~ContainerHelpers.binarySearch(mKeys, mSize, key);
+      }
+      //如果需要的空间大于了原来申请的控件,那么需要为key和value数组开辟新的空间.
+      if (mSize &gt;= mKeys.length) {
+        int n = ArrayUtils.idealIntArraySize(mSize + 1);
+        //定义了一个新的key和value数组.需要大于mSize
+        int[] nkeys = new int[n];
+        Object[] nvalues = new Object[n];
+
+        // Log.e("SparseArray", "grow " + mKeys.length + " to " + n);
+        //对数组进行赋值也就是copy操作.将原来的mKey数组和mValue数组的值赋给新开辟的空间的数组.目的是为了添加新的键值对.
+        System.arraycopy(mKeys, 0, nkeys, 0, mKeys.length);
+        System.arraycopy(mValues, 0, nvalues, 0, mValues.length);
+        //将数组赋值..这里只是将数组的大小进行扩大..放入键值对的操作不在这里完成.
+        mKeys = nkeys;
+        mValues = nvalues;
+      }
+      //如果i的值没有超过mSize的值.只需要扩大mKey的长度即可.
+      if (mSize - i != 0) {
+        // Log.e("SparseArray", "move " + (mSize - i));
+        System.arraycopy(mKeys, i, mKeys, i + 1, mSize - i);
+        System.arraycopy(mValues, i, mValues, i + 1, mSize - i);
+      }
+      //这里是用来完成放入操作的过程.
+      mKeys[i] = key;
+      mValues[i] = value;
+      mSize++;
+    }
+  } 
+
+</pre>
+</div>
+<p>&nbsp; 这就是SparseArray插入函数的源码.每次的插入方式都需要调用二分查找.因此这样在倒序插入的时候会导致情况非常的糟糕,效率上绝对输给了HashMap学过数据结构的大家都知道.Map在插入的时候会对冲突因子做出相应的决策.有非常好的处理冲突的方式.不需要遍历每一个值.因此无论是倒序还是正序插入的效率取决于处理冲突的方式,因此插入时牺牲的时间基本是相同的.</p>
+<p>&nbsp; 通过插入.我们还是可以看出二者的差异的.</p>
+<p>&nbsp; 我们再来看一下查找首先是HashMap的查找.</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ System.out.println("&lt;------------- 数据量100000 Map查找---------------&gt;");
+ HashMap&lt;Integer, String&gt;map = new HashMap&lt;Integer, String&gt;();
+    
+ for(int i=0;i&lt;MAX;i++){
+    map.put(i, String.valueOf(i));
+ }
+ long start_time =System.currentTimeMillis();
+ for(int i=0;i&lt;MAX;i+=100){
+      map.get(i);
+ }
+ long end_time =System.currentTimeMillis()-start_time;
+ System.out.println(end_time);
+ 
+ //执行后的结果
+ &lt;!---------查找的时间:175------------&gt;
+</pre>
+</div>
+<p>&nbsp;SparseArray的查找:<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+ System.out.println("&lt;------------- 数据量100000 SparseArray 查找---------------&gt;");
+ SparseArray&lt;String&gt;sparse = new SparseArray&lt;String&gt;();
+ for(int i=0;i&lt;10000;i++){
+    sparse.put(i, String.valueOf(i));
+ }
+ long start_time =System.currentTimeMillis();
+    
+ for(int i=0;i&lt;MAX;i+=10){
+    sparse.get(i);
+ }
+ long end_time =System.currentTimeMillis()-start_time;
+ System.out.println(end_time);
+ //执行后的结果
+ &lt;!-----------查找的时间:239----------------&gt;
+</pre>
+</div>
+<p>&nbsp; 我这里也简单的对查找的效率进行了测试.对一个数据或者是几个数据的查询.二者的差异还是非常小的.当数据量是100000条.查100000条的效率还是Map要快一点.数据量为10000的时候.这就差异性就更小.但是Map的查找的效率确实还是赢了一筹.</p>
+<p>&nbsp; 其实在我看来.在保存&lt;Integer,E&gt;时使用SparseArray去替换HashMap的主要原因还是因为内存的关系.我们可以看到.保存的数据量无论是大还是小,Map所占用的内存始终是大于SparseArray的.数据量100000条时SparseArray要比HashMap要节约27%的内存.也就是以牺牲效率的代价去节约内存空间.我们知道Android对内存的使用是极为苛刻的.堆区允许使用的最大内存仅仅16M.很容易出现OOM现象的发生.因此在Android中内存的使用是非常的重要的.因此官方才推荐去使用SparseArray&lt;E&gt;去替换HashMap&lt;Integer,E&gt;.官方也确实声明这种差异性不会超过50%.所以牺牲了部分效率换来内存其实在Android中也算是一种很好的选择吧.</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/94343.html'>CentOS下将软件源码打包为RPM的方法</a><a>下一篇</a><a href='/php/biji/94346.html'>destoon实现首页显示供应、企业、资讯条数的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

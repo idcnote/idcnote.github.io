@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL唯一索引和普通索引的深入分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL唯一索引和普通索引的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+想象这样一个" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL唯一索引和普通索引的深入分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:16:22                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL唯一索引和普通索引的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+想象这样一个</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL唯一索引和普通索引的深入分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>想象这样一个场景，在设计一张用户表时，每人的身份证号是唯一的，需要搜索。但由于身份证号字段较大，不好将其作为主键。在业务代码已经保证插入身份证唯一的情况下，可以选择建立唯一索引和普通索引，这时该如何选择呢？接下来，将从查询和更新的执行过程进行分析。</p>
+<p></p>
+<h3>查询过程</h3>
+<p></p>
+<p>假设 k 是表 t 上的索引，在搜索 <code>select id from t where k=5</code> 时，会先从 k 这棵 B+ 的树根开始，按层搜索叶子节点，找到 k=5 的数据页，然后在数据页内容进行二分法定位。</p>
+<p>对于普通索引，找到 k=5 的记录后，会继续向下查找一个，直到碰到第一个不是 5 的记录结束。</p>
+<p>对于唯一索引，由于取值唯一，找到后直接停止。</p>
+<p>由于 InnoDB 是按照数据页为单位（数据页默认 16 KB）进行读写的，在读取一条数据时，会将整个数据页整体读到内存。 在读入内存的数据页中，如果包含 k=5 的记录，在查询的情况下，唯一索引比普通索引多了一次查找和判断的过程，可以忽略。</p>
+<p>如果 k=5 是当前数据页的最后一条，就需要在读取下一个数据页。但这发生的概率较低，也可以忽略。</p>
+<p>所以总得来说，普通索引和唯一索引在查询的过程中差异不大。</p>
+<p></p>
+<h3>change buffer</h3>
+<p></p>
+<p>在分析唯一索引和普通索引的影响前，先来认识一下 change buffer 这个结构。</p>
+<p>什么是 change buffer ?</p>
+<p>在执行更新操作时，如果要更新的数据页在内存中就直接更新，否则的话，在不影响数据一致性的前提下，InnoDB 会将更新操作缓存在 change buffer 中，从而省去了从磁盘读取数据页的过程。在下次查询操作读取到恰好需要更新的数据页时，会将 change buffer 的更新语句执行，写入数据页。将操作应用到硬盘的过程叫 merge. 后台线程会定期 merge 或 数据库正常关闭时，也会进行 merge 操作。</p>
+<p>merge 的执行流程：</p>
+<ol>
+	<li>从磁盘读入老版本数据页。</li>
+	<li>从 change buffer中找出和该数据页关联的记录，依次应用，得到新版数据页。</li>
+	<li>写 redo log，记录数据的变更和 change buffer 的变更。</li>
+</ol>
+<p>change buffer 实际上是可以持久化到硬盘中的数据，也就是说在内存和硬盘上都 change buffer 的存在。change buffer 之前叫 insert buffer，开始只对 insert buffer 有优化，后来加上了对 delete 和 update 的支持，进而改名叫 change buffer。</p>
+<p>可以看到，先将更新操作记录在 change buffer，减少了将磁盘数据页读取到内存的过程，语句的执行速度会有很明显的提升。同时，将数据读入内存，会占用 buffer pool 内存，所以减少读操作，还提高了内存使用率。</p>
+<blockquote>
+<p>Buffer Pool 是内存中的一个区域，InnoDB 在访问表和索引数据时会在其中进行缓存。允许在内存中直接更新经常使用的数据，来加快处理速度。在一些专用的服务器上，会将 80% 的物理内存分为 buffer pool.</p></blockquote>
+<p>可以通过 innodb_change_buffer_max_size 来设置 change buffer 占用 buffer pool 的大小。</p>
+<p>change buffer 应用场景？</p>
+<p>如上面提到，change buffer 预先保存了更新记录，减少了读取数据页的过程，从而提高性能。也就是说如果 change buffer 中针对不同的数据页如果包含的更新记录越多，其实收益也就越大。</p>
+<p>因此对于写多读少的业务（更新完立即查询）change buffer 发挥的作用也就越大。如常见的账单类，日志类等系统。</p>
+<p>如果业务是更新完立即查询，虽然可以将更新记录放在 change buffer 中，但由于之后要马上查询数据页，所以会立即触发 merge 过程。这样随机访问 IO 次数并不会减少，反而增加了 change buffer 的维护代价，起到反效果。</p>
+<p></p>
+<h3>更新过程</h3>
+<p></p>
+<p>对于唯一索引来说，所有的更新操作都需要判断是否违反唯一性约束。所以必须把所需要的数据页读入内存，然后直接更新就可以，不需要使用 change buffer. 所以 change buffer 只对普通索引有用。</p>
+<p>具体分析下，对于一张表插入一个新记录：</p>
+<p>如果新记录要更新的数据页在内存中：</p>
+<p>对于唯一索引，找到合适的位置，判断有没有冲突，插入值，语句结束。</p>
+<p>对于普通索引：找到位置，插入值，语句结束。</p>
+<p>所以数据页在内存时，唯一和普通索引就差一个判断的过程。可以忽略。</p>
+<p>如果新记录要更新的数据页不在内存中：</p>
+<p>对于唯一索引，将数据页读入内存，判断冲突，插入，语句结束。</p>
+<p>对于普通索引，将语句记录在 change buffer 中，语句结束。</p>
+<p>由于从磁盘到内存涉及随机 IO 访问，是数据库成本最高的操作之一。普通索引比唯一索引减少的读入操作，可以有很好的性能提升。</p>
+<p></p>
+<h3>唯一或普通索引的选择</h3>
+<p></p>
+<p>通过在查询和更新方面，两者的比较。我们知道，在查询过程中，除了极特殊情况，其实两者的差异并不大。</p>
+<p>主要的差异是在更新过程中，要更新的数据页并不在内容中的情况。这时唯一索引，由于需要唯一性检查，不能利用 change buffer. 多了从磁盘到内容读取数据的过程，其中涉及随机 IO 的访问，相对来说效率就低了。</p>
+<p>所以如果业务需要更新不错的性能，这时可以选用普通索引。当然一切都是建立在能保证数据准确性的前提下。</p>
+<p>当如果更新后来紧接着查询操作，可以考虑关掉 change buffer. 其他的情况，change buffer 都能有很好的提升。</p>
+<blockquote>
+<p>特别针对机械硬盘，change buffer 效果很显著。</p></blockquote>
+<p></p>
+<h3>redo log 和 change buffer 的比较</h3>
+<p></p>
+<p>InnoDB 中 redo log 的出现使其具有了 crash-safe 的能力，同时还提高了效率，通过 WAL 先写日志，再写磁盘。</p>
+<p>而 change buffer 是节省了从磁盘读入数据页到内存的随机IO过程。</p>
+<p>下面通过一条插入语句来分析下两者间的关系：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; insert into t(id,k) values(id1,k1),(id2,k2);</code></pre>
+<p>MySQL唯一索引和普通索引选哪个？</p>
+<p>假设 k 为普通索引，k1 所插入的数据页在内存中， k2 不在。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>执行插入操作时，主要涉及了图中这四部分的内容：</p>
+<p>InnoDB buffer pool：内存区域</p>
+<p>redo log：日志</p>
+<p>system table space(ibdata1):系统表空间</p>
+<p>data(t.idb): 数据表空间</p>
+<blockquote>
+<p>innodb_file_per_table 开启时，表被创建在独立的表空间下，否则的话被创建在系统的表空间下。</p></blockquote>
+<p>执行过程如下：</p>
+<ol>
+	<li>k1 所在的 page1 在内存中，直接更新内存</li>
+	<li>k2 所在的 page2 不在内存中，记录在 change buffer.</li>
+	<li>将 k1 和 k2 的操作记录在 redo log.</li>
+	<li>提交事务。</li>
+</ol>
+<p>可以看到这条更新语句(包括插入，删除，更新操作)执行成本很低，两次写入内存，1次顺序写入磁盘。虚线的操作，是后台操作，不影响响应时间。</p>
+<p>再来看一条查询语句：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+select * from t where k in (k1, k2)</code></pre>
+<p>MySQL唯一索引和普通索引选哪个？</p>
+<p>假设读语句发生在更新语句不久，内存数据还在，此时读操作就和系统表空间和 redo log 无关。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>执行过程：</p>
+<ol>
+	<li>读取 k1 所在的 page1，在内存中，直接返回。注意，并没有读磁盘上的数据，而且磁盘上的数据还有可能是之前的版本的。</li>
+	<li>读取 k2 所在的 page2，这时需要将 page2 从磁盘加载到内存，并应用 change buffer 的内容，然后返回正确的结果。从这里也能看出，change buffer 不适用于更新完立马去读的情况。</li>
+</ol>
+<p>总结下 redo log 和 change buffer 的关系：</p>
+<p>存储位置：change buffer 也会持久化在硬盘里，但保存在系统表空间 ibdata1 里。而 redo log 是单独的文件。</p>
+<p>记录内容：change buffer 记录的是更新操作的内容，而 redo log 记录的是普通数据页的修改和 change buffer 的改动。</p>
+<p>同步磁盘过程：同步内存中数据页的修改时通过 merge 操作进行的，而不是根据 redo log.</p>
+<p>从更新的过程来看: redo log 将随机写磁盘的 IO 转换成了顺序写，而 change buffer 则是节省了随机读磁盘的 IO 消耗。</p>
+<p>如果服务器异常掉电，会不会导致 change buffer 丢失？</p>
+<p>并不会，因为 change buffer 中的数据已经被记录到 redo log 中，所以不会丢失。</p>
+<p>由于 change buffer 一部分数据在磁盘，一部分在内存。对于在磁盘的数据已经 merge 所以不会丢失。对于在内存中的数据：</p>
+<ol>
+	<li>如果 change buffer 写入，但 redo log 未提交，binlog 未提交，事务会回滚，这部分数据不存在。</li>
+	<li>如果 change buffer 写入，redo log 写入，binlog 写入，并已提交，不会丢失。从 redo log 直接恢复。</li>
+	<li>如果 change buffer 写入，redo log 写入但未 commit，binlog 写入，从 binlog 恢复 redo log 再恢复 change buffer.</li>
+</ol>
+<p></p>
+<h3>参考资料</h3>
+<p></p>
+<p>Buffer Pool</p>
+<p>以上就是MySQL唯一索引和普通索引选哪个？的详细内容，更多关于MySQL唯一索引和普通索引的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL唯一索引和普通索引的深入分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/447.html'>Mapper sql语句字段和实体类属性名字的解决办法</a><a>下一篇</a><a href='/mysql/biji/449.html'>MySQL临时表的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

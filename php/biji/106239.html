@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Oracle中的半联结和反联结详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="当两张表进行联结的时候，如果表1中的数据行是否出现在结果集中需要根据表2中出现或不出现至少一个相匹配的数据行来判断，这种情况就会发生半联结；而反联结便是半联结的补集，它们" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Oracle中的半联结和反联结详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>当两张表进行联结的时候，如果表1中的数据行是否出现在结果集中需要根据表2中出现或不出现至少一个相匹配的数据行来判断，这种情况就会发生半联结；而反联结便是半联结的补集，它们</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>当两张表进行联结的时候，如果表1中的数据行是否出现在结果集中需要根据表2中出现或不出现至少一个相匹配的数据行来判断，这种情况就会发生半联结；而反联结便是半联结的补集，它们会作为数据库中常见的联结方法如NESTED LOOPS，MERGE SORT JOIN，HASH JOIN的选项出现。</p>
+<p>实际上半联结和反联结本身也可以被认同是两种联结方法；在CBO优化模式下，优化器能够根据实际情况灵活的转换执行语句从而实现半联结和反联结方法，毕竟没有什么SQL语法可以显式的调用半联结和反联结，它们只是SQL语句满足某些条件时优化器可以选择的选项而已，不过仍然有必要深入这两种选项在特定情况下带来的性能优势。</p>
+<p><strong>半联结</strong></p>
+<p>半联结通常都发生在使用含有IN和EXISTS的相关子查询的时候，=ANY的用法与IN相同，所以也会出现发生半联结的情况；不过也是有例外的，在11gR2版本中，优化器不会为任何包含在OR分支中的子查询选择半联结，这也是现在官档中唯一明确标识的限制条件，来看几种发生场景：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="94117" class="copybut" id="copybut94117" onclick="doCopy('code94117')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code94117"><br />
+-- 使用IN关键字的相关子查询 =&gt; 发生NESTED LOOPS半联结<br />
+SQL&gt; select department_name<br />
+&nbsp; 2&nbsp; from hr.departments dept<br />
+&nbsp; 3&nbsp; where department_id in (select department_id from hr.employees emp);</p>
+<p>11 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 2605691773</p>
+<p>----------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+----------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 10 |&nbsp;&nbsp; 190 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; NESTED LOOPS SEMI |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 10 |&nbsp;&nbsp; 190 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; TABLE ACCESS FULL| DEPARTMENTS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp; 432 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 3 |&nbsp;&nbsp; INDEX RANGE SCAN | EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp; 41 |&nbsp;&nbsp; 123 |&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; (0)| 00:00:01 |<br />
+----------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 3 - access("DEPARTMENT_ID"="DEPARTMENT_ID")</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 742&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 524&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp; rows processed</p>
+<p>-- 使用EXISTS关键字的相关子查询 =&gt; 发生NESTED LOOPS半联结<br />
+SQL&gt; select department_name<br />
+&nbsp; 2&nbsp; from hr.departments dept where exists<br />
+&nbsp; 3&nbsp; (select null from hr.employees emp where emp.department_id = dept.department_id);</p>
+<p>11 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 2605691773</p>
+<p>----------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+----------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 10 |&nbsp;&nbsp; 190 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; NESTED LOOPS SEMI |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 10 |&nbsp;&nbsp; 190 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; TABLE ACCESS FULL| DEPARTMENTS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp; 432 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 3 |&nbsp;&nbsp; INDEX RANGE SCAN | EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp; 41 |&nbsp;&nbsp; 123 |&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; (0)| 00:00:01 |<br />
+----------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 3 - access("EMP"."DEPARTMENT_ID"="DEPT"."DEPARTMENT_ID")</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 742&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 524&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp; rows processed</p>
+<p>-- 谓语中使用了OR分支中的EXISTS子查询 =&gt; 禁用半联结<br />
+SQL&gt; select department_name<br />
+&nbsp; 2&nbsp; from hr.departments dept<br />
+&nbsp; 3&nbsp; where 1=2 OR exists<br />
+&nbsp; 4&nbsp; (select null from hr.employees emp where emp.department_id = dept.department_id);</p>
+<p>11 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 440241596</p>
+<p>----------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+----------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp; 432 |&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 1 |&nbsp; FILTER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; TABLE ACCESS FULL| DEPARTMENTS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp; 432 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 3 |&nbsp;&nbsp; INDEX RANGE SCAN | EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp;&nbsp; 2 |&nbsp;&nbsp;&nbsp;&nbsp; 6 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+----------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 1 - filter( EXISTS (SELECT 0 FROM "HR"."EMPLOYEES" "EMP" WHERE<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "EMP"."DEPARTMENT_ID"=:B1))<br />
+&nbsp;&nbsp; 3 - access("EMP"."DEPARTMENT_ID"=:B1)</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 35&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 742&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 524&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp; rows processed<br />
+</div></p>
+<p>从结果集来看，我们很容易联想到内联结，那为什么半联结通常来说会获得更高的性能呢？这实际也是半联结优化的关键，拿NESTED LOOPS来举例，在NESTED LOOPS联结中，驱动表被读取后需要逐个的进入内层循环来进行匹配工作，并且只有当外层循环的数据行与内层循环中的每一行数据匹配运算完成后才会结束一个结果集的获取；而相对而言，半联结的区别在于数据集1中的每一条记录只返回一次，而不管数据集2中有几条匹配的记录，因此，半联结会在找到子查询中匹配到的第一条数据后立即结束处理从而提高性能。</p>
+<p>对于某些需要利用半联结来提高性能的场景，可以通过手动的方式控制半联结的执行计划，使用SEMIJOIN和NO_SEMIJOIN提示分别可以指定优化器使用和禁用半联结。<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="85831" class="copybut" id="copybut85831" onclick="doCopy('code85831')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code85831"><br />
+-- 使用NO_SEMIJOIN提示禁用半联结<br />
+SQL&gt; select department_name<br />
+&nbsp; 2&nbsp; from hr.departments dept<br />
+&nbsp; 3&nbsp; where department_id in (select /*+ no_semijoin */department_id from hr.employees emp);</p>
+<p>11 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 3372191744</p>
+<p>------------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+------------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp; 106 |&nbsp; 1802 |&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp; (25)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; VIEW&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | VM_NWVW_2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp; 106 |&nbsp; 1802 |&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp; (25)| 00:00:01 |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; HASH UNIQUE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp; 106 |&nbsp; 2544 |&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp; (25)| 00:00:01 |<br />
+|&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp; NESTED LOOPS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp; 106 |&nbsp; 2544 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 4 |&nbsp;&nbsp;&nbsp;&nbsp; TABLE ACCESS FULL| DEPARTMENTS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp; 567 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 5 |&nbsp;&nbsp;&nbsp;&nbsp; INDEX RANGE SCAN | EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp;&nbsp; 4 |&nbsp;&nbsp;&nbsp; 12 |&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; (0)| 00:00:01 |<br />
+------------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 5 - access("DEPARTMENT_ID"="DEPARTMENT_ID")</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 506&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 188&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 742&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 524&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp; rows processed<br />
+</div></p>
+<p>除此之外，我们还可以使用_always_semi_join隐藏参数选择半联结的联结类型，有关_always_semi_join参数的可选值：</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="63805" class="copybut" id="copybut63805" onclick="doCopy('code63805')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code63805"><br />
+SQL&gt; SELECT<br />
+&nbsp; 2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PARNO_KSPVLD_VALUES&nbsp;&nbsp;&nbsp;&nbsp; pvalid_par#,<br />
+&nbsp; 3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NAME_KSPVLD_VALUES&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pvalid_name,<br />
+&nbsp; 4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VALUE_KSPVLD_VALUES&nbsp;&nbsp;&nbsp;&nbsp; pvalid_value,<br />
+&nbsp; 5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DECODE(ISDEFAULT_KSPVLD_VALUES, 'FALSE', '', 'DEFAULT' ) pvalid_default<br />
+&nbsp; 6&nbsp;&nbsp; FROM<br />
+&nbsp; 7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; X$KSPVLD_VALUES<br />
+&nbsp; 8&nbsp;&nbsp; WHERE<br />
+&nbsp; 9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LOWER(NAME_KSPVLD_VALUES) LIKE '%'||LOWER(nvl('&pname',name_kspvld_values))||'%'<br />
+&nbsp;10&nbsp;&nbsp; ORDER BY<br />
+&nbsp;11&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pvalid_par#,<br />
+&nbsp;12&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pvalid_default,<br />
+&nbsp;13&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pvalid_Value<br />
+&nbsp;14&nbsp;&nbsp; /</p>
+<p>&nbsp; PAR# PARAMETER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VALUE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DEFAULT<br />
+------ -------------------------------------------------- ------------------------------ -------<br />
+&nbsp; 1705 _always_semi_join&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CHOOSE<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _always_semi_join&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; HASH<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _always_semi_join&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MERGE<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _always_semi_join&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NESTED_LOOPS<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _always_semi_join&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OFF<br />
+</div></p>
+<p>该参数的默认值为choose，表示选用半联结的类型由优化器来决定，下面来使用_always_semi_join参数将上面的NESTED LOOPS半联结改变为HASH JOIN半联结：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="3326" class="copybut" id="copybut3326" onclick="doCopy('code3326')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code3326"><br />
+-- 默认发生NESTED LOOPS SEMI<br />
+SQL&gt; select department_name<br />
+&nbsp; 2&nbsp; from hr.departments dept<br />
+&nbsp; 3&nbsp; where department_id in (select department_id from hr.employees emp);</p>
+<p>11 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 2605691773</p>
+<p>----------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+----------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 10 |&nbsp;&nbsp; 190 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; NESTED LOOPS SEMI |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 10 |&nbsp;&nbsp; 190 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; TABLE ACCESS FULL| DEPARTMENTS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp; 432 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 3 |&nbsp;&nbsp; INDEX RANGE SCAN | EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp; 41 |&nbsp;&nbsp; 123 |&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; (0)| 00:00:01 |<br />
+----------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 3 - access("DEPARTMENT_ID"="DEPARTMENT_ID")</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 742&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 524&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp; rows processed</p>
+<p>-- session级别修改参数<br />
+SQL&gt; alter session set "_always_semi_join"=merge;</p>
+<p>Session altered.</p>
+<p>-- 发生MERGE JOIN SEMI<br />
+SQL&gt; select department_name<br />
+&nbsp; 2&nbsp; from hr.departments dept<br />
+&nbsp; 3&nbsp; where department_id in (select department_id from hr.employees emp);</p>
+<p>11 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 954076352</p>
+<p>--------------------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+--------------------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 10 |&nbsp;&nbsp; 190 |&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp; (25)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; MERGE JOIN SEMI&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 10 |&nbsp;&nbsp; 190 |&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp; (25)| 00:00:01 |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; TABLE ACCESS BY INDEX ROWID| DEPARTMENTS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp; 432 |&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 3 |&nbsp;&nbsp;&nbsp; INDEX FULL SCAN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | DEPT_ID_PK&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 4 |&nbsp;&nbsp; SORT UNIQUE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp; 107 |&nbsp;&nbsp; 321 |&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; (50)| 00:00:01 |<br />
+|&nbsp;&nbsp; 5 |&nbsp;&nbsp;&nbsp; INDEX FULL SCAN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | EMP_DEPARTMENT_IX |&nbsp;&nbsp; 107 |&nbsp;&nbsp; 321 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+--------------------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 4 - access("DEPARTMENT_ID"="DEPARTMENT_ID")<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; filter("DEPARTMENT_ID"="DEPARTMENT_ID")</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 742&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 523&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp; rows processed<br />
+-- 从trace来看优化器的选择还是非常可靠的。。<br />
+</div></p>
+<p><strong>反联结</strong></p>
+<p>从本质上来说，反联结和半联结很多相似的因素，反联结的发生通常是在使用含有NOT IN，NOT EXISTS的相关子查询的时候，同样，如果子查询谓语OR分支中，反联结也会被禁用，它和半联结主要的不同点还是在返回数据的匹配方式上，它是会返回在子查询中没有匹配到的数据行，不过其优化的原理是一致的，通过在子查询中找到第一条匹配记录而立即停止处理来提高效率，一下是发生的集中场景：<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="84763" class="copybut" id="copybut84763" onclick="doCopy('code84763')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code84763"><br />
+SQL&gt; set autotrace traceonly<br />
+-- NOT IN 触发反联结<br />
+SQL&gt; select department_name<br />
+&nbsp; 2&nbsp; from hr.departments<br />
+&nbsp; 3&nbsp; where department_id not in<br />
+&nbsp; 4&nbsp; (select department_id from hr.employees where department_id is not null);</p>
+<p>16 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 3082375452</p>
+<p>----------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+----------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 17 |&nbsp;&nbsp; 323 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; NESTED LOOPS ANTI |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 17 |&nbsp;&nbsp; 323 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; TABLE ACCESS FULL| DEPARTMENTS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp; 432 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 3 |&nbsp;&nbsp; INDEX RANGE SCAN | EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp; 41 |&nbsp;&nbsp; 123 |&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; (0)| 00:00:01 |<br />
+----------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 3 - access("DEPARTMENT_ID"="DEPARTMENT_ID")<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; filter("DEPARTMENT_ID" IS NOT NULL)</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 6&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 985&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 535&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 16&nbsp; rows processed</p>
+<p>-- EXISTS触发反联结<br />
+SQL&gt; select department_name<br />
+&nbsp; 2&nbsp; from hr.departments dept<br />
+&nbsp; 3&nbsp; where not exists<br />
+&nbsp; 4&nbsp; (select null from hr.employees emp where emp.department_id = dept.department_id);</p>
+<p>16 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 3082375452</p>
+<p>----------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+----------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 17 |&nbsp;&nbsp; 323 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 1 |&nbsp; NESTED LOOPS ANTI |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 17 |&nbsp;&nbsp; 323 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; TABLE ACCESS FULL| DEPARTMENTS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp; 432 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 3 |&nbsp;&nbsp; INDEX RANGE SCAN | EMP_DEPARTMENT_IX |&nbsp;&nbsp;&nbsp; 41 |&nbsp;&nbsp; 123 |&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; (0)| 00:00:01 |<br />
+----------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 3 - access("EMP"."DEPARTMENT_ID"="DEPT"."DEPARTMENT_ID")</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 13&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 985&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 535&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 16&nbsp; rows processed<br />
+</div></p>
+<p><br />
+从上面的例子可以看出minus和outer join操作都可以巧妙的实现同样的结果，不过从执行计划来看，minus操作显然没有反联结操作优化，而使用outer join虽然发生了反联结优化，但是由于使用了带空值的虚拟记录来匹配数据行，不便于理解，因此实际还是不建议使用的。</p>
+<p>如果想要手动控制反联结的执行计划，这里也有一些hint和参数可以使用，常用的hint有：</p>
+<p>1.ANTIJOIN-进行反联结，优化器决定联结类型<br />
+2.USE_ANTI-老版本的提示，和ANTIJOIN功能一致<br />
+3.[NL_AJ] | [HASH_AJ] | [MERGE_AJ]-指定发生反联结的类型(10g开始被弃用，不过仍然可以生效)</p>
+<p>在参数控制方面，也有个和_always_semi_join非常相同的_always_anti_join参数，用法完全一致；还有参数_optimizer_null_aware_antijoin，_optimizer_outer_to_anti_enable用于控制对含空值和外联结的反联结转换。</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="67009" class="copybut" id="copybut67009" onclick="doCopy('code67009')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code67009"><br />
+-- 使用hint显式指定反联结类型<br />
+SQL&gt; select department_name<br />
+&nbsp; 2&nbsp; from hr.departments dept<br />
+&nbsp; 3&nbsp; where not exists (select /*+ hash_aj */ null from hr.employees emp<br />
+&nbsp; 4&nbsp; where emp.department_id = dept.department_id);</p>
+<p>16 rows selected.</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 3587451639</p>
+<p>----------------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+----------------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 17 |&nbsp;&nbsp; 323 |&nbsp;&nbsp;&nbsp;&nbsp; 5&nbsp; (20)| 00:00:01 |<br />
+|*&nbsp; 1 |&nbsp; HASH JOIN ANTI&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 17 |&nbsp;&nbsp; 323 |&nbsp;&nbsp;&nbsp;&nbsp; 5&nbsp; (20)| 00:00:01 |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; TABLE ACCESS FULL| DEPARTMENTS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp; 432 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|&nbsp;&nbsp; 3 |&nbsp;&nbsp; INDEX FULL SCAN&nbsp; | EMP_DEPARTMENT_IX |&nbsp;&nbsp; 107 |&nbsp;&nbsp; 321 |&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; (0)| 00:00:01 |<br />
+----------------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 1 - access("EMP"."DEPARTMENT_ID"="DEPT"."DEPARTMENT_ID")</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 566&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 193&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 985&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 535&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 16&nbsp; rows processed</p>
+<p>-- 使用_optimizer_null_antijoin参数关闭反联结中的空值考虑选项-即返回空值的情况不使用反联结<br />
+SQL&gt; alter session set "_optimizer_null_aware_antijoin"=false;</p>
+<p>Session altered.</p>
+<p>SQL&gt; select department_name<br />
+&nbsp; 2&nbsp; from hr.departments<br />
+&nbsp; 3&nbsp; where department_id not in (select department_id from hr.employees);</p>
+<p>no rows selected</p>
+<p>Execution Plan<br />
+----------------------------------------------------------<br />
+Plan hash value: 3416340233</p>
+<p>----------------------------------------------------------------------------------<br />
+| Id&nbsp; | Operation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Rows&nbsp; | Bytes | Cost (%CPU)| Time&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+----------------------------------------------------------------------------------<br />
+|&nbsp;&nbsp; 0 | SELECT STATEMENT&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp; 26 |&nbsp;&nbsp; 416 |&nbsp;&nbsp;&nbsp; 30&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 1 |&nbsp; FILTER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |<br />
+|&nbsp;&nbsp; 2 |&nbsp;&nbsp; TABLE ACCESS FULL| DEPARTMENTS |&nbsp;&nbsp;&nbsp; 27 |&nbsp;&nbsp; 432 |&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; (0)| 00:00:01 |<br />
+|*&nbsp; 3 |&nbsp;&nbsp; TABLE ACCESS FULL| EMPLOYEES&nbsp;&nbsp; |&nbsp;&nbsp;&nbsp;&nbsp; 2 |&nbsp;&nbsp;&nbsp;&nbsp; 6 |&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp; (0)| 00:00:01 |<br />
+----------------------------------------------------------------------------------</p>
+<p>Predicate Information (identified by operation id):<br />
+---------------------------------------------------</p>
+<p>&nbsp;&nbsp; 1 - filter( NOT EXISTS (SELECT 0 FROM "HR"."EMPLOYEES" "EMPLOYEES"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE LNNVL("DEPARTMENT_ID"&lt;&gt;:B1)))<br />
+&nbsp;&nbsp; 3 - filter(LNNVL("DEPARTMENT_ID"&lt;&gt;:B1))</p>
+<p>Statistics<br />
+----------------------------------------------------------<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; recursive calls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; db block gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 172&nbsp; consistent gets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; physical reads<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; redo size<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 343&nbsp; bytes sent via SQL*Net to client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 513&nbsp; bytes received via SQL*Net from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; SQL*Net roundtrips to/from client<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (memory)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; sorts (disk)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp; rows processed<br />
+</div></p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/106238.html'>js仿苹果iwatch外观的计时器代码分享</a><a>下一篇</a><a href='/php/biji/106240.html'>java 获取路径的各种方法(总结)</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

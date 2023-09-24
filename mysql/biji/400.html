@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL的数据行和行溢出机制的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL的数据行和行溢出机制的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+一、行 有哪" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL的数据行和行溢出机制的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:15:55                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL的数据行和行溢出机制的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+一、行 有哪</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL的数据行和行溢出机制的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h3>一、行 有哪些格式？</h3>
+<p>你可以像下面这样看一下你的MySQL行格式设置。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>其实MySQL的数据行有两种格式，一种就是图中的 Compact格式，还有一种是Redundant格式。</p>
+<p>Compact是一种紧凑的行格式，设计的初衷就是为了让一个数据页中可以存放更多的数据行。</p>
+<p>你品一品，让一个数据页中可以存放更多的数据行是一个多么激动人心的事，MySQL以数据页为单位从磁盘中读数据，如果能做到让一个数据页中有更多的行，那岂不是使用的空间变少了，且整体的效率直线飙升？</p>
+<p>官网介绍：Compact能比Redundant格式节约20%的存储。</p>
+<p>Compact从MySQL5.0引入，MySQL5.1之后，行格式默认设置成 Compact 。所以本文描述的也是Compact格式。</p>
+<h3>二、紧凑的行格式长啥样？</h3>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>你肯定晓得表中有的列允许为null，有的列是变长的varchar类型。</p>
+<p>那Compact行格式是如何组织描述这些信息的呢？如下图：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<blockquote>
+<p>每部分包含的数据可能要比我上面标注的1、2、3还要多。</p>
+<p>为了给大家更直观的感受和理解我只是挑了一部分展示给大家看。</p></blockquote>
+<h3>三、MySQL单行能存多大体量的数据？</h3>
+<p>在MySQL的设定中，单行数据最大能存储65535byte的数据（注意是byte，而不是字符）</p>
+<p>但是当你像下面这样创建一张数据表时却发生了错误：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>MySQL不允许创建一个长度为65535byte的列，因为数据页中每一行中都有我们上图提到的隐藏列。</p>
+<p>所以将varchar的长度降低到65532byte即可成功创建该表</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>注意这里的65535指的是字节，而不是字符。</p>
+<p>所以如果你将charset换成utf8这种编码格式，那varchar(N)中的N其实指的N个字符，而不是N个byte。所以如果你像下面这样创建表就会报错。</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>假如encode=utf8时三个byte表示一个字符。那么65535 / 3 = 21845个字符。</p>
+<h3>四、Compact格式是如何做到紧凑的？</h3>
+<p>MySQL每次进行随机的IO读</p>
+<p>默认情况下，数据页的大小为16KB。数据页中存储着数行。</p>
+<p>那就意味着一个数据页中能存储越多的数据行，MySQL整体的进行的IO次数就越少？性能就越快？</p>
+<p>Compact格式的实现思路是：当列的类型为VARCHAR、 VARBINARY、 BLOB、TEXT时，该列超过768byte的数据放到其他数据页中去。</p>
+<p>如下图：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>看到这里来龙去脉是不是很清晰了呢？</p>
+<p>MySQL这样做，有效的防止了单个varchar列或者Text列太大导致单个数据页中存放的行记录过少而让IO飙升的窘境且占内存的。</p>
+<h3>五、什么是行溢出？</h3>
+<p>那什么是行溢出呢？</p>
+<p>如果数据页默认大小为16KB，换算成byte： 16*1024 = 16384 byte</p>
+<p>那你有没有发现，单页能存储的16384byte和单行最大能存储的 65535byte 差了好几倍呢？</p>
+<p>也就是说，假如你要存储的数据行很大超过了65532byte那么你是写入不进去的。假如你要存储的单行数据小于65535byte但是大于16384byte，这时你可以成功insert，但是一个数据页又存储不了你插入的数据。这时肯定会行溢出！</p>
+<p>其实在MySQL的设定中，发生行溢出并不是达到16384byte边缘才会发生。</p>
+<p>对于varchar、text等类型的行。当这种列存储的长度达到几百byte时就会发生行溢。</p>
+<h3>六、行 如何溢出？</h3>
+<p>还是看这张图：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>在MySQL设定中，当varchar列长度达到768byte后，会将该列的前768byte当作当作prefix存放在行中，多出来的数据溢出存放到溢出页中，然后通过一个偏移量指针将两者关联起来，这就是行溢出机制。</p>
+<h3>七、思考一个问题</h3>
+<p>不知道你有没有想过这样一个问题：</p>
+<p>首先你肯定知道，MySQL使用的是B+Tree的聚簇索引，在这棵B+Tree中非叶子节点是只存索引不存数据，叶子节点中存储着真实的数据。同时叶子结点指向数据页。</p>
+<p>那当单行存不下的时候，为啥不存储在两个数据页中呢？就像下图这样～。</p>
+<p>单个节点存储下，我用多个节点存总行吧！说不定这样我的B+Tee还能变大长高（这其实是错误的想法）</p>
+<p>这个错误的描述对应的脑图如下：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>那MySQL不这样做的原因如下：</p>
+<p>MySQL想让一个数据页中能存放更多的数据行，至少也得要存放两行数据。否则就失去了B+Tree的意义。B+Tree也退化成一个低效的链表。</p>
+<p>你可以品一下这句蓝色的话，他说的每个数据页至少要存放两行数据的意思不是说 数据页不能只存一行。你确确实实可以只往里面写一行数据，然后去吃个饭，干点别的。一直让这个数据页中只有一行数据。</p>
+<p>这句话的意思是，当你往这个数据页中写入一行数据时，即使它很大将达到了数据页的极限，但是通过行溢出机制。依然能保证你的下一条数据还能写入到这个数据页中。</p>
+<p>正确的脑图如下：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p></p>
+<h3>参考：</h3>
+<p></p>
+<p>https://dev.mysql.com/doc/refman/5.7/en/innodb-row-format.html</p>
+<p>https://dev.mysql.com/doc/refman/5.7/en/column-count-limit.html</p>
+<blockquote>
+<p>作者： 赐我白日梦</p>
+<p>出处：https://www.cnblogs.com/ZhuChangwu/p/14035330.html</p></blockquote>
+<p>以上就是详解MySQL的数据行和行溢出机制的详细内容，更多关于MySQL 数据行和行溢出的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL的数据行和行溢出机制的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/399.html'>MySQL高并发生成唯一订单号的解决办法</a><a>下一篇</a><a href='/mysql/biji/401.html'>MySQL SERVER收缩日志文件的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>快速查出Oracle数据库中锁等待的方法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="通常在大型数据库系统中，为了保证数据的一致性，在对数据库中的数据进行操作时，系统会进行对数据相应的锁定。<br />
+这些锁定中有&quot;只读锁&quot;、&quot;排它锁&quot;，&quot;共享排它锁&quot;等多种类型，而且每种" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">快速查出Oracle数据库中锁等待的方法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>通常在大型数据库系统中，为了保证数据的一致性，在对数据库中的数据进行操作时，系统会进行对数据相应的锁定。<br />
+这些锁定中有&quot;只读锁&quot;、&quot;排它锁&quot;，&quot;共享排它锁&quot;等多种类型，而且每种</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>通常在大型数据库系统中，为了保证数据的一致性，在对数据库中的数据进行操作时，系统会进行对数据相应的锁定。</p>
+<p>这些锁定中有"只读锁"、"排它锁"，"共享排它锁"等多种类型，而且每种类型又有"行级锁"（一次锁住一条记录），"页级锁"（一次锁住一页，即数据库中存储记录的最小可分配单元），"表级锁"（锁住整个表）。若为"行级排它锁"，则除被锁住的该行外，该表中其它行均可被其它的用户进行修改(Update)或删除(delete)操作，若为"表级排它锁"，则所有其它用户只能对该表进行查询(select)操作，而无法对其中的任何记录进行修改或删除。当程序对所做的修改进行提交(commit)或回滚后(rollback)后，锁住的资源便会得到释放，从而允许其它用户进行操作。</p>
+<p>但是在某些情况下，由于程序中的一些特殊原因，锁住资源后长时间未对其工作进行提交；或是由于用户的原因，如调出需要修改的数据后，未及时修改并提交，而是放置于一旁；或是由于客户服务器方式中客户端出现"死机"，而服务器端却并未检测到，从而造成锁定的资源未被及时释放，最终出现影响到其它用户操作的情况。</p>
+<p>因而，如何迅速地诊断出锁住资源的用户以及解决其锁定便是数据库管理员的一个挑战。<br />
+由于数据库应用系统越来越复杂， 一旦出现由于锁资源未及时释放的情况，便会引起对一相同表进行操作的大量用户无法进行操作，从而影响到系统的使用。此时，DBA应尽量快地解决问题。但是，由于在Oracle 8.0.x 中执行"获取正在等待锁资源的用户名"的查询语句<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+select a.username, a.sid, a.serial#, b.id1
+ from v$session a, v$lock b
+ where a.lockwait = b.kaddr
+</pre>
+</div>
+<p>十分缓慢，（在 Oracle 7.3.4中执行很快)，而且，执行"查找阻塞其它用户的用户进程"的查询语句<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+  select a.username, a.sid, a.serial#, b.id1
+   from v$session a, v$lock b
+   where b.id1 in
+      (select distinct e.id1
+       from v$session d, v$lock e
+       where d.lockwait = e.kaddr)
+    and a.sid = b.sid
+    and b.request = 0
+</pre>
+</div>
+<p>&nbsp;执行得也十分缓慢。因而，往往只好通过将 v$session 中状态为"inactive"（不活动）并且最后一次进行操作时间至当前已超过 20 分钟以上(last_call_et&gt;20*60 秒)的用户进程清除，然后才使得问题得到解决。</p>
+<p>&nbsp;但是，这种一刀切的方法实际上是"把婴儿与脏水一起泼掉"。因为，有些用户的进程尽管也为"inactive"，并且也已有较长时间未活动，但是，那是由于他们处于锁等待状态。</p>
+<p>&nbsp;因而，笔者想到了一个解决办法。即通过将问题发生时的 v$lock，v$session视图中的相关记录保存于自己建立的表中，再对该表进行查询，则速度大大提高，可以迅速发现问题。经实际使用，效果非常好。在接到用户反映后，几秒钟即可查出由于锁住资源而影响其它用户的进程，并进行相应的处理。</p>
+<p>&nbsp;首先，以 dba 身份（不一定为system）登录入数据库中，创建三个基本表:my_session，my_lock, my_sqltext，并在将会进行查询的列上建立相应的索引。语句如下： <br />
+&nbsp;rem 从 v$session 视图中取出关心的字段，创建 my_session 表,并在查询要用到的字段上创建索引，以加快查询速度<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+drop table my_session;
+create table my_session
+as
+select a.username, a.sid, a.serial#,
+a.lockwait, a.machine,a.status,
+a.last_call_et,a.sql_hash_value,a.program
+ from v$session a
+ where 1=2 ;
+
+create unique index my_session_u1 on my_session(sid);
+create index my_session_n2 on my_session(lockwait);
+create index my_session_n3 on my_session(sql_hash_value);
+
+</pre>
+</div>
+<p>rem 从 v$lock 视图中取出字段，创建 my_lock 表，并在查询要用到的字段上创建索引，以加快查询速度</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+drop table my_lock;
+create table my_lock
+as
+select id1, kaddr, sid, request,type
+ from v$lock
+ where 1=2;
+
+create index my_lock_n1 on my_lock(sid);
+create index my_lock_n2 on my_lock(kaddr);
+
+</pre>
+</div>
+<p>rem 从 v$sqltext 视图中取出字段，创建 my_sqltext 表，并在查询要用到的字段上创建索引，以加快查询速度</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+drop table my_sqltext;
+create table my_sqltext
+as
+select hash_value , sql_text
+ from v$sqltext
+ where 1=2;
+
+create index my_sqltext_n1 on my_sqltext ( hash_value);
+
+</pre>
+</div>
+<p>然后，创建一个 SQL 脚本文件，以便需要时可从 SQL*Plus 中直接调用。其中，首先用 truncate table 表名命令将表中的记录删除。之所以用 truncate 命令，而不是用delete 命令，是因为delete 命令执行时，将会产生重演记录，速度较慢，而且索引所占的空间并未真正释放，若反复做 insert及delete,则索引所占的空间会不断增长，查询速度也会变慢。而 truncate命令不产生重演记录，速度执行较delete快，而且索引空间被相应地释放出来。删除记录后，再将三个视图中的相关记录插入自己创建的三个表中。最后，对其进行查询，由于有索引，同时由于在插入时条件过滤后，记录数相对来说较少，因而查询速度很快，马上可以看到其结果。</p>
+<p>此时，若发现该阻塞其它用户进程的进程是正常操作中，则可通知该用户对其进行提交，从而达到释放锁资源的目的；若为未正常操作，即，其状态为"inactive"，且其last_call_et已为较多长时间，则可执行以下语句将该进程进行清除，系统会自动对其进行回滚，从而释放锁住的资源。</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+alter system kill session 'sid, serial#'; 
+
+</pre>
+</div>
+<p>SQL 脚本如下：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+set echo off
+set feedback off
+prompt '删除旧记录.....'
+truncate table my_session;
+truncate table my_lock;
+truncate table my_sqltext;
+
+prompt '获取数据.....'
+insert into my_session
+select a.username, a.sid, a.serial#,
+    a.lockwait, a.machine,a.status,
+    a.last_call_et,a.sql_hash_value,a.program
+ from v$session a
+ where nvl(a.username,'NULL')&lt; &gt;'NULL;
+
+insert into my_lock
+select id1, kaddr, sid, request,type
+ from v$lock;
+
+insert into my_sqltext
+select hash_value , sql_text
+ from v$sqltext s, my_session m
+ where s.hash_value=m.sql_hash_value;
+
+column username format a10
+column machine format a15
+column last_call_et format 99999 heading "Seconds"
+column sid format 9999
+
+prompt "正在等待别人的用户"
+select a.sid, a.serial#, 
+a.machine,a.last_call_et, a.username, b.id1
+ from my_session a, my_lock b
+ where a.lockwait = b.kaddr;
+
+prompt "被等待的用户"
+select a.sid, a.serial#, 
+a. machine, a.last_call_et,a.username,
+b. b.type,a.status,b.id1
+ from my_session a, my_lock b
+ where b.id1 in
+   (select distinct e.id1
+     from my_session d, my_lock e
+    where d.lockwait = e.kaddr)
+  and a.sid = b.sid
+  and b.request=0;
+
+prompt "查出其 sql "
+select a.username, a.sid, a.serial#,
+ b.id1, b.type, c.sql_text
+ from my_session a, my_lock b, my_sqltext c
+ where b.id1 in
+    (select distinct e.id1
+     from my_session d, my_lock e
+     where d.lockwait = e.kaddr)
+  and a.sid = b.sid
+  and b.request=0
+  and c.hash_value =a.sql_hash_value;
+ 
+</pre>
+</div>
+<p>以上思路也可用于其它大型数据库系统如 Informix, Sybase,DB2中。通过使用该脚本，可以极大地提高获取系统中当前锁等待的情况，从而及时解决数据库应用系统中的锁等待问题。而且，由于实际上已取出其 program 名及相应的 sql 语句，故可以在事后将其记录下来，交给其开发人员进行分析并从根本上得到解决。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/101763.html'>PagerSlidingTabStrip制作Android带标签的多界面滑动切换</a><a>下一篇</a><a href='/php/biji/101765.html'>Java封装好的mail包发送电子邮件的类</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

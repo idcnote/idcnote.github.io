@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>使用GDB调试PHP代码，解决PHP代码死循环问题_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="最近在帮同事解决Swoole Server问题时，发现有1个worker进程一直处于R的状态，而且CPU耗时非常高。初步断定是PHP代码中发生死循环。<br />
+下面通过一段代码展示如何解决PHP死循环问" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">使用GDB调试PHP代码，解决PHP代码死循环问题</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>最近在帮同事解决Swoole Server问题时，发现有1个worker进程一直处于R的状态，而且CPU耗时非常高。初步断定是PHP代码中发生死循环。<br />
+下面通过一段代码展示如何解决PHP死循环问</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>最近在帮同事解决Swoole Server问题时，发现有1个worker进程一直处于R的状态，而且CPU耗时非常高。初步断定是PHP代码中发生死循环。</p>
+<p>下面通过一段代码展示如何解决PHP死循环问题。</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="92716" class="copybut" id="copybut92716" onclick="doCopy('code92716')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code92716"><br />
+#dead_loop.php<br />
+$array = array();<br />
+for($i = 0; $i &lt; 10000; $i++)<br />
+{<br />
+&nbsp;&nbsp;&nbsp; $array[] = $i;<br />
+}<br />
+include __DIR__."/include.php";<br />
+#include.php<br />
+while(1)<br />
+{<br />
+&nbsp;&nbsp;&nbsp; usleep(10);<br />
+&nbsp;&nbsp;&nbsp; $keys = array_flip($array);<br />
+&nbsp;&nbsp;&nbsp; $index = array_search(rand(1500, 9999), $array);<br />
+&nbsp;&nbsp;&nbsp; $str = str_repeat('A', $index);<br />
+&nbsp;&nbsp;&nbsp; $strb = test($index, $str);<br />
+}<br />
+function test($index, $str)<br />
+{<br />
+&nbsp;&nbsp;&nbsp; return str_replace('A', 'B', $str);<br />
+}<br />
+</div></p>
+<p>通过ps aux得到进程ID和状态如下，使用gdb -p 进程ptrace跟踪，通过bt命令得到调用栈</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="84430" class="copybut" id="copybut84430" onclick="doCopy('code84430')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code84430"><br />
+htf 3834 2.6 0.2 166676 22060 pts/12 R+ 10:50 0:12 php dead_loop.php<br />
+gdb -p 3834<br />
+(gdb) bt<br />
+#0 0x00000000008cc03f in zend_mm_check_ptr (heap=0x1eaa2c0, ptr=0x2584910, silent=1, __zend_filename=0xee3d40 "/home/htf/workspace/php-5.4.27/Zend/zend_variables.c",<br />
+__zend_lineno=182, __zend_orig_filename=0xee1888 "/home/htf/workspace/php-5.4.27/Zend/zend_execute_API.c", __zend_orig_lineno=437)<br />
+at /home/htf/workspace/php-5.4.27/Zend/zend_alloc.c:1485<br />
+#1 0x00000000008cd643 in _zend_mm_free_int (heap=0x1eaa2c0, p=0x2584910, __zend_filename=0xee3d40 "/home/htf/workspace/php-5.4.27/Zend/zend_variables.c", __zend_lineno=182,<br />
+__zend_orig_filename=0xee1888 "/home/htf/workspace/php-5.4.27/Zend/zend_execute_API.c", __zend_orig_lineno=437) at /home/htf/workspace/php-5.4.27/Zend/zend_alloc.c:2064<br />
+#2 0x00000000008cebf7 in _efree (ptr=0x2584910, __zend_filename=0xee3d40 "/home/htf/workspace/php-5.4.27/Zend/zend_variables.c", __zend_lineno=182,<br />
+__zend_orig_filename=0xee1888 "/home/htf/workspace/php-5.4.27/Zend/zend_execute_API.c", __zend_orig_lineno=437) at /home/htf/workspace/php-5.4.27/Zend/zend_alloc.c:2436<br />
+#3 0x00000000008eda0a in _zval_ptr_dtor (zval_ptr=0x25849a0, __zend_filename=0xee3d40 "/home/htf/workspace/php-5.4.27/Zend/zend_variables.c", __zend_lineno=182)<br />
+at /home/htf/workspace/php-5.4.27/Zend/zend_execute_API.c:437<br />
+#4 0x00000000008fe687 in _zval_ptr_dtor_wrapper (zval_ptr=0x25849a0) at /home/htf/workspace/php-5.4.27/Zend/zend_variables.c:182<br />
+#5 0x000000000091259f in zend_hash_destroy (ht=0x7f7263f6e380) at /home/htf/workspace/php-5.4.27/Zend/zend_hash.c:560<br />
+#6 0x00000000008fe2c5 in _zval_dtor_func (zvalue=0x7f726426fe50, __zend_filename=0xeea290 "/home/htf/workspace/php-5.4.27/Zend/zend_execute.c", __zend_lineno=901)<br />
+at /home/htf/workspace/php-5.4.27/Zend/zend_variables.c:45<br />
+#7 0x0000000000936656 in _zval_dtor (zvalue=0x7f726426fe50, __zend_filename=0xeea290 "/home/htf/workspace/php-5.4.27/Zend/zend_execute.c", __zend_lineno=901)<br />
+at /home/htf/workspace/php-5.4.27/Zend/zend_variables.h:35<br />
+#8 0x0000000000939747 in zend_assign_to_variable (variable_ptr_ptr=0x7f7263f8e738, value=0x7f726426f6a8) at /home/htf/workspace/php-5.4.27/Zend/zend_execute.c:901<br />
+#9 0x0000000000997ee5 in ZEND_ASSIGN_SPEC_CV_VAR_HANDLER (execute_data=0x7f726d04b2a8) at /home/htf/workspace/php-5.4.27/Zend/zend_vm_execute.h:33168<br />
+#10 0x000000000093b5fd in execute (op_array=0x21d58b0) at /home/htf/workspace/php-5.4.27/Zend/zend_vm_execute.h:410<br />
+#11 0x0000000000901692 in zend_execute_scripts (type=8, retval=0x0, file_count=3) at /home/htf/workspace/php-5.4.27/Zend/zend.c:1315<br />
+#12 0x000000000087926a in php_execute_script (primary_file=0x7ffffe0038d0) at /home/htf/workspace/php-5.4.27/main/main.c:2502<br />
+#13 0x00000000009a32e3 in do_cli (argc=2, argv=0x7ffffe004d18) at /home/htf/workspace/php-5.4.27/sapi/cli/php_cli.c:989<br />
+#14 0x00000000009a4491 in main (argc=2, argv=0x7ffffe004d18) at /home/htf/workspace/php-5.4.27/sapi/cli/php_cli.c:1365<br />
+</div></p>
+<p>执行gdb后，死循环的进程会变成T的状态，表示正在Trace。这个是独占的，所以不能再使用strace/gdb或者其他ptrace工具对此进程进行调试。另外此进程会中断执行。gdb输入c后，程序继续向下运行。然后再次按下ctrl + c中断程序。 通过bt命令查看进程的调用栈。</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="62404" class="copybut" id="copybut62404" onclick="doCopy('code62404')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code62404"><br />
+(gdb) bt<br />
+#0 _zend_mm_alloc_int (heap=0x1eaa2c0, size=72, __zend_filename=0xe43410 "/home/htf/workspace/php-5.4.27/ext/standard/array.c", __zend_lineno=2719,<br />
+__zend_orig_filename=0xee5a38 "/home/htf/workspace/php-5.4.27/Zend/zend_hash.c", __zend_orig_lineno=412) at /home/htf/workspace/php-5.4.27/Zend/zend_alloc.c:1895<br />
+#1 0x00000000008ceb86 in _emalloc (size=72, __zend_filename=0xe43410 "/home/htf/workspace/php-5.4.27/ext/standard/array.c", __zend_lineno=2719,<br />
+__zend_orig_filename=0xee5a38 "/home/htf/workspace/php-5.4.27/Zend/zend_hash.c", __zend_orig_lineno=412) at /home/htf/workspace/php-5.4.27/Zend/zend_alloc.c:2425<br />
+#2 0x0000000000911d85 in _zend_hash_index_update_or_next_insert (ht=0x2257a10, h=3972, pData=0x7ffffe0012b0, nDataSize=8, pDest=0x0, flag=1,<br />
+__zend_filename=0xe43410 "/home/htf/workspace/php-5.4.27/ext/standard/array.c", __zend_lineno=2719) at /home/htf/workspace/php-5.4.27/Zend/zend_hash.c:412<br />
+#3 0x00000000007767e1 in zif_array_flip (ht=1, return_value=0x7f726424ea68, return_value_ptr=0x0, this_ptr=0x0, return_value_used=1)<br />
+at /home/htf/workspace/php-5.4.27/ext/standard/array.c:2719<br />
+#4 0x000000000093c03e in zend_do_fcall_common_helper_SPEC (execute_data=0x7f726d04b2a8) at /home/htf/workspace/php-5.4.27/Zend/zend_vm_execute.h:643<br />
+#5 0x00000000009400e6 in ZEND_DO_FCALL_SPEC_CONST_HANDLER (execute_data=0x7f726d04b2a8) at /home/htf/workspace/php-5.4.27/Zend/zend_vm_execute.h:2233<br />
+#6 0x000000000093b5fd in execute (op_array=0x21d58b0) at /home/htf/workspace/php-5.4.27/Zend/zend_vm_execute.h:410<br />
+</div></p>
+<p>两次的BT信息不一样，这是因为程序在不同的位置中断。看到execute (oparray=0x21d58b0) 这一行，这里就是PHP执行oparray的入口了。gdb下输入f 6，(通过调用栈编号可得)。</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="1925" class="copybut" id="copybut1925" onclick="doCopy('code1925')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code1925"><br />
+(gdb) f 6<br />
+#6 0x000000000093b5fd in execute (op_array=0x21d58b0) at /home/htf/workspace/php-5.4.27/Zend/zend_vm_execute.h:410<br />
+410 if ((ret = OPLINE-&gt;handler(execute_data TSRMLS_CC)) &gt; 0) {<br />
+(gdb) p *op_array<br />
+$2 = {type = 2 '\002', function_name = 0x7f726d086540 "test", scope = 0x0, fn_flags = 134217728, prototype = 0x0, num_args = 2, required_num_args = 2, arg_info = 0x7f726d086bd8,<br />
+refcount = 0x7f726d0870f0, opcodes = 0x7f726424d600, last = 8, vars = 0x7f726424e890, last_var = 2, T = 1, brk_cont_array = 0x0, last_brk_cont = 0, try_catch_array = 0x0,<br />
+last_try_catch = 0, static_variables = 0x0, this_var = 4294967295, filename = 0x7f726424ba38 "/home/htf/wwwroot/include.php", line_start = 12, line_end = 15, doc_comment = 0x0,<br />
+doc_comment_len = 0, early_binding = 4294967295, literals = 0x7f726424eae0, last_literal = 4, run_time_cache = 0x7f726450bfb0, last_cache_slot = 1, reserved = {0x0, 0x0, 0x0, 0x0}}<br />
+</div></p>
+<p>这里的filename就能看到op_array是哪个PHP文件的。然后输入f 0进入当前位置。</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="83362" class="copybut" id="copybut83362" onclick="doCopy('code83362')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code83362"><br />
+(gdb) p **executor_globals.opline_ptr<br />
+$4 = {handler = 0x93ff9c , op1 = {constant = 1680133296, var = 1680133296, num = 1680133296, hash = 140129283132592, opline_num = 1680133296,<br />
+jmp_addr = 0x7f726424ccb0, zv = 0x7f726424ccb0, literal = 0x7f726424ccb0, ptr = 0x7f726424ccb0}, op2 = {constant = 0, var = 0, num = 0, hash = 0, opline_num = 0, jmp_addr = 0x0,<br />
+zv = 0x0, literal = 0x0, ptr = 0x0}, result = {constant = 32, var = 32, num = 32, hash = 32, opline_num = 32, jmp_addr = 0x20, zv = 0x20, literal = 0x20, ptr = 0x20},<br />
+extended_value = 1, lineno = 5, opcode = 60 ' <br />
+</div></p>
+<p>这里的lineno表示OPCODE所在的代码行数，可以到对应文件里去看下是哪行代码。使用GDB可以查看到更多的信息，这里就不再一一介绍了，有兴趣各位可以自行尝试。</p>
+<p>zbacktrace的使用</p>
+<p>zend官方提供了一个gdb的脚本，对指令进行了封装，可以直接看到php函数的调用关系。在php源代码包的根目录中有一个.gdbinit。使用</p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="65608" class="copybut" id="copybut65608" onclick="doCopy('code65608')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code65608"><br />
+source your_php_src_path/.gdbinit<br />
+zbacktrace<br />
+</div></p>
+<p>可以直接看到PHP函数的调用堆栈。</p>
+<p>以上就是本文的全部内容了，希望大家能够喜欢。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/96125.html'>jquery实现浮动的侧栏实例</a><a>下一篇</a><a href='/php/biji/96127.html'>javascript抽象工厂模式详细说明</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

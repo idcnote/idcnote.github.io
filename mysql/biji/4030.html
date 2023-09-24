@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>LINQ to SQL:处理char(1)字段的方式会引起全表扫描问题_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了LINQ to SQL:处理char(1)字段的方式会引起全表扫描问题，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+
+如" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">LINQ to SQL:处理char(1)字段的方式会引起全表扫描问题</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:52:28                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了LINQ to SQL:处理char(1)字段的方式会引起全表扫描问题，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+
+如</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了LINQ to SQL:处理char(1)字段的方式会引起全表扫描问题，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p><img alt="image" border="0" height="339" src="http://www.512pic.com/d/file/20190420/0124920d5e8a4221b8fc4c8705401e14.png" style="BORDER-RIGHT: 0px; BORDER-TOP: 0px; BORDER-LEFT: 0px; BORDER-BOTTOM: 0px" width="368" /></p>
+<p>如果表中的字段类型为 char(1) 时，Linq to SQL生成char (System.Char)的属性，如下图</p>
+<table border="0" cellpadding="2" cellspacing="0" width="827">
+	<tbody>
+		<tr>
+			<td valign="top" width="255"><img alt="image" border="0" height="163" src="http://www.512pic.com/d/file/20190420/95f8440e310c074f186e3321992c435c.png" style="BORDER-RIGHT: 0px; BORDER-TOP: 0px; BORDER-LEFT: 0px; BORDER-BOTTOM: 0px" width="227" /></td>
+			<td valign="top" width="569"><img alt="image" border="0" height="273" src="http://www.512pic.com/d/file/20190420/5fdce451f1073a8c064d9efe4c6869c8.png" style="BORDER-RIGHT: 0px; BORDER-TOP: 0px; BORDER-LEFT: 0px; BORDER-BOTTOM: 0px" width="505" /></td>
+		</tr>
+		<tr>
+			<td valign="top" width="255">表定义</td>
+			<td valign="top" width="569"><font size="2">生成的实体</font></td>
+		</tr>
+	</tbody>
+</table>
+<p>2.</p>
+<p>如果要查询LineCode==&#39;A&#39;的记录，可以这样定义Linq查询语句</p>
+<div class="wlWriterSmartContent" id="scid:C411E4BC-FA5A-4068-9F25-1AA2B5A98D76:dc4d935b-70c5-49ab-a88e-73a396a5d4af" style="PADDING-RIGHT: 0px; DISPLAY: inline; PADDING-LEFT: 0px; FLOAT: none; PADDING-BOTTOM: 0px; MARGIN: 0px; PADDING-TOP: 0px">
+<div style="BORDER-RIGHT: gray 0px solid; BORDER-TOP: gray 0px solid; DISPLAY: block; MARGIN: 2px; BORDER-LEFT: gray 0px solid; BORDER-BOTTOM: gray 0px solid; BACKGROUND-COLOR: #f7f7ff">
+<table>
+	<tbody>
+		<tr>
+			<td>var test1 = from p in db.ProductLines</td>
+		</tr>
+		<tr>
+			<td>where p.LineCode ==&#39;A&#39;</td>
+		</tr>
+		<tr>
+			<td>select p;</td>
+		</tr>
+		<tr>
+			<td></td>
+		</tr>
+	</tbody>
+</table></div></div>
+<p>生成的SQL语句是这样的</p>
+<div class="wlWriterSmartContent" id="scid:C411E4BC-FA5A-4068-9F25-1AA2B5A98D76:7b18d98b-ca26-434c-bf85-25a8fcb029ea" style="PADDING-RIGHT: 0px; DISPLAY: inline; PADDING-LEFT: 0px; FLOAT: none; PADDING-BOTTOM: 0px; MARGIN: 0px; PADDING-TOP: 0px">
+<div style="BORDER-RIGHT: gray 0px solid; BORDER-TOP: gray 0px solid; DISPLAY: block; MARGIN: 2px; BORDER-LEFT: gray 0px solid; BORDER-BOTTOM: gray 0px solid; BACKGROUND-COLOR: #f7f7ff">
+<table>
+	<tbody>
+		<tr>
+			<td>SELECT [t0].[LineCode], [t0].[LineName], [t0].[JPH], [t0].[QueueCount]</td>
+		</tr>
+		<tr>
+			<td>FROM [dbo].[ProductLine] AS [t0]</td>
+		</tr>
+		<tr>
+			<td>WHERE UNICODE([t0].[LineCode]) = @p0</td>
+		</tr>
+		<tr>
+			<td>-- @p0: Input Int (Size = 0; Prec = 0; Scale = 0) [65]</td>
+		</tr>
+		<tr>
+			<td>-- Context: SqlProvider(Sql2000) Model: AttributedMetaModel Build: 3.5.21022.8</td>
+		</tr>
+	</tbody>
+</table></div></div>
+<p>注意到Where语句了吗？是WHERE UNICODE([t0].[LineCode]) = 65，这里先取LineCode列内容的UNICODE再和&#39;A&#39;的UNICODE比较。我们知道&#39;A&#39;和&#39;a&#39;的UNICODE是不同的。UNICODE(&#39;A&#39;) =65，UNICODE(&#39;a&#39;)=97，也就是说，我们在Linq to SQL中这二个查询的结果是不一样的。</p>
+<table border="0" cellpadding="2" cellspacing="0" width="734">
+	<tbody>
+		<tr>
+			<td valign="top" width="79">Linq 语句</td>
+			<td valign="top" width="318">
+			<div class="wlWriterSmartContent" id="scid:C411E4BC-FA5A-4068-9F25-1AA2B5A98D76:fc3a45c5-d70a-4dc2-b281-d2dec4841a47" style="PADDING-RIGHT: 0px; DISPLAY: inline; PADDING-LEFT: 0px; FLOAT: none; PADDING-BOTTOM: 0px; MARGIN: 0px; PADDING-TOP: 0px">
+			<div style="BORDER-RIGHT: gray 0px solid; BORDER-TOP: gray 0px solid; DISPLAY: block; MARGIN: 2px; BORDER-LEFT: gray 0px solid; BORDER-BOTTOM: gray 0px solid; BACKGROUND-COLOR: #f7f7ff">
+			<table>
+				<tbody>
+					<tr>
+						<td>var test1 = from p in db.ProductLines</td>
+					</tr>
+					<tr>
+						<td>where p.LineCode ==&#39;a&#39;</td>
+					</tr>
+					<tr>
+						<td>select p;</td>
+					</tr>
+					<tr>
+						<td></td>
+					</tr>
+				</tbody>
+			</table></div></div></td>
+			<td valign="top" width="335">
+			<div class="wlWriterSmartContent" id="scid:C411E4BC-FA5A-4068-9F25-1AA2B5A98D76:65437f4e-b3e8-4456-95b0-1f3daa5d328c" style="PADDING-RIGHT: 0px; DISPLAY: inline; PADDING-LEFT: 0px; FLOAT: none; PADDING-BOTTOM: 0px; MARGIN: 0px; PADDING-TOP: 0px">
+			<div style="BORDER-RIGHT: gray 0px solid; BORDER-TOP: gray 0px solid; DISPLAY: block; MARGIN: 2px; BORDER-LEFT: gray 0px solid; BORDER-BOTTOM: gray 0px solid; BACKGROUND-COLOR: #f7f7ff">
+			<table>
+				<tbody>
+					<tr>
+						<td>var test1 = from p in db.ProductLines</td>
+					</tr>
+					<tr>
+						<td>where p.LineCode ==&#39;A&#39;</td>
+					</tr>
+					<tr>
+						<td>select p;</td>
+					</tr>
+					<tr>
+						<td></td>
+					</tr>
+				</tbody>
+			</table></div></div></td>
+		</tr>
+		<tr>
+			<td valign="top" width="79">生成SQL语句</td>
+			<td valign="top" width="318">
+			<div class="wlWriterSmartContent" id="scid:C411E4BC-FA5A-4068-9F25-1AA2B5A98D76:e6f673eb-9df5-4bca-83bf-961e01fd8099" style="PADDING-RIGHT: 0px; DISPLAY: inline; PADDING-LEFT: 0px; FLOAT: none; PADDING-BOTTOM: 0px; MARGIN: 0px; PADDING-TOP: 0px">
+			<div style="BORDER-RIGHT: gray 0px solid; BORDER-TOP: gray 0px solid; DISPLAY: block; MARGIN: 2px; BORDER-LEFT: gray 0px solid; BORDER-BOTTOM: gray 0px solid; BACKGROUND-COLOR: #f7f7ff">
+			<table>
+				<tbody>
+					<tr>
+						<td>SELECT [t0].[LineCode], [t0].[LineName], [t0].[JPH], [t0].[QueueCount]</td>
+					</tr>
+					<tr>
+						<td>FROM [dbo].[ProductLine] AS [t0]</td>
+					</tr>
+					<tr>
+						<td>WHERE UNICODE([t0].[LineCode]) = @p0</td>
+					</tr>
+					<tr>
+						<td>-- @p0: Input Int (Size = 0; Prec = 0; Scale = 0) [97]</td>
+					</tr>
+				</tbody>
+			</table></div></div></td>
+			<td valign="top" width="347">
+			<div class="wlWriterSmartContent" id="scid:C411E4BC-FA5A-4068-9F25-1AA2B5A98D76:f3ab80d8-9c7f-45e8-b52f-7aec77b834a9" style="PADDING-RIGHT: 0px; DISPLAY: inline; PADDING-LEFT: 0px; FLOAT: none; PADDING-BOTTOM: 0px; MARGIN: 0px; PADDING-TOP: 0px">
+			<div style="BORDER-RIGHT: gray 0px solid; BORDER-TOP: gray 0px solid; DISPLAY: block; MARGIN: 2px; BORDER-LEFT: gray 0px solid; BORDER-BOTTOM: gray 0px solid; BACKGROUND-COLOR: #f7f7ff">
+			<table>
+				<tbody>
+					<tr>
+						<td>SELECT [t0].[LineCode], [t0].[LineName], [t0].[JPH], [t0].[QueueCount]</td>
+					</tr>
+					<tr>
+						<td>FROM [dbo].[ProductLine] AS [t0]</td>
+					</tr>
+					<tr>
+						<td>WHERE UNICODE([t0].[LineCode]) = @p0</td>
+					</tr>
+					<tr>
+						<td>-- @p0: Input Int (Size = 0; Prec = 0; Scale = 0) [65]</td>
+					</tr>
+				</tbody>
+			</table></div></div></td>
+		</tr>
+	</tbody>
+</table>
+<p>明显，<strong>在Linq to sql是查询char(1)类型字段是区分大小写的</strong>。</p>
+<p>这还会导致一个比较严重的问题，我们知道在SQL Server中,<strong>任何在运算符左边的操作都会使SQL采用全表扫描</strong>。也就是说，Linq的这个查询，<strong>会引起全表扫描</strong>，即使[LineCode]列上定义了聚合索引。而如果是where [linecode]=&#39;A&#39;，则可以使用索引。我们看下这二种情况时的查询执行计划对比。</p>
+<p><img alt="image" border="0" height="447" src="http://www.512pic.com/d/file/20190420/d5820af3d2fd3dc42788f46c9eec8c93.png" style="BORDER-RIGHT: 0px; BORDER-TOP: 0px; BORDER-LEFT: 0px; BORDER-BOTTOM: 0px" width="726" /></p>
+<p>图中可以看出，Linq to SQL 生成的SQL语句是表扫描，而后者则是索引查找。</p>
+<p></p>
+<p>3.</p>
+<p>对策</p>
+<p>在DBML设计器中将LineCode改成string类型。</p>
+<p><img alt="image" border="0" height="238" src="http://www.512pic.com/d/file/20190420/ca98e55a9426c72c732b2d8d200a77fc.png" style="BORDER-RIGHT: 0px; BORDER-TOP: 0px; BORDER-LEFT: 0px; BORDER-BOTTOM: 0px" width="542" /></p>
+<p>看一下改了之后的查询</p>
+<table border="0" cellpadding="2" cellspacing="0" width="763">
+	<tbody>
+		<tr>
+			<td valign="top" width="280">
+			<div class="wlWriterSmartContent" id="scid:C411E4BC-FA5A-4068-9F25-1AA2B5A98D76:f4b7db6e-413f-4173-a040-b63ccaa8d6ec" style="PADDING-RIGHT: 0px; DISPLAY: inline; PADDING-LEFT: 0px; FLOAT: none; PADDING-BOTTOM: 0px; MARGIN: 0px; PADDING-TOP: 0px">
+			<div style="BORDER-RIGHT: gray 0px solid; BORDER-TOP: gray 0px solid; DISPLAY: block; MARGIN: 2px; BORDER-LEFT: gray 0px solid; BORDER-BOTTOM: gray 0px solid; BACKGROUND-COLOR: #f7f7ff">
+			<table>
+				<tbody>
+					<tr>
+						<td>var test1 = from p in db.ProductLines</td>
+					</tr>
+					<tr>
+						<td>where p.LineCode == &quot;a&quot;</td>
+					</tr>
+					<tr>
+						<td>select p;</td>
+					</tr>
+					<tr>
+						<td></td>
+					</tr>
+				</tbody>
+			</table></div></div></td>
+			<td valign="top" width="481">
+			<div class="wlWriterSmartContent" id="scid:C411E4BC-FA5A-4068-9F25-1AA2B5A98D76:ad90660e-ee36-462e-b100-c6a514f58fbb" style="PADDING-RIGHT: 0px; DISPLAY: inline; PADDING-LEFT: 0px; FLOAT: none; PADDING-BOTTOM: 0px; MARGIN: 0px; PADDING-TOP: 0px">
+			<div style="BORDER-RIGHT: gray 0px solid; BORDER-TOP: gray 0px solid; DISPLAY: block; MARGIN: 2px; BORDER-LEFT: gray 0px solid; BORDER-BOTTOM: gray 0px solid; BACKGROUND-COLOR: #f7f7ff">
+			<table>
+				<tbody>
+					<tr>
+						<td>SELECT [t0].[LineCode], [t0].[LineName], [t0].[JPH], [t0].[QueueCount]</td>
+					</tr>
+					<tr>
+						<td>FROM [dbo].[ProductLine] AS [t0]</td>
+					</tr>
+					<tr>
+						<td>WHERE [t0].[LineCode] = @p0</td>
+					</tr>
+					<tr>
+						<td>-- @p0: Input VarChar (Size = 1; Prec = 0; Scale = 0) [a]</td>
+					</tr>
+					<tr>
+						<td>-- Context: SqlProvider(Sql2000) Model: AttributedMetaModel Build: 3.5.21022.8</td>
+					</tr>
+				</tbody>
+			</table></div></div></td>
+		</tr>
+		<tr>
+			<td align="middle" valign="top" width="280">Linq</td>
+			<td align="middle" valign="top" width="481">sql</td>
+		</tr>
+	</tbody>
+</table>
+<p>改为string后，生成的SQL不再用UNICODE函数了，<strong>就解决了区分大小写和引起全表扫描的问题</strong>。但又引起一个新的问题，因为数据库中存储的数据长度是1，在Insert和Update时就要注意，LineCode不要输入过长的内容，否则会出错了。</p>
+
+<p>注：关于LINQ to SQL:处理char(1)字段的方式会引起全表扫描问题的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/4029.html'>全文检索技术 sql server</a><a>下一篇</a><a href='/mysql/biji/4031.html'>SQL Server 不删除信息重新恢复自动编号列的序号的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

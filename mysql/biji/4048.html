@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server 高速缓存依赖分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server 高速缓存依赖分析，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！一，使数据库支持SQL高速缓存依" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server 高速缓存依赖分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:52:36                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server 高速缓存依赖分析，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！一，使数据库支持SQL高速缓存依</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server 高速缓存依赖分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>一，使数据库支持SQL高速缓存依赖性。二，使表支持SQL高速缓存依赖性。三，在ASP.NET应用程序的web.config文件中包含SQL连接字符串。四，以如下方式利用SQL高速缓存依赖性： 1)在代码中编程创建一个SqlCacheDependency对象。 2)给OutputCache指令添加SqlCacheDependency属性。 3)通过Response.AddCacheDependency给Response对象添加一SqlCacheDependency实例。开启高速缓存依赖性的参数简要说明-d &lt;database&gt; 用于SQL高速缓存依赖性的数据库名。数据库可以使用连接字符串和-c选项指定(必选)-ed 允许数据库启用SQL高速缓存依赖性。-dd 禁止数据库启用SQL高速缓存依赖性。-et 允许表启用SQL高速缓存依赖性。需要-t选项。-dt 禁止表启用SQL高速缓存依赖性。需要 -t 选项。-t &lt;table&gt; 支持或禁止SQL高速缓存依赖性的表名。需要 -et 或 -dt 选项。-lt 列出所有启用SQL高速缓存依赖性的表。在SQL Server 2000中使用高速缓存禁用功能(在2005中也可以进行如下设置)要在SQL 2000中使用高速缓存禁用功能，必须执行如下两步：第一步是使相应的数据库支持该功能。第二步是使要使用的表支持该功能。例：aspnet_regsql -S localhost -U sa -P sa -d Northwind -ed注：将本机上的Northwind数据库开启高速缓存依赖功能。aspnet_regsql -S localhost -U sa -P sa -d Northwind -dd注：禁用本机上的Northwind数据库的高速缓存依赖功能。使用次命令后，数据库中的所有表的高速缓存禁用功能都自动关闭，AspNet_SqlCacheTablesForChangeNotification表也会自动删除。开启表的高速缓存依赖功能。例：aspnet_regsql -S localhost -U sa -P sa -d Northwind -t Products -et注：为Northwind数据库中的Products表开启高速缓存依赖功能。aspnet_regsql -S localhost -U sa -P sa -d Northwind -t Products -dt注：为 Northwind数据库中的Products表关闭高速缓存依赖功能。通过这个方法可以为一个数据库中的一个或多个表开启高速缓存依赖功能。为数据库和表开启高速缓存依赖功能后，可以发现Northwind数据库中添加了一个 AspNet_SqlCacheTablesForChangeNotification表，表示配置成功了。aspnet_regsql -S localhost -U sa -P sa -d Northwind -lt使用-lt参数可以查看该数据库中哪些表开启了高速缓存依赖功能。如果数据库关闭了高速缓存依赖或者没有启用高速缓存依赖功能，使用此命令将会得到错误提示。关于SQL 2005的高速缓存禁用功能SQL Server 2005支持高速缓存的编程和声明技术。在OupputCache指令中使用CommandNotification字符串就可以给页面建立基于通知的高速缓存。可以编程指定SQL高速缓存选项，或声明该选项，但不能同时使用这两种方法。SQL2005的缓存依赖无需web.config的配置，也不用为数据库和表开启缓存依赖功能，由于05内置了一个通知传递服务，该服务可以实现检测数据的更改、实现更改通知传递等功能，因此不需要不断轮询数据库来检测数据更新了。注：虽然05中的缓存依赖使用很简单，但目前我还没有找到更多的相关资料，还没有亲自进行测试，主要原因还没搞清楚怎么才能开启Broker服务，以后有时间在进行测试吧。配置ASP.NET应用程序使用数据库和其中的几个表支持SQL Server高速缓存禁用功能后，就要为SQL Server高速缓存禁用功能配置应用程序。要配置应用程序，以使用SQL Server高速缓存禁用功能，首先应修改web.config文件。在此文件中，指定要使用的数据库，并让ASP.NET连接它。如：&lt;connectionStrings&gt; &lt;add name=&quot;NorthwindConnectionString&quot; connectionString=&quot;Data Source=.;Initial Catalog=Northwind;User ID=sa;Password=sa&quot; providerName=&quot;System.Data.SqlClient&quot; /&gt; &lt;/connectionStrings&gt; &lt;system.web&gt;&lt;caching&gt; &lt;sqlCacheDependency enabled=&quot;true&quot; pollTime=&quot;500&quot;&gt; &lt;databases&gt; &lt;clear/&gt; &lt;add name=&quot;Northwind&quot; connectionStringName =&quot;NorthwindConnectionString&quot; pollTime=&quot;500&quot;/&gt; &lt;/databases&gt; &lt;/sqlCacheDependency&gt; &lt;/caching&gt; &lt;/system.web&gt;注：首先使用web.config文件中的&lt;connectionStrings&gt;元素，建立了与数据库的连接字符串。然后通过&lt;caching&gt;元素为SQL Server高速缓存功能进行配置。要是使用SQL Server高速缓存依赖性，所以必须使用&lt;sqlCacheDependency enabled=&quot;true&quot;&gt;节点，并启用该功能。在&lt;databases&gt;节点中引用数据库。&lt;add&gt;元素中的属性说明：name：为SQL Server数据库提供一个标识符。connectionStringName：指定连接的名称。pollTime：指定SQL Server轮流检测的时间间隔，默认为5秒或500毫秒。SQL 2005通知功能不需要这个属性。web.config 文件配置正确后，就可以在页面上使用SQL Server高速缓存禁用功能了。ASP.NET会把SQL Server请求放在AspNet_SqlCacheTablesForChangeNotification表的一个完全不同的线程上，看看 changeId号是否递增了，如果该数字有变化，ASP.NET就知道对底层的SQL Server表进行了修改，应检索一个新的结果集。它确定是否应进行SQL Server调用时，对AspNet_SqlCacheTablesForChangeNotification表的请求会得到一个结果，启动了SQL Server高速缓存禁用功能后，这些执行得非常快。为页面添加多个表，如下（用分号隔开）：&lt;%@ OutputCache Duration=&quot;3600&quot; VaryByParam=&quot;none&quot; SqlDependency=&quot;Northwind:Employees;Northwind:Customers&quot; %&gt;
+
+<p>注：关于SQL Server 高速缓存依赖分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/4046.html'> SQLServer的备份和灾难恢复</a><a>下一篇</a><a href='/mysql/biji/4049.html'>Sqlserver2000 数据库备份实例代码</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

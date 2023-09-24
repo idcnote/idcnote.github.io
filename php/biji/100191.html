@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>php脚本运行时的超时机制详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="在做php开发的时候，经常会设置max_input_time、max_execution_time，用来控制脚本的超时时间。但却从来没有思考过背后的原理。<br />
+趁着这两天有空，研究一下这个问题。<br />
+超时配置" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">php脚本运行时的超时机制详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>在做php开发的时候，经常会设置max_input_time、max_execution_time，用来控制脚本的超时时间。但却从来没有思考过背后的原理。<br />
+趁着这两天有空，研究一下这个问题。<br />
+超时配置</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>在做php开发的时候，经常会设置max_input_time、max_execution_time，用来控制脚本的超时时间。但却从来没有思考过背后的原理。</p>
+<p>趁着这两天有空，研究一下这个问题。</p>
+<p><strong>超时配置</strong><br />
+</p>
+<p>php的ini配置如何起作用，这是一个老生常谈的话题了。</p>
+<p>首先，我们在php.ini里进行配置。当php启动的时候（php_module_startup阶段），会尝试读取ini文件并解析。解析过程简单来说，是分析ini文件，提取出其中合法的键值对，并保存到configuration_hash表。</p>
+<p>OK，然后php会进一步调用zend_startup_extensions来启动各个模块（包含php Core模块，以及所有需要加载的扩展）。各个模块的启动函数中，会完成REGISTER_INI_ENTRIES动作。REGISTER_INI_ENTRIES负责将模块对应的一些配置从configuration_hash表取出，然后调用处理函数，最终将处理完的值存入模块的globals变量。</p>
+<p>max_input_time、max_execution_time这两个配置属于php Core模块。对于php Core来说，REGISTER_INI_ENTRIES依然发生在php_module_startup中。同样属于php Core模块的配置还有expose_php、display_errors、memory_limit等等...</p>
+<p>示意图如下：</p>
+<div class="phpstudycode">
+<pre class="brush:plain;">
+----&gt;php_module_startup-----------&gt;php_request_startup----&gt;
+    |
+    |
+    |--&gt;REGISTER_INI_ENTRIES
+    |
+    |
+    |--&gt;zend_startup_extensions
+    |     |
+    |     |--&gt;zm_startup_date
+    |     |     |--&gt;REGISTER_INI_ENTRIES
+    |     |
+    |     |--&gt;zm_startup_json
+    |     |     |--&gt;REGISTER_INI_ENTRIES
+    |
+    |
+    |--&gt;do otherthings
+
+</pre>
+</div>
+<p>上面说到对于不同的配置，REGISTER_INI_ENTRIES会调用不同的函数来处理。我们直接来看max_execution_time对应的函数：</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+static PHP_INI_MH(OnUpdateTimeout)
+{
+  // php启动阶段走这里
+  if (stage == PHP_INI_STAGE_STARTUP) {
+    // 将超时设置保存到EG(timeout_seconds)中
+    EG(timeout_seconds) = atoi(new_value);
+    return SUCCESS;
+  }
+ 
+  // php执行过程中的ini set则走这里
+  zend_unset_timeout(TSRMLS_C);
+  EG(timeout_seconds) = atoi(new_value);
+  zend_set_timeout(EG(timeout_seconds), 0);
+  return SUCCESS;
+}
+</pre>
+</div>
+<p>暂时只看上半截，因为我们目前只需关注php的启动阶段，该函数行为很简单，将max_execution_time存入了EG(timeout_seconds)。</p>
+<p>至于max_input_time，并没有特殊的处理函数，默认是会将max_input_time存入存入PG(max_input_time)。</p>
+<p>因此，当REGISTER_INI_ENTRIES完成，发生的是：</p>
+<p>max_execution_time ----&gt; 存入EG(timeout_seconds)</p>
+<p>max_input_time&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ----&gt; 存入PG(max_input_time)</p>
+<p><strong>请求超时控制</strong><br />
+</p>
+<p>现在我们搞清楚php的启动阶段发生了什么，继续来看php在实际处理请求的时候，如何管理超时。</p>
+<p>在php_request_startup函数中有如下代码：</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+if (PG(max_input_time) == -1) {
+  zend_set_timeout(EG(timeout_seconds), 1);
+} else {
+  zend_set_timeout(PG(max_input_time), 1);
+}
+</pre>
+</div>
+<p>php_request_startup的时机很讲究。</p>
+<p>以cgi为例，只有当php已经从CGI拿到了原始请求以及一些CGI的环境变量之后，php_request_startup才会被调用。上面这段代码实际执行的时候，由于请求已经拿到，所以SG(request_info)处于准备就绪状态，但是php中的$_GET，$_POST，$_FILE等超全局变量尚未生成。</p>
+<p>从代码上理解：</p>
+<p>1、如果用户将max_input_time配做-1，或没有配置，那么脚本的生命周期就只受EG(timeout_seconds)约束。</p>
+<p>2、否则，请求启动阶段的超时控制，受PG(max_input_time)约束。</p>
+<p>3、zend_set_timeout函数负责设置定时器。一旦指定时间过去，定时器会通知php进程。zend_set_timeout下文会具体分析。</p>
+<p>php_request_startup完成，则进入php的实际执行阶段，即php_execute_script。在php_execute_script中可以看到：</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+// 设定执行超时
+if (PG(max_input_time) != -1) {
+#ifdef PHP_WIN32
+  zend_unset_timeout(TSRMLS_C); // 关闭之前的定时器
+#endif
+  zend_set_timeout(INI_INT("max_execution_time"), 0);
+}
+ 
+// 进入执行
+retval = (zend_execute_scripts(ZEND_REQUIRE TSRMLS_CC, NULL, 3, prepend_file_p, primary_file, append_file_p) == SUCCESS);
+</pre>
+</div>
+<p>OK，假如代码执行到这里，尚未发生max_input_time超时，则会重新指定max_execution_time的超时。</p>
+<p>同样也是采取调用zend_set_timeout，并传入max_execution_time。特别注意一下，windows下面的需要显式调用zend_unset_timeout关闭原来的定时器，而linux下不需要。这是由于两个平台的定时器实现原理不同导致的，下文也会详细展开叙述。</p>
+<p>最后用一张图表示超时控制的流程，左侧的case表明用户既配置了max_input_time，又配置了max_execution_time。而右侧的区别在于用户仅仅配置了max_execution_time：</p>
+<p></p>
+<p><strong>zend_set_timeout</strong><br />
+</p>
+<p>前文提到，zend_set_timeout函数用来设置定时器。具体来看下实现：</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+void zend_set_timeout(long seconds, int reset_signals) /* {{{ */
+{
+  TSRMLS_FETCH();
+ 
+  // 赋值
+  EG(timeout_seconds) = seconds;
+ 
+#ifdef ZEND_WIN32
+  if(!seconds) {
+    return;
+  }
+   
+  // 启动定时器线程
+  if (timeout_thread_initialized == 0 && InterlockedIncrement(&timeout_thread_initialized) == 1) {
+    /* We start up this process-wide thread here and not in zend_startup(), because if Zend
+     * is initialized inside a DllMain(), you're not supposed to start threads from it.
+     */
+    zend_init_timeout_thread();
+  }
+   
+  // 向线程发送WM_REGISTER_ZEND_TIMEOUT消息
+  PostThreadMessage(timeout_thread_id, WM_REGISTER_ZEND_TIMEOUT, (WPARAM) GetCurrentThreadId(),
+                                  (LPARAM) seconds);
+#else
+ 
+  // linux平台下
+  struct itimerval t_r;    /* timeout requested */
+  int signo;
+ 
+  if (seconds) {
+    t_r.it_value.tv_sec = seconds;
+    t_r.it_value.tv_usec = t_r.it_interval.tv_sec = t_r.it_interval.tv_usec = 0;
+ 
+    // 设置定时器，seconds秒后会发送SIGPROF信号
+    setitimer(ITIMER_PROF, &t_r, NULL);
+  }
+  signo = SIGPROF;
+ 
+  if (reset_signals) {
+    sigset_t sigset;
+ 
+    // 设置SIGPROF信号对应的处理函数为zend_timeout
+    signal(signo, zend_timeout);
+     
+    // 防屏蔽
+    sigemptyset(&sigset);
+    sigaddset(&sigset, signo);
+    sigprocmask(SIG_UNBLOCK, &sigset, NULL);
+  }
+#endif
+}
+
+</pre>
+</div>
+<p>上述实现基本上可以完全分成两种平台：</p>
+<p><strong>先看linux：</strong><br />
+</p>
+<p>linux下的定时器要容易许多，调用setitimer函数就行，此外，zend_set_timeout还设定了SIGPROF信号的handler为zend_timeout。</p>
+<p>注意，调用setitimer的时候，将it_interval设置成0，表明这个定时器只触发一次，而不会每隔一段时间触发一次。setitimer可以以三种方式计时，php中采用的是ITIMER_PROF，它同时计算了用户代码和内核代码的执行时间。一旦时间到了，会产生SIGPROF信号。</p>
+<p>当php进程接收到SIGPROF信号，不管当前正在执行什么，都会跳转进入到zend_timeout。zend_timeout才是实际处理超时的函数。</p>
+<p><strong>再看windows：</strong><br />
+</p>
+<p>首先会启动一个子线程，该线程主要用于设置定时器，同时维护EG(timed_out)变量。</p>
+<p>子线程一旦生成，主线程便会向子线程发送一条消息：WM_REGISTER_ZEND_TIMEOUT。子线程接收到WM_REGISTER_ZEND_TIMEOUT之后，产生一个定时器并开始计时。同时，子线程会设置EG(timed_out) = 0。这很重要！windows平台下正是通过判断EG(timed_out)是否为1，来决定是否超时。</p>
+<p>如果定时器到时间了，子线程收到WM_TIMER消息，则取消定时器，并且设置EG(timed_out) = 1。</p>
+<p>如果需要关闭定时器，则子线程会收到WM_UNREGISTER_ZEND_TIMEOUT消息。关闭定时器，并不会改变EG(timed_out)。</p>
+<p>相关代码还是很清晰的：</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+static LRESULT CALLBACK zend_timeout_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+  switch (message) {
+    case WM_DESTROY:
+      PostQuitMessage(0);
+      break;
+     
+    // 生成一个定时器，开始计时
+    case WM_REGISTER_ZEND_TIMEOUT:
+      /* wParam is the thread id pointer, lParam is the timeout amount in seconds */
+      if (lParam == 0) {
+        KillTimer(timeout_window, wParam);
+      } else {
+        SetTimer(timeout_window, wParam, lParam*1000, NULL);
+        EG(timed_out) = 0;
+      }
+      break;
+     
+    // 关闭定时器
+    case WM_UNREGISTER_ZEND_TIMEOUT:
+      /* wParam is the thread id pointer */
+      KillTimer(timeout_window, wParam);
+      break;
+     
+    // 超时了，也需关闭定时器
+    case WM_TIMER: {
+        KillTimer(timeout_window, wParam);
+        EG(timed_out) = 1;
+      }
+      break;
+    default:
+      return DefWindowProc(hWnd, message, wParam, lParam);
+  }
+  return 0;
+}
+</pre>
+</div>
+<p>根据上文描述，最终都是需要跳转到zend_timeout来处理超时的。那windows下如何进入zend_timeout呢？</p>
+<p>window下仅在execute函数中（zend_vm_execute.h刚开始的地方），可以看到调用zend_timeout：</p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+while (1) {
+  int ret;
+#ifdef ZEND_WIN32
+  if (EG(timed_out)) {  // windows下的超时，执行每条opcode之前都判断是否需要调用zend_timeout
+    zend_timeout(0);
+  }
+#endif
+ 
+  if ((ret = OPLINE-&gt;handler(execute_data TSRMLS_CC)) &gt; 0) {
+  ...
+  }
+}
+</pre>
+</div>
+<p>上述代码可以看到：</p>
+<p>在windows下，每执行完成一条opcode指令，就会进行一次超时判断。</p>
+<p>因为主线程执行opcode的同时，子线程可能已经发生超时，而windows并没有什么机制可以让主线程停止手头的工作，直接跳入zend_timeout。所以只好利用子线程先将EG(timed_out)设置为1，然后主线程在等到当前opcode执行完成、进入下一条opcode之前，判断一下EG(timed_out)再调用zend_timeout。</p>
+<p>因此准确的讲，windows的超时，其实是有一点点延时的。至少在某一个opcode执行的过程中，无法被打断。当然，正常情况下，单条opcode的执行时间会很短。但是可以很容易人为构造出一些很耗时的函数，使得function call需要等待较长时间。此时，如果子线程判断出超时了，则还需要经过漫长的等待，直到主线程完成该条opcode之后，才能调用zend_timeout。</p>
+<p><strong>zend_unset_timeout</strong></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+void zend_unset_timeout(TSRMLS_D) /* {{{ */
+{
+#ifdef ZEND_WIN32
+   
+  // 通过发送WM_UNREGISTER_ZEND_TIMEOUT消息来关闭定时器
+  if(timeout_thread_initialized) {
+    PostThreadMessage(timeout_thread_id, WM_UNREGISTER_ZEND_TIMEOUT, (WPARAM) GetCurrentThreadId(), (LPARAM) 0);
+  }
+#else
+  if (EG(timeout_seconds)) {
+    struct itimerval no_timeout;
+    no_timeout.it_value.tv_sec = no_timeout.it_value.tv_usec = no_timeout.it_interval.tv_sec = no_timeout.it_interval.tv_usec = 0;
+     
+    // 全置0，相当于关闭定时器
+    setitimer(ITIMER_PROF, &no_timeout, NULL);
+  }
+#endif
+}
+</pre>
+</div>
+<p>zend_unset_timeout同样分成两种平台的实现。</p>
+<p><strong>先看linux：</strong><br />
+</p>
+<p>linux下的关闭定时器也很简单。只要将struct itimerval中的4个值都设置为0，就行了。</p>
+<p><strong>再看windows：<br />
+</strong></p>
+<p>由于windows是利用一个独立的线程来计时。因此，zend_unset_timeout会向该线程发送WM_UNREGISTER_ZEND_TIMEOUT消息。WM_UNREGISTER_ZEND_TIMEOUT对应的动作是去调用KillTimer来关闭定时器。注意，线程本身并不退出。</p>
+<p>前文留下了一个问题，在php_execute_script中，windows下面要显示调用zend_unset_timeout来关闭定时器，而linux下不需要。因为对于一个linux进程来说，只能存在一个setitimer定时器。也就是说，重复调用setitimer，后面的定时器会直接覆盖前面的。</p>
+<p><strong>zend_timeout</strong></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+ZEND_API void zend_timeout(int dummy) /* {{{ */
+{
+  TSRMLS_FETCH();
+ 
+  if (zend_on_timeout) {
+    zend_on_timeout(EG(timeout_seconds) TSRMLS_CC);
+  }
+ 
+  zend_error(E_ERROR, "Maximum execution time of %d second%s exceeded", EG(timeout_seconds), EG(timeout_seconds) == 1 &#63; "" : "s");
+}
+</pre>
+</div>
+<p>如前文所述，zend_timeout是实际处理超时的函数。它的实现也很简单。</p>
+<p>如果有配置exit_on_timeout，则zend_on_timeout会尝试调用sapi_terminate_process关闭sapi进程。如果无需exit_on_timeout，则直接进入zend_error进行出错处理。大部分情况下，我们并不会设置exit_on_timeout，毕竟我们期望的是虽然一个请求超时了，但是进程仍然保留下来，服务下一个请求。</p>
+<p>zend_error除了会打印错误日志，还会利用longjump跳转到boilout指定的栈帧，一般是zend_end_try或者zend_catch宏所在的地方。关于longjump，可以另起一个话题，本文就不具体叙述了。在php_execute_script里面，zend_error会使得程序跳转到zend_end_try的位置然后继续执行。继续执行是指，会调用php_request_shutdown等函数来完成收尾工作。</p>
+<p>直到这里，php脚本的超时机制算是讲清楚了。</p>
+<p>最后来看一个疑似php内核的bug。</p>
+<p><strong>windows下max_input_time的bug</strong><br />
+</p>
+<p>回忆一下，之前有提到windows下只有一个地方调用了zend_timeout，就是execute函数里，准确讲是每条opcode执行之前。</p>
+<p>那么，假如发生max_input_time类型的超时，即使子线程将EG(timed_out)被置为1，也得延迟到execute中才能进行超时处理。貌似一切正常。</p>
+<p>而问题的关键之处便在于，我们并不能保证主线程执行到execute时，EG(timed_out)任然为1。一旦进入execute之前，EG(timed_out)被子线程修改成0，那么max_input_time类型的超时就永远不会被handle了。</p>
+<p>为何EG(timed_out)会被子线程又修改为0呢？原因在于：php_execute_script中，调用了zend_set_timeout(INI_INT("max_execution_time"), 0)来设置定时器。</p>
+<p>zend_set_timeout会向子线程发送WM_REGISTER_ZEND_TIMEOUT消息。子线程收到此消息，除了创建定时器之外，还会设置EG(timed_out) = 0（详见上文截取的zend_timeout_WndProc代码片段）。由于线程执行的不确定性，因此不能够判断主线程执行到execute的时候，子线程是否已接收到消息并设置EG(timed_out)为0。</p>
+<p></p>
+<p>如图所示，</p>
+<p>如果execute中的判断发生在红线标注的时间点，则EG(timed_out)为1，execute会调用zend_timeout做超时处理。</p>
+<p>如果execute中的判断发生在蓝线标注的时间点，则EG(timed_out)已被重置为0，max_input_time超时被彻底掩盖。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/100190.html'>Win7 64位摄像头驱动显示黄色感叹号无法使用的解决方法</a><a>下一篇</a><a href='/php/biji/100192.html'>Extjs4如何处理后台json数据中日期和时间</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

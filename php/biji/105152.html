@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>详解Android中用于线程处理的AsyncTask类的用法及源码_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="为什么要用AsyncTask<br />
+<br />
+我们写App都有一个原则，主线程不能够运行需要占用大量CPU时间片的任务，如大量复杂的浮点运算，较大的磁盘IO操作，网络socket等，这些都会导致我们的主线程对" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">详解Android中用于线程处理的AsyncTask类的用法及源码</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>为什么要用AsyncTask<br />
+<br />
+我们写App都有一个原则，主线程不能够运行需要占用大量CPU时间片的任务，如大量复杂的浮点运算，较大的磁盘IO操作，网络socket等，这些都会导致我们的主线程对</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>为什么要用AsyncTask<br />
+</strong>我们写App都有一个原则，主线程不能够运行需要占用大量CPU时间片的任务，如大量复杂的浮点运算，较大的磁盘IO操作，网络socket等，这些都会导致我们的主线程对用户的响应变得迟钝，甚至ANR，这些会使应用的用户体验变差，但是有时又的确需要执行这些耗时的任务，那么我们通常可以使用AsyncTask或者new Thread<br />
+来处理，这样把任务放入工作线程中执行，不会占用主线程的时间片，所以主线程会及时响应用户的操作，如果使用new Thread来执行任务，那么如果需要中途取消任务执行或者需要返回任务执行结果，就需要我们自己维护很多额外的代码，而AsyncTask是基于concurrent架包提供的并发类实现的，上面的二个需求都已经帮我们封装了，这也是我们选择AsyncTask的原因。</p>
+<p><strong>怎么用AsyncTask<br />
+</strong>我们还是简单介绍下AsyncTask一些使用示例。我们先新建一个类DemoAsyncTask继承AsyncTask，因为AsyncTask是抽象类，其中doInBackground方法必须重写。</p>
+<div class="phpstudycode">
+<pre class="brush:js;">
+private class DemoAsyncTask extends AsyncTask&lt;String, Void, Void&gt; {
+ @Override
+ protected void onPreExecute() {
+  super.onPreExecute();
+ }
+
+ @Override
+ protected Void doInBackground(String... params) {
+  return null;
+ } 
+
+ @Override
+ protected void onPostExecute(Void aVoid) {
+  super.onPostExecute(aVoid);
+ }
+
+ @Override
+ protected void onProgressUpdate(Void... values) {
+  super.onProgressUpdate(values);
+ }
+
+ @Override
+ protected void onCancelled(Void aVoid) {
+  super.onCancelled(aVoid);
+ }
+
+ @Override
+ protected void onCancelled() {
+  super.onCancelled();
+ }
+}
+
+DemoAsyncTask task = new DemoAsyncTask();
+task.execute("demo test AsyncTask");
+//task.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, "test");
+//myTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "test");
+
+</pre>
+</div>
+<p><strong>简单分析下<br />
+</strong>上面就是AsyncTask最简单的使用方法，我们上面重写的方法中，onInBackground方法运行在工作线程，其他的方法全部运行在主线程，另外它的运行方式Android提供给我们2个方法，上面都列出了。</p>
+<p>1.第一个方法会使用默认的Executor执行我们的任务, 其实也就是SERIAL_EXECUTOR，SERIAL_EXECUTOR我们其实也是可以通过方法去自定义的，Android帮我们的默认实现是逐个执行任务，也就是单线程的，关于AsyncTask的任务执行是单线程实现还是多线程实现还有一段很有意思的历史，较早的版本是单线程实现，从Android2.X开始，Google又把它改为多线程实现，后来Google发现，多线程实现的话，会有很多需要保证线程安全的额外工作留给开发者，所以从Android3.0开始，又把默认实现改为单线程了，今天我们演示的是Framwork代码版本是21(Android5.0)。<br />
+2.同时也提供了多线程实现的接口，即我们上面写的最后一行代码 AsyncTask.THREAD_POOL_EXECUTOR。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public final AsyncTask&lt;Params, Progress, Result&gt; execute(Params... params) {
+ return executeOnExecutor(sDefaultExecutor, params);
+}
+private static volatile Executor sDefaultExecutor = SERIAL_EXECUTOR;
+</pre>
+</div>
+<p>其实相信大家平时工作学习中经常使用AsyncTask，我们直接去看AsyncTask类源码（插一句题外话，平时大家也可以把自己工作学习中的心得体会总结一下，记下来~~）</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public abstract class AsyncTask&lt;Params, Progress, Result&gt; {
+....
+}
+</pre>
+</div>
+<p>AsyncTask抽象类，有三个泛型参数类型，第一个是你需要传递进来的参数类型，第二个是任务完成进度的类型一般是Integer，第三个是任务完成结果的返回类型，有时这些参数不是全部需要，不需要的设为Void即可，另外Result只有一个，但Params可以有多个。<br />
+我们可以看到AsyncTask的默认构造器初始化了二个对象，mWorker和mFuture。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+private final WorkerRunnable&lt;Params, Result&gt; mWorker;
+private final FutureTask&lt;Result&gt; mFuture;
+ mWorker = new WorkerRunnable&lt;Params, Result&gt;() {
+  public Result call() throws Exception {
+   mTaskInvoked.set(true);
+
+   Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+   //noinspection unchecked
+   return postResult(doInBackground(mParams));
+  }
+ };
+
+ mFuture = new FutureTask&lt;Result&gt;(mWorker) {
+  @Override
+  protected void done() {
+   try {
+    postResultIfNotInvoked(get());
+   } catch (InterruptedException e) {
+    android.util.Log.w(LOG_TAG, e);
+   } catch (ExecutionException e) {
+    throw new RuntimeException("An error occured while executing doInBackground()",
+      e.getCause());
+   } catch (CancellationException e) {
+    postResultIfNotInvoked(null);
+   }
+  }
+ };
+
+</pre>
+</div>
+<p>mWoker实现了Callback接口，Callback接口是JDK1.5加入的高级并发架包里面的一个接口，它可以有一个泛型返回值。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public interface Callable&lt;V&gt; {
+/**
+ * Computes a result, or throws an exception if unable to do so.
+ *
+ * @return computed result
+ * @throws Exception if unable to compute a result
+ */
+V call() throws Exception;
+}
+</pre>
+</div>
+<p>FutureTask实现了RunnableFuture接口，RunnableFuture接口是JDK提供的，看名称就知道它继承了Runnable和Future接口，mFuture是FutureTask的一个实例，可以直接被Executor类实例execute。我们来继续看AsyncTask的execute方法。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public final AsyncTask&lt;Params, Progress, Result&gt;  execute(Params... params) {
+ return executeOnExecutor(sDefaultExecutor, params);
+}
+public final AsyncTask&lt;Params, Progress, Result&gt; executeOnExecutor(Executor exec,
+  Params... params) {
+ if (mStatus != Status.PENDING) {
+  switch (mStatus) {
+   case RUNNING:
+    throw new IllegalStateException("Cannot execute task:"
+      + " the task is already running.");
+   case FINISHED:
+    throw new IllegalStateException("Cannot execute task:"
+      + " the task has already been executed "
+      + "(a task can be executed only once)");
+  }
+ }
+
+ mStatus = Status.RUNNING;
+
+ onPreExecute();
+
+ mWorker.mParams = params;
+ exec.execute(mFuture);
+
+ return this;
+}
+
+</pre>
+</div>
+<p>先调用onPreExecute()方法，此时还在主线程(严格来说是调用AsyncTask执行的线程)，然后exec.execute(mFuture)，把任务交给exec处理，execute mFuture其实就是invoke mWoker，然后调用postResult(doInBackground(mParams))，此时已经运行在工作线程池，不会阻塞主线程。然后给mHandler发送MESSAGE_POST_RESULT消息，然后调用finish方法，如果isCancelled，回调onCancelled，否则回调onPostExecute。</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+private Result postResult(Result result) {
+ @SuppressWarnings("unchecked")
+ Message message = sHandler.obtainMessage(MESSAGE_POST_RESULT,
+   new AsyncTaskResult&lt;Result&gt;(this, result));
+ message.sendToTarget();
+ return result;
+}
+private static final InternalHandler sHandler = new InternalHandler();
+private static class InternalHandler extends Handler {
+ @SuppressWarnings({"unchecked", "RawUseOfParameterizedType"})
+ @Override
+ public void handleMessage(Message msg) {
+  AsyncTaskResult result = (AsyncTaskResult) msg.obj;
+  switch (msg.what) {
+   case MESSAGE_POST_RESULT:
+    // There is only one result
+    result.mTask.finish(result.mData[0]);
+    break;
+   case MESSAGE_POST_PROGRESS:
+    result.mTask.onProgressUpdate(result.mData);
+    break;
+  }
+ }
+}
+private void finish(Result result) {
+ if (isCancelled()) {
+  onCancelled(result);
+ } else {
+  onPostExecute(result);
+ }
+ mStatus = Status.FINISHED;
+}
+</pre>
+</div>
+<p>现在其实我们已经把AsyncTask整个执行任务的过程走完了，其中暴露给我们的那几个回调方法也都走到了。现在我们回过头来看，AsyncTask其实只是对JDK 1.5提供的高级并发特性，concurrent架包做的一个封装，方便开发者来处理异步任务，当然里面还有很多细节处理的方法值得大家学习，如任务执行进度的反馈，任务执行原子性的保证等，这些留给大家自己学习了。</p>
+<p><span style="color: #ff0000"><strong>源码分析<br />
+</strong></span>下面我们再深入一些，来看AsyncTask的源码。下面分析这个类的实现，主要有线程池以及Handler两部分。</p>
+<p><strong>线程池<br />
+</strong>当执行一个AsyncTask的时候调用的是execute()方法，就从这个开始看：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+public final AsyncTask&lt;Params, Progress, Result&gt; execute(Params... params){
+ return executeOnExecutor(sDefaultExecutor, params);
+}
+public final AsyncTask&lt;Params, Progress, Result&gt; executeOnExecutor(Executor exec, 
+  Params... params) { 
+ if (mStatus != Status.PENDING) { 
+  switch (mStatus) { 
+   case RUNNING: 
+    throw new IllegalStateException("Cannot execute task:" + " the task is already running."); 
+       
+   case FINISHED: 
+    throw new IllegalStateException("Cannot execute task:" + " the task has already been executed " + "(a task can be executed only once)"); 
+      
+      
+  } 
+ } 
+ 
+ mStatus = Status.RUNNING; 
+ //先执行 onPreExecute
+ onPreExecute(); 
+ 
+ mWorker.mParams = params; 
+ 
+ exec.execute(mFuture); 
+ return this; 
+} 
+</pre>
+</div>
+<p>execute方法会调用executeOnExecutor。在这个方法中先检查任务是否已经执行或者执行结束，然后把任务标记为running。最开始执行的是onPreExecute，接着把参数赋值给mWorker对象。这个mWorker是一个Callable对象，最终被包装为FutureTask，代码如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+private static abstract class WorkerRunnable&lt;Params, Result&gt; implements Callable&lt;Result&gt; { 
+ Params[] mParams; 
+} 
+
+mWorker = new WorkerRunnable&lt;Params, Result&gt;() { 
+  public Result call() throws Exception { 
+   mTaskInvoked.set(true); 
+
+   Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND); 
+   //noinspection unchecked 
+   return postResult(doInBackground(mParams)); 
+  } 
+ };
+ 
+mFuture = new FutureTask&lt;Result&gt;(mWorker) { 
+ @Override 
+ protected void done() { 
+  try { 
+   postResultIfNotInvoked(get()); 
+  } catch (InterruptedException e) { 
+   android.util.Log.w(LOG_TAG, e); 
+  } catch (ExecutionException e) { 
+   throw new RuntimeException("An error occured while executing doInBackground()", 
+     e.getCause()); 
+  } catch (CancellationException e) { 
+   postResultIfNotInvoked(null); 
+  } 
+ } 
+}; 
+
+</pre>
+</div>
+<p>&nbsp;&nbsp;&nbsp; <br />
+从上面的代码可以看出，在mWorker对象中的call()方法会调用doInbackground，返回值交给postResult方法，这个方法通过Handler发送消息，这一点稍后再详细分析。</p>
+<p>在mWorker对象被封装成FutureTask之后交由线程池执行，从execute方法可以看出，使用的是sDefaultExecutor，它的值默认为SERIAL_EXECUTOR，也就是串行执行器，实现如下：</p>
+<p>&nbsp;</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+private static class SerialExecutor implements Executor { 
+ //线性双向队列，用来存储所有的AsyncTask任务 
+ final ArrayDeque&lt;Runnable&gt; mTasks = new ArrayDeque&lt;Runnable&gt;(); 
+ //当前正在执行的AsyncTask任务 
+ Runnable mActive; 
+
+ public synchronized void execute(final Runnable r) { 
+  //将新的AsyncTask任务加入到双向队列中 
+  mTasks.offer(new Runnable() { 
+   public void run() { 
+    try { 
+     //执行AsyncTask任务 
+     r.run(); 
+    } finally { 
+     //当前任务执行结束后执行下一个任务
+     scheduleNext(); 
+    } 
+   } 
+  }); 
+  if (mActive == null) { 
+   scheduleNext(); 
+  } 
+ } 
+
+ protected synchronized void scheduleNext() { 
+  //从任务队列中取出队列头部的任务，如果有就交给并发线程池去执行 
+  if ((mActive = mTasks.poll()) != null) { 
+   THREAD_POOL_EXECUTOR.execute(mActive); 
+  } 
+ } 
+}
+
+public static final Executor THREAD_POOL_EXECUTOR 
+  = new ThreadPoolExecutor(CORE_POOL_SIZE, MAXIMUM_POOL_SIZE, KEEP_ALIVE, 
+    TimeUnit.SECONDS, sPoolWorkQueue, sThreadFactory); 
+
+</pre>
+</div>
+<p>在上面的代码中，如果有任务执行，那么SerialExecutor的execute方法会被调用，它的逻辑是把Runnable对象加入ArrayDeque队列中，然后判断mActivie是否为空。第一次执行时mActive当然为空，所以执行scheduleNext，其实就是取出任务队列中的第一个任务交给线程池(THREAD_POOL_EXECUTOR)执行。加入mTask队列的Runnable对象的run方法里最终一定会调用scheduleNext，那么又会从任务队列中取出队头任务执行。这样便实现了单线程顺序执行任务，所以在AsyncTask中默认启用的是单线程执行，只有上一个任务执行后才会执行下一个任务。如果想要启用多线程执行任务，可以直接调用 executeOnExecutor(Executor exec, Params... params)，这里的Executor参数可以使用AsyncTask自带的THREAD_POOL_EXECUTOR，也可以自己定义。</p>
+<p><strong>Handler<br />
+</strong>AsyncTask内部用Handler传递消息，它的实现如下：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+private static class InternalHandler extends Handler { 
+ @SuppressWarnings({"unchecked", "RawUseOfParameterizedType"}) 
+ @Override 
+ public void handleMessage(Message msg) { 
+  AsyncTaskResult result = (AsyncTaskResult) msg.obj; 
+  switch (msg.what) { 
+   case MESSAGE_POST_RESULT: 
+    // There is only one result 
+    result.mTask.finish(result.mData[0]); 
+    break; 
+   case MESSAGE_POST_PROGRESS: 
+    result.mTask.onProgressUpdate(result.mData); 
+    break; 
+  } 
+ } 
+} 
+</pre>
+</div>
+<p>如果消息类型是任务执行后的返回值(MESSAGE_POST_RESULT)将调用finish()方法：</p>
+<div class="phpstudycode">
+<pre class="brush:java;">
+private void finish(Result result) { 
+ if (isCancelled()) { 
+  onCancelled(result); 
+ } else { 
+  onPostExecute(result); 
+ } 
+ mStatus = Status.FINISHED; 
+} 
+</pre>
+</div>
+<p>从上面可以知道，如果任务取消了，将调用onCancelled，否则调用onPostExecute，所以一个AsyncTask任务如果取消了，那么onPostExecute将不会得到执行。</p>
+<p>如果消息类型是执行进度(MESSAGE_POST_PROGRESS)将调用onProgressUpdate，这个方法默认是空方法，我们可以根据自己的需要重写。</p>
+<p><strong>总结<br />
+</strong>AsyncTask的主要逻辑就如上面所分析的，总结几个需要注意的地方：</p>
+<ul>
+<li>AsyncTask的类必须在UI线程加载（从4.1开始系统会帮我们自动完成）</li>
+<li>AsyncTask对象必须在UI线程创建</li>
+<li>execute方法必须在UI线程调用</li>
+<li>不要手动调用onPreExecute()、doInBackground、onProgressUpdate方法</li>
+<li>一个任务只能被调用一次（第二次调用会抛出异常）</li>
+</ul>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/105151.html'>C#中string.Empty和null的区别详解</a><a>下一篇</a><a href='/php/biji/105153.html'>php二维数组合并及去重复的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

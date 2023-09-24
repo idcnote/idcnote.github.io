@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Android消息处理机制Looper和Handler详解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="Message：消息，其中包含了消息ID，消息处理对象以及处理的数据等，由MessageQueue统一列队，终由Handler处理。<br />
+Handler：处理者，负责Message的发送及处理。使用Handler时，需要实现hand" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Android消息处理机制Looper和Handler详解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>Message：消息，其中包含了消息ID，消息处理对象以及处理的数据等，由MessageQueue统一列队，终由Handler处理。<br />
+Handler：处理者，负责Message的发送及处理。使用Handler时，需要实现hand</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><div class="phpstudycode">
+<pre class="brush:plain;">
+Message：消息，其中包含了消息ID，消息处理对象以及处理的数据等，由MessageQueue统一列队，终由Handler处理。
+Handler：处理者，负责Message的发送及处理。使用Handler时，需要实现handleMessage(Message msg)方法来对特定的Message进行处理，例如更新UI等。
+MessageQueue：消息队列，用来存放Handler发送过来的消息，并按照FIFO规则执行。当然，存放Message并非实际意义的保存，而是将Message以链表的方式串联起来的，等待Looper的抽取。
+Looper：消息泵，不断地从MessageQueue中抽取Message执行。因此，一个MessageQueue需要一个Looper。
+Thread：线程，负责调度整个消息循环，即消息循环的执行场所。</pre>
+</div>
+<p>Android系统的消息队列和消息循环都是针对具体线程的，一个线程可以存在（当然也可以不存在）一个消息队列和一个消 息循环（Looper），特定线程的消息只能分发给本线程，不能进行跨线程，跨进程通讯。但是创建的工作线程默认是没有消息循环和消息队列的，如果想让该 线程具有消息队列和消息循环，需要在线程中首先调用Looper.prepare()来创建消息队列，然后调用Looper.loop()进入消息循环。 如下例所示：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+ LooperThread Thread {
+    Handler mHandler;
+
+    run() {
+     Looper.prepare();
+
+     mHandler = Handler() {
+        handleMessage(Message msg) {
+         
+       }
+     };
+
+     Looper.loop();
+   }
+ }
+
+</pre>
+</div>
+<p>&nbsp;//Looper类分析<br />
+&nbsp;//没找到合适的分析代码的办法，只能这么来了。每个重要行的上面都会加上注释<br />
+&nbsp;//功能方面的代码会在代码前加上一段分析<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+ public class Looper {
+  //static变量，判断是否打印调试信息。
+   private static final boolean DEBUG = false;
+   private static final boolean localLOGV = DEBUG &#63; Config.LOGD : Config.LOGV;
+ 
+   // sThreadLocal.get() will return null unless you've called prepare().
+ //线程本地存储功能的封装，TLS，thread local storage,什么意思呢？因为存储要么在栈上，例如函数内定义的内部变量。要么在堆上，例如new或者malloc出来的东西
+ //但是现在的系统比如Linux和windows都提供了线程本地存储空间，也就是这个存储空间是和线程相关的，一个线程内有一个内部存储空间，这样的话我把线程相关的东西就存储到
+ //这个线程的TLS中，就不用放在堆上而进行同步操作了。
+   private static final ThreadLocal sThreadLocal = new ThreadLocal();
+ //消息队列，MessageQueue，看名字就知道是个queue..
+   final MessageQueue mQueue;
+   volatile boolean mRun;
+ //和本looper相关的那个线程，初始化为null
+   Thread mThread;
+   private Printer mLogging = null;
+ //static变量，代表一个UI Process（也可能是service吧，这里默认就是UI）的主线程
+   private static Looper mMainLooper = null;
+   
+   /** Initialize the current thread as a looper.
+    * This gives you a chance to create handlers that then reference
+    * this looper, before actually starting the loop. Be sure to call
+    * {@link #loop()} after calling this method, and end it by calling
+    * {@link #quit()}.
+    */
+ //往TLS中设上这个Looper对象的，如果这个线程已经设过了ｌｏｏｐｅｒ的话就会报错
+ //这说明，一个线程只能设一个looper
+   public static final void prepare() {
+     if (sThreadLocal.get() != null) {
+       throw new RuntimeException("Only one Looper may be created per thread");
+     }
+     sThreadLocal.set(new Looper());
+   }
+   
+   /** Initialize the current thread as a looper, marking it as an application's main 
+   * looper. The main looper for your application is created by the Android environment,
+   * so you should never need to call this function yourself.
+   * {@link #prepare()}
+   */
+ //由framework设置的UI程序的主消息循环，注意，这个主消息循环是不会主动退出的
+ //  
+   public static final void prepareMainLooper() {
+     prepare();
+     setMainLooper(myLooper());
+ //判断主消息循环是否能退出....
+ //通过quit函数向looper发出退出申请
+     if (Process.supportsProcesses()) {
+       myLooper().mQueue.mQuitAllowed = false;
+     }
+   }
+ 
+   private synchronized static void setMainLooper(Looper looper) {
+     mMainLooper = looper;
+   }
+   
+   /** Returns the application's main looper, which lives in the main thread of the application.
+   */
+   public synchronized static final Looper getMainLooper() {
+     return mMainLooper;
+   }
+ 
+   /**
+   * Run the message queue in this thread. Be sure to call
+   * {@link #quit()} to end the loop.
+   */
+ //消息循环，整个程序就在这里while了。
+ //这个是static函数喔！
+   public static final void loop() {
+     Looper me = myLooper();//从该线程中取出对应的looper对象
+     MessageQueue queue = me.mQueue;//取消息队列对象...
+     while (true) {
+       Message msg = queue.next(); // might block取消息队列中的一个待处理消息..
+       //if (!me.mRun) {//是否需要退出？mRun是个volatile变量，跨线程同步的，应该是有地方设置它。
+       //  break;
+       //}
+       if (msg != null) {
+         if (msg.target == null) {
+           // No target is a magic identifier for the quit message.
+           return;
+         }
+         if (me.mLogging!= null) me.mLogging.println(
+             "&gt;&gt;&gt;&gt;&gt; Dispatching to " + msg.target + " "
+             + msg.callback + ": " + msg.what
+             );
+         msg.target.dispatchMessage(msg);
+         if (me.mLogging!= null) me.mLogging.println(
+             "&lt;&lt;&lt;&lt;&lt; Finished to  " + msg.target + " "
+             + msg.callback);
+         msg.recycle();
+       }
+     }
+   }
+ 
+   /**
+   * Return the Looper object associated with the current thread. Returns
+   * null if the calling thread is not associated with a Looper.
+  */
+//返回和线程相关的looper
+ public static final Looper myLooper() {
+   return (Looper)sThreadLocal.get();
+ }
+
+ /**
+  * Control logging of messages as they are processed by this Looper. If
+  * enabled, a log message will be written to &lt;var&gt;printer&lt;/var&gt; 
+  * at the beginning and ending of each message dispatch, identifying the
+  * target Handler and message contents.
+  * 
+  * @param printer A Printer object that will receive log messages, or
+  * null to disable message logging.
+  */
+//设置调试输出对象，looper循环的时候会打印相关信息，用来调试用最好了。
+ public void setMessageLogging(Printer printer) {
+   mLogging = printer;
+ }
+ 
+ /**
+  * Return the {@link MessageQueue} object associated with the current
+  * thread. This must be called from a thread running a Looper, or a
+  * NullPointerException will be thrown.
+  */
+ public static final MessageQueue myQueue() {
+   return myLooper().mQueue;
+ }
+//创建一个新的looper对象，
+//内部分配一个消息队列，设置mRun为true
+ private Looper() {
+   mQueue = new MessageQueue();
+   mRun = true;
+   mThread = Thread.currentThread();
+ }
+
+ public void quit() {
+   Message msg = Message.obtain();
+   // NOTE: By enqueueing directly into the message queue, the
+   // message is left with a null target. This is how we know it is
+   // a quit message.
+   mQueue.enqueueMessage(msg, 0);
+ }
+
+ /**
+  * Return the Thread associated with this Looper.
+  */
+ public Thread getThread() {
+   return mThread;
+ }
+ //后面就简单了，打印，异常定义等。
+ public void dump(Printer pw, String prefix) {
+   pw.println(prefix + this);
+   pw.println(prefix + "mRun=" + mRun);
+   pw.println(prefix + "mThread=" + mThread);
+   pw.println(prefix + "mQueue=" + ((mQueue != null) &#63; mQueue : "(null"));
+   if (mQueue != null) {
+     synchronized (mQueue) {
+       Message msg = mQueue.mMessages;
+       int n = 0;
+       while (msg != null) {
+         pw.println(prefix + " Message " + n + ": " + msg);
+         n++;
+         msg = msg.next;
+       }
+       pw.println(prefix + "(Total messages: " + n + ")");
+     }
+   }
+ }
+
+ public String toString() {
+   return "Looper{"
+     + Integer.toHexString(System.identityHashCode(this))
+     + "}";
+ }
+
+ static class HandlerException extends Exception {
+
+   HandlerException(Message message, Throwable cause) {
+     super(createMessage(cause), cause);
+   }
+
+   static String createMessage(Throwable cause) {
+     String causeMsg = cause.getMessage();
+     if (causeMsg == null) {
+       causeMsg = cause.toString();
+     }
+     return causeMsg;
+   }
+ }
+}
+
+</pre>
+</div>
+<p>那怎么往这个消息队列中发送消息呢？？调用looper的static函数myQueue可以获得消息队列，这样你就可用自己往里边插入消息了。不过这种方法比较麻烦，这个时候handler类就发挥作用了。先来看看handler的代码，就明白了。</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+ class Handler{
+ ..........
+ //handler默认构造函数
+ public Handler() {
+ //这个if是干嘛用的暂时还不明白，涉及到java的深层次的内容了应该
+     if (FIND_POTENTIAL_LEAKS) {
+       final Class&lt;&#63; extends Handler&gt; klass = getClass();
+       if ((klass.isAnonymousClass() || klass.isMemberClass() || klass.isLocalClass()) &&
+           (klass.getModifiers() & Modifier.STATIC) == 0) {
+         Log.w(TAG, "The following Handler class should be static or leaks might occur: " +
+           klass.getCanonicalName());
+       }
+     }
+ //获取本线程的looper对象
+ //如果本线程还没有设置looper，这回抛异常
+     mLooper = Looper.myLooper();
+     if (mLooper == null) {
+       throw new RuntimeException(
+         "Can't create handler inside thread that has not called Looper.prepare()");
+     }
+ //无耻啊，直接把looper的queue和自己的queue搞成一个了
+ //这样的话，我通过handler的封装机制加消息的话，就相当于直接加到了looper的消息队列中去了
+     mQueue = mLooper.mQueue;
+     mCallback = null;
+   }
+ //还有好几种构造函数，一个是带callback的，一个是带looper的
+ //由外部设置looper
+   public Handler(Looper looper) {
+     mLooper = looper;
+     mQueue = looper.mQueue;
+     mCallback = null;
+   }
+ // 带callback的，一个handler可以设置一个callback。如果有callback的话，
+ //凡是发到通过这个handler发送的消息，都有callback处理，相当于一个总的集中处理
+ //待会看dispatchMessage的时候再分析
+ public Handler(Looper looper, Callback callback) {
+     mLooper = looper;
+     mQueue = looper.mQueue;
+     mCallback = callback;
+   }
+ //
+ //通过handler发送消息
+ //调用了内部的一个sendMessageDelayed
+ public final boolean sendMessage(Message msg)
+   {
+     return sendMessageDelayed(msg, 0);
+   }
+ //FT，又封装了一层，这回是调用sendMessageAtTime了
+ //因为延时时间是基于当前调用时间的，所以需要获得绝对时间传递给sendMessageAtTime
+ public final boolean sendMessageDelayed(Message msg, long delayMillis)
+   {
+     if (delayMillis &lt; 0) {
+       delayMillis = 0;
+     }
+     return sendMessageAtTime(msg, SystemClock.uptimeMillis() + delayMillis);
+   }
+ 
+ 
+ public boolean sendMessageAtTime(Message msg, long uptimeMillis)
+   {
+     boolean sent = false;
+     MessageQueue queue = mQueue;
+     if (queue != null) {
+ //把消息的target设置为自己，然后加入到消息队列中
+ //对于队列这种数据结构来说，操作比较简单了
+       msg.target = this;
+       sent = queue.enqueueMessage(msg, uptimeMillis);
+     }
+     else {
+       RuntimeException e = new RuntimeException(
+         this + " sendMessageAtTime() called with no mQueue");
+       Log.w("Looper", e.getMessage(), e);
+     }
+     return sent;
+   }
+ //还记得looper中的那个消息循环处理吗
+ //从消息队列中得到一个消息后，会调用它的target的dispatchMesage函数
+ //message的target已经设置为handler了，所以
+ //最后会转到handler的msg处理上来
+ //这里有个处理流程的问题
+ public void dispatchMessage(Message msg) {
+ //如果msg本身设置了callback，则直接交给这个callback处理了
+     if (msg.callback != null) {
+       handleCallback(msg);
+     } else {
+ //如果该handler的callback有的话，则交给这个callback处理了---相当于集中处理
+      if (mCallback != null) {
+         if (mCallback.handleMessage(msg)) {
+           return;
+         }
+      }
+ //否则交给派生处理,基类默认处理是什么都不干
+       handleMessage(msg);
+     }
+   }
+ ..........
+ }
+
+</pre>
+</div>
+<p>生成</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+    Message msg = mHandler.obtainMessage();
+    msg.what = what;
+    msg.sendToTarget();
+
+</pre>
+</div>
+<p>发送</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+    MessageQueue queue = mQueue;
+    if (queue != null) {
+      msg.target = this;
+      sent = queue.enqueueMessage(msg, uptimeMillis);
+    }
+
+</pre>
+</div>
+<p>在Handler.java的sendMessageAtTime(Message msg, long uptimeMillis)方法中，我们看到，它找到它所引用的MessageQueue，然后将Message的target设定成自己（目的是为了在处理消息环节，Message能找到正确的Handler），再将这个Message纳入到消息队列中。</p>
+<p>抽取</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+    Looper me = myLooper();
+    MessageQueue queue = me.mQueue;
+    while (true) {
+      Message msg = queue.next(); // might block
+      if (msg != null) {
+        if (msg.target == null) {
+          // No target is a magic identifier for the quit message.
+          return;
+        }
+        msg.target.dispatchMessage(msg);
+        msg.recycle();
+      }
+    }
+
+</pre>
+</div>
+<p>在Looper.java的loop()函数里，我们看到，这里有一个死循环，不断地从MessageQueue中获取下一个（next方法）Message，然后通过Message中携带的target信息，交由正确的Handler处理（dispatchMessage方法）。</p>
+<p>处理</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+    if (msg.callback != null) {
+      handleCallback(msg);
+    } else {
+      if (mCallback != null) {
+        if (mCallback.handleMessage(msg)) {
+          return;
+        }
+      }
+      handleMessage(msg);
+    }
+
+</pre>
+</div>
+<p>在Handler.java的dispatchMessage(Message msg)方法里，其中的一个分支就是调用handleMessage方法来处理这条Message，而这也正是我们在职责处描述使用Handler时需要实现handleMessage(Message msg)的原因。</p>
+<p>至于dispatchMessage方法中的另外一个分支，我将会在后面的内容中说明。</p>
+<p>至此，我们看到，一个Message经由Handler的发送，MessageQueue的入队，Looper的抽取，又再一次地回到Handler的怀抱。而绕的这一圈，也正好帮助我们将同步操作变成了异步操作。</p>
+<p>3）剩下的部分，我们将讨论一下Handler所处的线程及更新UI的方式。</p>
+<p>在主线程（UI线程）里，如果创建Handler时不传入Looper对象，那么将直接使用主线程（UI线程）的Looper对象（系统已经帮我们创建了）；在其它线程里，如果创建Handler时不传入Looper对象，那么，这个Handler将不能接收处理消息。在这种情况下，通用的作法是：</p>
+<div class="phpstudycode">
+<pre class="brush:cpp;">
+        class LooperThread extends Thread {
+                public Handler mHandler;
+                public void run() {
+                        Looper.prepare();
+                        mHandler = new Handler() {
+                                public void handleMessage(Message msg) {
+                                       // process incoming messages here
+                                }
+                        };
+                        Looper.loop();
+                }
+        }
+
+</pre>
+</div>
+<p>在创建Handler之前，为该线程准备好一个Looper（Looper.prepare），然后让这个Looper跑起来（Looper.loop），抽取Message，这样，Handler才能正常工作。</p>
+<p>因此，Handler处理消息总是在创建Handler的线程里运行。而我们的消息处理中，不乏更新UI的操作，不正确的线程直接更新UI将引发异常。因此，需要时刻关心Handler在哪个线程里创建的。</p>
+<p>如何更新UI才能不出异常呢？SDK告诉我们，有以下4种方式可以从其它线程访问UI线程：</p>
+<p>·&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Activity.runOnUiThread(Runnable)<br />
+·&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; View.post(Runnable)<br />
+·&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; View.postDelayed(Runnable, long)<br />
+·&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Handler<br />
+其中，重点说一下的是View.post(Runnable)方法。在post(Runnable action)方法里，View获得当前线程（即UI线程）的Handler，然后将action对象post到Handler里。在Handler里，它将传递过来的action对象包装成一个Message（Message的callback为action），然后将其投入UI线程的消息循环中。在Handler再次处理该Message时，有一条分支（未解释的那条）就是为它所设，直接调用runnable的run方法。而此时，已经路由到UI线程里，因此，我们可以毫无顾虑的来更新UI。</p>
+<p>4） 几点小结</p>
+<p>·&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Handler的处理过程运行在创建Handler的线程里<br />
+·&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 一个Looper对应一个MessageQueue<br />
+·&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 一个线程对应一个Looper<br />
+·&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 一个Looper可以对应多个Handler<br />
+·&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 不确定当前线程时，更新UI时尽量调用post方法</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/87125.html'>Win10系统无法登录LOL英雄联盟提示null错误的原因及解决方法</a><a>下一篇</a><a href='/php/biji/87127.html'>通过php删除xml文档内容的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

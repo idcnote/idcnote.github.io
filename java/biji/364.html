@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>JAVA虚拟机（JVM）详细介绍（三）——垃圾收集机制_java教程_IDC笔记</title>
+    <meta name="keywords" content=",java教程" />
+    <meta name="description" content="在本部分我们要解决如下几个问题：1、哪些内存需要回收？2、什么时候回收？3、如何回收？哪些内存需要回收？堆和方法区的内存需要回收，其余的不需要回收。因为只有堆和方法区是线程共" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java入门			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/start/184.html">第一个Java程序</a></li><li><a href="/java/start/185.html">如何运行Java程序</a></li><li><a href="/java/start/186.html">Java标识符与关键字</a></li><li><a href="/java/start/187.html">Java注释</a></li><li><a href="/java/start/188.html">Java常量</a></li><li><a href="/java/start/189.html">Java基本数据类型</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java运算符和表达式			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/operators/190.html">Java运算符和表达式</a></li><li><a href="/java/operators/191.html">Java算数运算符实例讲解</a></li><li><a href="/java/operators/192.html">Java关系运算符实例讲解</a></li><li><a href="/java/operators/193.html">Java逻辑运算符实例讲解</a></li><li><a href="/java/operators/194.html">Java位运算符实例讲解</a></li><li><a href="/java/operators/195.html">Java赋值运算符实例讲解</a></li><li><a href="/java/operators/196.html">Java条件运算符实例讲解</a></li><li><a href="/java/operators/197.html">Java instanceof运算符实例讲解</a></li><li><a href="/java/operators/198.html">Java运算符的优先级和结合性</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java流程控制			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/control/200.html">Java if条件分支语句</a></li><li><a href="/java/control/199.html">Java语句</a></li><li><a href="/java/control/201.html">Java switch开关语句</a></li><li><a href="/java/control/203.html">Java while循环语句</a></li><li><a href="/java/control/202.html">Java for循环语句</a></li><li><a href="/java/control/205.html">Java break语句</a></li><li><a href="/java/control/204.html">Java do-while循环语句</a></li><li><a href="/java/control/206.html">Java continue语句</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/java/objects/209.html">Java方法</a></li><li><a href="/java/objects/208.html">Java成员变量</a></li><li><a href="/java/objects/207.html">Java类</a></li><li><a href="/java/objects/211.html">Java创建对象</a></li><li><a href="/java/objects/210.html">Java类的构造方法</a></li><li><a href="/java/objects/213.html">Java对象的引用和实体</a></li><li><a href="/java/objects/212.html">Java使用对象</a></li><li><a href="/java/objects/216.html">Java实例变量和类变量</a></li><li><a href="/java/objects/215.html">Java参数传值</a></li><li><a href="/java/objects/214.html">Java类与程序的基本结构</a></li><li><a href="/java/objects/217.html">Java实例方法和类方法</a></li><li><a href="/java/objects/218.html">Java方法重载</a></li><li><a href="/java/objects/222.html">Java访问权限</a></li><li><a href="/java/objects/221.html">Java import语句</a></li><li><a href="/java/objects/220.html">Java包</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java子类与继承			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java接口与实现			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java内部类与异常类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> Java常用实用类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 		</ul>
+	</li>
+		<li>
+	    <a href="/java/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>JAVA笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">JAVA虚拟机（JVM）详细介绍（三）——垃圾收集机制</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>在本部分我们要解决如下几个问题：1、哪些内存需要回收？2、什么时候回收？3、如何回收？哪些内存需要回收？堆和方法区的内存需要回收，其余的不需要回收。因为只有堆和方法区是线程共</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>在本部分我们要解决如下几个问题：</p>
+<p>1、哪些内存需要回收？</p>
+<p>2、什么时候回收？</p>
+<p>3、如何回收？</p>
+<p><strong>哪些内存需要回收？</strong></p>
+<p>堆和方法区的内存需要回收，其余的不需要回收。<br />因为只有堆和方法区是线程共享的，其余的是与线程&ldquo;同生共死&rdquo;的，线程结束，内存自然就跟着回收了，所以不用管它们。</p>
+<p><strong>什么时候回收？</strong></p>
+<p><span style="background-color: rgb(255, 255, 255); color: rgb(79, 79, 79); font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; font-variant-ligatures: common-ligatures; font-size: 14px;">（1）在堆里面：</span></p>
+<p>当对象&ldquo;死了&rdquo;的时候就要对其进行内存回收了。啥叫对象死了？就是没有地方引用它了，它无用了。那怎么判断它是否死了呢？</p>
+<p>有两种方法：</p>
+<p><strong>引用计数算法</strong></p>
+<p>给对象添加一个引用计数器，每当有一个地方引用它时，计数器的值就+1，当引用失效时，计数器的值就-1，当计数器的值为0时，代表此对象已不被引用，也就是&ldquo;可以死了&rdquo;。</p>
+<p>但这有一个弊端，就是循环引用的问题。就像下图，堆里的两个对象即使无用了也没办法对其进行回收，因为它们互相引用着，计数器的值至少为1。</p>
+<p><img alt="201906191053460.png" src="/d/file/p/20221028/1566627045602522.png" title="1566627045602522.png" /></p>
+<p><strong>可达性分析</strong></p>
+<p>所有生成的对象都是一个称为&ldquo;GC Roots&rdquo;的根的子树。从GC Roots开始向下搜索，搜索所经过的路径称为引用链。当一个对象到GC Roots没有任何引用链可以到达时，就称这个对象是不可达的，也就是可以被GC回收了。这个是Java中采用较多的方式。</p>
+<p>就像下图中的堆中未被引用的对象，就可以对其进行回收。</p>
+<p><img alt="20190619110132365.png" src="/d/file/p/20221028/1566627218174280.png" title="1566627218174280.png" /></p>
+<p>怎么判断一个对象是否还存在着引用？java中的引用分为4种：</p>
+<p>强引用：Object o=new Object()，只要强引用存在，GC永远不会回收掉被引用的对象。</p>
+<p>软引用：描述一些还有用但非必需的对象。当系统即将发生内存溢出了，就会对其进行回收。</p>
+<p>弱引用：只要进行GC，就会对其进行回收。</p>
+<p>虚引用：这是最弱的一种引用关系，无法通过虚引用来取得一个对象实例。它的作用是：能在这个对象被收集器回收时收到一个系统通知。</p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 22px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 30px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><span style="font-size: 14px;">（2）在方法区里面：</span></p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 22px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 30px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);">&nbsp;</p>
+<p>我们知道，方法区里存储的是已被虚拟机加载的类信息，常量，静态变量，即时编译器编译后的代码等数据。所以我们在方法区里面进行垃圾回收，回收的是一些废弃的常量和无用的类。</p>
+<p>怎么判断一个常量是否被废弃了？</p>
+<p>看引用计数就可以，如果没有对象引用该常量，则说明此常量被废弃了，也就可以回收了。</p>
+<p>怎么判断一个类是无用的类？</p>
+<p>有3种情况：</p>
+<p>a、该类所有的实例都已经被回收。</p>
+<p>b、加载该类的ClassLoader已经被回收。</p>
+<p>c、该类对应的java.lang.Class对象没有任何地方被引用，无法在任何地方通过反射访问该类的方法。</p>
+<p><strong>如何回收</strong>？</p>
+<p>有4种算法作为理论：<br />&bull; 标记-清除算法<br />&bull; 复制算法<br />&bull; 标记-整理算法<br />&bull; 分代收集算法</p>
+<p>有5种收集器作为实现：</p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 22px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 30px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><span style="font-size: 14px;"><img alt="20190619112737902.png" src="/d/file/p/20221028/1566627538197941.png" title="1566627538197941.png" /></span></p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 22px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 30px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><strong><span style="font-size: 14px;">后记</span></strong></p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 22px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 30px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><span style="font-size: 14px;">内存溢出：系统无法再分配出你需要的空间。比如在堆中无法再给新生的对象分配内存了，在栈里栈满了无法再让新栈帧进栈了。</span></p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-size: 22px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 30px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);"><span style="font-size: 14px;">内存泄漏：内存被对象占用着不还，就叫内存泄露。</span></p>
+<p style="box-sizing: border-box; outline: 0px; margin: 8px 0px 16px; padding: 0px; font-family: &quot;Microsoft YaHei&quot;, &quot;SF Pro Display&quot;, Roboto, Noto, Arial, &quot;PingFang SC&quot;, sans-serif; color: rgb(79, 79, 79); line-height: 30px; overflow-wrap: break-word; font-variant-ligatures: common-ligatures; white-space: normal; background-color: rgb(255, 255, 255);">以上便是关于JVM中垃圾回收机制的详细讲解，更多相关问题请访问PHP中文网：JAVA视频教程</p><!-- .entry-wrapper --></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span>[!--zhushi--]</span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/java/biji/363.html'>java中set和list的区别是什么？</a><a>下一篇</a><a href='/java/biji/365.html'>eclipse导入后怎么运行</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>深入浅析mybatis oracle BLOB类型字段保存与读取_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="一、BLOB字段<br />
+　　BLOB是指二进制大对象也就是英文Binary Large Object的所写，而CLOB是指大字符对象也就是英文Character Large Object的所写。其中BLOB是用来存储大量二进制" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">深入浅析mybatis oracle BLOB类型字段保存与读取</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>一、BLOB字段<br />
+　　BLOB是指二进制大对象也就是英文Binary Large Object的所写，而CLOB是指大字符对象也就是英文Character Large Object的所写。其中BLOB是用来存储大量二进制</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><span style="color: #0000ff"><strong>一、BLOB字段</strong></span></p>
+<p>　　BLOB是指二进制大对象也就是英文Binary Large Object的所写，而CLOB是指大字符对象也就是英文Character Large Object的所写。其中BLOB是用来存储大量二进制数据的；CLOB用来存储大量文本数据。BLOB通常用来保存图片、文件等二进制类型的数据。</p>
+<p><span style="color: #0000ff"><strong>二、使用mybatis操作blob</strong></span></p>
+<p>　　<strong>1、表结构如下：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+create table BLOB_FIELD
+(
+  ID          VARCHAR2(64 BYTE)  not null,
+  TAB_NAME       VARCHAR2(64 BYTE)  not null,
+  TAB_PKID_VALUE    VARCHAR2(64 BYTE)  not null,
+  CLOB_COL_NAME    VARCHAR2(64 BYTE)  not null,
+  CLOB_COL_VALUE    CLOB,
+  constraint PK_BLOB_FIELD primary key (ID)
+);</pre>
+</div>
+<p>　　<strong>2、实体代码如下：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+ package com.test.entity;
+ import java.sql.Clob; 
+ /**
+  * 大字段 
+  */
+ public class BlobField { 
+   private String tabName;// 表名
+   private String tabPkidValue;// 主键值
+   private String blobColName;// 列名
+   private byte[] blobColValue;// 列值 clob类型
+   public String getTabName() {
+     return tabName;
+   }
+   public void setTabName(String tabName) {
+     this.tabName = tabName;
+   }
+   public String getTabPkidValue() {
+     return tabPkidValue;
+   }
+   public void setTabPkidValue(String tabPkidValue) {
+     this.tabPkidValue = tabPkidValue;
+   }
+   public String getBlobColName() {
+     return blobColName;
+   }
+   public void setBlobColName(String blobColName) {
+     this.blobColName = blobColName;
+   }
+   public byte[] getBlobColValue() {
+     return blobColValue;
+   }
+   public void setBlobColValue(byte[] blobColValue) {
+     this.blobColValue = blobColValue;
+   }
+ }</pre>
+</div>
+<p>　　<strong>3、mybatis sql代码如下：</strong></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+ &lt;&#63;xml version="." encoding="UTF-" &#63;&gt;
+ &lt;!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper .//EN" "http://mybatis.org/dtd/mybatis--mapper.dtd"&gt;
+ &lt;mapper namespace="com.test.dao.BlobFieldDao"&gt;
+   &lt;sql id="blobFieldColumns"&gt;
+     a.ID AS id,
+     a.TAB_NAME AS tabName,
+     a.TAB_PKID_VALUE AS tabPkidValue,
+     a.BLOB_COL_NAME AS blobColName,
+     a.BLOB_COL_VALUE AS blobColValue
+   &lt;/sql&gt;
+   &lt;sql id="blobFieldJoins"&gt;
+   &lt;/sql&gt;
+   &lt;select id="get" resultType="blobField"&gt;
+     SELECT
+     &lt;include refid="blobFieldColumns" /&gt;
+     FROM BLOB_FIELD a
+     &lt;include refid="blobFieldJoins" /&gt;
+     WHERE a.ID = #{id}
+   &lt;/select&gt;
+   &lt;select id="findList" resultType="blobField"&gt;
+     SELECT
+     &lt;include refid="blobFieldColumns" /&gt;
+     FROM BLOB_FIELD a
+     &lt;include refid="blobFieldJoins" /&gt;
+   &lt;/select&gt; 
+   &lt;insert id="insert"&gt;
+     INSERT INTO BLOB_FIELD(
+     ID ,
+     TAB_NAME ,
+     TAB_PKID_VALUE ,
+     BLOB_COL_NAME ,
+     BLOB_COL_VALUE
+     ) VALUES (
+     #{id},
+     #{tabName},
+     #{tabPkidValue},
+     #{blobColName},
+     #{blobColValue,jdbcType=BLOB}
+     )
+   &lt;/insert&gt;
+   &lt;update id="update"&gt;
+     UPDATE BLOB_FIELD SET
+     TAB_NAME = #{tabName},
+     TAB_PKID_VALUE = #{tabPkidValue},
+     BLOB_COL_NAME = #{blobColName},
+     BLOB_COL_VALUE = #{blobColValue}
+     WHERE ID = #{id}
+   &lt;/update&gt;
+   &lt;delete id="delete"&gt;
+     DELETE FROM BLOB_FIELD 
+     WHERE ID = #{id}
+   &lt;/delete&gt;
+ &lt;/mapper&gt;</pre>
+</div>
+<p><strong>　　3、controller代码如下：</strong></p>
+<p>　　<strong>a、保存BLOB字段代码</strong></p>
+<div class="phpstudycode">
+<pre class="brush:csharp;">
+/**
+    * 附件上传
+    * 
+    * @param testId
+    *      主表Id
+    * @param request
+    * @return
+    * @throws UnsupportedEncodingException
+    */
+   @RequiresPermissions("exc:exceptioninfo:feedback")
+   @RequestMapping(value = "attachment", method = RequestMethod.POST)
+   @ResponseBody
+   public Map&lt;String, Object&gt; uploadAttachment(@RequestParam(value = "testId", required = true) String testId, 
+ 
+ HttpServletRequest request)
+       throws UnsupportedEncodingException {
+     Map&lt;String, Object&gt; result = new HashMap&lt;String, Object&gt;();
+ 
+     MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+     // 获得文件
+     MultipartFile multipartFile = multipartRequest.getFile("Filedata");// 与前端设置的fileDataName属性值一致
+     String filename = multipartFile.getOriginalFilename();// 文件名称
+     InputStream is = null;
+     try {
+       //读取文件流
+       is = multipartFile.getInputStream();
+       byte[] bytes = FileCopyUtils.copyToByteArray(is);
+       BlobField blobField = new BlobField();
+       blobField.setTabName("testL");
+       blobField.setTabPkidValue(testId);
+       blobField.setBlobColName("attachment");
+       blobField.setBlobColValue(bytes);
+       //保存blob字段
+       this.testService.save(blobField, testId, filename);
+       result.put("flag", true);
+       result.put("attachmentId", blobField.getId());
+       result.put("attachmentName", filename);
+     } catch (IOException e) {
+       e.printStackTrace();
+       result.put("flag", false);
+     } finally {
+       IOUtils.closeQuietly(is);
+     }
+     return result;
+   }</pre>
+</div>
+<p>　<strong>　b、读取BLOB字段</strong></p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+ /**
+    * 下载附件
+    * 
+    * @param attachmentId
+    * @return
+    */
+   @RequiresPermissions("exc:exceptioninfo:view")
+   @RequestMapping(value = "download", method = RequestMethod.GET)
+   public void download(@RequestParam(value = "attachmentId", required = true) String attachmentId,
+       @RequestParam(value = "attachmentName", required = true) String attachmentName, HttpServletRequest 
+ request, HttpServletResponse response) {
+     ServletOutputStream out = null;
+     try {
+       response.reset();
+       String userAgent = request.getHeader("User-Agent");
+       byte[] bytes = userAgent.contains("MSIE") &#63; attachmentName.getBytes() : attachmentName.getBytes("UTF-
+ "); // fileName.getBytes("UTF-")处理safari的乱码问题
+       String fileName = new String(bytes, "ISO--");
+       // 设置输出的格式
+       response.setContentType("multipart/form-data");
+       response.setHeader("Content-Disposition", "attachment;fileName=" + URLEncoder.encode(attachmentName, 
+ "UTF-"));
+       BlobField blobField = this.blobFieldService.get(attachmentId);
+       //获取blob字段
+       byte[] contents = blobField.getBlobColValue();
+       out = response.getOutputStream();
+       //写到输出流
+       out.write(contents);
+       out.flush();
+     } catch (IOException e) {
+       e.printStackTrace();
+     }
+   }        </pre>
+</div>
+<p>　　本例子将文件上传并保存到BLOB类型字段字段，下载的时候读取BLOB字段，并写入成输出流。</p>
+<p>以上就是本文的全部叙述，希望对大家有所帮助。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/100257.html'>php强制更新图片缓存的方法</a><a>下一篇</a><a href='/php/biji/100259.html'>初识通用数据库操作类——前端easyui-datagrid，form（php）</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

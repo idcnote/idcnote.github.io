@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>分析SQL死锁检测的方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了分析SQL死锁检测的方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+sql server中的死锁是指进程之间互" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">分析SQL死锁检测的方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:43:50                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了分析SQL死锁检测的方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+sql server中的死锁是指进程之间互</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了分析SQL死锁检测的方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>sql server中的死锁是指进程之间互相永久阻塞的状态，下文就将为您介绍如何检测sql server死锁，希望对您有所帮助。</p>
+<p>死锁（deadlock）指进程之间互相永久阻塞的状态，SQL可以检测到死锁，并选择终止其中一个事务以干预sql server死锁状态。</p>
+<p></p>
+<h3>第一步：首先创建两个测试表，表goods_sort和goods</h3>
+<p></p>
+<p>表goods_sort：创建并写入测试数据</p>
+<p>代码如下：</p>
+<pre>
+<code>
+IF EXISTS(SELECT name FROM sysobjects WHERE name='goods_sort' AND xtype='U')
+DROP TABLE dbo.goods_sort
+--创建商品分类表
+CREATE TABLE dbo.goods_sort(
+iSortID int NOT NULL
+CONSTRAINT PK_iSortID PRIMARY KEY
+IDENTITY(1001,1),
+sSortName NVARCHAR(20) NOT NULL
+)
+GO
+INSERT INTO dbo.goods_sort VALUES('服饰')
+INSERT INTO dbo.goods_sort VALUES('女包')
+INSERT INTO dbo.goods_sort VALUES('鞋子')
+INSERT INTO dbo.goods_sort VALUES('首饰')
+INSERT INTO dbo.goods_sort VALUES('美容')
+GO</code></pre>
+<p>表goods：创建并写入测试数据</p>
+<p>代码如下：</p>
+<pre>
+<code>
+IF EXISTS(SELECT name FROM sysobjects WHERE name='goods' AND xtype='U')
+DROP TABLE dbo.goods;
+--创建商品表
+CREATE TABLE dbo.goods(
+iID int NOT NULL
+CONSTRAINT PK_iID PRIMARY KEY
+IDENTITY(1,1),
+iGoodsID varchar(20) NOT NULL,
+sGoodsName nvarchar(100) NOT NULL,
+iGoodTotal int NOT NULL
+CONSTRAINT DF_iGoodTotal DEFAULT(0),
+iPrice int NOT NULL
+CONSTRAINT DF_iPrice DEFAULT(0),
+iPriceTotal int NOT NULL,
+iSortID int NOT NULL,
+tAddDate smalldatetime NOT NULL
+CONSTRAINT DF_tAddDate DEFAULT getdate()
+)
+GO
+INSERT INTO dbo.goods
+(iGoodsID,sGoodsName,iGoodTotal,iPrice,iPriceTotal,iSortID)
+VALUES('YR6001','瘦身羽绒服',20,200,4000,1001)
+INSERT INTO dbo.goods
+(iGoodsID,sGoodsName,iGoodTotal,iPrice,iPriceTotal,iSortID)
+VALUES('YR6002','加厚羽绒服',20,300,6000,1001)
+INSERT INTO dbo.goods
+(iGoodsID,sGoodsName,iGoodTotal,iPrice,iPriceTotal,iSortID)
+VALUES('BB7001','小黄牛皮马鞍包',30,100,3000,1002)
+INSERT INTO dbo.goods
+(iGoodsID,sGoodsName,iGoodTotal,iPrice,iPriceTotal,iSortID)
+VALUES('BB7002','十字绣流苏包',50,150,7500,1002)
+GO</code></pre>
+<p></p>
+<h3>第二步：创建两个会产生死锁的事务</h3>
+<p></p>
+<p>事务1：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+GO
+--使用TRY-CATCH，使代码发生错误也继续运行
+BEGIN TRY
+BEGIN TRAN
+UPDATE dbo.goods_sort SET sSortName='女鞋' WHERE iSortID=1003;
+WAITFOR DELAY '00:00:05';
+UPDATE dbo.goods SET sGoodsName='胖子羽绒服' WHERE iID=2;
+COMMIT TRAN
+END TRY
+BEGIN CATCH
+IF (XACT_STATE()=-1)
+ROLLBACK TRAN;
+--ERROR_NUMBER()值为1205则表示发生了死锁
+IF (ERROR_NUMBER() = 1205)
+PRINT '事务1发生了死锁'
+--写SQL Server日志或者返回错误给应用程序
+END CATCH
+SELECT iID,sGoodsName FROM dbo.goods WHERE iID=2;
+SELECT iSortID,sSortName FROM dbo.goods_sort WHERE iSortID=1003;
+GO </code></pre>
+<p>事务2：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+GO
+--使用TRY-CATCH，使代码发生错误也继续运行
+BEGIN TRY
+BEGIN TRAN
+UPDATE dbo.goods SET sGoodsName='瘦子羽绒服' WHERE iID=2;
+WAITFOR DELAY '00:00:05';
+UPDATE dbo.goods_sort SET sSortName='男鞋' WHERE iSortID=1003;
+COMMIT TRAN
+END TRY
+BEGIN CATCH
+IF (XACT_STATE()=-1)
+ROLLBACK TRAN;
+--ERROR_NUMBER()值为1205则表示发生了死锁
+IF (ERROR_NUMBER() = 1205)
+PRINT '事务2发生了死锁'
+--写SQL Server日志或者返回错误给应用程序
+END CATCH
+SELECT iID,sGoodsName FROM dbo.goods WHERE iID=2;
+SELECT iSortID,sSortName FROM dbo.goods_sort WHERE iSortID=1003;
+GO </code></pre>
+<p>然后运行事务1，接着马上运行事务2，这种情况下某一个事务会提示发生了死锁，修改不成功。另外一个事务则完成。</p>
+<p>第一点：使用TRY.CATCH让产生异常的事务能继续完成后面的代码。</p>
+<p>第二点：使用WAITFOR DELAY产生造成死锁的发生环境。</p>
+<p>第三点：使用ERROR_NUMBER()来判断是否发生事务。</p>
+<p>第四点：发生死锁，写SQL Server日志或者返回应用程序去写日志。便于检查日志的时候发现存在死锁并做相应的修改。</p>
+<p>以上内容给大家介绍了SQL死锁检测的方法，希望大家喜欢。</p>
+
+<p>注：关于分析SQL死锁检测的方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/3151.html'>SQL Server 数据库导入数据的解决办法</a><a>下一篇</a><a href='/mysql/biji/3153.html'>SQL Server 页类型汇总+疑问汇总解析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL Innodb关键特性之插入缓冲(insert buffer)的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL Innodb关键特性之插入缓冲(insert buffer)的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL Innodb关键特性之插入缓冲(insert buffer)的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:19:28                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL Innodb关键特性之插入缓冲(insert buffer)的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL Innodb关键特性之插入缓冲(insert buffer)的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h2>什么是insert buffer？</h2>
+<p> 插入缓冲，也称之为insert buffer，它是innodb存储引擎的关键特性之一，我们经常会理解插入缓冲时缓冲池的一个部分，这样的理解是片面的，insert buffer的信息一部分在内存中，另外一部分像数据页一样，存在于物理页中。</p>
+<p> 在innodb中，我们知道，如果一个表有自增主键，那么对于这个表的默认插入是非常快的，注意，这里的主键是自增的，如果不是自增的，那么这个插入将会变成随机的，就可能带来数据页分裂的开销，这样，插入就不是顺序的，就会变慢。还有一种情况，就是如果我们插入的id不是顺序的，而是随机的，那么即使有自增主键，那么插入的速度也不会特别快。</p>
+<p> 如果我们定义了一个表，包含一个主键和一个非聚集索引，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+create table t(
+
+a int auto_increment,
+
+b varchar(30),
+
+primary key(a),
+
+key (b)
+
+);
+</code></pre>
+<p>MySQL Innodb关键特性之插入缓冲(insert buffer)</p>
+<p>当我们按照主键a进行插入的时候，对于非聚集索引，也就是常说的二级索引b,它的插入不是顺序的，插入性能必然会下降。</p>
+<p> Innodb存储引擎针对这种情况，设计了Insert Buffer，对于非聚集索引的插入或者更新操作，不是每一次插入到索引页中，而是先判断插入的非聚集索引页是否在缓冲池中，如果在，则直接插入，如果不在，则先放入一个insert buffer中，告诉数据库这个非聚集的索引已经插入到了叶子节点，实际上并没有插入，只是存放在另外一个位置，然后再以一定的频率和情况进行Insert buffer和辅助索引叶子节点合并操作。这种时候，经常能将多条记录的插入合并到一个操作中，这样就大大提高了非聚集索引离散插入的性能。</p>
+<h2>insert buffer的触发条件？</h2>
+<p> insert buffer需要满足两个条件才能被使用，第一，索引是辅助索引，也就是二级索引，第二，索引不是唯一的。当满足上述两个条件的时候，就可以使用insert buffer，从而提高数据库的插入操作性能。</p>
+<p> 这里需要注意，如果在程序进行了大量操作的时候发生了MySQL数据库的宕机，那么肯定有大量的insert buffer没有合并到实际的非聚集索引中去，恢复可能会造成很长的时间。</p>
+<h2>为什么不能是唯一索引？</h2>
+<p> 之所以不支持唯一索引，是因为如果辅助索引是唯一索引，那么在插入时需要校验唯一性，校验唯一性的时候就会发生离散读取，从而又增加了开销，那么insert buffer得不偿失。</p>
+<p> 我们可以通过show engine innodb status来查看insert buffer的使用情况，如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql--root@localhost:dms_alimetadata 20:35:24&gt;&gt;show engine innodb status\G
+-------------------------------------
+INSERT BUFFER AND ADAPTIVE HASH INDEX
+-------------------------------------
+Ibuf: size 1, free list len 0, seg size 2, 0 merges
+merged operations:
+ insert 0, delete mark 0, delete 0
+discarded operations:
+ insert 0, delete mark 0, delete 0</code></pre>
+<p>MySQL Innodb关键特性之插入缓冲(insert buffer)</p>
+<p> 其中size代表了已经合并记录页的数量，free list len代表了空闲列表的长度，seg size显示了当前insert buffer的大小为2*16KB</p>
+<h2>引入Change Buffer的概念</h2>
+<p> 最新的MySQL5.7已经支持change buffer，事实上，它在innodb 1.0.x版本已经引入，这个change buffer 可以理解为insert buffer的升级，也就是对常见的DML语言都可以进行缓冲，包含insert delete以及update，对应的分别是insert buffer，delete buffer以及purge buffer。</p>
+<p> 当然，change buffer的使用对象仍然是非唯一的辅助索引。</p>
+<p> 这里我们以update操作为例，update的过程可以拆分为两个部分：</p>
+<p>第一个部分是将记录的delete_mask标记为删除，如果你不了解delete_mask，可以在4月9号的文章中去看。第二个部分是真正的将记录删除。</p>
+<p>而delete buffer对应的是update的第一个过程，purge buffer对应的是第二个部分。</p>
+<p> 在innodb中，我们可以通过参数innodb_change_buffering来开启buffer的各种选项，该参数可选的值为inserts，deletes，purges，changes，all，none等，其中inserts，deletes和purges就是前面讨论过的情况，changes表示开启inserts和deletes，all表示开启所有，默认的参数如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql--root@localhost:dms_alimetadata 21:13:37&gt;&gt;show variables like '%buffering%';        
++-------------------------+-------+
+| Variable_name           | Value |
++-------------------------+-------+
+| innodb_change_buffering | all   |
++-------------------------+-------+
+1 row in set (0.01 sec)</code></pre>
+<p>MySQL Innodb关键特性之插入缓冲(insert buffer)</p>
+<p>我们还可以通过innodb_change_buffer_max_size来控制change_buffer的最大使用内存数量，该参数的默认值是25，也就是1/4，示例如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql--root@localhost:dms_alimetadata 21:20:52&gt;&gt;show variables like '%innodb_change_buffer_max_size%';
++-------------------------------+-------+
+| Variable_name                 | Value |
++-------------------------------+-------+
+| innodb_change_buffer_max_size | 25    |
++-------------------------------+-------+
+1 row in set (0.00 sec)</code></pre>
+<p>MySQL Innodb关键特性之插入缓冲(insert buffer)</p>
+<p> 在上面的show engine innodb status命令的输出结果中，显示了merged operation和discarded operation，其中insert 表示insert buffer的操作次数，delete mark表示delete buffer的操作次数，而delete表示purge buffer的操作次数，discarded operation表示当change buffer发生merge时，表已经被删除，此时就无需进行合并。</p>
+<h2>Insert Buffer的实现？</h2>
+<p> insert buffer的数据结构是一棵B+树，类似聚集索引一样，全局只有一棵insert buffer B+树，它负责对所有的表进行insert buffer，而这棵B+树放在共享表空间中，也就是ibdata1文件中，因此，试图通过ibd文件恢复表数据的时候可能会出现check table失败，原因是表的辅助索引中的数据可能还在insert buffer中，所以通过ibd文件恢复文件之后，还需要进行repair table操作来重建表上的辅助索引。</p>
+<p> insert buffer既然是一棵树，那么必定有叶子节点和非叶子节点，非叶子节点存放的是查询的search key值，它的构造如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
++---------+------------+-------+
+| space   |   marker   | Value |
++---------+------------+-------+</code></pre>
+<p>MySQL Innodb关键特性之插入缓冲(insert buffer)</p>
+<p>这个结构一共占用9个字节，其中，space表示待插入的记录所在的表的表空间id，这个id是每个表都要有的唯一的id，其中space占用4个字节，marker占用1个字节，用来兼容老版本的insert buffer，offset占用4个字节，表示页所在的偏移量。</p>
+<h2>辅助索引的插入过程？</h2>
+<p> 当一个辅助索引要插入到数据页的时候，如果这个数据页不在缓冲池中，那么innodb会根据规则构造一个search key，接下来将这个记录插入到insert buffer的B+树里面去，插入的过程中，需要对这个记录进行一些构造，最终插入的结果是类似下面这样的一条记录：</p>
+<p>代码如下：</p>
+<pre>
+<code>
++---------+------------+-------+------------+------+-------+------+-------+
+| space   |   marker   | Value | metadata   |      |       |      |       |
++---------+------------+-------+------------+------+-------+------+-------+</code></pre>
+<p>MySQL Innodb关键特性之插入缓冲(insert buffer)</p>
+<p>可以发现，最后面多了一个metadata的字段和4个其他的字段，先来说说metadata的字段，它占用4个字节，它用来排序每个记录进入insert buffer的顺序，从第5列开始，就是实际插入记录的各个字段的值了，因此和单纯的数据记录相比，insert buffer需要额外13个字节的开销。</p>
+<p> 为了保证每次merge insert buffer成功，需要设置一个特殊的数据页来标记每个辅助索引页的可用空间，这个数据页的类型为insert buffer bitmap，这个页可以追踪很多辅助索引页的可用空间。这里简单了解一下，下面会解释它的用法。</p>
+<h2>Merged Insert Buffer的时机？</h2>
+<p> 我们前面已经知道，当插入记录的辅助索引页不在缓冲池中的时候，需要将辅助索引记录插入到这棵B+树中，后续会从insert buffer中往真正的辅助索引中进行合并，那么什么时候进行合并呢？</p>
+<p>1、辅助索引页被读取到缓冲池的时候</p>
+<p>2、insert buffer Bitmap追踪到该辅助索引页已经没有足够的可用空间时，一般的阈值是辅助索引页空间的1/32</p>
+<p>3、master thread每秒执行一次merge insert buffer的操作</p>
+<p>以上就是MySQL Innodb关键特性之插入缓冲(insert buffer)的详细内容，更多关于Innodb特性之插入缓冲的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL Innodb关键特性之插入缓冲(insert buffer)的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/781.html'>SQL Server函数或存储过程中抛出异常的实现方法</a><a>下一篇</a><a href='/mysql/biji/783.html'>MySQL以utf8存储gbk输出的实现方法提供</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

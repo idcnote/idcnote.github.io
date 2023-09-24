@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>PHP+memcache实现消息队列案例分享_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="memche消息队列的原理就是在key上做文章，用以做一个连续的数字加上前缀记录序列化以后消息或者日志。然后通过定时程序将内容落地到文件或者数据库。<br />
+php实现消息队列的用处" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">PHP+memcache实现消息队列案例分享</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>memche消息队列的原理就是在key上做文章，用以做一个连续的数字加上前缀记录序列化以后消息或者日志。然后通过定时程序将内容落地到文件或者数据库。<br />
+php实现消息队列的用处</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><P>memche消息队列的原理就是在key上做文章，用以做一个连续的数字加上前缀记录序列化以后消息或者日志。然后通过定时程序将内容落地到文件或者数据库。</P>
+<P>php实现消息队列的用处比如在做发送邮件时发送大量邮件很费时间的问题，那么可以采取队列。<BR>方便实现队列的轻量级队列服务器是：<BR>starling支持memcache协议的轻量级持久化服务器<BR>https://github.com/starling/starling<BR>Beanstalkd轻量、高效，支持持久化，每秒可处理3000左右的队列<BR>http://kr.github.com/beanstalkd/<BR>php中也可以使用memcache/memcached来实现消息队列。</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="28460" class="copybut" id="copybut28460" onclick="doCopy('code28460')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code28460"><BR>&nbsp;&nbsp;&nbsp; &lt;?php&nbsp; <BR>&nbsp;&nbsp;&nbsp; /** <BR>&nbsp;&nbsp;&nbsp; * Memcache 消息队列类 <BR>&nbsp;&nbsp;&nbsp; */&nbsp; <BR>&nbsp;&nbsp;&nbsp; class QMC {&nbsp; <BR>&nbsp;&nbsp;&nbsp; const PREFIX = 'ASDFASDFFWQKE';&nbsp; <BR>&nbsp;&nbsp;&nbsp; /** <BR>&nbsp;&nbsp;&nbsp; * 初始化mc <BR>&nbsp;&nbsp;&nbsp; * @staticvar string $mc <BR>&nbsp;&nbsp;&nbsp; * @return Memcache <BR>&nbsp;&nbsp;&nbsp; */&nbsp; <BR>&nbsp;&nbsp;&nbsp; static private function mc_init() {&nbsp; <BR>&nbsp;&nbsp;&nbsp; static $mc = null;&nbsp; <BR>&nbsp;&nbsp;&nbsp; if (is_null($mc)) {&nbsp; <BR>&nbsp;&nbsp;&nbsp; $mc = new Memcache;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $mc-&gt;connect('127.0.0.1', 11211);&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $mc;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp; <BR>&nbsp;&nbsp;&nbsp; /** <BR>&nbsp;&nbsp;&nbsp; * mc 计数器,增加计数并返回新的计数 <BR>&nbsp;&nbsp;&nbsp; * @param string $key&nbsp;&nbsp; 计数器 <BR>&nbsp;&nbsp;&nbsp; * @param int $offset&nbsp;&nbsp; 计数增量,可为负数.0为不改变计数 <BR>&nbsp;&nbsp;&nbsp; * @param int $time&nbsp;&nbsp;&nbsp;&nbsp; 时间 <BR>&nbsp;&nbsp;&nbsp; * @return int/false&nbsp;&nbsp;&nbsp; 失败是返回false,成功时返回更新计数器后的计数 <BR>&nbsp;&nbsp;&nbsp; */&nbsp; <BR>&nbsp;&nbsp;&nbsp; static public function set_counter( $key, $offset, $time=0 ){&nbsp; <BR>&nbsp;&nbsp;&nbsp; $mc = self::mc_init();&nbsp; <BR>&nbsp;&nbsp;&nbsp; $val = $mc-&gt;get($key);&nbsp; <BR>&nbsp;&nbsp;&nbsp; if( !is_numeric($val) || $val &lt; 0 ){&nbsp; <BR>&nbsp;&nbsp;&nbsp; $ret = $mc-&gt;set( $key, 0, $time );&nbsp; <BR>&nbsp;&nbsp;&nbsp; if( !$ret ) return false;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $val = 0;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp; <BR>&nbsp;&nbsp;&nbsp; $offset = intval( $offset );&nbsp; <BR>&nbsp;&nbsp;&nbsp; if( $offset &gt; 0 ){&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $mc-&gt;increment( $key, $offset );&nbsp; <BR>&nbsp;&nbsp;&nbsp; }elseif( $offset &lt; 0 ){&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $mc-&gt;decrement( $key, -$offset );&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $val;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp; <BR>&nbsp;&nbsp;&nbsp; /** <BR>&nbsp;&nbsp;&nbsp; * 写入队列 <BR>&nbsp;&nbsp;&nbsp; * @param string $key <BR>&nbsp;&nbsp;&nbsp; * @param mixed $value <BR>&nbsp;&nbsp;&nbsp; * @return bool <BR>&nbsp;&nbsp;&nbsp; */&nbsp; <BR>&nbsp;&nbsp;&nbsp; static public function input( $key, $value ){&nbsp; <BR>&nbsp;&nbsp;&nbsp; $mc = self::mc_init();&nbsp; <BR>&nbsp;&nbsp;&nbsp; $w_key = self::PREFIX.$key.'W';&nbsp; <BR>&nbsp;&nbsp;&nbsp; $v_key = self::PREFIX.$key.self::set_counter($w_key, 1);&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $mc-&gt;set( $v_key, $value );&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp; <BR>&nbsp;&nbsp;&nbsp; /** <BR>&nbsp;&nbsp;&nbsp; * 读取队列里的数据 <BR>&nbsp;&nbsp;&nbsp; * @param string $key <BR>&nbsp;&nbsp;&nbsp; * @param int $max&nbsp; 最多读取条数 <BR>&nbsp;&nbsp;&nbsp; * @return array <BR>&nbsp;&nbsp;&nbsp; */&nbsp; <BR>&nbsp;&nbsp;&nbsp; static public function output( $key, $max=100 ){&nbsp; <BR>&nbsp;&nbsp;&nbsp; $out = array();&nbsp; <BR>&nbsp;&nbsp;&nbsp; $mc = self::mc_init();&nbsp; <BR>&nbsp;&nbsp;&nbsp; $r_key = self::PREFIX.$key.'R';&nbsp; <BR>&nbsp;&nbsp;&nbsp; $w_key = self::PREFIX.$key.'W';&nbsp; <BR>&nbsp;&nbsp;&nbsp; $r_p&nbsp;&nbsp; = self::set_counter( $r_key, 0 );//读指针&nbsp; <BR>&nbsp;&nbsp;&nbsp; $w_p&nbsp;&nbsp; = self::set_counter( $w_key, 0 );//写指针&nbsp; <BR>&nbsp;&nbsp;&nbsp; if( $r_p == 0 ) $r_p = 1;&nbsp; <BR>&nbsp;&nbsp;&nbsp; while( $w_p &gt;= $r_p ){&nbsp; <BR>&nbsp;&nbsp;&nbsp; if( --$max &lt; 0 ) break;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $v_key = self::PREFIX.$key.$r_p;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $r_p = self::set_counter( $r_key, 1 );&nbsp; <BR>&nbsp;&nbsp;&nbsp; $out[] = $mc-&gt;get( $v_key );&nbsp; <BR>&nbsp;&nbsp;&nbsp; $mc-&gt;delete($v_key);&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $out;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp; <BR>&nbsp;&nbsp;&nbsp; /** <BR>&nbsp;&nbsp;&nbsp; 使用方法: <BR>&nbsp;&nbsp;&nbsp; QMC::input($key, $value );//写入队列 <BR>&nbsp;&nbsp;&nbsp; $list = QMC::output($key);//读取队列 <BR>&nbsp;&nbsp;&nbsp; */&nbsp; <BR>&nbsp;&nbsp;&nbsp; ?&gt;&nbsp; <BR></div></P>
+<P>基于PHP共享内存实现的消息队列:</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="20174" class="copybut" id="copybut20174" onclick="doCopy('code20174')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code20174"><BR>&lt;?php&nbsp; <BR>/** <BR>* 使用共享内存的PHP循环内存队列实现 <BR>* 支持多进程, 支持各种数据类型的存储 <BR>* 注: 完成入队或出队操作,尽快使用unset(), 以释放临界区 <BR>* <BR>* @author wangbinandi@gmail.com <BR>* @created 2009-12-23 <BR>*/&nbsp; <BR>class ShmQueue&nbsp; <BR>{&nbsp; <BR>private $maxQSize = 0; // 队列最大长度&nbsp; <BR>private $front = 0; // 队头指针&nbsp; <BR>private $rear = 0;&nbsp; // 队尾指针&nbsp; <BR>private $blockSize = 256;&nbsp; // 块的大小(byte)&nbsp; <BR>private $memSize = 25600;&nbsp; // 最大共享内存(byte)&nbsp; <BR>private $shmId = 0;&nbsp; <BR>private $filePtr = './shmq.ptr';&nbsp; <BR>private $semId = 0;&nbsp; <BR>public function __construct()&nbsp; <BR>{&nbsp; <BR>$shmkey = ftok(__FILE__, 't');&nbsp; <BR>$this-&gt;shmId = shmop_open($shmkey, "c", 0644, $this-&gt;memSize );&nbsp; <BR>$this-&gt;maxQSize = $this-&gt;memSize / $this-&gt;blockSize;&nbsp; <BR>// 申?一个信号量&nbsp; <BR>$this-&gt;semId = sem_get($shmkey, 1);&nbsp; <BR>sem_acquire($this-&gt;semId); // 申请进入临界区&nbsp; <BR>$this-&gt;init();&nbsp; <BR>}&nbsp; <BR>private function init()&nbsp; <BR>{&nbsp; <BR>if ( file_exists($this-&gt;filePtr) ){&nbsp; <BR>$contents = file_get_contents($this-&gt;filePtr);&nbsp; <BR>$data = explode( '|', $contents );&nbsp; <BR>if ( isset($data[0]) && isset($data[1])){&nbsp; <BR>$this-&gt;front = (int)$data[0];&nbsp; <BR>$this-&gt;rear&nbsp; = (int)$data[1];&nbsp; <BR>}&nbsp; <BR>}&nbsp; <BR>}&nbsp; <BR>public function getLength()&nbsp; <BR>{&nbsp; <BR>return (($this-&gt;rear - $this-&gt;front + $this-&gt;memSize) % ($this-&gt;memSize) )/$this-&gt;blockSize;&nbsp; <BR>}&nbsp; <BR>public function enQueue( $value )&nbsp; <BR>{&nbsp; <BR>if ( $this-&gt;ptrInc($this-&gt;rear) == $this-&gt;front ){ // 队满&nbsp; <BR>return false;&nbsp; <BR>}&nbsp; <BR>$data = $this-&gt;encode($value);&nbsp; <BR>shmop_write($this-&gt;shmId, $data, $this-&gt;rear );&nbsp; <BR>$this-&gt;rear = $this-&gt;ptrInc($this-&gt;rear);&nbsp; <BR>return true;&nbsp; <BR>}&nbsp; <BR>public function deQueue()&nbsp; <BR>{&nbsp; <BR>if ( $this-&gt;front == $this-&gt;rear ){ // 队空&nbsp; <BR>return false;&nbsp; <BR>}&nbsp; <BR>$value = shmop_read($this-&gt;shmId, $this-&gt;front, $this-&gt;blockSize-1);&nbsp; <BR>$this-&gt;front = $this-&gt;ptrInc($this-&gt;front);&nbsp; <BR>return $this-&gt;decode($value);&nbsp; <BR>}&nbsp; <BR>private function ptrInc( $ptr )&nbsp; <BR>{&nbsp; <BR>return ($ptr + $this-&gt;blockSize) % ($this-&gt;memSize);&nbsp; <BR>}&nbsp; <BR>private function encode( $value )&nbsp; <BR>{&nbsp; <BR>$data = serialize($value) . "__eof";&nbsp; <BR>echo '';&nbsp; <BR>echo strlen($data);&nbsp; <BR>echo '';&nbsp; <BR>echo $this-&gt;blockSize -1;&nbsp; <BR>echo '';&nbsp; <BR>if ( strlen($data) &gt; $this-&gt;blockSize -1 ){&nbsp; <BR>throw new Exception(strlen($data)." is overload block size!");&nbsp; <BR>}&nbsp; <BR>return $data;&nbsp; <BR>}&nbsp; <BR>private function decode( $value )&nbsp; <BR>{&nbsp; <BR>$data = explode("__eof", $value);&nbsp; <BR>return unserialize($data[0]);&nbsp; <BR>}&nbsp; <BR>public function __destruct()&nbsp; <BR>{&nbsp; <BR>$data = $this-&gt;front . '|' . $this-&gt;rear;&nbsp; <BR>file_put_contents($this-&gt;filePtr, $data);&nbsp; <BR>sem_release($this-&gt;semId); // 出临界区, 释放信号量&nbsp; <BR>}&nbsp; <BR>}&nbsp; <BR>/* <BR>// 进队操作 <BR>$shmq = new ShmQueue(); <BR>$data = 'test data'; <BR>$shmq-&gt;enQueue($data); <BR>unset($shmq); <BR>// 出队操作 <BR>$shmq = new ShmQueue(); <BR>$data = $shmq-&gt;deQueue(); <BR>unset($shmq); <BR>*/&nbsp; <BR>?&gt;<BR></div></P>
+<P>对于一个很大的消息队列，频繁进行进行大数据库的序列化 和 反序列化，有太耗费。下面是我用PHP 实现的一个消息队列，只需要在尾部插入一个数据，就操作尾部，不用操作整个消息队列进行读取，与操作。但是，这个消息队列不是线程安全的，我只是尽量的避免了冲突的可能性。如果消息不是非常的密集，比如几秒钟才一个，还是可以考虑这样使用的。 <BR>如果你要实现线程安全的，一个建议是通过文件进行锁定，然后进行操作。下面是代码： <BR>代码如下:</P>
+<P><div class="codetitle"><span><a style="CURSOR: pointer" data="98148" class="copybut" id="copybut98148" onclick="doCopy('code98148')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code98148"><BR>&nbsp;&nbsp;&nbsp; class Memcache_Queue&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; private $memcache;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; private $name;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; private $prefix;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; function __construct($maxSize, $name, $memcache, $prefix = "__memcache_queue__")&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; if ($memcache == null) {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; throw new Exception("memcache object is null, new the object first.");&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;memcache = $memcache;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;name = $name;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;prefix = $prefix;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;maxSize = $maxSize;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;front = 0;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;real = 0;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;size = 0;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; function __get($name)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this-&gt;get($name);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; function __set($name, $value)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;add($name, $value);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; function isEmpty()&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this-&gt;size == 0;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; function isFull()&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this-&gt;size == $this-&gt;maxSize;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; function enQueue($data)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; if ($this-&gt;isFull()) {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; throw new Exception("Queue is Full");&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;increment("size");&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;set($this-&gt;real, $data);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;set("real", ($this-&gt;real + 1) % $this-&gt;maxSize);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; function deQueue()&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; if ($this-&gt;isEmpty()) {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; throw new Exception("Queue is Empty");&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;decrement("size");&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;delete($this-&gt;front);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;set("front", ($this-&gt;front + 1) % $this-&gt;maxSize);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; function getTop()&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this-&gt;get($this-&gt;front);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; function getAll()&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this-&gt;getPage();&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; function getPage($offset = 0, $limit = 0)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; if ($this-&gt;isEmpty() || $this-&gt;size &lt; $offset) {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return null;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $keys[] = $this-&gt;getKeyByPos(($this-&gt;front + $offset) % $this-&gt;maxSize);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $num = 1;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; for ($pos = ($this-&gt;front + $offset + 1) % $this-&gt;maxSize; $pos != $this-&gt;real; $pos = ($pos + 1) % $this-&gt;maxSize)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $keys[] = $this-&gt;getKeyByPos($pos);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $num++;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; if ($limit &gt; 0 && $limit == $num) {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; break;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return array_values($this-&gt;memcache-&gt;get($keys));&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; function makeEmpty()&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $keys = $this-&gt;getAllKeys();&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; foreach ($keys as $value) {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;delete($value);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;delete("real");&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;delete("front");&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;delete("size");&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;delete("maxSize");&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; private function getAllKeys()&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; if ($this-&gt;isEmpty())&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return array();&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $keys[] = $this-&gt;getKeyByPos($this-&gt;front);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; for ($pos = ($this-&gt;front + 1) % $this-&gt;maxSize; $pos != $this-&gt;real; $pos = ($pos + 1) % $this-&gt;maxSize)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $keys[] = $this-&gt;getKeyByPos($pos);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $keys;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; private function add($pos, $data)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;memcache-&gt;add($this-&gt;getKeyByPos($pos), $data);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; private function increment($pos)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this-&gt;memcache-&gt;increment($this-&gt;getKeyByPos($pos));&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; private function decrement($pos)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;memcache-&gt;decrement($this-&gt;getKeyByPos($pos));&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; private function set($pos, $data)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; $this-&gt;memcache-&gt;set($this-&gt;getKeyByPos($pos), $data);&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; private function get($pos)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this-&gt;memcache-&gt;get($this-&gt;getKeyByPos($pos));&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; private function delete($pos)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this-&gt;memcache-&gt;delete($this-&gt;getKeyByPos($pos));&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; private function getKeyByPos($pos)&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; return $this-&gt;prefix . $this-&gt;name . $pos;&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR>&nbsp;&nbsp;&nbsp; }&nbsp;&nbsp; <BR></div></P>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/101138.html'>Linux 正则表达式详解</a><a>下一篇</a><a href='/php/biji/101140.html'>Android App中使用ListFragment的实例教程</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

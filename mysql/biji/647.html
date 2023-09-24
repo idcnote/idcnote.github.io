@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL索引选择以及优化的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL索引选择以及优化的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	索引模" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL索引选择以及优化的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:18:06                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL索引选择以及优化的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+
+目录
+
+	索引模</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL索引选择以及优化的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<div id="navCategory">
+<h5 class="catalogue">目录</h5>
+<ul class="first_class_ul">
+	<li>索引模型</li>
+	<li>B+Tree</li>
+	<li>索引选择</li>
+	<li>索引优化
+	<ul class="second_class_ul">
+		<li>索引选择性</li>
+		<li>覆盖索引</li>
+		<li>最左前缀原则+索引下推</li>
+		<li>前缀索引</li>
+		<li>唯一索引</li>
+		<li>索引失效</li>
+	</ul></li>
+	<li>总结
+	<ul class="second_class_ul">
+	</ul></li>
+</ul>
+<p class="maodian"></p>
+<h2>索引模型</h2>
+<p>哈希表</p>
+<ul>
+	<li>适用于只有等值查询的场景，Memory引擎默认索引</li>
+	<li>InnoDB支持自适应哈希索引，不可干预，由引擎自行决定是否创建</li>
+</ul>
+<p>有序数组：在等值查询和范围查询场景中的性能都非常优秀，但插入和删除数据需要进行数据移动，成本太高。因此，只适用于静态存储引擎</p>
+<p>二叉平衡树：每个节点的左儿子小于父节点，父节点又小于右儿子，时间复杂度是 O(log(N))</p>
+<p>多叉平衡树：索引不止存在内存中，还要写到磁盘上。为了让一个查询尽量少地读磁盘，就必须让查询过程访问尽量少的数据块。因此，要使用&ldquo;N 叉&rdquo;树。</p>
+<p class="maodian"></p>
+<h2>B+Tree</h2>
+<p>B-Tree 与 B+Tree</p>
+<p>B-Tree</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>B+Tree</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>InnoDB 使用了 B+ 树索引模型。假设，我们有一个主键列为 ID 的表，表中有字段 k，并且在 k 上有索引，如下所示：</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<ul>
+	<li>主键索引：也被称为聚簇索引，叶子节点存的是整行数据</li>
+	<li>非主键索引：也被称为二级索引，叶子节点内容是主键的值</li>
+</ul>
+<p></p>
+<h3>注意事项</h3>
+<p></p>
+<ul>
+	<li>索引基于数据页有序存储，可能发生数据页的分裂(页存储空间不足)和合并(数据删除造成页利用率低)</li>
+	<li>数据的无序插入会造成数据的移动，甚至数据页的分裂</li>
+	<li>主键长度越小，普通索引的叶子节点就越小，普通索引占用的空间也就越小</li>
+	<li>索引字段越小，单层可存储数据量越多，可减少磁盘IO</li>
+</ul>
+<p>代码如下：</p>
+<pre>
+<code>
+// 假设一个数据页16K、一行数据1K、索引间指针6字节、索引字段bigint类型(8字节)
+
+// 索引个数
+K = 16*1024/(8+6) =1170
+
+// 单个叶子节点记录数
+N = 16/1 = 16
+
+// 三层B+记录数
+V = K*K*N = 21902400
+
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p>MyISAM也是使用B+Tree索引，区别在于不区分主键和非主键索引，均是非聚簇索引，叶子节点保存的是数据文件的指针</p>
+<p class="maodian"></p>
+<h2>索引选择</h2>
+<p>优化器选择索引的目的，是找到一个最优的执行方案，并用最小的代价去执行语句。在数据库里面，扫描行数是影响执行代价的因素之一。扫描的行数越少，意味着访问磁盘数据的次数越少，消耗的 CPU 资源越少。</p>
+<p>当然，扫描行数并不是唯一的判断标准，优化器还会结合是否使用临时表、是否排序等因素进行综合判断。</p>
+<p></p>
+<h3>扫描行数如何计算</h3>
+<p></p>
+<p>一个索引上不同的值越多，这个索引的区分度就越好。而一个索引上不同的值的个数，称之为&ldquo;基数&rdquo;（cardinality）。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+-- 查看当前索引基数
+mysql&gt; show index from test;
++-------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| Table | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment |
++-------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| test |   0 | PRIMARY |   1 | id   | A   |  100256 | NULL  | NULL |  | BTREE  |   |    |
+| test |   1 | index_a |   1 | a   | A   |  98199 | NULL  | NULL | YES | BTREE  |   |    |
++-------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p>从性能的角度考虑，InnoDB 使用采样统计，默认会选择 N 个数据页，统计这些页面上的不同值，得到一个平均值，然后乘以这个索引的页面数，就得到了这个索引的基数。因此，上述两个索引显示的基数并不相同。</p>
+<p>而数据表是会持续更新的，索引统计信息也不会固定不变。所以，当变更的数据行数超过 1/M 的时候(innodb_stats_persistent=on时默认10，反之16)，会自动触发重新做一次索引统计。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; show variables like '%innodb_stats_persistent%';
++--------------------------------------+-------------+
+| Variable_name      | Value  |
++--------------------------------------+-------------+
+-- 是否自动触发更新统计信息，当被修改的数据超过10%时就会触发统计信息重新统计计算
+| innodb_stats_auto_recalc    | ON   |
+-- 控制在重新计算统计信息时是否会考虑删除标记的记录
+| innodb_stats_include_delete_marked | OFF   |
+-- 对null值的统计方法，当变量设置为nulls_equal时，所有NULL值都被视为相同
+| innodb_stats_method     | nulls_equal | 
+-- 操作元数据时是否触发更新统计信息
+| innodb_stats_on_metadata    | OFF   |
+-- 统计信息是否持久化存储
+| innodb_stats_persistent    | ON   |
+-- innodb_stats_persistent=on，持久化统计信息采样的抽样页数
+| innodb_stats_persistent_sample_pages | 20   |
+-- 不推荐使用，已经被innodb_stats_transient_sample_pages替换
+| innodb_stats_sample_pages   | 8   |
+-- 瞬时抽样page数
+| innodb_stats_transient_sample_pages | 8   |
++--------------------------------------+-------------+
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<ul>
+	<li>除了因为抽样导致统计基数不准外，MVCC也会导致基数统计不准确。例如：事务A先事务B开启且未提交，事务B删除部分数据，在可重复读中事务A还可以查询到删除的数据，此部分数据目前至少有两个版本，有一个标识为deleted的数据。</li>
+	<li>主键是直接按照表的行数来估计的，表的行数，优化器直接使用show table status like &#39;t&#39;的值</li>
+	<li>手动触发索引统计：</li>
+</ul>
+<p>代码如下：</p>
+<pre>
+<code>
+-- 重新统计索引信息
+mysql&gt; analyze table t;
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p>排序对索引选择的影响</p>
+<p>代码如下：</p>
+<pre>
+<code>
+-- 创建表
+mysql&gt; CREATE TABLE `t` (
+`id` int(11) NOT NULL,
+`a` int(11) DEFAULT NULL,
+`b` int(11) DEFAULT NULL,
+PRIMARY KEY (`id`),
+KEY `a` (`a`),
+KEY `b` (`b`)
+) ENGINE=InnoDB;
+
+-- 定义测试数据存储过程
+mysql&gt; delimiter ;
+CREATE PROCEDURE idata ()
+BEGIN
+
+DECLARE i INT ;
+SET i = 1 ;
+WHILE (i &lt;= 100000) DO
+ INSERT INTO t
+VALUES
+ (i, i, i) ;
+SET i = i + 1 ;
+END
+WHILE ;
+END;
+delimiter ;
+
+-- 执行存储过程，插入测试数据
+mysql&gt; CALL idata ();
+
+-- 查看执行计划，使用了字段a上的索引
+mysql&gt; explain select * from t where a between 10000 and 20000;
++----+-------------+-------+-------+---------------+-----+---------+------+-------+-----------------------+
+| id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra         |
++----+-------------+-------+-------+---------------+-----+---------+------+-------+-----------------------+
+| 1 | SIMPLE   | t   | range | a       | a  | 5    | NULL | 10000 | Using index condition |
++----+-------------+-------+-------+---------------+-----+---------+------+-------+-----------------------+
+
+-- 由于需要进行字段b排序，虽然索引b需要扫描更多的行数，但本身是有序的，综合扫描行数和排序，优化器选择了索引b，认为代价更小
+mysql&gt; explain select * from t where (a between 1 and 1000) and (b between 50000 and 100000) order by b limit 1;
++----+-------------+-------+-------+---------------+-----+---------+------+-------+------------------------------------+
+| id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra               |
++----+-------------+-------+-------+---------------+-----+---------+------+-------+------------------------------------+
+| 1 | SIMPLE   | t   | range | a,b      | b  | 5    | NULL | 50128 | Using index condition; Using where |
++----+-------------+-------+-------+---------------+-----+---------+------+-------+------------------------------------+
+
+-- 方案1：通过force index强制走索引a，纠正优化器错误的选择，不建议使用（不通用，且索引名称更变语句也需要变）
+mysql&gt; explain select * from t force index(a) where (a between 1 and 1000) and (b between 50000 and 100000) order by b limit 1;
++----+-------------+-------+-------+---------------+-----+---------+------+------+----------------------------------------------------+
+| id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra                       |
++----+-------------+-------+-------+---------------+-----+---------+------+------+----------------------------------------------------+
+| 1 | SIMPLE   | t   | range | a       | a  | 5    | NULL | 999 | Using index condition; Using where; Using filesort |
++----+-------------+-------+-------+---------------+-----+---------+------+------+----------------------------------------------------+
+
+-- 方案2：引导 MySQL 使用我们期望的索引，按b,a排序，优化器需要考虑a排序的代价
+mysql&gt; explain select * from t where (a between 1 and 1000) and (b between 50000 and 100000) order by b,a limit 1;
++----+-------------+-------+-------+---------------+-----+---------+------+------+----------------------------------------------------+
+| id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra                       |
++----+-------------+-------+-------+---------------+-----+---------+------+------+----------------------------------------------------+
+| 1 | SIMPLE   | t   | range | a,b      | a  | 5    | NULL | 999 | Using index condition; Using where; Using filesort |
++----+-------------+-------+-------+---------------+-----+---------+------+------+----------------------------------------------------+
+
+-- 方案3：有些场景下，我们可以新建一个更合适的索引，来提供给优化器做选择，或删掉误用的索引
+ALTER TABLE `t`
+DROP INDEX `a`,
+DROP INDEX `b`,
+ADD INDEX `ab` (`a`,`b`) ;
+
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p class="maodian"></p>
+<h2>索引优化</h2>
+<p class="maodian"></p>
+<h3>索引选择性</h3>
+<p>索引选择性 = 基数 / 总行数</p>
+<p>代码如下：</p>
+<pre>
+<code>
+-- 表t中字段xxx的索引选择性
+select count(distinct xxx)/count(id) from t;
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p>索引的选择性，指的是不重复的索引值（基数）和表记录数的比值。选择性是索引筛选能力的一个指标，索引的取值范围是 0~1 ，当选择性越大，索引价值也就越大。</p>
+<p>在使用普通索引查询时，会先加载普通索引，通过普通索引查询到实际行的主键，再使用主键通过聚集索引查询相应的行，以此循环查询所有的行。若直接全量搜索聚集索引，则不需要在普通索引和聚集索引中来回切换，相比两种操作的总开销可能扫描全表效率更高。</p>
+<p>实际工作中，还是要看业务情况，如果数据分布不均衡，实际查询条件总是查询数据较少的部分，在索引选择较低的列上加索引，效果可能也很不错。</p>
+<p class="maodian"></p>
+<h3>覆盖索引</h3>
+<p>覆盖索引可以减少树的搜索次数，显著提升查询性能，所以使用覆盖索引是一个常用的性能优化手段</p>
+<p style="text-align: center"><!---ecms -ecms 
+【图缺】
+--></p>
+<p>代码如下：</p>
+<pre>
+<code>
+-- 只需要查 ID 的值，而 ID 的值已经在 k 索引树上了，因此可以直接提供查询结果，不需要回表
+select ID from T where k between 3 and 5
+
+-- 增加字段V，每次查询需要返回V，可考虑把k、v做成联合索引
+select ID,V from T where k between 3 and 5
+
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p class="maodian"></p>
+<h3>最左前缀原则+索引下推</h3>
+<p>代码如下：</p>
+<pre>
+<code>
+-- id、name、age三列，name、age上创建联合索引
+
+-- 满足最左前缀原则，name、age均走索引
+select * from T where name='xxx' and age=12
+
+-- Mysql自动优化，调整name、age顺序，，name、age均走索引
+select * from T where age=12 and name='xxx'
+
+-- name满足最左前缀原则走索引，MySQL5.6引入索引下推优化（index condition pushdown)，即索引中先过滤掉不满足age=12的记录再回表
+select * from T where name like 'xxx%' and age=12
+
+-- 不满足最左前缀原则，均不走索引
+select * from T where name like '%xxx%' and age=12
+
+-- 满足最左前缀原则，name走索引
+select * from T where name='xxx'
+
+-- 不满足最左前缀原则，不走索引
+select * from T where age=12
+
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p>联合索引建立原则：</p>
+<ul>
+	<li>如果通过调整顺序，可以少维护一个索引，那么这个顺序往往就是需要优先考虑采用的</li>
+	<li>空间：优先小字段单独建立索引，例如：name、age，可建立(name,age)联合索引和(age)单字段索引</li>
+</ul>
+<p class="maodian"></p>
+<h3>前缀索引</h3>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; create table SUser(
+ID bigint unsigned primary key,
+name varchar(64),  
+email varchar(64),
+...
+)engine=innodb;
+
+-- 以下查询场景
+mysql&gt; select name from SUser where email='xxx';
+
+-- 方案1：全文本索引，回表次数由符合条件的数据量决定
+mysql&gt; alter table SUser add index index1(email);
+
+-- 方案2：前缀索引，回表次数由前缀匹配结果决定
+mysql&gt; alter table SUser add index index2(email(6));
+
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p>前缀索引可以节省空间，但需要注意前缀长度的定义，在节省空间的同时，不能增加太多查询成本，即减少回表验证次数</p>
+<p></p>
+<h3>如何设置合适的前缀长度？</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+-- 预设一个可以接受的区分度损失比，选择满足条件中最小的前缀长度
+select count(distinct left(email,n))/count(distinct email) from SUser;
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p></p>
+<h3>如果合适的前缀长度较长？</h3>
+<p></p>
+<p>比如身份证号，如果满足区分度要求，可能需要12位以上的前缀索引，节约的空间有限，又增加了查询成本，就没有必要使用前缀索引。此时，我们可以考虑使用以下方式：</p>
+<p></p>
+<h3>倒序存储</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+-- 查询时字符串反转查询
+mysql&gt; select field_list from t where id_card = reverse('input_id_card_string');
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p></p>
+<h3>使用hash字段</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+-- 创建一个整数字段，来保存身份证的校验码，同时在这个字段上创建索引
+mysql&gt; alter table t add id_card_crc int unsigned, add index(id_card_crc);
+
+-- 查询时使用hash字段走索引查询，再使用原字段精度过滤
+mysql&gt; select field_list from t where id_card_crc=crc32('input_id_card_string') and id_card='input_id_card_string'
+
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p>以上两种方式的缺点：</p>
+<ul>
+	<li>不支持范围查询</li>
+	<li>使用hash字段需要额外占用空间，新增了一个字段</li>
+	<li>读写时需要额外的处理，reverse或者crc32等</li>
+</ul>
+<p>前缀索引对覆盖索引的影响？</p>
+<p>代码如下：</p>
+<pre>
+<code>
+-- 使用前缀索引就用不上覆盖索引对查询性能的优化
+select id,email from SUser where email='xxx';
+</code></pre>
+<p>MySQL索引选择以及优化分析</p>
+<p class="maodian"></p>
+<h3>唯一索引</h3>
+<p>建议使用普通索引，唯一索引无法使用change buffer，内存命中率低</p>
+<p class="maodian"></p>
+<h3>索引失效</h3>
+<ul>
+	<li>不做列运算，包括函数的使用，可能破坏索引值的有序性</li>
+	<li>避免 %xxx 式查询使索引失效</li>
+	<li>or语句前后没有同时使用索引，当or左右查询字段只有一个是索引，该索引失效</li>
+	<li>组合索引ABC问题，最左前缀原则</li>
+	<li>隐式类型转化</li>
+	<li>隐式字符编码转换</li>
+	<li>优化器放弃索引，回表、排序成本等因素影响，改走其它索引或者全部扫描</li>
+</ul>
+<p class="maodian"></p>
+<h2>总结</h2>
+<p>到此这篇关于Mysql索引选择以及优化的文章就介绍到这了,更多相关Mysql索引选择优化内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p></div>
+
+<p>注：关于MySQL索引选择以及优化的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/646.html'>MySQL myisam 优化设置设置</a><a>下一篇</a><a href='/mysql/biji/648.html'>MySQL常见错误集锦</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

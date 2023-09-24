@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL长事务的深入分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL长事务的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言：
+本篇文章主要介绍MySQ" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL长事务的深入分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:15:48                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL长事务的深入分析，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+前言：
+本篇文章主要介绍MySQ</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL长事务的深入分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>前言：</p>
+<p>本篇文章主要介绍MySQL长事务相关内容，比如说我们开启的一个事务，一直没提交或回滚会怎样呢，出现事务等待情况应该如何处理，本篇文章将给你答案。</p>
+<blockquote>
+<p>注意：本篇文章并不聚焦于谈论事务隔离级别以及相关特性。而是介绍长事务相关危害以及监控处理方法。本文是基于MySQL5.7.23版本，不可重复读(RR)隔离级别所做实验。(语句为\G可以使查询结构显示更易读，但只可以在mysql命令行使用。)</p></blockquote>
+<p>1.什么是长事务</p>
+<p>首先我们先要知道什么是长事务，顾名思义就是运行时间比较长，长时间未提交的事务，也可以称之为大事务。这类事务往往会造成大量的阻塞和锁超时，容易造成主从延迟，要尽量避免使用长事务。</p>
+<p>下面我将演示下如何开启事务及模拟长事务：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#假设我们有一张stu_tb表，结构及数据如下
+mysql&gt; show create table stu_tb\G
+*************************** 1. row ***************************
+    Table: stu_tb
+Create Table: CREATE TABLE `stu_tb` (
+ `increment_id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增主键',
+ `stu_id` int(11) NOT NULL COMMENT '学号',
+ `stu_name` varchar(20) DEFAULT NULL COMMENT '学生姓名',
+ `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+ `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+ PRIMARY KEY (`increment_id`),
+ UNIQUE KEY `uk_stu_id` (`stu_id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 COMMENT='测试学生表'
+1 row in set (0.01 sec)
+
+mysql&gt; select * from stu_tb;
++--------------+--------+----------+---------------------+---------------------+
+| increment_id | stu_id | stu_name | create_time     | update_time     |
++--------------+--------+----------+---------------------+---------------------+
+|      1 |  1001 | from1  | 2019-09-15 14:27:34 | 2019-09-15 14:27:34 |
+|      2 |  1002 | dfsfd  | 2019-09-15 14:27:34 | 2019-09-15 14:27:34 |
+|      3 |  1003 | fdgfg  | 2019-09-15 14:27:34 | 2019-09-15 14:27:34 |
+|      4 |  1004 | sdfsdf  | 2019-09-15 14:27:34 | 2019-09-15 14:27:34 |
+|      5 |  1005 | dsfsdg  | 2019-09-15 14:27:34 | 2019-09-15 14:27:34 |
+|      6 |  1006 | fgd   | 2019-09-15 14:27:34 | 2019-09-15 14:27:34 |
+|      7 |  1007 | fgds   | 2019-09-15 14:27:34 | 2019-09-15 14:27:34 |
+|      8 |  1008 | dgfsa  | 2019-09-15 14:27:34 | 2019-09-15 14:27:34 |
++--------------+--------+----------+---------------------+---------------------+
+8 rows in set (0.00 sec)
+
+#显式开启事务，可用begin或start transaction
+mysql&gt; start transaction;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql&gt; select * from stu_tb where stu_id = 1006 for update;
++--------------+--------+----------+---------------------+---------------------+
+| increment_id | stu_id | stu_name | create_time     | update_time     |
++--------------+--------+----------+---------------------+---------------------+
+|      6 |  1006 | fgd   | 2019-09-15 14:27:34 | 2019-09-15 14:27:34 |
++--------------+--------+----------+---------------------+---------------------+
+1 row in set (0.01 sec)
+
+ #如果我们不及时提交上个事务，那么这个事务就变成了长事务，当其他会话要操作这条数据时，就会一直等待。</code></pre>
+<p>深入了解MySQL长事务</p>
+<p>2.如何找到长事务</p>
+<p>遇到事务等待问题时，我们首先要做的是找到正在执行的事务。information_schema.INNODB_TRX 表中包含了当前innodb内部正在运行的事务信息，这个表中给出了事务的开始时间，我们可以稍加运算即可得到事务的运行时间。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select t.*,to_seconds(now())-to_seconds(t.trx_started) idle_time from INFORMATION_SCHEMA.INNODB_TRX t \G
+*************************** 1. row ***************************
+          trx_id: 6168
+         trx_state: RUNNING
+        trx_started: 2019-09-16 11:08:27
+   trx_requested_lock_id: NULL
+     trx_wait_started: NULL
+        trx_weight: 3
+    trx_mysql_thread_id: 11
+         trx_query: NULL
+    trx_operation_state: NULL
+     trx_tables_in_use: 0
+     trx_tables_locked: 1
+     trx_lock_structs: 3
+   trx_lock_memory_bytes: 1136
+      trx_rows_locked: 2
+     trx_rows_modified: 0
+  trx_concurrency_tickets: 0
+    trx_isolation_level: REPEATABLE READ
+     trx_unique_checks: 1
+  trx_foreign_key_checks: 1
+trx_last_foreign_key_error: NULL
+ trx_adaptive_hash_latched: 0
+ trx_adaptive_hash_timeout: 0
+     trx_is_read_only: 0
+trx_autocommit_non_locking: 0
+         idle_time: 170</code></pre>
+<p>深入了解MySQL长事务</p>
+<p>在结果中idle_time是计算产生的，也是事务的持续时间。但事务的trx_query是NUL，这并不是说事务什么也没执行，一个事务可能包含多个SQL，如果SQL执行完毕就不再显示了。当前事务正在执行，innodb也不知道这个事务后续还有没有sql,啥时候会commit。因此trx_query不能提供有意义的信息。</p>
+<p>如果我们想看到这个事务执行过的SQL，看是否可以杀掉长事务，怎么办呢？我们可以联合其他系统表查询得到，具体查询SQL如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; select now(),(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(a.trx_started)) diff_sec,b.id,b.user,b.host,b.db,d.SQL_TEXT from information_schema.innodb_trx a inner join
+  -&gt; information_schema.PROCESSLIST b
+  -&gt; on a.TRX_MYSQL_THREAD_ID=b.id and b.command = 'Sleep'
+  -&gt; inner join performance_schema.threads c ON b.id = c.PROCESSLIST_ID
+  -&gt; inner join performance_schema.events_statements_current d ON d.THREAD_ID = c.THREAD_ID;
++---------------------+----------+----+------+-----------+--------+-----------------------------------------------------+
+| now()        | diff_sec | id | user | host   | db   | SQL_TEXT                      |
++---------------------+----------+----+------+-----------+--------+-----------------------------------------------------+
+| 2019-09-16 14:06:26 |    54 | 17 | root | localhost | testdb | select * from stu_tb where stu_id = 1006 for update |
++---------------------+----------+----+------+-----------+--------+-----------------------------------------------------+</code></pre>
+<p>深入了解MySQL长事务</p>
+<p>上述结果中diff_sec和上面idle_time表示意思相同，都是代表此事务持续的秒数。SQL_TEXT表示该事务刚执行的SQL。但是呢，上述语句只能查到事务最后执行的SQL，我们知道，一个事务里可能包含多个SQL，那我们想查询这个未提交的事务执行过哪些SQL，是否可以满足呢，答案是结合events_statements_history系统表也可以满足需求。下面语句将会查询出该事务执行过的所有SQL：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; SELECT
+  -&gt;  ps.id 'PROCESS ID',
+  -&gt;  ps.USER,
+  -&gt;  ps.HOST,
+  -&gt;  esh.EVENT_ID,
+  -&gt;  trx.trx_started,
+  -&gt;  esh.event_name 'EVENT NAME',
+  -&gt;  esh.sql_text 'SQL',
+  -&gt;  ps.time
+  -&gt; FROM
+  -&gt;  PERFORMANCE_SCHEMA.events_statements_history esh
+  -&gt;  JOIN PERFORMANCE_SCHEMA.threads th ON esh.thread_id = th.thread_id
+  -&gt;  JOIN information_schema.PROCESSLIST ps ON ps.id = th.processlist_id
+  -&gt;  LEFT JOIN information_schema.innodb_trx trx ON trx.trx_mysql_thread_id = ps.id
+  -&gt; WHERE
+  -&gt;  trx.trx_id IS NOT NULL
+  -&gt;  AND ps.USER != 'SYSTEM_USER'
+  -&gt; ORDER BY
+  -&gt;  esh.EVENT_ID;
++------------+------+-----------+----------+---------------------+------------------------------+-----------------------------------------------------+------+
+| PROCESS ID | USER | HOST   | EVENT_ID | trx_started     | EVENT NAME          | SQL                         | time |
++------------+------+-----------+----------+---------------------+------------------------------+-----------------------------------------------------+------+
+|     20 | root | localhost |    1 | 2019-09-16 14:18:44 | statement/sql/select     | select @@version_comment limit 1          |  60 |
+|     20 | root | localhost |    2 | 2019-09-16 14:18:44 | statement/sql/begin     | start transaction                  |  60 |
+|     20 | root | localhost |    3 | 2019-09-16 14:18:44 | statement/sql/select     | SELECT DATABASE()                  |  60 |
+|     20 | root | localhost |    4 | 2019-09-16 14:18:44 | statement/com/Init DB    | NULL                        |  60 |
+|     20 | root | localhost |    5 | 2019-09-16 14:18:44 | statement/sql/show_databases | show databases                   |  60 |
+|     20 | root | localhost |    6 | 2019-09-16 14:18:44 | statement/sql/show_tables  | show tables                     |  60 |
+|     20 | root | localhost |    7 | 2019-09-16 14:18:44 | statement/com/Field List   | NULL                        |  60 |
+|     20 | root | localhost |    8 | 2019-09-16 14:18:44 | statement/com/Field List   | NULL                        |  60 |
+|     20 | root | localhost |    9 | 2019-09-16 14:18:44 | statement/sql/select     | select * from stu_tb                |  60 |
+|     20 | root | localhost |    10 | 2019-09-16 14:18:44 | statement/sql/select     | select * from stu_tb where stu_id = 1006 for update |  60 |
++------------+------+-----------+----------+---------------------+------------------------------+-----------------------------------------------------+------+</code></pre>
+<p>深入了解MySQL长事务</p>
+<p>从上述结果中我们可以看到该事务从一开始到现在执行过的所有SQL，当我们把该事务相关信息都查询清楚后，我们就可以判定该事务是否可以杀掉，以免影响其他事务造成等待现象。</p>
+<p>在这里稍微拓展下，长事务极易造成阻塞或者死锁现象，通常情况下我们可以首先查询 sys.innodb_lock_waits 视图确定有没有事务阻塞现象：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#假设一个事务执行 select * from stu_tb where stu_id = 1006 for update
+#另外一个事务执行 update stu_tb set stu_name = 'wang' where stu_id = 1006
+
+mysql&gt; select * from sys.innodb_lock_waits\G
+*************************** 1. row ***************************
+        wait_started: 2019-09-16 14:34:32
+          wait_age: 00:00:03
+        wait_age_secs: 3
+        locked_table: `testdb`.`stu_tb`
+        locked_index: uk_stu_id
+         locked_type: RECORD
+       waiting_trx_id: 6178
+     waiting_trx_started: 2019-09-16 14:34:32
+       waiting_trx_age: 00:00:03
+   waiting_trx_rows_locked: 1
+  waiting_trx_rows_modified: 0
+         waiting_pid: 19
+        waiting_query: update stu_tb set stu_name = 'wang' where stu_id = 1006
+       waiting_lock_id: 6178:47:4:7
+      waiting_lock_mode: X
+       blocking_trx_id: 6177
+        blocking_pid: 20
+       blocking_query: NULL
+      blocking_lock_id: 6177:47:4:7
+     blocking_lock_mode: X
+    blocking_trx_started: 2019-09-16 14:18:44
+      blocking_trx_age: 00:15:51
+  blocking_trx_rows_locked: 2
+ blocking_trx_rows_modified: 0
+   sql_kill_blocking_query: KILL QUERY 20
+sql_kill_blocking_connection: KILL 20</code></pre>
+<p>深入了解MySQL长事务</p>
+<p>上述结果显示出被阻塞的SQL以及锁的类型，更强大的是杀掉会话的语句也给出来了。但是并没有找到阻塞会话执行的SQL，如果我们想找出更详细的信息，可以使用下面语句：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+mysql&gt; SELECT
+  -&gt;  tmp.*,
+  -&gt;  c.SQL_Text blocking_sql_text,
+  -&gt;  p.HOST blocking_host
+  -&gt; FROM
+  -&gt;  (
+  -&gt;  SELECT
+  -&gt;   r.trx_state wating_trx_state,
+  -&gt;   r.trx_id waiting_trx_id,
+  -&gt;   r.trx_mysql_thread_Id waiting_thread,
+  -&gt;   r.trx_query waiting_query,
+  -&gt;   b.trx_state blocking_trx_state,
+  -&gt;   b.trx_id blocking_trx_id,
+  -&gt;   b.trx_mysql_thread_id blocking_thread,
+  -&gt;   b.trx_query blocking_query
+  -&gt;  FROM
+  -&gt;   information_schema.innodb_lock_waits w
+  -&gt;   INNER JOIN information_schema.innodb_trx b ON b.trx_id = w.blocking_trx_id
+  -&gt;   INNER JOIN information_schema.innodb_trx r ON r.trx_id = w.requesting_trx_id
+  -&gt;  ) tmp,
+  -&gt;  information_schema.PROCESSLIST p,
+  -&gt;  PERFORMANCE_SCHEMA.events_statements_current c,
+  -&gt;  PERFORMANCE_SCHEMA.threads t
+  -&gt; WHERE
+  -&gt;  tmp.blocking_thread = p.id
+  -&gt;  AND t.thread_id = c.THREAD_ID
+  -&gt;  AND t.PROCESSLIST_ID = p.id \G
+*************************** 1. row ***************************
+ wating_trx_state: LOCK WAIT
+  waiting_trx_id: 6180
+  waiting_thread: 19
+   waiting_query: update stu_tb set stu_name = 'wang' where stu_id = 1006
+blocking_trx_state: RUNNING
+  blocking_trx_id: 6177
+  blocking_thread: 20
+  blocking_query: NULL
+ blocking_sql_text: select * from stu_tb where stu_id = 1006 for update
+   blocking_host: localhost</code></pre>
+<p>深入了解MySQL长事务</p>
+<p>上面结果显得更加清晰，我们可以清楚的看到阻塞端及被阻塞端事务执行的语句，有助于我们排查并确认是否可以杀掉阻塞的会话。</p>
+<p>3.监控长事务</p>
+<p>现实工作中我们需要监控下长事务，定义一个阈值，比如说30s 执行时间超过30s的事务即为长事务，要求记录并告警出来，提醒管理人员去处理。下面给出监控脚本，各位可以参考下，根据需求改动使用：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#!/bin/bash
+# -------------------------------------------------------------------------------
+# FileName:  long_trx.sh
+# Describe:  monitor long transaction
+# Revision:  1.0
+# Date:    2019/09/16
+# Author:   wang
+
+/usr/local/mysql/bin/mysql -N -uroot -pxxxxxx -e "select now(),(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(a.trx_started)) diff_sec,b.id,b.user,b.host,b.db,d.SQL_TEXT from information_schema.innodb_trx a inner join
+information_schema.PROCESSLIST b
+on a.TRX_MYSQL_THREAD_ID=b.id and b.command = 'Sleep'
+inner join performance_schema.threads c ON b.id = c.PROCESSLIST_ID
+inner join performance_schema.events_statements_current d ON d.THREAD_ID = c.THREAD_ID;" | while read A B C D E F G H
+do
+ if [ "$C" -gt 30 ]
+   then
+   echo $(date +"%Y-%m-%d %H:%M:%S")
+   echo "processid[$D] $E@$F in db[$G] hold transaction time $C SQL:$H"
+ fi
+done &gt;&gt; /tmp/longtransaction.txt</code></pre>
+<p>深入了解MySQL长事务</p>
+<p>简单说明一下，这里的-gt 30是30秒钟的意思，只要超过了30秒钟就认定是长事务，可以根据实际需要自定义。将该脚本加入定时任务中即可执行。</p>
+<p>总结：</p>
+<p>本文主要介绍了长事务相关内容，怎样找到长事务，怎么处理长事务，如何监控长事务。可能有些小伙伴对事务理解还不多，希望这篇文章对你有所帮助。由于本篇文章列出的查询事务相关语句较多，现总结如下：</p>
+<p>代码如下：</p>
+<pre>
+<code>
+# 查询所有正在运行的事务及运行时间
+select t.*,to_seconds(now())-to_seconds(t.trx_started) idle_time from INFORMATION_SCHEMA.INNODB_TRX t \G
+
+# 查询事务详细信息及执行的SQL
+select now(),(UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(a.trx_started)) diff_sec,b.id,b.user,b.host,b.db,d.SQL_TEXT from information_schema.innodb_trx a inner join information_schema.PROCESSLIST b
+on a.TRX_MYSQL_THREAD_ID=b.id and b.command = 'Sleep'
+inner join performance_schema.threads c ON b.id = c.PROCESSLIST_ID
+inner join performance_schema.events_statements_current d ON d.THREAD_ID = c.THREAD_ID;
+
+# 查询事务执行过的所有历史SQL记录
+SELECT
+ ps.id 'PROCESS ID',
+ ps.USER,
+ ps.HOST,
+ esh.EVENT_ID,
+ trx.trx_started,
+ esh.event_name 'EVENT NAME',
+ esh.sql_text 'SQL',
+ ps.time 
+FROM
+ PERFORMANCE_SCHEMA.events_statements_history esh
+ JOIN PERFORMANCE_SCHEMA.threads th ON esh.thread_id = th.thread_id
+ JOIN information_schema.PROCESSLIST ps ON ps.id = th.processlist_id
+ LEFT JOIN information_schema.innodb_trx trx ON trx.trx_mysql_thread_id = ps.id 
+WHERE
+ trx.trx_id IS NOT NULL 
+ AND ps.USER != 'SYSTEM_USER' 
+ORDER BY
+ esh.EVENT_ID;
+ 
+ # 简单查询事务锁
+ select * from sys.innodb_lock_waits\G
+ 
+ # 查询事务锁详细信息
+ SELECT
+ tmp.*,
+ c.SQL_Text blocking_sql_text,
+ p.HOST blocking_host
+FROM
+ (
+ SELECT
+  r.trx_state wating_trx_state,
+  r.trx_id waiting_trx_id,
+  r.trx_mysql_thread_Id waiting_thread,
+  r.trx_query waiting_query,
+  b.trx_state blocking_trx_state,
+  b.trx_id blocking_trx_id,
+  b.trx_mysql_thread_id blocking_thread,
+  b.trx_query blocking_query
+ FROM
+  information_schema.innodb_lock_waits w
+  INNER JOIN information_schema.innodb_trx b ON b.trx_id = w.blocking_trx_id
+  INNER JOIN information_schema.innodb_trx r ON r.trx_id = w.requesting_trx_id 
+ ) tmp,
+ information_schema.PROCESSLIST p,
+ PERFORMANCE_SCHEMA.events_statements_current c,
+ PERFORMANCE_SCHEMA.threads t
+WHERE
+ tmp.blocking_thread = p.id 
+ AND t.thread_id = c.THREAD_ID 
+ AND t.PROCESSLIST_ID = p.id \G</code></pre>
+<p>深入了解MySQL长事务</p>
+<p>以上就是深入了解mysql长事务的详细内容，更多关于mysql长事务的资料请关注512笔记其它相关文章！</p>
+
+<p>注：关于MySQL长事务的深入分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/388.html'>6秒钟往MySQL插入100万条数据的解决办法</a><a>下一篇</a><a href='/mysql/biji/390.html'>MySQL的7种日志的实现方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

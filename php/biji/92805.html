@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>Oracle数据库中基本的查询优化与子查询优化讲解_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="1. 查询条件合理排序<br />
+Oracle采用自下而上的顺序解析WHERE字据，从优化性能角度考虑，建议将那些可以过滤掉大量记录行的条件写在WHERE子句的末尾，而将表<br />
+之间的连接条件置于其他W" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">Oracle数据库中基本的查询优化与子查询优化讲解</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>1. 查询条件合理排序<br />
+Oracle采用自下而上的顺序解析WHERE字据，从优化性能角度考虑，建议将那些可以过滤掉大量记录行的条件写在WHERE子句的末尾，而将表<br />
+之间的连接条件置于其他W</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>1. 查询条件合理排序</strong></p>
+<p>Oracle采用自下而上的顺序解析WHERE字据，从优化性能角度考虑，建议将那些可以过滤掉大量记录行的条件写在WHERE子句的末尾，而将表</p>
+<p>之间的连接条件置于其他WHERE子句之前，即对易排查的条件先做判断处理，这样在过滤掉尽可能多的记录后再进行等值连接，可以提高检索效率。</p>
+<p>例如：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SELECT empno, ename, job, sal, dept.deptno, dname 
+
+FROM emp, dept 
+
+WHERE emp.deptno = dept.deptno AND emp.deptno = 20;
+
+</pre>
+</div>
+<p>要比下述语句的查询效率高一些：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SELETE empno, ename, job, sal, dept.deptno, dname
+
+FROM emp, dept
+
+WHERE emp.deptno = 20 AND emp.deptno = dept.deptno;
+
+</pre>
+</div>
+<p><strong>2.连接中使用表别名</strong></p>
+<p>在进行连接查询时，建议在SQL语句中使用表的别名， 并把别名前缀与每个字段上。这样可以减少解析的时间，并可避免因字段名存在歧义（使用多个</p>
+<p>表中出现的同名字段）而导致的语法错误。例如下述语句：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SELECT e.empno, e.ename, e.job, e.sal, e.deptno, d.name
+
+FROM emp e, dept d
+
+WHERE e.deptno = d.deptno AND e.deptno = 20;
+
+</pre>
+</div>
+<p><strong>3.用EXISTS替换DISTINCT</strong></p>
+<p>在进行一对多关系的表间连接查询时，如果要剔除结果中的重复行，可以考虑使用EXISTS（结合子查询）替换DISTINCT。</p>
+<p>例如：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SELECT deptno, dname FROM dept d WHERE EXIST (SELECT 'y' FROM emp e WHERE e.deptno = d.deptno);
+
+</pre>
+</div>
+<p><strong>4.用WHERE替换HAVING</strong></p>
+<p>由于SELECT语句的执行顺序为：先ＷＨＥＲＥ子句, 在GROUP BY 子句， 然后SELECT查询， 再后HAVINT子句，最后是ORDER BY子句，因此在进行分组</p>
+<p>查询时，如果过滤条件不涉及分组计算，则应该使用WHERE语句替换HAVING指定的过滤条件</p>
+<p>例如：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SELECT deptno, avg(sal) FROM emp
+
+WHERE deptno IN (10, 20)
+
+GROUP BY deptno;
+
+</pre>
+</div>
+<p>效率会高于下面</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+SELECT deptno, avg(sal) FROM emp
+
+WHERE deptno IN (10, 20)
+
+GROUP BY deptno;
+
+</pre>
+</div>
+<p>当然， 如果分组查询的过滤条件设计分组计算，就只能在HAVING子句中指定了。</p>
+<p><strong>5.子查询优化</strong></p>
+<p>1） 在数据量大时，子查询的性能会受到比较大的影响；</p>
+<p>2） 在子查询中使用了函数to_char(add_months(to_date(tb.rptdate,'yyyymm'),12),'yyyymm')，对大数据量查询时，执行函数也会对系统产生比较大的影响。</p>
+<p>下面来看一个例子：<br />
+</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+createor replace procedure Rpt_Dyhgl_year( 
+ rptyear      in varchar2, --年yyyy 
+ --rpttype      in varchar2,  --报表类型，1年报，2季报 
+ ref_cursor      out sys_refcursor --返回游标 
+) 
+As 
+ -- 变量声明 
+ 。。。。。 
+begin 
+  delete from YWTJ_RPT_DYHGL_YEAR where RPTYEAR = rptyear and RPTTYPE = '1'; 
+  commit; 
+ --查询原始数据 
+ v_sql := 'select rptdate, jcdlb, jcdlbName, sum(nvl(runtime,0)) sumruntime,sum(nvl(buhegeTime,0)) buhegeTime, count(jcdcount) jcdcount, 
+    sum(nvl(tongbiRuntime,0)) tongbiRuntime, sum(nvl(tongbiBhg,0))tongbiBhg from ( 
+  select rptdate, runtime,r.chaoshangxian+r.chaoxiaxian buhegeTime, r.objid, 1 jcdcount, 
+    (select runtime fromywtj_rpt_dyhgl_month tb whereto_char(add_months(to_date(tb.rptdate,''yyyymm''),12),''yyyymm'') = r.rptdateand tb.objid = r.objid) tongbiRuntime, 
+    (select chaoshangxian + chaoxiaxian fromywtj_rpt_dyhgl_month tb whereto_char(add_months(to_date(tb.rptdate,''yyyymm''),12),''yyyymm'') = r.rptdateand tb.objid = r.objid) tongbiBhg, 
+    (select jcdlb from jczl_dwjg d whered.objid = r.objid ) jcdlb, 
+    (select jcdlbname from dic_jcdlb wherejcdlbid = (select jcdlb from jczl_dwjg where objid = r.objid)) jcdlbName 
+    from ywtj_rpt_dyhgl_month r where rptdate = :rptYear) 
+  group by rptdate, jcdlb,  jcdlbName  
+  order by rptdate ,jcdlb '; 
+  -- 插入新数据 
+  v_sqlRptInsert := 'Insert IntoYWTJ_RPT_DYHGL_YEAR (RPTYEAR,RPTDATE,RPTTYPE) values(:RPTYEAR,:RPTDATE,:RPTTYPE)'; 
+  v_sqlRptUpdate := ''; 
+  -- 计算1--12月的当月数据 
+  for rptmonth in 1..12 loop 
+   execute immediate v_sqlRptInsertusing rptyear, rptmonth, '1'; 
+   commit; 
+   open v_cur for v_sql using rptyear ||LPAD(rptmonth, 2, '0'); 
+   loop 
+     fetch v_cur intov_rptDate,v_jcdlb,v_jcdName,v_sumRuntime,v_sumbuhegeTime,v_jcdCount,v_tongbiRuntime,v_tongbiBhg; 
+     exit when v_cur%notfound; 
+     --计算合格率 
+     。。。。。。 
+     -- 更新当月数据 
+     。。。。。。 
+    end loop; 
+    close v_cur; 
+  end loop; 
+  -- 更新累计数据 
+  。。。。。。 
+  commit; 
+  -- 计算综合合格率 
+  open ref_cursor for select * fromYWTJ_RPT_DYHGL_YEAR r where r.rptyear = rptyear and r.rpttype = 1 order byr.rptdate; 
+end Rpt_Dyhgl_year; 
+</pre>
+</div>
+<p>功能运行正常，查询时间大约30-40秒。</p>
+<p>然后，把报表部署到运行环境中后，验证功能时，发现2、3分钟报表没有出来！多次尝试，后来终于出来结果了：940多秒，15分钟多！这样用户肯定是不能接受的！使用pl/sql dev的性能分析对Rpt_Dyhgl_year的执行过程进行分析，发现几乎所有的时间都化在了</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+fetch v_cur into v_rptDate,v_jcdlb,v_jcdName,v_sumRuntime,v_sumbuhegeTime,v_jcdCount,v_tongbiRuntime,v_tongbiBhg;
+
+</pre>
+</div>
+<p>（期间把过程转成程序执行，性能分析时发现，主要时间都是由dr.Read()占用，和对过程的分析一致。）</p>
+<p>那问题应该是在fetch对应的查询上，把</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+v_sql :='select rptdate, jcdlb, jcdlbName,sum(nvl(runtime,0)) sumruntime, sum(nvl(buhegeTime,0)) buhegeTime,count(jcdcount) jcdcount, 
+ 
+    sum(nvl(tongbiRuntime,0)) tongbiRuntime, sum(nvl(tongbiBhg,0))tongbiBhg from ( 
+ 
+  select rptdate, runtime,r.chaoshangxian+r.chaoxiaxian buhegeTime, r.objid, 1 jcdcount, 
+ 
+    (select runtime fromywtj_rpt_dyhgl_month tb whereto_char(add_months(to_date(tb.rptdate,''yyyymm''),12),''yyyymm'') = r.rptdateand tb.objid = r.objid) tongbiRuntime, 
+ 
+    (select chaoshangxian + chaoxiaxian fromywtj_rpt_dyhgl_month tb whereto_char(add_months(to_date(tb.rptdate,''yyyymm''),12),''yyyymm'') = r.rptdateand tb.objid = r.objid) tongbiBhg, 
+ 
+    (select jcdlb from jczl_dwjg d whered.objid = r.objid ) jcdlb, 
+ 
+    (select jcdlbname from dic_jcdlb wherejcdlbid = (select jcdlb from jczl_dwjg where objid = r.objid)) jcdlbName 
+ 
+    from ywtj_rpt_dyhgl_month r where rptdate = :rptYear) 
+ 
+  group by rptdate, jcdlb,  jcdlbName  
+ 
+  order by rptdate ,jcdlb ';      --① 
+</pre>
+</div>
+<p>单独拿出来执行，大约5.7秒多。<br />
+再把其中的子查询：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+selectrptdate, runtime, r.chaoshangxian+r.chaoxiaxian buhegeTime, r.objid, 1jcdcount, 
+ 
+    (select runtime fromywtj_rpt_dyhgl_month tb whereto_char(add_months(to_date(tb.rptdate,''yyyymm''),12),''yyyymm'') = r.rptdateand tb.objid = r.objid) tongbiRuntime, 
+ 
+    (select chaoshangxian + chaoxiaxian fromywtj_rpt_dyhgl_month tb whereto_char(add_months(to_date(tb.rptdate,''yyyymm''),12),''yyyymm'') = r.rptdateand tb.objid = r.objid) tongbiBhg, 
+ 
+    (select jcdlb from jczl_dwjg d whered.objid = r.objid ) jcdlb, 
+ 
+    (select jcdlbname from dic_jcdlb wherejcdlbid = (select jcdlb from jczl_dwjg where objid = r.objid)) jcdlbName 
+ 
+    from ywtj_rpt_dyhgl_month r where rptdate =:rptYear;  --② 
+</pre>
+</div>
+<p>单独拿出来执行，速度很快，但返回的数据量很大。如果再对其循环分析，估计性能也好不到哪去，先行放弃这种尝试。</p>
+<p>把查询②中的tongbiRuntime和tongbiBhg两个字段子查询去掉，执行速度更快，同样再把①中的tongbiRuntime和tongbiBhg两个字段子查询去掉，执行速度提高很多，时间约0.157秒。</p>
+<p>这样速度就提高了很多，但少了去年同比的数据，那就分成两个查询！按这个思路下来，最后得到的过程如下（只保留主要部分）：</p>
+<div class="phpstudycode">
+<pre class="brush:sql;">
+createor replace procedure Rpt_Dyhgl_year( 
+--电压合格率-年 
+ v_rptyear      in varchar2, --年yyyy 
+ --rpttype      in varchar2,  --报表类型，1年报，2季报 
+ ref_cursor      out sys_refcursor --返回游标 
+) 
+as 
+ -- 变量声明 
+ ....... 
+begin 
+  delete from YWTJ_RPT_DYHGL_YEAR where RPTYEAR = v_rptyear and RPTTYPE = '1'; 
+  commit; 
+ --查询原始数据 
+ v_sql := 'select rptdate, jcdlb, jcdlbName, sum(nvl(runtime,0)) sumruntime,sum(nvl(buhegeTime,0)) buhegeTime, count(jcdcount) jcdcount 
+    from ( select rptdate, runtime,r.chaoshangxian+r.chaoxiaxian buhegeTime, r.objid, 1 jcdcount, 
+    (select jcdlb from jczl_dwjg d whered.objid = r.objid ) jcdlb, 
+    (select jcdlbname from dic_jcdlb wherejcdlbid = (select jcdlb from jczl_dwjg where objid = r.objid)) jcdlbName 
+    from ywtj_rpt_dyhgl_month r where rptdate = :rptYear) 
+  group by rptdate, jcdlb,  jcdlbName 
+  order by rptdate ,jcdlb '; 
+  -- 插入新数据 
+  v_sqlRptInsert := 'Insert IntoYWTJ_RPT_DYHGL_YEAR (RPTYEAR,RPTDATE,RPTTYPE) values(:RPTYEAR,:RPTDATE,:RPTTYPE)'; 
+  v_sqlRptUpdate := ''; 
+ 
+  -- 计算1--12月的当月数据 
+  for rptmonth in 1..12 loop 
+   -- 打开游标开始计算合格率 
+   open v_cur for v_sql using v_rptyear||LPAD(rptmonth, 2, '0'); 
+   loop 
+     fetch v_cur intov_rptDate,v_jcdlb,v_jcdLbName,v_sumRuntime,v_sumbuhegeTime,v_jcdCount; 
+     exit when v_cur%notfound; 
+     --计算合格率 
+     if v_sumRuntime &lt;&gt; 0 then 
+      v_hgl := (v_sumRuntime-v_sumbuhegeTime)/v_sumRuntime *100; 
+     end if; 
+     -- 更新当月数据 
+     ........ 
+    end loop; 
+    close v_cur; 
+   -- 打开游标开始计算同比合格率 
+   open v_cur for v_sql using (v_rptyear-1)|| LPAD(rptmonth, 2, '0'); 
+   loop 
+     fetch v_cur into v_rptDate,v_jcdlb,v_jcdLbName,v_sumRuntime,v_sumbuhegeTime,v_jcdCount; 
+     exit when v_cur%notfound; 
+     --计算合格率 
+     if v_sumRuntime &lt;&gt; 0 then 
+      v_hgl := (v_sumRuntime-v_sumbuhegeTime)/v_sumRuntime*100; 
+     end if; 
+     -- 更新同比数据 
+     ......... 
+    end loop; 
+    close v_cur; 
+  end loop; 
+ 
+  -- 更新累计数据 
+  .........  
+  -- 计算综合合格率 
+  ........ 
+ 
+  open ref_cursor for select * fromYWTJ_RPT_DYHGL_YEAR r where r.rptyear = v_rptyear and r.rpttype = 1 order byr.rptdate; 
+end Rpt_Dyhgl_year;</pre>
+</div>
+<p>&nbsp;</p>
+<p><br />
+经验证，执行速度大约在一秒多，也就是说性能从原来的900多秒提高到1秒，提高差不多三个数量级。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/92804.html'>codeigniter框架批量插入数据</a><a>下一篇</a><a href='/php/biji/92806.html'>Java中List与数组相互转换实例分析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

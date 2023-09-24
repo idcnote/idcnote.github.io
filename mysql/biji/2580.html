@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQL Server无日志恢复数据库实现方法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了SQL Server无日志恢复数据库实现方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+SQL Server是一个关系" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQL Server无日志恢复数据库实现方法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:38:37                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了SQL Server无日志恢复数据库实现方法，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！
+SQL Server是一个关系</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了SQL Server无日志恢复数据库实现方法，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>
+<p>SQL Server是一个关系数据库管理系统，应用很广泛，在进行SQL Server数据库操作的过程中难免会出现误删或者别的原因引起的日志损坏，又由于SQL Server数据库中数据的重要性，出现了以上的故障之后就必须对数据库中数据进行恢复。下文就为大家介绍一种恢复数据库日志文件的方法。</p>
+<p></p>
+<h3>解决方法一</h3>
+<p></p>
+<p>1.新建一个同名的数据库</p>
+<p>2.再停掉sql server(注意不要分离数据库)</p>
+<p>3.用原数据库的数据文件覆盖掉这个新建的数据库</p>
+<p>4.再重启sql server</p>
+<p>5.此时打开企业管理器时会出现置疑，先不管，执行下面的语句(注意修改其中的数据库名)</p>
+<p>6.完成后一般就可以访问数据库中的数据了,这时,数据库本身一般还要问题,解决办法是,利用</p>
+<p>数据库的脚本创建一个新的数据库,并将数据导进去就行了.</p>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+USE MASTER
+
+GO
+
+SP_CONFIGURE 'ALLOW UPDATES',1 RECONFIGURE WITH OVERRIDE
+
+GO
+
+UPDATE SYSDATABASES SET STATUS =32768 WHERE NAME='置疑的数据库名'
+
+Go
+
+sp_dboption '置疑的数据库名', 'single user', 'true'
+
+Go
+
+DBCC CHECKDB('置疑的数据库名')
+
+Go
+
+update sysdatabases set status =28 where name='置疑的数据库名'
+
+Go
+
+sp_configure 'allow updates', 0 reconfigure with override
+
+Go
+
+sp_dboption '置疑的数据库名', 'single user', 'false'
+
+Go
+</code></pre>
+<p></p>
+<h3>解决方法二</h3>
+<p></p>
+<p>没有效果的恢复步骤</p>
+<p>附加数据库</p>
+<p>_Rambo讲过被删除日志文件中不存在活动日志时，可以这么做来恢复:</p>
+<p>1，分离被置疑的数据库，可以使用sp_detach_db</p>
+<p>2，附加数据库，可以使用sp_attach_single_file_db</p>
+<p>但是，很遗憾，执行之后，SQL Server质疑数据文件和日志文件不符，所以无法附加数据库数据文件。</p>
+<p>DTS数据导出</p>
+<p>不行，无法读取XXX数据库，DTS Wizard报告说&ldquo;初始化上下文发生错误&rdquo;。</p>
+<p></p>
+<h3>紧急模式</h3>
+<p></p>
+<p>没有日志用于恢复时，还可以这么做:</p>
+<p>1，把数据库设置为emergency mode</p>
+<p>2，重新建立一个log文件</p>
+<p>3，把SQL Server 重新启动一下</p>
+<p>4，把应用数据库设置成单用户模式</p>
+<p>5，做DBCC CHECKDB</p>
+<p>6，如果没有什么大问题就可以把数据库状态改回去了，记得别忘了把系统表的修改选项关掉</p>
+<p>我实践了一下，把应用数据库的数据文件移走，重新建立一个同名的数据库XXX，然后停掉SQL服务，把原来的数据文件再覆盖回来。之后，按照怡红公子的步骤走。</p>
+<p>但是，也很遗憾，除了第2步之外，其他步骤执行非常成功。可惜，重启SQL Server之后，这个应用数据库仍然是置疑!</p>
+<p>不过，让我欣慰的是，这么做之后，倒是能够Select数据了，让我大出一口气。只不过，组件使用数据库时，报告说:&ldquo;发生错误:-2147467259,未能在数据库 &#39;XXX&#39; 中运行 BEGIN TRANSACTION，因为该数据库处于回避恢复模式。&rdquo;</p>
+<p></p>
+<h3>最终成功恢复的全部步骤</h3>
+<p></p>
+<p>设置数据库为紧急模式</p>
+<p>停掉SQL Server服务;</p>
+<p>把应用数据库的数据文件XXX_Data.mdf移走;</p>
+<p>重新建立一个同名的数据库XXX;</p>
+<p>停掉SQL服务;</p>
+<p>把原来的数据文件再覆盖回来;</p>
+<p>运行以下语句，把该数据库设置为紧急模式;</p>
+<p>代码如下：</p>
+<pre>
+<code>
+Use Master
+
+Go
+
+sp_configure 'allow updates', 1
+
+reconfigure with override
+
+Go
+</code></pre>
+<p>执行结果:</p>
+<p>DBCC 执行完毕。如果 DBCC 输出了错误信息，请与系统管理员联系。</p>
+<p>已将配置选项 &#39;allow updates&#39; 从 0 改为 1。请运行 RECONFIGURE 语句以安装。</p>
+<p>接着运行&ldquo;update sysdatabases set status = 32768 where name = &#39;XXX&#39;&rdquo;</p>
+<p></p>
+<h3>执行结果:</h3>
+<p></p>
+<p>(所影响的行数为 1 行)</p>
+<p>重启SQL Server服务;</p>
+<p>运行以下语句，把应用数据库设置为Single User模式;</p>
+<p>运行&ldquo;sp_dboption &#39;XXX&#39;, &#39;single user&#39;, &#39;true&#39;&rdquo;</p>
+<p></p>
+<h3>执行结果:</h3>
+<p></p>
+<p>命令已成功完成。</p>
+<p>&uuml; 做DBCC CHECKDB;</p>
+<p>运行&ldquo;DBCC CHECKDB(&#39;XXX&#39;)&rdquo;</p>
+<p></p>
+<h3>执行结果:</h3>
+<p></p>
+<p>&#39;XXX&#39; 的 DBCC 结果。</p>
+<p>&#39;sysobjects&#39; 的 DBCC 结果。</p>
+<p>对象 &#39;sysobjects&#39; 有 273 行，这些行位于 5 页中。</p>
+<p>&#39;sysindexes&#39; 的 DBCC 结果。</p>
+<p>对象 &#39;sysindexes&#39; 有 202 行，这些行位于 7 页中。</p>
+<p>&#39;syscolumns&#39; 的 DBCC 结果。</p>
+<p>&hellip;&hellip;&hellip;</p>
+<p>&uuml; 运行以下语句把系统表的修改选项关掉;</p>
+<p>运行</p>
+<p>代码如下：</p>
+<pre>
+<code>
+“sp_resetstatus "XXX"
+
+go
+
+sp_configure 'allow updates', 0
+
+reconfigure with override
+
+Go”
+
+</code></pre>
+<p></p>
+<h3>执行结果:</h3>
+<p></p>
+<p>在 sysdatabases 中更新数据库 &#39;XXX&#39; 的条目之前，模式 = 0，状态 = 28(状态 suspect_bit = 0)，没有更新 sysdatabases 中的任何行，因为已正确地重置了模式和状态。没有错误，未进行任何更改。</p>
+<p>DBCC 执行完毕。如果 DBCC 输出了错误信息，请与系统管理员联系。</p>
+<p>已将配置选项 &#39;allow updates&#39; 从 1 改为 0。请运行 RECONFIGURE 语句以安装。</p>
+<p>重新建立另外一个数据库XXX.Lost;</p>
+<p>DTS导出向导</p>
+<p>运行DTS导出向导;</p>
+<p>复制源选择EmergencyMode的数据库XXX，导入到XXX.Lost;</p>
+<p>选择&ldquo;在SQL Server数据库之间复制对象和数据&rdquo;，试了多次，好像不行，只是复制过来了所有表结构，但是没有数据，也没有视图和存储过程，而且DTS向导最后报告复制失败;</p>
+<p>所以最后选择&ldquo;从源数据库复制表和视图&rdquo;，但是后来发现，这样总是只能复制一部分表记录;</p>
+<p>于是选择&ldquo;用一条查询指定要传输的数据&rdquo;，缺哪个表记录，就导哪个;</p>
+<p>视图和存储过程是执行SQL语句添加的。</p>
+<p>维护Sql Server中表的索引</p>
+<p>在使用和创建数据库索引中经常会碰到一些问题，在这里可以采用一些另类的方法解决&hellip;</p>
+<p></p>
+<h3>--第一步:查看是否需要维护，查看扫描密度/Scan Density是否为100%</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+declare @table_id int
+
+set @table_id=object_id('表名')
+
+dbcc showcontig(@table_id)
+</code></pre>
+<p></p>
+<h3>--第二步:重构表索引</h3>
+<p></p>
+<p>代码如下：</p>
+<pre>
+<code>
+dbcc dbreindex('表名',pk_索引名,100)</code></pre>
+<p></p>
+<h3>--重做第一步，如发现扫描密度/Scan Density还是小于100%则重构表的所有索引</h3>
+<p></p>
+<p>--并不一定能达100%</p>
+<p>代码如下：</p>
+<pre>
+<code>
+dbcc dbreindex('表名','',100)</code></pre>
+<p>这就是我要为大家介绍的SQL Server数据库中日志文件的恢复方法，希望对大家能够有所帮助。</p>
+
+<p>注：关于SQL Server无日志恢复数据库实现方法的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/2579.html'>Sql Server系统视图解析</a><a>下一篇</a><a href='/mysql/biji/2581.html'>SQL Server找出一个表包含的页信息（Page)的解决办法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

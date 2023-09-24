@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL死锁检查处理的正常解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL死锁检查处理的正常简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+正常情况下，死锁" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL死锁检查处理的正常解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:15:02                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL死锁检查处理的正常简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+正常情况下，死锁</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL死锁检查处理的正常简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<p>正常情况下，死锁发生时，权重最小的连接将被kill并回滚。但是为了找出语句来优化，启用可启用死锁将死锁信息记录下来。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#step 1：窗口一
+mysql&gt; start transaction;
+mysql&gt; update aa set name='aaa' where id = 1;
+ 
+#step 2：窗口二
+mysql&gt; start transaction;
+mysql&gt; update bb set name='bbb' where id = 1;
+ 
+#step 3：窗口一
+mysql&gt; update bb set name='bbb';</code></pre>
+<p>MySQL死锁检查处理的正常方法</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#step 4：窗口三
+#是否自动提交
+mysql&gt; show variables like 'autocommit';
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| autocommit | ON |
++---------------+-------+
+ 
+#查看当前连接
+mysql&gt; show processlist;
+mysql&gt; show full processlist;
+mysql&gt; SELECT * FROM INFORMATION_SCHEMA.PROCESSLIST;
++----+------+-----------+------+---------+------+-------+------------------+
+| Id | User | Host  | db | Command | Time | State | Info    |
++----+------+-----------+------+---------+------+-------+------------------+
+| 4 | root | localhost | test | Sleep | 244 |  | NULL    |
+| 5 | root | localhost | test | Sleep | 111 |  | NULL    |
+| 6 | root | localhost | NULL | Query | 0 | init | show processlist |
++----+------+-----------+------+---------+------+-------+------------------+
+ 
+ 
+#查看当前正在被锁的事务（锁请求超时后则查不到）
+mysql&gt; SELECT * FROM INFORMATION_SCHEMA.INNODB_LOCKS;
++------------------+-------------+-----------+-----------+-------------+-----------------+------------+-----------+----------+----------------+
+| lock_id   | lock_trx_id | lock_mode | lock_type | lock_table | lock_index  | lock_space | lock_page | lock_rec | lock_data  |
++------------------+-------------+-----------+-----------+-------------+-----------------+------------+-----------+----------+----------------+
+| 130718495:65:3:4 | 130718495 | X   | RECORD | `test`.`bb` | GEN_CLUST_INDEX |   65 |   3 |  4 | 0x000000000300 |
+| 130718496:65:3:4 | 130718496 | X   | RECORD | `test`.`bb` | GEN_CLUST_INDEX |   65 |   3 |  4 | 0x000000000300 |
++------------------+-------------+-----------+-----------+-------------+-----------------+------------+-----------+----------+----------------+
+ 
+#查看当前等待锁的事务（锁请求超时后则查不到）
+mysql&gt; SELECT * FROM INFORMATION_SCHEMA.INNODB_LOCK_WAITS; 
++-------------------+-------------------+-----------------+------------------+
+| requesting_trx_id | requested_lock_id | blocking_trx_id | blocking_lock_id |
++-------------------+-------------------+-----------------+------------------+
+| 130718499   | 130718499:65:3:4 | 130718500  | 130718500:65:3:4 |
++-------------------+-------------------+-----------------+------------------+
+ 
+ 
+#查看当前未提交的事务（如果死锁等待超时,事务可能还没有关闭）
+mysql&gt; SELECT * FROM INFORMATION_SCHEMA.INNODB_TRX;
++--------------------------------------------------------------------------------------------------------+
+| trx_id | trx_state | trx_started   | trx_requested_lock_id | trx_wait_started | trx_weight |
++-----------+-----------+---------------------+-----------------------+---------------------+------------+
+| 130718500 | RUNNING | 2018-03-12 09:28:10 | NULL     | NULL    |   3 |
+| 130718499 | LOCK WAIT | 2018-03-12 09:27:59 | 130718499:65:3:4  | 2018-03-12 09:32:48 |   5 |
+==========================================================================================================
+| trx_mysql_thread_id | trx_query        | trx_operation_state | trx_tables_in_use |
++---------------------+---------------------------------------+---------------------+-------------------+
+|     4 | NULL         | NULL    |     0 |
+|     5 | update bb set name='bbb'    | starting index read |     1 |
+=========================================================================================================
+| trx_tables_locked | trx_lock_structs | trx_lock_memory_bytes | trx_rows_locked | trx_rows_modified |
++-------------------+------------------+-----------------------+-----------------+-------------------+
+|     0 |    2 |     360 |    3 |     1 |
+|     1 |    4 |     1184 |    4 |     1 |
+===========================================================================================================================
+| trx_concurrency_tickets | trx_isolation_level | trx_unique_checks | trx_foreign_key_checks | trx_last_foreign_key_error |
++-------------------------+---------------------+-------------------+------------------------+----------------------------+
+|      0 | REPEATABLE READ  |     1 |      1 | NULL      |
+|      0 | REPEATABLE READ  |     1 |      1 | NULL      |
+===========================================================================================================================
+| trx_adaptive_hash_latched | trx_adaptive_hash_timeout | trx_is_read_only | trx_autocommit_non_locking |
++---------------------------+---------------------------+------------------+----------------------------+
+|       0 |      10000 |    0 |       0 |
+|       0 |      10000 |    0 |       0 |
++---------------------------+---------------------------+------------------+----------------------------+
+ 
+ 
+#查看正在被访问的表
+mysql&gt; show OPEN TABLES where In_use &gt; 0;
++----------+-------+--------+-------------+
+| Database | Table | In_use | Name_locked |
++----------+-------+--------+-------------+
+| test  | bb |  1 |   0 |
++----------+-------+--------+-------------+</code></pre>
+<p>MySQL死锁检查处理的正常方法</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#step 3：窗口一 （若第三步中锁请求太久，则出现锁超时而终止执行）
+mysql&gt; update bb set name='bbb';
+ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction
+ 
+ 
+#"窗口一" 锁请求超时前，执行第五步，使死锁产生，则该连接 "窗口二" 执行终止，"窗口一" 顺利执行
+#step 5：窗口二
+mysql&gt; update aa set name='aa';
+ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction</code></pre>
+<p>MySQL死锁检查处理的正常方法</p>
+<p>查看最近一个死锁情况</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#查看最近一个死锁情况
+mysql&gt; SHOW ENGINE INNODB STATUS\G ;
+...............
+------------------------
+LATEST DETECTED DEADLOCK
+------------------------
+2018-03-12 11:01:06 7ffb4993a700 #发生时间
+*** (1) TRANSACTION: #事务1
+TRANSACTION 130718515, ACTIVE 19 sec starting index read
+mysql tables in use 1, locked 1 #正被访问的表
+LOCK WAIT 4 lock struct(s), heap size 1184, 4 row lock(s), undo log entries 1 #影响行数
+MySQL thread id 5, OS thread handle 0x7ffb498f8700, query id 205 localhost root updating #线程/连接host/用户
+update bb set name='bb' #请求语句
+*** (1) WAITING FOR THIS LOCK TO BE GRANTED: #等待以下资源 （锁定位置及锁模式）
+RECORD LOCKS space id 65 page no 3 n bits 72 index `GEN_CLUST_INDEX` of table `test`.`bb` trx id 130718515 lock_mode X waiting
+Record lock, heap no 5 PHYSICAL RECORD: n_fields 5; compact format; info bits 0
+ 0: len 6; hex 000000000300; asc  ;;
+ 1: len 6; hex 000007ca9b34; asc  4;;
+ 2: len 7; hex 1f000002092075; asc  u;;
+ 3: len 4; hex 80000001; asc  ;;
+ 4: len 2; hex 6262; asc bb;;
+ 
+*** (2) TRANSACTION: #事务2
+TRANSACTION 130718516, ACTIVE 14 sec starting index read
+mysql tables in use 1, locked 1
+4 lock struct(s), heap size 1184, 4 row lock(s), undo log entries 1
+MySQL thread id 4, OS thread handle 0x7ffb4993a700, query id 206 localhost root updating
+update aa set name='aa' #请求语句
+*** (2) HOLDS THE LOCK(S): #持有锁资源
+RECORD LOCKS space id 65 page no 3 n bits 72 index `GEN_CLUST_INDEX` of table `test`.`bb` trx id 130718516 lock_mode X
+Record lock, heap no 1 PHYSICAL RECORD: n_fields 1; compact format; info bits 0
+ 0: len 8; hex 73757072656d756d; asc supremum;;
+ 
+Record lock, heap no 3 PHYSICAL RECORD: n_fields 5; compact format; info bits 0
+ 0: len 6; hex 000000000301; asc  ;;
+ 1: len 6; hex 000007ca9b17; asc  ;;
+ 2: len 7; hex 9000000144011e; asc  D ;;
+ 3: len 4; hex 80000002; asc  ;;
+ 4: len 2; hex 6262; asc bb;;
+ 
+Record lock, heap no 5 PHYSICAL RECORD: n_fields 5; compact format; info bits 0
+ 0: len 6; hex 000000000300; asc  ;;
+ 1: len 6; hex 000007ca9b34; asc  4;;
+ 2: len 7; hex 1f000002092075; asc  u;;
+ 3: len 4; hex 80000001; asc  ;;
+ 4: len 2; hex 6262; asc bb;;
+ 
+*** (2) WAITING FOR THIS LOCK TO BE GRANTED:
+RECORD LOCKS space id 64 page no 3 n bits 80 index `GEN_CLUST_INDEX` of table `test`.`aa` trx id 130718516 lock_mode X waiting
+Record lock, heap no 7 PHYSICAL RECORD: n_fields 5; compact format; info bits 0
+ 0: len 6; hex 000000000200; asc  ;;
+ 1: len 6; hex 000007ca9b33; asc  3;;
+ 2: len 7; hex 1e000001d53057; asc  0W;;
+ 3: len 4; hex 80000001; asc  ;;
+ 4: len 2; hex 6161; asc aa;;
+ 
+*** WE ROLL BACK TRANSACTION (2)
+...............</code></pre>
+<p>MySQL死锁检查处理的正常方法</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#死锁记录只记录最近一个死锁信息，若要将每个死锁信息都保存到错误日志，启用以下参数：
+mysql&gt; show variables like 'innodb_print_all_deadlocks';
++----------------------------+-------+
+| Variable_name    | Value |
++----------------------------+-------+
+| innodb_print_all_deadlocks | OFF |
++----------------------------+-------+
+ 
+ 
+#上面 【step 3：窗口一】若一直请求不到资源，默认50秒则出现锁等待超时。
+mysql&gt; show variables like 'innodb_lock_wait_timeout'; 
++--------------------------+-------+
+| Variable_name   | Value |
++--------------------------+-------+
+| innodb_lock_wait_timeout | 50 |
++--------------------------+-------+
+ 
+ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction
+ 
+ 
+#设置全局变量 锁等待超时为60秒（新的连接生效）
+#mysql&gt; set session innodb_lock_wait_timeout=50; 
+mysql&gt; set global innodb_lock_wait_timeout=60; 
+ 
+ 
+#上面测试中，当事务中的某个语句超时只回滚该语句，事务的完整性属于被破坏了。为了回滚这个事务，启用以下参数：
+mysql&gt; show variables like 'innodb_rollback_on_timeout';
++----------------------------+-------+
+| Variable_name    | Value |
++----------------------------+-------+
+| innodb_rollback_on_timeout | OFF |
++----------------------------+-------+</code></pre>
+<p>MySQL死锁检查处理的正常方法</p>
+<p>最终参数设置如下：(重启服务重新连接测试)</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[mysqld]
+log-error =/var/log/mysqld3306.log
+innodb_lock_wait_timeout=60  #锁请求超时时间(秒)
+innodb_rollback_on_timeout = 1 #事务中某个语句锁请求超时将回滚真个事务
+innodb_print_all_deadlocks = 1 #死锁都保存到错误日志</code></pre>
+<p>MySQL死锁检查处理的正常方法</p>
+<p>代码如下：</p>
+<pre>
+<code>
+#若手动删除堵塞会话，删除 Command='Sleep' 、无State、无Info、trx_weight 权重最小的。
+show processlist;
+SELECT trx_mysql_thread_id,trx_state,trx_started,trx_weight FROM INFORMATION_SCHEMA.INNODB_TRX;</code></pre>
+<p>MySQL死锁检查处理的正常方法</p>
+<h3>总结</h3>
+<p>到此这篇关于MySQL死锁检查处理的文章就介绍到这了,更多相关MySQL死锁检查处理内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL死锁检查处理的正常简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/305.html'>MySQL远程连接的开启方法</a><a>下一篇</a><a href='/mysql/biji/307.html'>MySQL MyISAM 与InnoDB 的区别的深入分析</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

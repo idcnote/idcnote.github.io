@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL中提高Order by语句查询效率的两个思路分析_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL中提高Order by语句查询效率的两个思路分析，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！因为可能需" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL中提高Order by语句查询效率的两个思路分析</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:23:31                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL中提高Order by语句查询效率的两个思路分析，具有一定的参考价值，可以用来参考一下。
+
+对此感兴趣的朋友，看看idc笔记做的技术笔记！因为可能需</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL中提高Order by语句查询效率的两个思路分析，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>对此感兴趣的朋友，看看idc笔记做的技术笔记！</p>因为可能需要对数据库的记录进行重新排序。在这篇文章中，笔者就谈谈提高Order By语句查询效率的两个思路，以供大家参考。
+<p>在MySQL数据库中，Order by语句的使用频率是比较高的。但是众所周知，在使用这个语句时，往往会降低数据查询的性能。因为可能需要对数据库的记录进行重新排序。在这篇文章中，笔者就谈谈提高Order By语句查询效率的两个思路，以供大家参考。</p>
+<p style="TEXT-ALIGN: center"><!---ecms -ecms 
+【图缺】
+-->498)this.width=498;&quot; border=0&gt;</p>
+<p style="TEXT-ALIGN: left"><strong>　一、建议使用一个索引来满足Order By子句。</strong></p>
+<p>在条件允许的情况下，笔者建议最好使用一个索引来满足Order By子句。如此的话，就可以避免额外的排序工作。这里笔者需要强调的一点是及时Order By子句不确切匹配索引，但是只要Where子句中所有未使用的索引部分和所有额外的 Order by子句中的列为常数，此时就可以使用索引。具体的来说，推荐如下的查询语句。</p>
+<p>1、select * from ad_user where is_active=&#39;Y&#39; order by value;</p>
+<p>在这条查询语句中，使用了两个列。在Where查询语句中，查询表中活动的记录。此时使用的是一个常数的条件。而在Order By子句中，则根据Value列的值来进行排序。如果在表设计中，为这个字段设置一个索引。此时使用这条语句来进行查询，则查询结果就不需要进行额外的排序工作，从而可以提高数据的查询效率。</p>
+<p>这也就是说，如果Where条件语句与Order By条件语句一起使用，如果需要通过一个索引来提高查询效率的话，那么就必须满足一个条件，及where条件语句中所使用的参数值是常数，而不是变量。如果使用变量的话，这个方法就不奏效了。</p>
+<p>2、注意有些情况下不能够使用索引来提高Order By语句的查询性能。</p>
+<p>这里需要注意的是，并不是任何情况下都能够通过使用索引来提高Order Byz子句的查询效率。如对不同的关键字使用这个语句、混合使用ASC模式和DESC模式、用于查询条件的关键字与Order By语句中所使用的关键字不同、对关键字的非连续元素使用Order By子句、在同一条语句中使用不同的Order BY 和Group BY表达式、使用的表索引的类型不能够按顺序来保存行等情况，就无法通过使用索引来解决Order By语句的排序问题。此时就需要另想他法。如可以重新调整表结构或者查询语句，以满足使用这个特性的特定条件。</p>
+<p>其实这里就遇到一个均衡的问题。如在查询时，Where条件语句中往往使用的是一个变量，这主要是为了提高语句的灵活性。这个变量接受前端用户传递过来的参数。此时如果用户同时有排序的需求，根据上面介绍的规则，就无法使用索引来提高查询的效率。此时作为开发人员，就需要评估，需要语句的灵活性还是需要查询的性能。通常情况下，对于记录量比较大的查询，同时其查询的格式比较固定，如大容量的月报与年报，此时就会倾向于查询语句的性能。而对于记录量比较少的查询，如日报表，或者使用频率比较高的查询语句，此时会更加的倾向于查询的灵活性。作为开发人员，现在需要关注的就是根据用户实际的情况，来选择合适的解决方式。</p>
+<p>通常情况下，为了避免使用Order By语句导致的查询速度变慢的问题，先是需要考虑使用索引来解决问题。如果不能够通过索引来解决问题，那么可以通过缓存在一定程度来缓解。如可以增加soft_buffer_size变量的大小、根据实际情况调整Read_buffer_size变量的大小、更改tmpdir目录将其指向具有大量空闲空间的专用文件系统等等。有时候管理员可以使用这个特性将负载均匀分布到多个目录中去。</p>
+<p><b>二、使用Explain关键字来确认是否可以通过索引来解决Order BY速度问题。</b></p>
+<p>如果用户无法确定是否可以通过索引来提高Order By语句的查询效率，那么就可以凭借Explain关键字来帮助关键员进行判断。如可以通过使用explain select * from ad_user where is_active=&#39;Y&#39; order by value(即在常规的查询语句前面加上一个explain关键字)，用来判断是否可以使用索引来提高查询的效率。判断的方法是：如果这个查询语句中，有一个using filesort这个字段，那么就非常的抱歉，无法通过使用索引来提高这个语句的查询效率。反之，没有这个字段，则说明可以通过索引来提高查询效率。</p>
+<p>这里需要说明的是，通常情况下文件排序优化不仅仅可以用于记录排序关键字和行的位置，并且还会记录查询所需要的列。如此的话，就可以避免多次读取行的信息。为了让大家更加明白其中的道理笔者简单说明一下这工作的过程。通常情况下，文件排序优化包括四 个步骤。第一步读取与Where条件语句所匹配的行信息;第二步对于每个行、记录构成排序关键字和行位置的一系列值，并且记录查询所需要的列;第三步根据排序关键字排序元祖;第四步按排序的顺序检索行，不过此时是直接从排序的元祖读取所需要的列(使用的是第三个步骤中的结果)，而不会重新访问表中的数据。显然使用文件排序优化的思路，可以避免重复访问表，从而提高查询的效率。</p>
+<p>原文链接：http://publish.itpub.net/a2011/0225/1160/000001160766.shtml</p>
+
+<p>注：关于MySQL中提高Order by语句查询效率的两个思路分析的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/1207.html'>MySQL 字符串长度计算实现代码(gb2312+utf8)</a><a>下一篇</a><a href='/mysql/biji/1209.html'>彻底卸载MySQL的方法分享</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

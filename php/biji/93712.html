@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>举例讲解iOS中延迟加载和上拉刷新/下拉加载的实现_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="lazy懒加载(延迟加载)UITableView<br />
+<br />
+举个例子,当我们在用网易新闻App时,看着那么多的新闻,并不是所有的都是我们感兴趣的,有的时候我们只是很快的滑过,想要快速的略过不喜欢" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">举例讲解iOS中延迟加载和上拉刷新/下拉加载的实现</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>lazy懒加载(延迟加载)UITableView<br />
+<br />
+举个例子,当我们在用网易新闻App时,看着那么多的新闻,并不是所有的都是我们感兴趣的,有的时候我们只是很快的滑过,想要快速的略过不喜欢</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p><strong>lazy懒加载(延迟加载)UITableView</strong><br />
+举个例子,当我们在用网易新闻App时,看着那么多的新闻,并不是所有的都是我们感兴趣的,有的时候我们只是很快的滑过,想要快速的略过不喜欢的内容,但是只要滑动经过了,图片就开始加载了,这样用户体验就不太好,而且浪费内存.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 这个时候,我们就可以利用lazy加载技术,当界面滑动或者滑动减速的时候,都不进行图片加载,只有当用户不再滑动并且减速效果停止的时候,才进行加载.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 刚开始我异步加载图片利用SDWebImage来做,最后试验的时候出现了重用bug,因为虽然SDWebImage实现了异步加载缓存,当加载完图片后再请求会直接加载缓存中的图片,注意注意注意,关键的来了,如果是lazy加载,滑动过程中是不进行网络请求的,cell上的图片就会发生重用,当你停下来能进行网络请求的时候,才会变回到当前Cell应有的图片,大概1-2秒的延迟吧(不算延迟,就是没有进行请求,也不是没有缓存的问题).怎么解决呢&#63;这个时候我们就要在Model对象中定义个一个UIImage的属性,异步下载图片后,用已经缓存在沙盒中的图片路径给它赋值,这样,才cellForRowAtIndexPath方法中,判断这个UIImage对象是否为空,若为空,就进行网络请求,不为空,就直接将它赋值给cell的imageView对象,这样就能很好的解决图片短暂重用问题.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; @下面我的代码用的是自己写的异步加载缓存类,SDWebImage的加载图片的懒加载,会在后面的章节给出.(为什么不同呢,因为SDWebImage我以前使用重来不关心它将图片存储在沙盒中的名字和路径,但是要实现懒加载的话,一定要得到图片路径,所以在找SDWebImage如何存储图片路径上花了点时间)<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="9637" class="copybut" id="copybut9637" onclick="doCopy('code9637')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code9637"><br />
+@model类&nbsp; <br />
+#import &lt;Foundation/Foundation.h&gt;&nbsp; <br />
+&nbsp; <br />
+@interface NewsItem : NSObject&nbsp; <br />
+&nbsp; <br />
+@property (nonatomic,copy) NSString * newsTitle;&nbsp; <br />
+@property (nonatomic,copy) NSString * newsPicUrl;&nbsp; <br />
+@property (nonatomic,retain) UIImage * newsPic; //&nbsp; 存储每个新闻自己的image对象&nbsp; <br />
+&nbsp; <br />
+- (id)initWithDictionary:(NSDictionary *)dic;&nbsp; <br />
+&nbsp; <br />
+//&nbsp; 处理解析&nbsp; <br />
++ (NSMutableArray *)handleData:(NSData *)data;&nbsp; <br />
+@end&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+#import "NewsItem.h"&nbsp; <br />
+#import "ImageDownloader.h"&nbsp; <br />
+&nbsp; <br />
+@implementation NewsItem&nbsp; <br />
+&nbsp; <br />
+- (void)dealloc&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; self.newsTitle = nil;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; self.newsPicUrl = nil;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; self.newsPic = nil;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; [super dealloc];&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+- (id)initWithDictionary:(NSDictionary *)dic&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; self = [super init];&nbsp; <br />
+&nbsp;&nbsp;&nbsp; if (self) {&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; self.newsTitle = [dic objectForKey:@"title"];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; self.newsPicUrl = [dic objectForKey:@"picUrl"];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //从本地沙盒加载图像&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ImageDownloader * downloader = [[[ImageDownloader alloc] init] autorelease];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; self.newsPic = [downloader loadLocalImage:_newsPicUrl];&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; return self;&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
++ (NSMutableArray *)handleData:(NSData *)data;&nbsp; <br />
+{&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //解析数据&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NSError * error = nil;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NSDictionary * dic = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&error];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NSMutableArray * originalArray = [dic objectForKey:@"news"];&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //封装数据对象&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NSMutableArray * resultArray = [NSMutableArray array];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (int i=0 ;i&lt;[originalArray count]; i++) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NSDictionary * newsDic = [originalArray objectAtIndex:i];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NewsItem * item = [[NewsItem alloc] initWithDictionary:newsDic];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [resultArray addObject:item];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [item release];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return resultArray;&nbsp; <br />
+&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+@end&nbsp; </div></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="1351" class="copybut" id="copybut1351" onclick="doCopy('code1351')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code1351"><br />
+@图片下载类&nbsp; <br />
+#import &lt;Foundation/Foundation.h&gt;&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+@class NewsItem;&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+@interface ImageDownloader : NSObject&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+@property (nonatomic,copy) NSString * imageUrl;&nbsp; <br />
+@property (nonatomic,retain) NewsItem * newsItem; //下载图像所属的新闻&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+//图像下载完成后，使用block实现回调&nbsp; <br />
+@property (nonatomic,copy) void (^completionHandler)(void);&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+//开始下载图像&nbsp; <br />
+- (void)startDownloadImage:(NSString *)imageUrl;&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+//从本地加载图像&nbsp; <br />
+- (UIImage *)loadLocalImage:(NSString *)imageUrl;&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+@end&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+#import "ImageDownloader.h"&nbsp; <br />
+#import "NewsItem.h"&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+@implementation ImageDownloader&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+- (void)dealloc&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; self.imageUrl = nil;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; Block_release(_completionHandler);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; [super dealloc];&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+#pragma mark - 异步加载&nbsp; <br />
+- (void)startDownloadImage:(NSString *)imageUrl&nbsp; <br />
+{&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; self.imageUrl = imageUrl;&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; // 先判断本地沙盒是否已经存在图像，存在直接获取，不存在再下载，下载后保存&nbsp; <br />
+&nbsp;&nbsp;&nbsp; // 存在沙盒的Caches的子文件夹DownloadImages中&nbsp; <br />
+&nbsp;&nbsp;&nbsp; UIImage * image = [self loadLocalImage:imageUrl];&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; if (image == nil) {&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 沙盒中没有，下载&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 异步下载,分配在程序进程缺省产生的并发队列&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 多线程中下载图像&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NSData * imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:imageUrl]];&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 缓存图片&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [imageData writeToFile:[self imageFilePath:imageUrl] atomically:YES];&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 回到主线程完成UI设置&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dispatch_async(dispatch_get_main_queue(), ^{&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //将下载的图像，存入newsItem对象中&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UIImage * image = [UIImage imageWithData:imageData];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; self.newsItem.newsPic = image;&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //使用block实现回调，通知图像下载完成&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (_completionHandler) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _completionHandler();&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; });&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; });&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+#pragma mark - 加载本地图像&nbsp; <br />
+- (UIImage *)loadLocalImage:(NSString *)imageUrl&nbsp; <br />
+{&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; self.imageUrl = imageUrl;&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; // 获取图像路径&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSString * filePath = [self imageFilePath:self.imageUrl];&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; UIImage * image = [UIImage imageWithContentsOfFile:filePath];&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; if (image != nil) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return image;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; return nil;&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+#pragma mark - 获取图像路径&nbsp; <br />
+- (NSString *)imageFilePath:(NSString *)imageUrl&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; // 获取caches文件夹路径&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSString * cachesPath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject];&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; // 创建DownloadImages文件夹&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSString * downloadImagesPath = [cachesPath stringByAppendingPathComponent:@"DownloadImages"];&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSFileManager * fileManager = [NSFileManager defaultManager];&nbsp; <br />
+&nbsp;&nbsp;&nbsp; if (![fileManager fileExistsAtPath:downloadImagesPath]) {&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [fileManager createDirectoryAtPath:downloadImagesPath withIntermediateDirectories:YES attributes:nil error:nil];&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+#pragma mark 拼接图像文件在沙盒中的路径,因为图像URL有"/",要在存入前替换掉,随意用"_"代替&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSString * imageName = [imageUrl stringByReplacingOccurrencesOfString:@"/" withString:@"_"];&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSString * imageFilePath = [downloadImagesPath stringByAppendingPathComponent:imageName];&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; return imageFilePath;&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+@end&nbsp; </div></p>
+<p><div class="codetitle"><span><a style="CURSOR: pointer" data="79324" class="copybut" id="copybut79324" onclick="doCopy('code79324')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code79324"><br />
+@这里只给出关键代码,网络请求,数据处理,自定义cell自行解决&nbsp; <br />
+&nbsp; <br />
+#pragma mark - Table view data source&nbsp; <br />
+&nbsp; <br />
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; // Return the number of sections.&nbsp; <br />
+&nbsp;&nbsp;&nbsp; return 1;&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; // Return the number of rows in the section.&nbsp; <br />
+&nbsp;&nbsp;&nbsp; if (_dataArray.count == 0) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 10;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp;&nbsp;&nbsp; return [_dataArray count];&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; static NSString *cellIdentifier = @"Cell";&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NewsListCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier ];&nbsp; <br />
+&nbsp;&nbsp;&nbsp; if (!cell) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cell = [[[NewsListCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier] autorelease];&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NewsItem * item = [_dataArray objectAtIndex:indexPath.row];&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; cell.titleLabel.text = item.newsTitle;&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; //判断将要展示的新闻有无图像&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; if (item.newsPic == nil) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //没有图像下载&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cell.picImageView.image = nil;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NSLog(@"dragging = %d,decelerating = %d",self.tableView.dragging,self.tableView.decelerating);&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // &#63;&#63;执行的时机与次数问题&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (self.tableView.dragging == NO && self.tableView.decelerating == NO) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [self startPicDownload:item forIndexPath:indexPath];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }else{&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //有图像直接展示&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NSLog(@"1111");&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cell.picImageView.image = item.newsPic;&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; cell.titleLabel.text = [NSString stringWithFormat:@"indexPath.row = %ld",indexPath.row];&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; return cell;&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; return [NewsListCell cellHeight];&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+//开始下载图像&nbsp; <br />
+- (void)startPicDownload:(NewsItem *)item forIndexPath:(NSIndexPath *)indexPath&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; //创建图像下载器&nbsp; <br />
+&nbsp;&nbsp;&nbsp; ImageDownloader * downloader = [[ImageDownloader alloc] init];&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; //下载器要下载哪个新闻的图像，下载完成后，新闻保存图像&nbsp; <br />
+&nbsp;&nbsp;&nbsp; downloader.newsItem = item;&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; //传入下载完成后的回调函数&nbsp; <br />
+&nbsp;&nbsp;&nbsp; [downloader setCompletionHandler:^{&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //下载完成后要执行的回调部分，block的实现&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //根据indexPath获取cell对象，并加载图像&nbsp; <br />
+#pragma mark cellForRowAtIndexPath--&gt;没看到过&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NewsListCell * cell = (NewsListCell *)[self.tableView cellForRowAtIndexPath:indexPath];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cell.picImageView.image = downloader.newsItem.newsPic;&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }];&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; //开始下载&nbsp; <br />
+&nbsp;&nbsp;&nbsp; [downloader startDownloadImage:item.newsPicUrl];&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; [downloader release];&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+&nbsp; <br />
+- (void)loadImagesForOnscreenRows&nbsp; <br />
+{&nbsp; <br />
+#pragma mark indexPathsForVisibleRows--&gt;没看到过&nbsp; <br />
+&nbsp;&nbsp;&nbsp; //获取tableview正在window上显示的cell，加载这些cell上图像。通过indexPath可以获取该行上需要展示的cell对象&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSArray * visibleCells = [self.tableView indexPathsForVisibleRows];&nbsp; <br />
+&nbsp;&nbsp;&nbsp; for (NSIndexPath * indexPath in visibleCells) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NewsItem * item = [_dataArray objectAtIndex:indexPath.row];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (item.newsPic == nil) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //如果新闻还没有下载图像，开始下载&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [self startPicDownload:item forIndexPath:indexPath];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+#pragma mark - 延迟加载关键&nbsp; <br />
+//tableView停止拖拽，停止滚动&nbsp; <br />
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; //如果tableview停止滚动，开始加载图像&nbsp; <br />
+&nbsp;&nbsp;&nbsp; if (!decelerate) {&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [self loadImagesForOnscreenRows];&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp; NSLog(@"%s__%d__|%d",__FUNCTION__,__LINE__,decelerate);&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; //如果tableview停止滚动，开始加载图像&nbsp; <br />
+&nbsp;&nbsp;&nbsp; [self loadImagesForOnscreenRows];&nbsp; <br />
+&nbsp; <br />
+} </div></p>
+<p><strong>下拉刷新和上拉加载的原理</strong><br />
+很多App中,新闻或者展示类都存在下拉刷新和上拉加载的效果,网上提供了实现这种效果的第三方类(详情请见MJRefresh和EGOTableViewPullRefresh),用起来很方便,但是闲暇之余,我们可以思考下,这种效果实现的原理是什么,我以前说过,只要是动画都是骗人的,只要不是硬件问题大部分效果都能在系统UI的基础上做出来.<br />
+下面是关键代码分析:<br />
+<div class="codetitle"><span><a style="CURSOR: pointer" data="18845" class="copybut" id="copybut18845" onclick="doCopy('code18845')"><U>复制代码</U></a></span> 代码如下:</div><div class="codebody" id="code18845"><br />
+// 下拉刷新的原理&nbsp; <br />
+- (void)scrollViewWillBeginDecelerating:(UIScrollView *)scrollView&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp; if (scrollView.contentOffset.y &lt; - 100) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [UIView animateWithDuration:1.0 animations:^{&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //&nbsp; frame发生偏移,距离顶部150的距离(可自行设定)&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; self.tableView.contentInset = UIEdgeInsetsMake(150.0f, 0.0f, 0.0f, 0.0f);&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } completion:^(BOOL finished) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /** <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; 发起网络请求,请求刷新数据 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }];&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+}&nbsp; <br />
+&nbsp; <br />
+// 上拉加载的原理&nbsp; <br />
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate&nbsp; <br />
+{&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSLog(@"%f",scrollView.contentOffset.y);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSLog(@"%f",scrollView.frame.size.height);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; NSLog(@"%f",scrollView.contentSize.height);&nbsp; <br />
+&nbsp;&nbsp;&nbsp; /** <br />
+&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; 关键--&gt; <br />
+&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; scrollView一开始并不存在偏移量,但是会设定contentSize的大小,所以contentSize.height永远都会比contentOffset.y高一个手机屏幕的 <br />
+&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; 高度;上拉加载的效果就是每次滑动到底部时,再往上拉的时候请求更多,那个时候产生的偏移量,就能让contentOffset.y + 手机屏幕尺寸高大于这 <br />
+&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; 个滚动视图的contentSize.height <br />
+&nbsp;&nbsp;&nbsp;&nbsp; */&nbsp; <br />
+&nbsp;&nbsp;&nbsp; if (scrollView.contentOffset.y + scrollView.frame.size.height &gt;= scrollView.contentSize.height) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NSLog(@"%d %s",__LINE__,__FUNCTION__);&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [UIView commitAnimations];&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [UIView animateWithDuration:1.0 animations:^{&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //&nbsp; frame发生的偏移量,距离底部往上提高60(可自行设定)&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; self.tableView.contentInset = UIEdgeInsetsMake(0, 0, 60, 0);&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } completion:^(BOOL finished) {&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /** <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; 发起网络请求,请求加载更多数据 <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; 然后在数据请求回来的时候,将contentInset改为(0,0,0,0) <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }];&nbsp; <br />
+&nbsp; <br />
+&nbsp;&nbsp;&nbsp; }&nbsp; <br />
+}&nbsp; </div><br />
+</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/93711.html'>详解C++编程中标记语句与复合语句的写法</a><a>下一篇</a><a href='/php/biji/93713.html'>Oracle对于死锁的处理方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

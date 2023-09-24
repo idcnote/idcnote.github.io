@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>SQLServer数据库中如何保持数据一致性_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="复制是SQLServer数据库中保持数据一致性的一种手段。根据实现策略的不同，主要有快照复制、事务复制、合并复制等三种类型。这三种复制类型，各有各的特点，分别适用于不同的场" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/122.html"></a></li><li><a href="/php/phpbiji/123.html"></a></li><li><a href="/php/phpbiji/124.html"></a></li><li><a href="/php/phpbiji/125.html"></a></li><li><a href="/php/phpbiji/126.html"></a></li><li><a href="/php/phpbiji/127.html"></a></li><li><a href="/php/phpbiji/128.html"></a></li><li><a href="/php/phpbiji/129.html"></a></li><li><a href="/php/phpbiji/130.html"></a></li><li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">SQLServer数据库中如何保持数据一致性</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>复制是SQLServer数据库中保持数据一致性的一种手段。根据实现策略的不同，主要有快照复制、事务复制、合并复制等三种类型。这三种复制类型，各有各的特点，分别适用于不同的场</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><div><p>
+</p>
+复制是SQLServer<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>中保持数据一致性的一种手段。根据实现策略的不同，主要有快照复制、事务复制、合并复制等三种类型。这三种复制类型，各有各的特点，分别适用于不同的场合。一般来说，在考虑采用哪种复制类型比较合适的时候，主要考虑的是性能与数据同步的时间间隔。那么在什么情形下比较适用快照复制呢?笔者就跟大家来讨论一下这个话题。
+<p>　　为了在恰当的时候采用快照复制，<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>管理员首先需要知道快照复制的特点。快照复制是指将数据以特定时刻的瞬时状态转发，而不坚实对数据的更新。在发生同步时，将生成完整的快照并将其发送到订阅服务器。简单的说，快照复制就是每隔一段时间发生数据同步操作。而不是发布服务器的数据一有更新就出发这个快照复制。显然这种快照复制的数据同步性稍微差一点。在订阅服务器与发布服务器之间有一段时间会存在数据不一致的情况。但是这可以在很大程度上提高订阅服务器与发布服务器的性能。这就好像汽车运输。采用快照复制的话可以将一个集装箱装满后在送货，而不是有多少送多少。掌握这个<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>复快照复制的具体特点之后，<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>管理员就可以来考虑在什么情况下，采用快照复制更加的合理。</p>
+<p>　<strong><font color="#bc0e07">　一、数据更改比较少的系统中。</font></strong></p>
+<p>　　快照复制与其他复制相比最主要的缺陷就是<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>中的数据无法及时同发布服务器一致。为此如果发布服务器中的内容很少更改的话，显然此时采用快照复制是比较合理的。此时采用快照复制的话，不仅数据一致性延迟的负面效应会越来越不明显，同时可以提高发布服务器与订阅服务器的性能。如在实际工作中，经常会遇到这样的客户。如一家企业在各地都有办事处或者销售机构，就像肯德基一样，各地的产品价格基本上都是相同的，不怎么会更改。即使更改的话，各地也是统一调整。由于此时产品价格表更改的比较少，那么在企业总部的<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>服务与各地的订阅服务器之间，采用快照复制的形式就会比较合适。其实类似的情况有很多。如不少的服装企业，像李宁、耐克等等，他们不仅自己生产，而且在各地又有自己的销售办事处。在价格方面也是统一的。在这种情况下，采用快照复制往往能够提高<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>复制的性能，同时又不影响其使用。</p>
+<p>　　<strong><font color="#bc0e07">二、在某个时段内会出现数据大量的更改。</font></strong></p>
+<p>　　需要补充说明的一点是，上面说到的数据不怎么发生更改，指的是数据的延续性更改。如在一年中，每天或者每个小时更改的数据都比较平均。此时采用快照复制不怎么合适。但是如果数据的更改集中在一个时段内。而其他时间中<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>的内容不会有多大的更改。此时采用快照复制是可行的。如一些决策性系统，往往在起初导入数据的时候，需要进行大量的更改。而等到数据导入完毕，在大家对数据进行分析时，则<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>中的内容基本上保持不变。在这种情况下，笔者认为只要数据的更新集中在一个固定的时段，此时采用快照复制仍然是可行的。</p>
+<p>　　再如上面这个KFC或者服装企业的案例中，如果市场部门维护一个产品的价格，而且这些价格往往在一个固定的时间进行几次更新。如在换季的时候会进行一些促销。此时<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>管理员可以在数据更新完毕后立即执行复制完成的数据快照。所以，以数据更新来判断是否适合采用快照复制，标准并不是数据的更新量。像上面提到的分析决策系统，其起初的数据更新量可能比有些<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>系统几年的数据更新量都要大。笔者认为，主要是根据数据更新的频率来进行判断。如果数据更新的比较频繁，那么即使数据更新的数据不多，像那种细水长流似的更新，则不适合采用快照复制。而那些井喷似的数据更新，所有的更新都集中在一个固定的时刻，那么此时采用快照复制是比较合理的。</p>
+<p>　　<strong><font color="#bc0e07">三、在一段时间内是否允许具有相对发布服务器已过时的数据副本?</font></strong></p>
+<p>　　现在不少超市也已经连锁了，如世纪联华等等。为了提高利润，增加市场的份额，这些超市纷纷推出了冲值卡，即消费者先将一定金额的人民币打入到冲值卡中。然后每次消费完成后从卡中扣费。但前些天经常有新闻报道，说一个客户的消费卡在一家联华超市挂失了。但是捡到这张卡的人仍然可以在其他的联华超市中消费。为此消费者就想不明白了，为什么挂失了的消费卡仍然可以在其他超市中消费?挂失后的损失该由谁来承担呢?其实这就使超市在不适当的时候采用了快照复制所造成的。由于采用快照复制，在各个联华超市的<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>之间数据无法在短时间内取得一致。如有些商户说挂失当日之内的损失他们不承担，这就说明他们可能是每天下班后进行一次快照复制。一般情况下这不会有问题。但是像遇到消费卡被偷了等情况，就会遇到类似的问题了。</p>
+<p>　　所以，在考虑是否适合采用快照复制的时候，还需要考虑在一段时间内是否允许具有相对发布服务器来说已过时的数据副本。如果不允许的话，那么就不允许采用这个快照复制。如果允许的话，那么<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>管理员就需要评估这段时间最长是多少。如果是24个小时，那么就需要每隔24小时进行一次快照复制。但是需要注意的是，如果时间的间隔比较短，如才允许十分钟的数据延迟，那么采用快照复制就没有必要了。此时采用事务复制或则和合并复制可能更加的合适。</p>
+<p>　　<strong><font color="#bc0e07">四、复制少量的数据。</font></strong></p>
+<p>　　快照复制跟其他复制类型相比，还有一个比较显著的特点，即当发生数据同步时，将生成完整的快照并将其从发布服务器传送到订阅服务器。这是一个什么概念呢?如订阅服务器中有10G的数据，而在一个快照复制的周期内，只有1M的数据发生了更改。此时发生快照复制的话，<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>系统会将10G的数据都传送到订阅服务器上。此时更改的数据只有1M，却需要在网络上传送10G的数据流量，显然会对企业的网络产生比较大的压力。由于在发布服务器上快照复制的连续开销低于事务复制的开销，一次<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>系统不会启用跟踪增量更改。但是像这种情况，如果要复制的数据量非常的大，而平时的更新又不多。此时<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>系统要生成和应用快照，就将耗用大量的资源，包括网络资源和服务器资源。所以说，当发布服务器中的数据比较多时，采用快照复制不怎么合适。因为此时网络传输反而会成为其最重大的<strong><font color="#bc0e07">瓶颈</font></strong>资源。相反若能够采取细水长流的事务复制策略，那么对于企业网络性能的影响就会小的多，甚至可以忽略不计。</p>
+<p>　　所以在采用快照复制的时候，<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>管理员一定要明白，快照复制会传送整个<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>对象。从而在快照复制传输过程中会侵蚀大量的网络带宽，从而明显的降低企业网络的性能，甚至导致网络拥塞。有时候为了保障快照能够准确、迅速的传递到其他的订阅服务器，还不得不采用VPN等技术来保障传输的准确性。为此，笔者认为只有发布服务器的<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>并不是很大的情况下，才适合采用快照复制。否则的话，采用快照复制是得不偿失。</p>
+<p>　　从以上的分析中，可以得到一个结论。在考虑采用快照复制是否合适时，往往不能够采用一个指标来判断。而需要考虑多个因素，如<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>的大小、数据更新的频率、允许数据延迟的时间等等因素来进行判断。最后在数据的一致性与<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>的性能之间取得一个均衡。说实话，对于大部分<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>管理员来说，要做出一个抉择，确实有困难。因为这没有固定的指标可以拿来参考。如<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>容量小于多少时该采用快照复制。任何一个<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>管理专家都不能够下这个结论。所以在掌握影响其选择的相关因素外，就要依靠<a href='http://www.phpstudy.net/database/'><u>数据库</u></a>管理员的经验了。在遇到类似的选择题时，往往经验可以帮助管理员迅速解决问题。最后需要提醒的是，无论最终采取了什么方案，最好能够持续跟踪一段时间，看看自己的选择是否合理。</p></div>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/25718.html'>PHP设计模式 注册表模式</a><a>下一篇</a><a href='/php/biji/25720.html'>Windows下基于Apache的PHP4和PHP5共存</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

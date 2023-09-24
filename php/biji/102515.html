@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>PHP利用APC模块实现大文件上传进度条的方法_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="php 大文件带进度的上传，一直是一个令php程序员很苦恼的问题。查询baidu 、Google ，大体做带进度的上传方式为：flash+php，socket，apc+php等，下面我介绍了apc +php+ajax制作的带进" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">PHP利用APC模块实现大文件上传进度条的方法</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>php 大文件带进度的上传，一直是一个令php程序员很苦恼的问题。查询baidu 、Google ，大体做带进度的上传方式为：flash+php，socket，apc+php等，下面我介绍了apc +php+ajax制作的带进</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>php 大文件带进度的上传，一直是一个令php程序员很苦恼的问题。查询baidu 、Google ，大体做带进度的上传方式为：flash+php，socket，apc+php等，下面我介绍了<strong>apc +php+ajax制作的带进度的上传</strong>，并贴出源码，希望对大家有用。<br />
+Alternative PHP Cache（APC）是 PHP 的一个免费公开的优化代码缓存。它用来提供免费，公开并且强健的架构来缓存和优化 PHP 的中间代码。&nbsp;</p>
+<p>在使用apc时候，先必须使用安装apc 模块。<br />
+<strong><span style="color: #3366ff">第一步：下载php_apc.dll</span></strong></p>
+<p><strong><span style="color: #3366ff">第二步：让php.ini支持apc扩展模块。<br />
+</span></strong>将php_apc.dll放入你的ext目录，然后打开php.ini 加入：<br />
+&nbsp;&nbsp;&nbsp;<span style="color: #808080"><strong>&nbsp; extension=php_apc.dll<br />
+&nbsp;&nbsp;&nbsp;&nbsp; apc.rfc1867 = on<br />
+&nbsp;&nbsp;&nbsp;&nbsp; apc.max_file_size = 100M<br />
+&nbsp;&nbsp;&nbsp;&nbsp; upload_max_filesize = 100M<br />
+&nbsp;&nbsp;&nbsp;&nbsp; post_max_size = 100M<br />
+</strong></span>&nbsp;&nbsp;&nbsp;&nbsp; //以上参数可自己定义<strong>&nbsp;</strong></p>
+<p><span style="color: #3366ff"><strong>第三步：检查是否支持PHP APC<br />
+</strong></span></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+ if (function_exists('apc_fetch')) {
+ echo 'it surpport apc model!';
+ } else {
+ echo "it's not support apc model!";
+ }
+ &#63;&gt;
+</pre>
+</div>
+<p><strong>下面进入正题：<br />
+</strong><span style="color: #ff0000"><strong>原理：</strong></span>通过APC 模块，用ajas从缓存中读取上传的进度。详见：<br />
+<strong>&nbsp;index.php&nbsp;</strong></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+&lt;&#63;php
+ $unid=uniqid("");//确定唯一标致，实现多人同时上传
+&#63;&gt;
+&lt;div class="userinput2"&gt;
+ &lt;div id="captions"&gt;先将你要上传的软件上传服务器，上传时请耐心等候...&lt;span class="style1"&gt;&lt;br /&gt;
+ &lt;/span&gt;
+ &lt;script type="text/javascript" &gt;
+ var xmlHttp;
+ var proNum=0;
+ var loop=0;
+ //初始化xmlHttp
+ function createxml(){
+ var xmlHttp;
+ if(window.XMLHttpRequest){
+ xmlHttp=new XMLHttpRequest();
+ }else{
+ xmlHttp=new ActiveXObject("Microsoft.XMLHTTP");
+ }
+ return xmlHttp;
+ }
+ xmlHttp=createxml();
+ //ajas操作
+ function sendURL() {
+ var url="getprogress.php&#63;progress_key=&lt;&#63;php echo $unid;&#63;&gt;";
+ xmlHttp.open("GET",url,false);
+ if (window.navigator.userAgent.indexOf("Firefox")&gt;=1){
+ //如果是firefox3.0
+ xmlHttp.send("progress_key=&lt;&#63;php echo $unid;&#63;&gt;");
+ if(xmlHttp.status==200) doHttpReadyStateChange();
+ 
+ }else{
+ xmlHttp.onreadystatechange = doHttpReadyStateChange;
+ xmlHttp.send("progress_key=&lt;&#63;php echo $unid;&#63;&gt;");
+ }
+ }
+ //回调函数
+ function doHttpReadyStateChange() {
+ if (xmlHttp.readyState== 4){
+ proNum=parseInt(xmlHttp.responseText);
+ //alert(proNum);
+ document.getElementByIdx_x("progressinner").style.width = proNum+"%";
+ document.getElementByIdx_x("showNum").innerHTML = proNum+"%";
+ if ( proNum &lt; 100){
+ setTimeout("sendURL()", 200);
+ }else{
+ //上传成功后，还不能及时得到信息。还希望高人指点
+ document.getElementByIdx_x("progressouter").style.display="none";
+ document.getElementByIdx_x("progressinner").style.display="none";
+ document.getElementByIdx_x("showNum").style.display="none";
+ document.getElementByIdx_x("theframe").style.display="none";
+ document.getElementByIdx_x("link2").style.display="block";
+ }
+ 
+ }
+ }
+ function startProgress(){
+ document.getElementByIdx_x("progressouter").style.display="block";
+ setTimeout("sendURL()", 200);
+ }
+ function newsofturl(text){
+ document.getElementByIdx_x("link2").style.display="block";
+ document.getElementByIdx_x("link2").value=text;
+ }
+ &lt;/script&gt;
+ &lt;iframe id="theframe" name="theframe" src="softupload.php&#63;id=&lt;&#63;php echo($unid); &#63;&gt;" style="border: 0; height: 80px; width: 400px; " frameborder="0" scrolling="no" &gt; &lt;/iframe&gt;
+ &lt;input name="linkdefult" type="hidden" id="linkdefult" value="0" /&gt;
+ &lt;br /&gt;
+ &lt;div id="link2" style="display:none;" &gt; &lt;font size=2&gt;上传成功!&nbsp; &nbsp; 文件大小为：
+ &lt;input type="text" name="filesize" id="filesize" style="width:50px;"/&gt;
+ &lt;/font&gt;&lt;br&gt;
+ &lt;br&gt;
+ &lt;font size=2&gt;文件下载地址为：&lt;/font&gt;&lt;br /&gt;
+ &lt;input type=text name='link' id='link' style='width:380px;' /&gt;
+ &lt;/div&gt;
+ &lt;br/&gt;
+ &lt;div id="progressouter" style="width: 500px; height: 20px; border: 1px solid #000000; display:none;"&gt;
+ &lt;div id="progressinner" style="position: relative; height: 20px; background-color: #333333; width: 0%; "&gt;&lt;/div&gt;
+ &lt;/div&gt;
+ &lt;div id='showNum' style="font-size:12px; color:#333333"&gt;&lt;/div&gt;
+ &lt;/div&gt;
+&lt;/div&gt;
+ 
+
+</pre>
+</div>
+<p><strong>softupload.php</strong></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+&lt;&#63;php
+ $id = $_GET['id'];
+&#63;&gt;
+&lt;script language="javascript"&gt;
+//Trim the input text
+function Trim(input)
+{
+ var lre = /^\s*/;
+ var rre = /\s*$/;
+ input = input.replace(lre, "");
+ input = input.replace(rre, "");
+ return input;
+ }
+function CheckForTestFile()
+ {
+ var file = document.getElementByIdx_x('Softfile');
+ var fileName=file.value; 
+ //Checking for file browsed or not
+ if (Trim(fileName) =='' )
+ {
+ alert("请为上传选择一个文件!!!");
+ file.focus();
+ return false;
+ }
+ //Setting the extension array for diff. type of text files
+ var extArray = new Array(".rar", ".zip", ".exe", ".gz"); 
+ //getting the file name
+ while (fileName.indexOf("\") != -1)
+ fileName = fileName.slice(fileName.indexOf("\") + 1);
+
+ //Getting the file extension  
+ var ext = fileName.slice(fileName.indexOf(".")).toLowerCase();
+ for (var i = 0; i &lt; extArray.length; i++)
+ {
+ if (extArray[i] == ext)
+ {
+ window.parent.startProgress(); return true;
+ }
+ }
+ alert("正确的文件格式为" + (extArray.join(" ")) + "\n请选择一个新的 " + "文件提交上传.");
+ file.focus();
+ return false; 
+ } 
+&lt;/script&gt; &lt;meta http-equiv="Content-Type" content="text/html; charset=gb2312" /&gt;
+&lt;form enctype="multipart/form-data" id="upload_form" action="target.php" method="POST"&gt;
+&lt;input type="hidden" name="APC_UPLOAD_PROGRESS" id="progress_key" value="&lt;&#63;php echo $id&#63;&gt;"/&gt;
+&lt;table width="322" border="0" cellpadding="0" cellspacing="0" id="linkTable"&gt;
+
+ &lt;tr&gt;
+ &lt;td &gt;1.选择软件&lt;br /&gt;
+
+ &lt;input name="Softfile" type="file" id="Softfile" /&gt;&lt;/td&gt;
+ &lt;td &gt;&lt;br /&gt;
+ &lt;input name="submit" type="submit" onclick="return CheckForTestFile();" value="上传软件"/&gt;&lt;/td&gt;
+ &lt;/tr&gt;
+ &lt;/table&gt;
+&lt;/form&gt;
+
+</pre>
+</div>
+<p><strong>target.php</strong></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+&lt;script language="javascript"&gt;
+//将上传后的信息返还给父窗口
+function chuanzhi(){
+parent.document.getElementByIdx_x('filesize').value=document.getElementByIdx_x('size').value;
+parent.document.getElementByIdx_x('link').value=document.getElementByIdx_x('newsoftdir').value;
+parent.document.getElementByIdx_x('linkdefult').value=1;
+}
+&lt;/script&gt;
+&lt;body onLoad="chuanzhi();"&gt;
+&lt;&#63;php
+//header('Content-Type:text/html;charset=gb2312');
+define('SOFTDIR', "./upload/"); //上传后路径
+define('HTTPSOFTDIR', "http://www.mysite.com/"); //服务器的路径
+
+//判断上传软件后缀名是否允许
+function isSoftExt($extension) {
+ $ext = array('exe', 'rar', 'zip','gz');
+ return in_array($extension, $ext) &#63; true : false;
+}
+if($_SERVER['REQUEST_METHOD']=='POST'){
+$errors['0'] = true;
+$errors['1'] = '请选择上传的软件图片';
+$errors['2'] = '上传软件图片失败';
+$errors['3'] = '上传软件图片失败';
+$daytime = date('Y-m-d-h-m-s');
+$timename=str_replace("-","",$daytime); //取得当天的日期时间
+
+
+ //检查软件是否是正常上传的
+ if(!is_uploaded_file($_FILES['Softfile']['tmp_name'])) {
+ echo "&lt;script&gt;alert('非正常上传！');history.back();&lt;/script&gt;";
+ exit;
+ }
+ $extension = pathinfo($_FILES['Softfile']['name'], PATHINFO_EXTENSION);
+ $filename = $timename."_".$_FILES['Softfile']['name'];
+ $tmpsize=$_FILES['Softfile']['size'];
+ $msize=round($tmpsize/1048576 , 2) ."M";
+ $ksize=round($tmpsize/1024 ,2). "K";
+ $filesize =$tmpsize&gt;1048576&#63;$msize:$ksize;
+ //检查软件文件格式
+ if(!isSoftExt($extension)) {
+ echo "&lt;script&gt;alert('上传的软件格式有错误！');history.back();&lt;/script&gt;";
+ exit;
+ } 
+ //移动软件
+ if(!move_uploaded_file($_FILES['Softfile']['tmp_name'], SOFTDIR. $filename)) {
+ echo "&lt;script&gt;alert('移动软件出错！');history.back();&lt;/script&gt;";
+ exit;
+ }else{
+ echo "&lt;font size=2&gt;上传成功!&nbsp; &nbsp; 文件大小为：&lt;input type=text id='size' value='$filesize'&gt;&lt;/font&gt;&lt;br&gt;";
+ echo "&lt;font size=2&gt;文件下载地址为：&lt;/font&gt;&lt;input type=text id='newsoftdir' value='".HTTPSOFTDIR.$filename."' style='width=380'&gt;";
+ }
+}else
+echo "请不要直接输入地址！";
+
+&#63;&gt;
+
+</pre>
+</div>
+<p><strong>getprogress.php</strong></p>
+<div class="phpstudycode">
+<pre class="brush:php;">
+&lt;&#63;php
+//上传ajas获取进度页面
+session_start();
+if(isset($_GET['progress_key'])) {
+ $status = apc_fetch('upload_'.$_GET['progress_key']);
+ echo ($status['current']/$status['total'])*100;
+}
+echo 'APC_FILE='.APC_FILE;
+&#63;&gt;
+
+</pre>
+</div>
+<p>本文为大家提供了一个php制作带进度上传文件的思路，可能还有一些欠缺的地方，希望大家进行补充，或者是再结合小编之前整理的文章进行学习，希望对大家的学习有所帮助。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/102514.html'>在CentOS系统中安装RPMforge的方法</a><a>下一篇</a><a href='/php/biji/102516.html'>android打开本地图像的方法</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

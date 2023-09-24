@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>MySQL主从搭建（多主一从）的思路步骤的解决办法_mysql教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="这篇文章主要为大家详细介绍了MySQL主从搭建（多主一从）的思路步骤的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+背景：" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+	    <a href="/mysql/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>数据库笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">MySQL主从搭建（多主一从）的思路步骤的解决办法</h1>
+					</div>
+                    <div class="panel-title">
+                        2022-11-12 09:20:30                    </div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>这篇文章主要为大家详细介绍了MySQL主从搭建（多主一从）的思路步骤的简单示例，具有一定的参考价值，可以用来参考一下。
+
+感兴趣的小伙伴，下面一起跟随512笔记的小玲来看看吧！
+背景：</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>这篇文章主要为大家详细介绍了MySQL主从搭建（多主一从）的思路步骤的简单示例，具有一定的参考价值，可以用来参考一下。</p>
+
+<p>感兴趣的小伙伴，下面一起跟随数据库教程的小编来看看吧！</p>
+<h3>背景：</h3>
+<p>由于最近公司项目好像有点受不住并发压力了，优化迫在眉睫。由于当前系统是单数据库系统原因，能优化的地方也尽力优化了但是数据库瓶颈还是严重限制了项目的并发能力。所以就考虑了添加数据库来增大项目并发能力。</p>
+<h3>思路：</h3>
+<p>1： 创建集中库： 主要就是存储历史数据。作为查询使用。</p>
+<p>2：创建多个业务库：满足项目高并发的能力。</p>
+<h3>demo环境：</h3>
+<p>1： VM ware 虚拟机 - centOS 7</p>
+<blockquote>
+<p>centOS-1： 192.168.194.3 主 100-------业务库</p>
+<p>centOS-2： 192.168.194.4 主 200-------业务库</p>
+<p>centOS-3： 192.168.194.5 从 300-------相当于集中库</p></blockquote>
+<p>2：mysql 5.7</p>
+<h2>步骤</h2>
+<p>1： 主库100</p>
+<p>设置my.cnf。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[mysqld]
+lower_case_table_names = 1 # 表名不区分大小写
+server-id = 100
+log_bin = mysql-bin  #开始binlog记录
+binlog_format = MIXED 
+#每次事务提交，MySQL都会把binlog刷下去，是最安全但是性能损耗最大的设置。
+#这样的话，在数据库所在的主机操作系统损坏或者突然掉电的情况下，系统才有可能丢失1个事务的数据
+#但是binlog虽然是顺序IO，但是设置sync_binlog=1，多个事务同时提交，
+#同样很大的影响MySQL和IO性能。按需设置。
+sync_binlog = 1 
+# 二进制日志自动删除/过期的天数。默认值为0，表示不自动删除。
+expire_logs_days = 7
+#binlog_cache_size = 128m
+#max_binlog_cache_size = 512m
+#max_binlog_size = 256M
+# 需要同步库
+binlog-do-db = dev
+# 不需要同步库
+binlog-ignore-db = mysql
+binlog_ignore_db = information_schema
+binlog_ignore_db = performation_schema
+binlog_ignore_db = sys
+datadir=/var/lib/mysql</code></pre>
+<p>MySQL主从搭建（多主一从）的实现思路与步骤</p>
+<p>设置slave用户</p>
+<p>代码如下：</p>
+<pre>
+<code>
+# mysql -uroot -p 
+# password: xxxxxx
+# mysql&gt; GRANT REPLICATION SLAVE ON *.* TO 'slave'@'%' IDENTIFIED BY 'root1234';
+# mysql&gt; flush privileges;
+# quit;
+# systemctl restart mysqld;
+# show master status \G
+#*************************** 1. row ***************************
+             File: mysql-bin.000001
+         Position: 886
+     Binlog_Do_DB: dev
+ Binlog_Ignore_DB: mysql,information_schema,performation_schema,sys
+Executed_Gtid_Set: 
+1 row in set (0.00 sec)
+</code></pre>
+<p>MySQL主从搭建（多主一从）的实现思路与步骤</p>
+<p></p>
+<h3>2： 主库200</h3>
+<p></p>
+<p>设置my.cnf。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[mysqld]
+lower_case_table_names = 1 # 表名不区分大小写
+server-id = 200
+log_bin = mysql-bin  #开始binlog记录
+binlog_format = MIXED 
+#每次事务提交，MySQL都会把binlog刷下去，是最安全但是性能损耗最大的设置。
+#这样的话，在数据库所在的主机操作系统损坏或者突然掉电的情况下，系统才有可能丢失1个事务的数据
+#但是binlog虽然是顺序IO，但是设置sync_binlog=1，多个事务同时提交，
+#同样很大的影响MySQL和IO性能。按需设置。
+sync_binlog = 1 
+# 二进制日志自动删除/过期的天数。默认值为0，表示不自动删除。
+expire_logs_days = 7
+#binlog_cache_size = 128m
+#max_binlog_cache_size = 512m
+#max_binlog_size = 256M
+# 需要同步库
+binlog-do-db =dev
+# 不需要同步库
+binlog-ignore-db = mysql
+binlog_ignore_db = information_schema
+binlog_ignore_db = performation_schema
+binlog_ignore_db = sys
+datadir=/var/lib/mysql</code></pre>
+<p>MySQL主从搭建（多主一从）的实现思路与步骤</p>
+<p>设置slave用户</p>
+<p>代码如下：</p>
+<pre>
+<code>
+# mysql -uroot -p 
+# password: xxxxxx
+# mysql&gt; GRANT REPLICATION SLAVE ON *.* TO 'slave'@'%' IDENTIFIED BY 'root1234';
+# mysql&gt; flush privileges;
+# quit;
+# systemctl restart mysqld;
+# show master status \G
+#*************************** 1. row ***************************
+             File: mysql-bin.000001
+         Position: 154
+     Binlog_Do_DB: dev
+ Binlog_Ignore_DB: mysql,information_schema,performation_schema,sys
+Executed_Gtid_Set: 
+1 row in set (0.00 sec)
+</code></pre>
+<p>MySQL主从搭建（多主一从）的实现思路与步骤</p>
+<p></p>
+<h3>3： 从库300</h3>
+<p></p>
+<p>设置my.cnf。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+[mysqld]
+lower_case_table_names = 1 # 表名不区分大小写 
+server-id = 300
+master_info_repository = table
+relay_log_info_repository = table 
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock  
+symbolic-links=0 
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid</code></pre>
+<p>MySQL主从搭建（多主一从）的实现思路与步骤</p>
+<p>设置主库信息</p>
+<p>代码如下：</p>
+<pre>
+<code>
+# mysql -uroot -p 
+# password: xxxxxx
+# 设置主库信息
+# mysql&gt; CHANGE MASTER TO  
+# -&gt;MASTER_HOST='192.168.194.3',
+# -&gt;MASTER_PORT=3306, MASTER_USER='slave', 
+# -&gt;MASTER_PASSWORD='root1234',
+# -&gt;MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=886 for channel '100';
+# mysql&gt; CHANGE MASTER TO  
+# -&gt;MASTER_HOST='192.168.194.4',
+# -&gt;MASTER_PORT=3306, MASTER_USER='slave', 
+# -&gt;MASTER_PASSWORD='root1234',
+# -&gt;MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=154  for channel '200';
+# 设置主库信息
+# mysql&gt; flush privileges;
+# start slave;
+# mysql&gt;show slave status \G  </code></pre>
+<p>MySQL主从搭建（多主一从）的实现思路与步骤</p>
+<p>标识同步成功</p>
+<blockquote>
+<p>Slave_IO_Running: YesSlave_SQL_Running: Yes</p></blockquote>
+<p>测试。</p>
+<p>随意主库：创建表,插入一条数据。</p>
+<p>代码如下：</p>
+<pre>
+<code>
+CREATE TABLE `t_user`  (
+  `id` varchar(32) NOT NULL COMMENT '主键ID',
+  `name` varchar(32) CHARACTER SET utf8mb4 NULL COMMENT '用户名称',
+  `code` varchar(32) CHARACTER SET utf8mb4 NULL COMMENT '用户编码',
+  `phone_number` varchar(300) CHARACTER SET utf8mb4 NULL COMMENT '电话号码',
+  `create_date` datetime NULL COMMENT '创建时间',
+  `update_date` datetime NULL COMMENT '修改时间',
+  PRIMARY KEY (`id`)
+) COMMENT = '用户信息表';
+INSERT INTO t_user (`id`, `name`, `code`, `phone_number`, `create_date`, `update_date`) 
+VALUES ('userId_4', '张三', '123456789', '123456789632', '2020-04-27 22:05:00', '2020-04-27 22:05:00');</code></pre>
+<p>MySQL主从搭建（多主一从）的实现思路与步骤</p>
+<p>从库查询</p>
+<p>代码如下：</p>
+<pre>
+<code>
+SELECT * FROM t_user;
+------+--------+----------+--------------+---------------------+-------------+
+| id       | name   | code     | phone_number | create_date  | update_date |
++-------+--------+----------+--------------+---------------------+----------+
+| userId_4 | 张三 |123456789|123456789632|2020-04-27 22:05:00|2020-04-27 22:05:00 </code></pre>
+<p>MySQL主从搭建（多主一从）的实现思路与步骤</p>
+<h3>总结</h3>
+<p>到此这篇关于MySQL主从搭建（多主一从）的实现思路与步骤的文章就介绍到这了,更多相关MySQL主从搭建内容请搜索512笔记以前的文章或继续浏览下面的相关文章希望大家以后多多支持512笔记！</p>
+
+<p>注：关于MySQL主从搭建（多主一从）的思路步骤的简单示例的内容就先介绍到这里，更多相关文章的可以留意</span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/mysql/biji/888.html'>MySQL之高可用集群部署及故障切换的解决办法</a><a>下一篇</a><a href='/mysql/biji/890.html'>MySQL 数据库中my.ini的优化 2G内存针对站多 抗压型的设置</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>

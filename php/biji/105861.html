@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <title>一次Linux系统被服务器被rootkit攻击的处理思路和处理过程_PHP教程_IDC笔记</title>
+    <meta name="keywords" content="PHP,PHP笔记,PHP教程" />
+    <meta name="description" content="IT行业发展到现在，安全问题已经变得至关重要，从最近的&ldquo;棱镜门&rdquo;事件中，折射出了很多安全问题，信息安全问题已变得刻不容缓，而做为运维人员，就必须了解一些安全运维准则" />
+    <meta content="Responsive admin theme build on top of Bootstrap 4" name="description" />
+    <meta content="idcnote.com" name="author" />
+    <link rel="shortcut icon" href="/skin1/images/favicon.ico">
+    <!--Morris Chart CSS -->
+    <link rel="stylesheet" href="/skin1/css/morris.css">
+    <link href="/skin1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/metismenu.min.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/icons.css" rel="stylesheet" type="text/css">
+    <link href="/skin1/css/style.css" rel="stylesheet" type="text/css">
+<link href="/SyntaxHighlighter/shCoreDefault.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/SyntaxHighlighter/shCore.js"></script>
+<script type="text/javascript">
+ SyntaxHighlighter.all();
+</script>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+</head>
+<body>
+<!-- Begin page -->
+		<div id="wrapper">
+			<!-- Top Bar Start -->
+			<div class="topbar">
+				<!-- LOGO -->
+				<div class="topbar-left">
+					<a href="/" class="logo">
+						<span class="logo-light">
+                            <i class="mdi mdi-camera-control"></i>IDC笔记
+                        </span>
+						<span class="logo-sm">
+                            <i class="mdi mdi-camera-control"></i>
+                        </span>
+					</a>
+				</div>
+				<nav class="navbar-custom">
+					<ul class="navbar-right list-inline float-right mb-0">
+						<!--<li class="dropdown notification-list list-inline-item d-none d-md-inline-block">
+							<a class="nav-link waves-effect" href="#" id="btn-fullscreen">
+								<i class="mdi mdi-arrow-expand-all noti-icon"></i>
+							</a>
+						</li>
+						<li class="dropdown notification-list list-inline-item">
+							<div class="dropdown notification-list nav-pro-img">
+								<a class="dropdown-toggle nav-link arrow-none nav-user" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+									<img src="/skin1/picture/user-4.jpg" alt="user" class="rounded-circle">
+								</a>
+								<div class="dropdown-menu dropdown-menu-right profile-dropdown ">
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-account-circle"></i> Profile</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-wallet"></i> Wallet</a>
+									<a class="dropdown-item d-block" href="#">
+										<span class="badge badge-success float-right">11</span>
+										<i class="mdi mdi-settings"></i> Settings</a>
+									<a class="dropdown-item" href="#">
+										<i class="mdi mdi-lock-open-outline"></i> Lock screen</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-danger" href="#">
+										<i class="mdi mdi-power text-danger"></i> Logout</a>
+								</div>
+							</div>
+						</li>
+						-->
+					</ul>
+					<ul class="list-inline menu-left mb-0">
+						<li class="float-left">
+							<button class="button-menu-mobile open-left waves-effect">
+                            <i class="mdi mdi-menu"></i>
+                        </button>
+						</li>
+						<li class="d-none d-md-inline-block">
+							<form role="search" class="app-search">
+								<div class="form-group mb-0">
+									<input type="text" class="form-control" placeholder="Search..">
+									<button type="submit"><i class="fa fa-search"></i></button>
+								</div>
+							</form>
+						</li>
+					</ul>
+				</nav>
+			</div>
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left side-menu">
+    <div class="slimscroll-menu" id="remove-scroll">
+    <!--- Sidemenu -->
+    <div id="sidebar-menu">
+    <!-- Left Menu Start -->
+    <ul class="metismenu" id="side-menu">
+			<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP简介			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jianjie/1.html">PHP简介</a></li><li><a href="/php/jianjie/2.html">PHP用途</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP基本语法			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yufa/3.html">分离HTML</a></li><li><a href="/php/yufa/4.html">指令分隔符</a></li><li><a href="/php/yufa/5.html">PHP注释</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类型			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpleixing/6.html">PHP类型简介</a></li><li><a href="/php/phpleixing/7.html">PHP类型之布尔类型</a></li><li><a href="/php/phpleixing/8.html">PHP类型之整型</a></li><li><a href="/php/phpleixing/9.html">PHP类型之浮点型</a></li><li><a href="/php/phpleixing/10.html">PHP类型之字符串</a></li><li><a href="/php/phpleixing/11.html">PHP类型之数组</a></li><li><a href="/php/phpleixing/12.html">PHP类型之对象</a></li><li><a href="/php/phpleixing/13.html">PHP类型之资源类型</a></li><li><a href="/php/phpleixing/14.html">PHP类型之NULL</a></li><li><a href="/php/phpleixing/15.html">PHP类型之伪类型</a></li><li><a href="/php/phpleixing/16.html">PHP类型之类型判别</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP变量			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbianliang/17.html">PHP变量之基础</a></li><li><a href="/php/phpbianliang/18.html">PHP变量之预定义变量</a></li><li><a href="/php/phpbianliang/19.html">PHP变量之变量范围</a></li><li><a href="/php/phpbianliang/20.html">PHP变量之可变变量</a></li><li><a href="/php/phpbianliang/21.html">PHP变量之外部变量</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP运算符			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yunsuanfu/22.html">PHP运算符优先级</a></li><li><a href="/php/yunsuanfu/23.html">算术运算符</a></li><li><a href="/php/yunsuanfu/24.html">赋值运算符</a></li><li><a href="/php/yunsuanfu/25.html">位运算符</a></li><li><a href="/php/yunsuanfu/26.html">比较运算符</a></li><li><a href="/php/yunsuanfu/27.html">错误控制运算符</a></li><li><a href="/php/yunsuanfu/28.html">执行运算符</a></li><li><a href="/php/yunsuanfu/29.html">递增/递减运算符</a></li><li><a href="/php/yunsuanfu/30.html">逻辑运算符</a></li><li><a href="/php/yunsuanfu/31.html">字符串运算符</a></li><li><a href="/php/yunsuanfu/32.html">数组运算符</a></li><li><a href="/php/yunsuanfu/33.html">类型运算符</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP控制结构			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/jiegou/34.html">PHP控制结构之if</a></li><li><a href="/php/jiegou/35.html">PHP控制结构之else</a></li><li><a href="/php/jiegou/36.html">PHP控制结构之elseif/else if</a></li><li><a href="/php/jiegou/37.html">PHP控制结构之替代语法</a></li><li><a href="/php/jiegou/38.html">PHP控制结构之while</a></li><li><a href="/php/jiegou/39.html">PHP控制结构之do-while</a></li><li><a href="/php/jiegou/40.html">PHP控制结构之for</a></li><li><a href="/php/jiegou/41.html">PHP控制结构之foreach</a></li><li><a href="/php/jiegou/42.html">PHP控制结构之break</a></li><li><a href="/php/jiegou/43.html">PHP控制结构之continue</a></li><li><a href="/php/jiegou/44.html">PHP控制结构之switch</a></li><li><a href="/php/jiegou/45.html">PHP控制结构之declare</a></li><li><a href="/php/jiegou/46.html">PHP控制结构之return</a></li><li><a href="/php/jiegou/47.html">PHP控制结构之require</a></li><li><a href="/php/jiegou/48.html">PHP控制结构之include</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/hanshu/52.html">用户自定义函数</a></li><li><a href="/php/hanshu/53.html">函数的参数</a></li><li><a href="/php/hanshu/54.html">返回值</a></li><li><a href="/php/hanshu/55.html">可变函数</a></li><li><a href="/php/hanshu/56.html">内部（内置）函数</a></li><li><a href="/php/hanshu/57.html">匿名函数</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP类与对象			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpduixiang/58.html">类与对象前言</a></li><li><a href="/php/phpduixiang/59.html">基本概念</a></li><li><a href="/php/phpduixiang/60.html">属性</a></li><li><a href="/php/phpduixiang/61.html">类常量</a></li><li><a href="/php/phpduixiang/62.html">自动加载对象</a></li><li><a href="/php/phpduixiang/63.html">构造函数和析构函数</a></li><li><a href="/php/phpduixiang/64.html">访问控制</a></li><li><a href="/php/phpduixiang/65.html">对象继承</a></li><li><a href="/php/phpduixiang/66.html">Static关键字</a></li><li><a href="/php/phpduixiang/67.html">抽象类</a></li><li><a href="/php/phpduixiang/68.html">接口</a></li><li><a href="/php/phpduixiang/69.html">Traits</a></li><li><a href="/php/phpduixiang/70.html">重载</a></li><li><a href="/php/phpduixiang/71.html">对象迭代</a></li><li><a href="/php/phpduixiang/72.html">设计模式</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP异常处理			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/yichang/81.html">异常处理</a></li><li><a href="/php/yichang/82.html">扩展PHP内置的异常处理类</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> PHP函数库按分类			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpku/83.html">数组</a></li><li><a href="/php/phpku/84.html">Classes/Objects</a></li><li><a href="/php/phpku/85.html">Date/Time</a></li><li><a href="/php/phpku/86.html">Directories</a></li><li><a href="/php/phpku/87.html">错误处理</a></li><li><a href="/php/phpku/88.html">Program execution</a></li><li><a href="/php/phpku/89.html">Filesystem</a></li><li><a href="/php/phpku/90.html">Filter</a></li><li><a href="/php/phpku/91.html">Function Handling</a></li><li><a href="/php/phpku/92.html">PHP 选项/信息</a></li><li><a href="/php/phpku/93.html">Mail</a></li><li><a href="/php/phpku/94.html">Math</a></li><li><a href="/php/phpku/95.html">Misc.</a></li><li><a href="/php/phpku/96.html">Network</a></li><li><a href="/php/phpku/97.html">输出控制</a></li>		</ul>
+	</li>
+		<li>
+		<a href="javascript:void(0);" class="waves-effect">
+			<i class="icon-share"></i>
+			<span> php基础			<span class="float-right menu-arrow">
+			<i class="mdi mdi-chevron-right"></i>
+			</span> 
+			</span>
+		</a>
+		<ul class="submenu">
+			 <li><a href="/php/phpbiji/108377.html"></a></li><li><a href="/php/phpbiji/108376.html"></a></li><li><a href="/php/phpbiji/108380.html"></a></li><li><a href="/php/phpbiji/108379.html"></a></li><li><a href="/php/phpbiji/108378.html"></a></li><li><a href="/php/phpbiji/108381.html"></a></li><li><a href="/php/phpbiji/108382.html"></a></li><li><a href="/php/phpbiji/108384.html"></a></li><li><a href="/php/phpbiji/108383.html"></a></li><li><a href="/php/phpbiji/108385.html"></a></li><li><a href="/php/phpbiji/108386.html"></a></li><li><a href="/php/phpbiji/108388.html"></a></li><li><a href="/php/phpbiji/108387.html"></a></li><li><a href="/php/phpbiji/108389.html"></a></li><li><a href="/php/phpbiji/108391.html"></a></li>		</ul>
+	</li>
+		<li>
+	    <a href="/php/biji/" class="waves-effect">
+		    <i class="icon-share"></i>
+		    <span>PHP笔记
+		       	<span class="float-right menu-arrow">
+		       	<i class="mdi mdi-chevron-right"></i>
+		       	</span>
+		    </span>
+	    </a>
+	</li>
+	</ul>
+</div>
+<!-- Sidebar -->
+<div class="clearfix"></div>
+</div>
+<!-- Sidebar -left -->
+</div>
+<!-- Left Sidebar End -->
+<!-- Start right Content here -->
+<div class="content-page">
+	<div class="content">
+		<div class="container-fluid">
+			<div class="page-title-box">
+				<div class="row align-items-center">
+					<div class="col-sm-6">
+						<h1 class="page-title">一次Linux系统被服务器被rootkit攻击的处理思路和处理过程</h1>
+					</div>
+				</div>
+				<!-- end row -->
+			</div>
+			<!-- end page-title -->
+			<!-- START ROW -->
+			<div class="panel panel-forbid">
+				<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>内容摘要</div>
+			    <div class="panel-content">
+			    <span>IT行业发展到现在，安全问题已经变得至关重要，从最近的&ldquo;棱镜门&rdquo;事件中，折射出了很多安全问题，信息安全问题已变得刻不容缓，而做为运维人员，就必须了解一些安全运维准则</span>                                     
+		    	</div>
+			    <div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>文章正文</div>
+			    <div class="panel-content">
+			    <span><p>IT行业发展到现在，安全问题已经变得至关重要，从最近的&ldquo;棱镜门&rdquo;事件中，折射出了很多安全问题，信息安全问题已变得刻不容缓，而做为运维人员，就必须了解一些安全运维准则，同时，要保护自己所负责的业务，首先要站在攻击者的角度思考问题，修补任何潜在的威胁和漏洞。</p>
+<p><strong>一次Linux被入侵后的分析</strong></p>
+<p>下面通过一个案例介绍下当一个服务器被rootkit入侵后的处理思路和处理过程，rootkit攻击是Linux系统下最常见的攻击手段和攻击方式。</p>
+<p><strong>1、受攻击现象</strong></p>
+<p>这是一台客户的门户网站服务器，托管在电信机房，客户接到电信的通知：由于此服务器持续对外发送数据包，导致100M带宽耗尽，于是电信就切断了此服务器的网络。此服务器是Centos5.5版本，对外开放了80、22端口。</p>
+<p>从客户那里了解到，网站的访问量并不大，所以带宽占用也不会太高，而耗尽100M的带宽是绝对不可能的，那么极有可能是服务器遭受了流量攻击，于是登录服务器做详细的检测。</p>
+<p><strong>2、初步分析</strong></p>
+<p>&nbsp;在电信人员的配合下通过交换机对该服务器的网络流量进行了检测，发现该主机确实存在对外80端口的扫描流量，于是登录系统通过&ldquo;netstat &ndash;an&rdquo;命令对系统开启的端口进行检查，可奇怪的是，没有发现任何与80端口相关的网络连接。接着使用&ldquo;ps &ndash;ef&rdquo;、&ldquo;top&rdquo;等命令也没有发现任何可疑的进程。于是怀疑系统是否被植入了rootkit。</p>
+<p>为了证明系统是否被植入了rootkit，我们将网站服务器下的ps、top等命令与之前备份的同版本可信操作系统命令做了md5sum校验，结果发现网站服务器下的这两个命令确实被修改过，由此断定，此服务器已经被入侵并且安装了rootkit级别的后门程序。</p>
+<p><strong>3、断网分析系统</strong></p>
+<p>由于服务器不停向外发包，因此，首先要做的就是将此服务器断开网络，然后分析系统日志，寻找攻击源。但是系统命令已经被替换掉了，如果继续在该系统上执行操作将变得不可信，这里可以通过两种方法来避免这种情况，第一种方法是将此服务器的硬盘取下来挂载到另外一台安全的主机上进行分析，另一种方式就是从一个同版本可信操作系统下拷贝所有命令到这个入侵服务器下某个路径，然后在执行命令的时候指定此命令的完整路径即可，这里采用第二种方法。</p>
+<p>我们首先查看了系统的登录日志，查看是否有可疑登录信息，执行如下命令：</p>
+<pre>more&nbsp;/var/log/secure&nbsp;|grep&nbsp;Accepted</pre>
+<p>通过对命令输出的查看，有一条日志引起了我们的怀疑：</p>
+<pre>Oct&nbsp;3&nbsp;03:10:25&nbsp;webserver&nbsp;sshd[20701]:&nbsp;Accepted&nbsp;password&nbsp;for&nbsp;mail&nbsp;from&nbsp;62.17.163.186&nbsp;port&nbsp;53349&nbsp;ssh2</pre>
+<p>这条日志显示在10月3号的凌晨3点10分，有个mail帐号从62.17.163.186这个IP成功登录了系统，mail是系统的内置帐号，默认情况下是无法执行登录操作的，而62.17.163.186这个IP，经过查证，是来自爱尔兰的一个地址。从mail帐号登录的时间来看，早于此网站服务器遭受攻击的时间。</p>
+<p>接着查看一下系统密码文件/etc/shadow，又发现可疑信息：</p>
+<pre>mail:$1$kCEd3yD6$W1evaY5BMPQIqfTwTVJiX1:15400:0:99999:7:::</pre>
+<p>很明显，mail帐号已经被设置了密码，并且被修改为可远程登录，之所以使用mail帐号，猜想可能是因为入侵者想留下一个隐蔽的帐号，以方便日后再次登录系统。</p>
+<p>然后继续查看其他系统日志，如/var/log/messages、/var/log/wtmp均为空文件，可见，入侵者已经清理了系统日志文件，至于为何没有清空/var/log/secure文件，就不得而知了。</p>
+<p><strong>4、寻找攻击源</strong></p>
+<p>到目前为止，我们所知道的情况是，有个mail帐号曾经登录过系统，但是为何会导致此网站服务器持续对外发送数据包呢？必须要找到对应的攻击源，通过替换到此服务器上的ps命令查看系统目前运行的进程，又发现了新的可疑：</p>
+<pre>nobody&nbsp;&nbsp;&nbsp;22765&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;6&nbsp;Sep29&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4-00:11:58&nbsp;.t</pre>
+<p>这个.t程序是什么呢，继续执行top命令，结果如下：</p>
+<pre>PID&nbsp;USER&nbsp;&nbsp;&nbsp;&nbsp;PR&nbsp;&nbsp;NI&nbsp;&nbsp;VIRT&nbsp;&nbsp;RES&nbsp;&nbsp;SHR&nbsp;&nbsp;S&nbsp;&nbsp;%CPU&nbsp;%MEM&nbsp;&nbsp;&nbsp;&nbsp;TIME+&nbsp;&nbsp;COMMAND</pre>
+<pre>22765&nbsp;nobody&nbsp;&nbsp;15&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;1740m&nbsp;1362m&nbsp;1228&nbsp;&nbsp;S&nbsp;&nbsp;98.3&nbsp;&nbsp;&nbsp;&nbsp;91.5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2892:19&nbsp;&nbsp;&nbsp;.t</pre>
+<p>从输出可知，这个t程序已经运行了4天左右，运行这个程序的是nobody用户，并且这个t程序消耗了大量的内存和cpu，这也是之前客户反映的网站服务器异常缓慢的原因，从这个输出，我们得到了t程序的进程PID为22765，接下来根据PID查找下执行程序的路径在哪里：</p>
+<p>进入内存目录，查看对应PID目录下exe文件的信息：</p>
+<pre>[root@webserver&nbsp;~]#&nbsp;/mnt/bin/ls&nbsp;-al&nbsp;/proc/22765/exe&nbsp;</pre>
+<pre>lrwxrwxrwx&nbsp;1&nbsp;root&nbsp;root&nbsp;0&nbsp;Sep&nbsp;29&nbsp;22:09&nbsp;/proc/22765/exe&nbsp;-&gt;&nbsp;/var/tmp/&hellip;/apa/t</pre>
+<p>这样就找到了进程对应的完整程序执行路径，这个路径很隐蔽，由于/var/tmp目录默认情况下任何用户可读性，而入侵者就是利用这个漏洞在/var/tmp目录下创建了一个&ldquo;&hellip;&rdquo;的目录，而在这个目录下隐藏着攻击的程序源，进入/var/tmp/&hellip;/目录，发现了一些列入侵者放置的rootkit文件，列表如下：</p>
+<pre>[root@webserver&nbsp;...]#/mnt/bin/ls&nbsp;-al</pre>
+<pre>drwxr-xr-x&nbsp;2&nbsp;nobody&nbsp;nobody&nbsp;4096&nbsp;Sep&nbsp;29&nbsp;22:09&nbsp;apa</pre>
+<pre>-rw-r--r--&nbsp;1&nbsp;nobody&nbsp;nobody&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;Sep&nbsp;29&nbsp;22:09&nbsp;apa.tgz</pre>
+<pre>drwxr-xr-x&nbsp;2&nbsp;nobody&nbsp;nobody&nbsp;4096&nbsp;Sep&nbsp;29&nbsp;22:09&nbsp;caca</pre>
+<pre>drwxr-xr-x&nbsp;2&nbsp;nobody&nbsp;nobody&nbsp;4096&nbsp;&nbsp;Sep&nbsp;29&nbsp;22:09&nbsp;haha</pre>
+<pre>-rw-r--r--&nbsp;1&nbsp;nobody&nbsp;nobody&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0Sep&nbsp;29&nbsp;22:10&nbsp;kk.tar.gz-</pre>
+<pre>rwxr-xr-x&nbsp;1&nbsp;nobody&nbsp;nobody&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;Sep&nbsp;29&nbsp;22:10&nbsp;login</pre>
+<pre>-rw-r--r--&nbsp;1&nbsp;nobody&nbsp;nobody&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;Sep&nbsp;29&nbsp;22:10&nbsp;login.tgz</pre>
+<pre>-rwxr-xr-x&nbsp;1&nbsp;nobody&nbsp;nobody&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;Sep&nbsp;29&nbsp;22:10&nbsp;z</pre>
+<p>通过对这些文件的分析，基本判断这就是我们要找的程序攻击源，其中：</p>
+<p>1）、z程序是用来清除系统日志等相关信息的，例如执行：</p>
+<pre>./z&nbsp;62.17.163.186</pre>
+<p>这条命令执行后，系统中所有与62.17.163.186有关的日志将全部被清除掉。</p>
+<p>2）、在apa目录下有个后门程序t，这个就是之前在系统中看到的，运行此程序后，此程序会自动去读apa目录下的ip这个文件，而ip这个文件记录了各种ip地址信息，猜想这个t程序应该是去扫描ip文件中记录的所有ip信息，进而获取远程主机的权限，可见这个网站服务器已经是入侵者的一个肉鸡了。</p>
+<p>3）、haha目录里面放置的就是用来替换系统相关命令的程序，也就是这个目录下的程序使我们无法看到操作系统的异常情况。</p>
+<p>4）、login程序就是用来替换系统登录程序的木马程序，此程序还可以记录登录帐号和密码。</p>
+<p><strong>5、查找攻击原因</strong></p>
+<p>到这里为止，服务器上遭受的攻击已经基本清晰了，但是入侵者是如何侵入这台服务器的呢？这个问题很重要，一定要找到入侵的根源，才能从根本上封堵漏洞。</p>
+<p>为了弄清楚入侵者是如何进入服务器的，需要了解下此服务器的软件环境，这台服务器是一个基于java的web服务器，安装的软件有apache2.0.63、tomcat5.5，apache和tomcat之间通过mod_jk模块进行集成，apache对外开放80端口，由于tomcat没有对外开放端口，所以将问题集中到apache上面。</p>
+<p>通过查看apache的配置发现，apache仅仅处理些静态资源请求，而网页也以静态页面居多，所以通过网页方式入侵系统可能性不大，既然漏洞可能来自于apache，那么尝试查看apache日志，也许能发现一些可疑的访问痕迹，通过查看access.log文件，发现了如下信息：</p>
+<pre>62.17.163.186&nbsp;-&nbsp;-&nbsp;[29/Sep/2013:22:17:06&nbsp;+0800]&nbsp;&quot;GET&nbsp;http://www.xxx.com/cgi-bin/awstats.pl?configdir=|echo;echo;ps+-aux%00&nbsp;HTTP/1.0&quot;&nbsp;200&nbsp;12333&nbsp;&quot;-&quot;&nbsp;&quot;Mozilla/5.0&nbsp;(Windows;&nbsp;U;&nbsp;Windows&nbsp;NT&nbsp;5.1;&nbsp;pt-BR;&nbsp;rv:1.8.1)&nbsp;Gecko/20121010&nbsp;Firefox/2.0&quot;</pre>
+<pre>62.17.163.186&nbsp;-&nbsp;-&nbsp;[29/Sep/213:22:17:35&nbsp;+0800]&nbsp;&quot;GET&nbsp;http://www.xxx.com/cgi-bin/awstats.pl?configdir=|echo;echo;cd+/var/tmp/.../haha;ls+-a%00&nbsp;HTTP/1.0&quot;&nbsp;200&nbsp;1626&nbsp;&quot;-&quot;&nbsp;&quot;Mozilla/5.0&nbsp;(Windows;&nbsp;U;&nbsp;Windows&nbsp;NT&nbsp;5.1;&nbsp;pt-BR;&nbsp;rv:1.8.1)&nbsp;Gecko/20121010&nbsp;Firefox/2.0&quot;</pre>
+<p>至此，发现了漏洞的根源，原来是awstats.pl脚本中configdir的一个漏洞，通过了解此服务器的应用，客户确实是通过一个Awstats的开源插件来做网页访问统计，通过这个漏洞，攻击者可以直接在浏览器上操作服务器，例如查看进程、创建目录等。通过上面第二条日志可以看出，攻击者正常浏览器执行切换到/var/tmp/.../haha目录的操作。</p>
+<p>这个脚本漏洞挺可怕的，不过在Awstats官网也早已给出了修补的方法，对于这个漏洞，修复方法很简单，打开awstats.pl文件，找到如下信息：</p>
+<pre>if&nbsp;($QueryString&nbsp;=~&nbsp;/configdir=([^&amp;]+)/i)</pre>
+<pre>{</pre>
+<pre>$DirConfig=&amp;DecodeEncodedString(&quot;$1&quot;);</pre>
+<pre>}</pre>
+<pre>修改为如下即可：</pre>
+<pre>if&nbsp;($QueryString&nbsp;=~&nbsp;/configdir=([^&amp;]+)/i)</pre>
+<pre>{</pre>
+<pre>$DirConfig=&amp;DecodeEncodedString(&quot;$1&quot;);</pre>
+<pre>$DirConfig=~tr/a-z0-9_\-\/\./a-z0-9_\-\/\./cd;</pre>
+<pre>}</pre>
+<p><strong>6、揭开谜团</strong></p>
+<p>通过上面逐步分析和介绍，此服务遭受入侵的原因和过程已经非常清楚了，大致过程如下：</p>
+<p>（1）攻击者通过Awstats脚本awstats.pl文件的漏洞进入了系统，在/var/tmp目录下创建了隐藏目录，然后将rootkit后门文件传到这个路径下。</p>
+<p>（2）攻击者通过植入后门程序，获取了系统超级用户权限，进而控制了这台服务器，通过这台服务器向外发包。</p>
+<p>（3）攻击者的IP地址62.17.163.186可能是通过代理过来的，也可能是攻击者控制的其他肉鸡服务器。</p>
+<p>（4）攻击者为了永久控制这台机器，修改了系统默认帐号mail的信息，将mail帐号变为可登录，并且设置了mail帐号的密码。</p>
+<p>（5）攻击者在完成攻击后，通过后门程序自动清理了系统访问日志，毁灭了证据。</p>
+<p>通过对这个入侵过程的分析，发现入侵者的手段还是非常简单和普遍的，虽然入侵者删除了系统的一些日志，但是还是留下了很多可查的踪迹，其实还可以查看用户下的.bash_history文件，这个文件是用户操作命令的历史记录。</p>
+<p><strong>7、如何恢复网站</strong></p>
+<p>由于系统已经文件被更改和替换，此系统已经变得完全不可信，因此建议备份网站数据，重新安装系统，基本步骤如下：</p>
+<p>（1）安装稳定版本的操作系统，删除系统默认的并且不需要的用户。</p>
+<p>（2）系统登录方式改为公钥认证方式，避开密码认证的缺陷。</p>
+<p>（3）安装更高版本的apache和最新稳定版本的Awstats程序。</p>
+<p>（4）使用Linux下的Tcp_Wrappers防火墙，限制ssh登录的源地址。</p>
+<hr></span>                                     
+		    	</div>
+		    	<div class="panel-title"><i class="fa fa fa-file-text fa-fw"></i>代码注释</div>
+			    <div class="panel-content">
+			    <span></span>                                     
+		    	</div>
+
+			</div>
+
+			<!-- END ROW -->
+			<div class="newsPage">
+				<div class="newsPageTurn">
+				    <span><a>上一篇</a><a href='/php/biji/105860.html'>Laravel与CI框架中截取字符串函数</a><a>下一篇</a><a href='/php/biji/105862.html'>phpinfo() 中 Local Value（局部变量）Master Value（主变量） 的区别</a></span>
+				</div>
+			</div>
+		</div>
+
+
+<div id="author-box">
+    <h3>作者：喵哥笔记</h3>
+        <div class="author-info">
+            <div class="author-avatar">
+                <img src="/skin1/picture/01.jpg" alt="IDC笔记" class="avatar" width="64" height="64">
+            </div>
+        <div class="author-description">
+            <p>学的不仅是技术，更是梦想！</p>
+            <ul class="author-social follows nb">
+            	<li>
+                    <a target="_blank" href="/" title="IDC笔记">IDC笔记</a>
+                </li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script>
+var paras = document.getElementsByTagName("pre");
+for ( var i=0;i<paras.length;i++ ) {
+    paras[i].setAttribute("class","brush:php;toolbar:false");     
+}
+</script>
+<!-- container-fluid -->
+	</div>
+<!-- content -->
+	<footer class="footer">
+	© 2020 IDC笔记 <i class="mdi mdi-heart text-danger"></i>. | 备案号：<a href="https://beian.miit.gov.cn/">辽ICP备18000516号</a>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?674585fbbd2294d3faf910f668ea91b4";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+	</footer>
+</div>
+
+</div>
+<!-- END wrapper -->
+<!-- jQuery  -->
+<script src="/skin1/js/jquery.min.js"></script>
+<script src="/skin1/js/bootstrap.bundle.min.js"></script>
+<script src="/skin1/js/metismenu.min.js"></script>
+<script src="/skin1/js/jquery.slimscroll.js"></script>
+<script src="/skin1/js/waves.min.js"></script>
+<!--Morris Chart-->
+<script src="/skin1/js/morris.min.js"></script>
+<script src="/skin1/js/raphael.min.js"></script>
+<script src="/skin1/js/dashboard.init.js"></script>
+<script src="/skin1/js/app.js"></script>
+<script src="/foot.js"></script>
+</body>
+</html>
